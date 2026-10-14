@@ -1,8 +1,14 @@
 # 当前技术结构与完整链条
 
-空间后验现由`spatial_signal_prior/5`持有原物理A/D/Z因子及同次source QR/noise生成凭证，exact结构null取因子乘积，数值后验和BLUE沿原算法。`SpatialObservation/3`保存原Q、归一map、scale/volume/诊断，load集中核关系并恢复原态；general可识别reference-free效应也进入同一个source输运入口。
+空间后验现由`spatial_signal_prior/6`持有原物理A/D/Z因子及同次source QR/noise生成凭证，exact结构null取因子乘积，数值后验和BLUE沿原算法。`SpatialObservation/3`保存原Q、归一map、scale/volume/诊断，load集中核关系并恢复原态；general可识别reference-free效应也进入同一个source输运入口。
+
+B09结构识别先对每record原joint `[Z D]`取exact rowspace、消其独立nuisance，再stream配对空间/时间约束到shared beta canonical rowspace；普通fit/load/BLUE不构造原大Kronecker或完整nullbasis。physical factors `/2`保存原D/Z和生成证书，数值QR/noise及BLUE仍消费原完整record。
+
+B07 `research.multichannel_c_latent`新增明确外部固定参数的finite C producer；原compiler分别颁发C标签/观测权限和截止内未标签history权限，B05中枢复用共同QR/flat chart，保存原prior F及后验R/RHS。`history_artifact`的newmodel capsule直接拷原模型字节，conditional-tail和whole-observed current-q各声明法与完整positive mass保存；旧frozen-C权限由原owner保持。
 
 `research.calibration_selection.transfer_scratch_prefix_plan`仅派生新的四fixed完整程序族：source/scratch单NN及各自NN+xDAWN。实际expert IDs、baseline/output/选择行政策显式传入，原source catalog、匹配architecture、time scope和checkpoint权限由原CLI消费；NN配对同profile，经典专家可保自己声明视图。原prefix selector、graph保存重放和parent核回概率继续持有实际执行。
+
+`transfer.pool_calibration`是exact arithmetic pool之后的uniform-contamination唯一概率owner。新fixed-base `grouped_uniform_contamination`每poolnode全roster C-only OOF拟ε；`FittedEnsemble`独立保存原temperature OOF与pool OOF，numeric模型绑定actualfinal base/inner producers，scorer/graph/publicparent统一按冻结poolstate重算。ε0/1/truezero与unavailable由原完整decision owner消费，新参数不迁移到另一个roster或weights。
 
 `transfer.information_bound`持有`/2`完整activation/模型诊断、raw plug-in估计量及不可变JSON报告，`save/load/replay_model`保护全部输出与原producer。`transfer.exact_covariance/2`持有raw传播、resolved SPD/显式identified support及独立ridge诊断，当前是内存诊断接口。二者没有生产调用；来源、反例和完整性验收见[数学整合](assets/research_resume_20261012/diagnostic_mathematics_integration.json)。原D树local-only `run_information_bound.py`保原字节，迁移membership、actual activation和报告schema后才可复用。
 

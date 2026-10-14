@@ -1,19 +1,17 @@
 # 科研总监交接
 
-2026-10-13用户最新指令已恢复科研，授权自主修改并要求精简长期记忆。本记录沿用现有续接入口，活动科学规范由六指南和四主题页持有；原暂停检查点记录当时状态。科研集成树已迁至D盘，原详细日志随树保留。binary固定requested风险与B09物理效应/reference输运已逐模块审阅并进入集成树；最终少量入口验证正与云端错峰。下一实施是四fixed source/scratch程序族及空间精确因子识别，沿独立文件/分支推进。云窗口继续独占调度、回放图/IO与原结果恢复，其完整入口交付后再集成整链。
+科研已按用户授权持续推进。当前入口为 `D:/BCI/worktrees/research-director`，分支 `codex/research-director-resume-20261013`，最新已提交状态可由该分支解析；当前已接受源码含35adb7e。原暂停检查点和旧producer保持历史身份。活动规范由六指南维护，科学结论由四主题页维护。
 
 ## 最新集成与当前工作
 
-- binary作者最终`ccd212c`：集成为`9edc355`加已审阅R5标签关系delta`0dbac03`，生产字节匹配作者；四个生产文件实际SHA在`tmp/BINARY_SELECTION_SOURCE_BINDING.json`。旧新真实产品对照的选轮、refit参数、独立预测及保存加载逐bit一致。最后scope/tie/roster/R5/CE关系6个独立delta案例通过；个人包`/5`、公共target-stage`/2`及活动指南已联动。整合绑定已写，作者树在保关键交接/源码验证后移除，分支提交仍保留。
-- 空间作者`fa27eda`：集成`71522f3`；最终5入口真RED揭示冻结tuple/list误拒，central序列关系修复`2bf2713`后5项GREEN，接受SHA`3899022837ca36894ed9a9ab3246a488f82788de63972a753823b0760675334f`。native/实测参考/CAR的直接效应BLUE、完整noise SD及source→群体→target→B05链经独审。新posterior`/4`、effect`/2`、transported measurement`/2`持有本次接受身份；后续`/5`精确因子仍是独立WIP。
-- 上述作者/独审handoff和兼容probe已保`tmp/BINARY_SELECTION_HANDOFF.md`、`tmp/BINARY_SELECTION_REVIEW.md`、`tmp/SPATIAL_SOURCE_HANDOFF.md`、`tmp/SPATIAL_TRANSPORT_MATH_REVIEW.md`及各自脚本/摘要。原测试阶段与最后candidate源码分别记录，最终验收后保紧凑绑定并移除已结束任务树。
-- 新四程序family已提交并接受`1edbeca`，factory实际SHA`5f6313fcfb83f940c5553d86a5fd04212c0485ebfe8d643192898ac8d53d3d44`。显式expert IDs、baseline/output/选择行政策，只替换新plan的`prefix_selection`；source/scratch同profile和配方，xDAWN消费自身已声明视图。20声明检查、actual CLI/graph/save/replay/parent及3权限案例各按真实来源验收，29requested/87selected/3packages与C800五合法行/22node保其合成软件身份。下一公共计划接云owner最终整链；本任务已结束，无后台数值进程。
-- 空间精确因子已接受作者`b59c2e4`，集成`acaf796`，实际生产SHA`23eb13760114cb7cd0284c9a382918e3a4672a05fc7aab14e689bb3f7b297f1f`。原A/D/Z因子+同次QR/noise凭证连接exact结构null与数值后验；observation `/3`恢复原producer坐标/map/volume，QR先共列去单位。新state14、actualcaller6和prototype独立保存，Spec/Standards接受；新posterior `/5`移除输运过渡白名单和重复入口核。关键来源已复制`tmp/spatial_exact_delivery`，`/4`旧来源分列，作者树验回后清理。
-- 云端作者当前已交`5584d48`等独审模块，整CLI/source-chain入口待正式最终交付。软件fixture按actual owned-tree峰约461MiB取640MiB，public8GiB与CPU25/GPU4保持；最后8项实际入口/overlap已通过并释放数值窗口。root已依次闭合上述两个最终入口，现在交四程序family执行必要实际行为，再交精确因子任务，保持单解释器时序。
-- C盘已整合clean Claude树`647b20e`经祖先/进程/内容核对后移除，提交仍保留。原dirty main、数据、云活动树保持；本轮没有push/新公共训练。
-- memory精简更新按用户授权写入`C:/Users/chent/.codex/memories/extensions/ad_hoc/notes/20261013-215044-research-memory-simplification.md`，收敛为长期偏好、科学合同与主题/续接入口，退役过时当前状态及零散过程数字。
-- 云完整回放9code提交含group完整SHA缓存已逐模块接入`61433ee/8fa5d49/af071e1/bed3db3/9be8a8a/c54feb4/dda20b3/1c9c0c8/db169ff`。root与独审核原history权限/rootfloor/samebytes source/dynamicregistry/actualRun退租，科学旧函数AST保持；独立delivery收`tmp/cloud_integration_delivery`。唯一K800四family/source-chain组合case提交`75ee4d3`，首24601真实OS1/17.99s为D basetemp父目录setupERROR，fit/freeze/body均0，父路径已修；待足额窗口以统一新root源码只补该case，不重旧绿色资源组。
-- 下一B07多通道C-latent树`D:/BCI/worktrees/multichannel-c-latent`、分支`codex/multichannel-c-latent`，作者与数学独审继续。原B05 central posterior/continuation、原sparse history积分及两compiler issuer形成新producer；external fixedparams角色、C实际权限、同record startup/sharedβ/flatmeasure明确。独立AR解析12×2 oracle及作者六smallcase各保源码，native119/8channel/完整history实际链待运行。新conditional-tail与whole-observed current-q显式法共一个C模型，prefix含currentERP时后者消费q前缀信息；same-context nominal作为机制对照。不要改旧frozen-C门。
+- binary固定requested选择已接受：缺失预测保固定正负对分母，普通/QC/EOG及公共E3共fit/refit owner，个人包 `/5`、target-stage `/2` 保存实际选择关系。原新旧产品全C参数、独立预测及保存加载逐bit一致。详见[整合绑定](research_integration_acceptance.json)及主树 `tmp/BINARY_SELECTION_*`。
+- B09物理效应/参考输运和精确因子已接受：posterior `/5`、observation `/3`保存原A/D/Z、同次QR/noise生成及原坐标/map/volume。四导实际12维null反例和極端单位QR关系已修；完整measurement covariance、原BLUE与持久态复用。代码集成acaf796、指南7e66453，实际生产SHA `23eb1376…`，原交付回收在 `tmp/spatial_exact_delivery`，独审 `tmp/SPATIAL_EXACT_FACTOR_FINAL_REVIEW.md`。已结束作者树移除，提交保留。
+- 四fixed程序factory已接受：source/scratch单NN及各自NN+xDAWN，只替换新计划的prefix selection；匹配recipe/architecture与经典专家自身profile、baseline/tie/row政策由原owner消费。真实CLI、graph、保存、零拟合重放与parent已有软件出口；公共新程序需自己的freeze。
+- 云node/chunk/shared-input底座已按模块集成，原history权限、中央资源floor、同checkpoint bytes、完整dynamic registry与同CloudRun finalize保持。Linux原history正控实际OS0，执行前后599source members一致。完整四程序source链case原75ee4第一次为setup失败；云实际第二次source selector/refit完成，但fixture遗漏waveform LDA，target前被原控制门拒绝。1656afa只修测试输入及10面板/完整requested断言；新case完成source/target拟合和25包，prepare因锁定Python缺memfd/fcntl绑定未准入，云owner修nativeABI。target实测RSS1.531GiB超过原fixture1.25，41cecd6明确软件worker2GiB及原20ms whole-treeguard，CPU2/native1不变。旧失败保原签，history不重复。交接 `tmp/CLOUD_FIXED_FAMILY_INTEGRATION_HANDOFF.md`，云正式日志由owner交付。
+- B07多通道C-latent已完成的原作者树 `D:/BCI/worktrees/multichannel-c-latent`，作者/数学独审持有新producer：实际C标签权限、同record一次startup/共享beta/原flat measure、完整positive-state后验，explicit conditional-tail/whole-observed两评分法，same-context nominal对照。独立raw AR协方差与实际selection design oracle均闭合。严格BNCI合成fixture119label/8channel首轮6scope通过、3numerical不可用；改small-log/scalar-operation误差和保存F后，再修整数索引/upperT/C1入口。最终旧C producer模型与MAT全SHA复用，newconsumer `tmp/C_LATENT_NATIVE_REUSE` OS0/三完整出口；八prediction/1044continuation、nominal唯一新Cfit、whole/censored/modelonly/heldtruth均触发，旧C0refit/publicfit0。原失败与各body保来源，作者96280已由根审/独审最终接受并集成319da17；全部tmp和runtime源43成员核回主树 `tmp/c_latent_delivery`，clean作者树已移除，branch提交保留。
+- B09作者/独审树 `D:/BCI/worktrees/spatial-rowspace` 的rowspace owner4b4c已独审接受并集成b15bdaf：joint `[D Z]` exact time row-space压缩保shared beta和每record独立nuisance核，数值QR/noise/BLUE不变；随后接真实source builder、OOF和ensemble。B03概率作者/独审树 `D:/BCI/worktrees/probability-tail` 的fixed-base exactpool首片e189+bf06已接受并集成bfdc613/1f19e8d，normal selectedtail/publicparent正控与篡改拒绝实际通过；后续T+ε及ordinary各exactpool独立状态继续。pool层 `pε=(1−ε)p+ε/J`，每层只用实际完整pool合法OOF及声明risk学习ε，完整roster/失败及旧producer保持，沿parent/model-only replay保存新程序。两个任务只复制代码，必要数值窗本机native1串行协调。B11作者树 `D:/BCI/worktrees/joint-flat-scale` 实施actual same-record单Gammaλ、globalbeta/recordflatZ共同测度、C→prefix→tail及真实source/C参数权限/持久态；独立初审已固定有效行数/volume/prefixa与ratio-MCSE关系，小oracle和实际纵向待执行。
+- 原BI/BNCI、entry005/P1大结果及32份P1 score/receipt已恢复到 `D:/BCI/artifacts/cloud-completed-originals-20261014`。云独立原分数分析获接收；root核37个local payload/分析/脚本/清单SHA与bytes，原binding保持，见[恢复与复算绑定](../research_resume_20261011/cloud_payload_recovery_binding.json)。云73精确临时文件释放4.069GiB；模型、selection graph及有引用或缺重建链的冷缓存保留。科研原dirty main保持。
+- memory精简仅通过ad-hoc更新说明记录在 `C:/Users/chent/.codex/memories/extensions/ad_hoc/notes/20261013-215044-research-memory-simplification.md`。长期偏好保全局推导、实际模块/调用链审阅、定向验证、无我方科研额度、D盘代码树和主题文档；原memory不直接编辑。
 
 ## 工作身份与恢复
 
@@ -22,7 +20,7 @@
 - 暂停前完整代码/结果文档提交：`577ac4c68db17cf3ce12431add8f371deaab5759`。本handoff及当前checkpoint随后作为文档提交；最终提交可由该分支tip解析，避免在文件中自引用提交SHA。
 - `f6c8ca5`：目标校准scope和严格warm-start完整状态覆盖；`2dc48dd`：Gaussian诊断及中央资源floor；`afa9bbb`：当前科学路线与验收；`577ac4c`：从云端`4c4b987`接收完成读数，保较新的科研记录并解决四个文档冲突。
 - 暂停收尾时实际`merge-base --is-ancestor 33603f7431ca50465e2d1678eef51145a1c63f3c HEAD`退出0：Claude review原tip已是当前树祖先，当前无需再次合并旧branch。原提案的替代/否决以及随后修复按固定源码覆盖和活动指南解释。
-- `D:/BCI/n2p3-net`仍是`main@f1a303c42c68173e8b1452ceb26bd84923b8a6aa`，暂停收尾时345条porcelain记录，完全保留。本轮未切换main、未push、未删除工作树/分支、未prune或gc。
+- `D:/BCI/n2p3-net`仍是`main@f1a303c42c68173e8b1452ceb26bd84923b8a6aa`，暂停收尾时345条porcelain记录，完全保留。恢复时原状态保持；后续仅移除已接受且恢复证据核验过的任务checkout，main、数据、分支提交保持。未push、未prune或gc。
 - 多个旧工作树目录已不存在，其Git提交仍保留。prunable注册不等于可安全清理：旧ignored原始结果、模型和专项验证载荷须先核恢复来源。旧`pause_checkpoint_20261012.json`不重写。
 - Python：`D:/BCI/n2p3-net/.venv/Scripts/python.exe`；行尾以`.gitattributes`和实际raw-byte冻结为准。
 
@@ -51,29 +49,25 @@ src/research/source_execution.py af464538c1525dd71b95c952e90d64a3ee930b399d574b4
 
 ## 完成程序与可读分析
 
-四个完成程序的报告/紧凑完成绑定已从保留Git提交恢复，不是本轮重新评分。详见[公共评估](../../evidence/public_evaluation.zh.md)、[响应与噪声](../../evidence/response_and_noise.zh.md)及[原读数](../research_resume_20261011/cloud_completion_readout.json)。
+原完成程序已按SHA恢复并独立复算，今天没有重拟合这些完成实验。读[公共评估](../../evidence/public_evaluation.zh.md)、[校准与选择](../../evidence/calibration_and_selection.zh.md)、[响应与噪声](../../evidence/response_and_noise.zh.md)和[恢复绑定](../research_resume_20261011/cloud_payload_recovery_binding.json)。
 
-- BI Q1：61人，hit保1287 requested，概率指标保1243可用；fine−scratch participant-macro hit `+10.8958pp`、NLL `−0.590480`。
-- BNCI C600：8人，每臂240；fine−scratch hit `−3.3333pp`，NLL改善主要来自A04。
-- entry005：8×19=152请求，92面板、13,984预测，结构异常0。K2000 selector132/152，NLL `.262927`对primary `.367674`；scratch135/152、NN+xDAWN133/152。K800少一命中且概率指标变差；K200回基线。
-- P1：16 cells/576分数，private6/8对shared5/8，只有A06救回；新旧stationary-law赢家一致。entry005及P1 science exit0/owned0，外层queue exit1保历史失败。
+- BI Q1：61人，hit保1287 requested，概率指标保1243可用；fine−scratch participant-macro hit +10.8958pp，42人命中/52人NLL/46人Brier改善。
+- BNCI C600：八人240请求；fine−scratch hit −3.3333pp，A02/A05各净少七个正确，NLL改善主要来自A04；高置信组平均98.276%、实际正确85.897%。
+- entry005：八人152请求、92面板、13984预测，原指标归约误差≤1.78e-15/结构异常0。K2000 selector132/152，NLL .262927对primary .367674；scratch135/152、NN+xDAWN133/152。K800少一命中，2救回/3损害集中A04。
+- P1：16cells/576分数，private6/8对shared5/8；同输入新旧law16winner完全相同，最大Δp约2.45e-8。科学OS0/owned0，外层queue OS1保历史失败。
 
-旧ignored大结果/模型的本地路径已失效，当前SSH端点此前拒绝后超时；原始载荷持久性未重新确认。完整完成身份与原始payload恢复是两个状态，不重签旧producer、不从超时推断可重启训练。
+## 云窗口分工与当前执行
 
-## 云窗口分工与未集成实现
+云owner chat `01a10b0f-c672-7e73-8449-4ebdaf6fc5eb` 独占云资源、freeze、source/target调度与实际利用率检查。新endpoint及原lockedvenv已恢复，软件case使用独立system code checkout、native1/hiddenCUDA、完整599member身份。下一公共执行仍按CPU25/GPU4和完整约定矩阵；base四程序不等待B07/B09新机制收尾。
 
-云owner chat：`01a10b0f-c672-7e73-8449-4ebdaf6fc5eb`，host `local`。其新树`C:/Users/chent/.codex/worktrees/prefix-replay-integration/n2p3-net`，收尾读取时HEAD `263df81e9f5a675e929477754d5fafec09f7e333`，有`ensemble_views.py`及新增共享输入模块/测试的未提交工作，保持原样。
-
-云窗口持有CLI、dispatch、IO/lifecycle和node/chunk实现。最新即时快照称共享输入记账六例通过、节点串行/分块/逆序归并一致且独审接受，实际调度生命周期仍在核验；整体实现尚未交由科研root最终整合。继续消费owner最终handoff和真实代码，不把局部软件结果写成公共吞吐改善。
-
-旧冻结云路径为`/root/n2p3-runtime-20261011-control/prefix_catalog_recovery_source02/checkout`及`p1_queued_source02/checkout`，目前仅保恢复定位信息。接收新调度前确认：一次graph/package准入、digest绑定node/chunk、原顺序归并、requested失败分母、source/input lease、退出及共享输入预算均闭合。同步本轮PDS scope、warm-start及direct floor接口变化，云owner须以实际source/config/plan重新冻结。
+下一cloud正式交付是native ABI实际holder/reader及组合case真实terminal/JUnit、内层task/source ledger、同run注册/失败分母、input lease与owned-tree RSS、source before/after SHA。41cecd6软件fixture worker2GiB来自原1.531GiB实测，最终whole-tree采样仍核同声明。软件完整接缝已接受，base科学声明也经独立14文件/四fold/123名单审阅finding0；云owner修明确source native5+interop1/claim6的25线程预算、冻结真实plan/source/inputs/resources后直接执行全约定base矩阵。BI新cohort核exact01..61，B07新增C-latent/概率ε另有opt-in freeze。只同步重要接口、阻塞及可整合交付。
 
 ## 续接的决策与实施顺序
 
-1. 先核branch/HEAD/dirty状态，读本handoff、当前checkpoint、`AGENTS.md`、文档索引及相关六指南/四主题页；历史binding按原源码使用，不重跑旧全集。
-2. 核云owner最终实现和原始载荷恢复状态。已完成科学结果不为性能改造重复拟合；清理工作树前核恢复包与实际进程依赖。
-3. 首个可独立研究切片：binary calibration selector仍在各candidate自己的finite logits上排AUC，选择性abstention可能获利。此前candidate-dependent交集提案已正确否决；需要设计共同requested-risk/availability合同，写反例并检查完整caller/save/replay，再实施。
-4. 接云node/chunk候选时root仔细逐模块审阅，不以作者测试数量替代集成验收。优先核内存/lease/reduction与数学score等价，再做必要针对性检查。
-5. B07冻结同支持公共opt-in、fractional时钟authority及C-latent新producer；B05更多selection/类别、高置信校准和joint MLE；B09 source builder/reference transport/ensemble；B10/B11/B12完整科研出口及B13成人/设备确认继续按依赖推进。
+1. 核branch/HEAD/dirty与真实进程，读本handoff、AGENTS、文档索引及相关六指南；旧checkpoint只供历史定位，不重复已完成测试。
+2. 复核云组合case的actual terminal与源/任务/资源证据，按真实问题修复；接收base完整科学计划并核source/input/CPU25/GPU4实际能力，随后完整单seed执行。
+3. 审阅C-latent最终运算误差、两评分法、原producer保存/恢复及必要真实出口；结合独立raw-AR oracle集成接受源码，回收证据后清理作者树。
+4. B03pool尾部校准及B09长record/实际source消费者各沿理论、反例、深owner接口、纵向caller/save/load/replay审阅与集成；没有future阈值授权或prior completion伪测量。
+5. B11固定noise shape K0来源和原flat measure长record程序、B10完整输入增量、B12新数据泛化与B13成人确认按各自依赖继续推进。整个123项计划仍开放。
 
-日常seed `20260918`，大版本才三seed；科研子代理无我方人工期限/额度。按最新授权自主推进研究和集成，围绕实际问题做定向验证。已整合任务树在保留提交与必要交接后清理，结论写入现有主题页。
+日常科研一个完整source→target seed20260918，大版本才三个完整程序。科研子代理没有我方人工时限/额度，主代理最终仔细审阅和整合；针对实际变更验证、主题页维护结论，已完成代码树及时清理。

@@ -10,9 +10,9 @@
 
 原BI、BNCI、entry005与P1载荷已按原SHA恢复并独立复算。BI预训练后个人全网校准相对同配方随机初始化提高10.8958个百分点，42/61人命中改善；BNCI低3.3333个百分点，A02/A05各净少7个正确。BNCI全网校准的高置信组平均报98.276%而实际正确85.897%，下一程序同时研究命中与概率可信度。前缀K2000选择保持132/152命中并改善概率质量；K800的2项救回、3项损害集中A04。指标和完整分母维护在公共评估与校准选择页。
 
-B07新多通道校准潜状态程序已形成真实连续记录的联合后验。C是授权校准数据，潜状态是未直接测到的逐次响应变化；后验把观察后各可能状态的权重及共同响应系数一起保存。独立原始AR噪声协方差oracle核验了两种评分法：观察前缀不含当前ERP时两法相同，包含当前响应时必须按声明法处理当前候选证据；28×2实际design的独立误差在1.78e-14内。ERP指刺激后的事件相关电位。实际119标签、八通道出口运行终态为6权限案例通过、3数值出口因误差certificate略超原预算而不可用；作者修真实运算计数与共同项抵消，保持预算和全部状态，随后再验必要出口。该新producer仍在独审树。
+B07新多通道校准潜状态程序已形成真实连续记录的联合后验。C是授权校准数据，潜状态是未直接测到的逐次响应变化；后验把观察后各可能状态的权重及共同响应系数一起保存。独立原始AR噪声协方差oracle核验了两种评分法：观察前缀不含当前ERP时两法相同，包含当前响应时必须按声明法处理当前候选证据；28×2实际design的独立误差在1.78e-14内。ERP指刺激后的事件相关电位。119标签、八通道的严格BNCI合成fixture走原decoder/factory。首轮6权限案例通过、3数值出口不可用；修实际log归约/标量乘运算计数及保存原F后，整数索引元数据另修。最终旧C模型和原MAT按全SHA复用，新consumer三完整出口OS0，实际八次prediction/1044次continuation，nominal唯一新C拟合，capsule copy/load/replay和held-truth攻击均触发。原数值预算与全部状态保留；当前完成的是合成数据纵向软件链，公共脑电效能进入后续新programme。
 
-云重放底座已按模块集成并保科研原history权限。今日缓存同源校准组摘要，23MB受控载荷热调用中位0.319607→0.254425秒，约降低20.4%；这是该恢复路径的测量。新source→四固定程序→完整任务图的Linux接缝case已执行，source选择/refit完成；target前被原matched waveform LDA控制门拒绝，原因是新fixture漏声明control。原作者已补同profile waveform对照并同步10面板/完整请求断言，root沿实际CLI复审后提交1656afa；云端独立新freeze只复跑该case。原history正控已实际OS0通过，源码599成员执行前后不变。四程序公共基础队列独立于新C-latent机制收尾。
+云重放底座已按模块集成并保科研原history权限。今日缓存同源校准组摘要，23MB受控载荷热调用中位0.319607→0.254425秒，约降低20.4%；这是该恢复路径的测量。新source→四固定程序→完整任务图的Linux接缝case已执行，source选择/refit完成；target前被原matched waveform LDA控制门拒绝，原因是新fixture漏声明control。原作者已补同profile waveform对照及10面板/完整请求，1656afa新case完成source/target拟合与25包，但锁定Anaconda缺Python memfd/fcntl UAPI绑定，prepare science未准入；云owner修显式native ABI，保内核seal与fd/lease关系。原20ms sampler量得target owned-tree峰1.531GiB超fixture1.25，41cecd6将软件worker明确声明2GiB并继续同sampler逐task验证，CPU2/native1及science不变。原history正控已OS0，源码599成员前后不变。四程序公共基础队列独立于新C-latent机制收尾。
 
 研究结论持续维护四主题页。云端73项有明确恢复关系的临时文件释放4.069GiB；原模型、结果、selection graph及仍有引用或缺完整重建链的冷缓存保留。memory精简请求已写入ad-hoc更新说明，保长期偏好、共享合同和现有文档入口。
 
@@ -55,6 +55,8 @@ CloudExecutor的IO调度切片已在科研WIP通过Windows19个相关case。Linu
 2026-10-14新实例与已复制数据盘恢复可用，实际quota为25 CPU、RAM硬上限90GiB，管理接口可见RTX5090约32GiB；本次结果恢复与分析未启动公共训练。原BI/BNCI报告、entry005/P1结果和七份terminal已按原字节恢复到`D:/BCI/artifacts/cloud-completed-originals-20261014`。entry005/P1的SHA与原完成绑定一致，两库report与原terminal.artifact_facts一致；旧P1 reference `091fa663…`也已恢复。直接原预测/原分数分析与此前舍入表派生分列，原producer和全部失败终态保持。来源和后续清理账本见[恢复与复算绑定](../assets/research_resume_20261011/cloud_payload_recovery_binding.json)。
 
 复制后的临时清理分两段完成：73个精确regular file（重复安装包、closed软件fixture、61份有原ZIP的CSV解压副本和旧候选缓存），数据盘实际净释放4368982016B（4.07GiB），剩余约8.28GiB。原ZIP、全部正式模型/结果/selection graph及producer/退出凭证保留；CSV原member/headerCRC/SHA清单和原子恢复脚本保持。冷盘删除0B：旧failed源的18275380243B工作视图仍被成功source链引用，27652184687B的inactive旧池缺原完整复建输入，因此继续保护。逐文件删除回执、实际free、完整保留核验和恢复入口随上述绑定持久保存；failed/retry/inactive命名不作为删除依据。
+
+Linux平台接缝已由根逐函数接受并集成c43428f：锁定Anaconda3.12.3缺Python memfd/fcntl名字，私有typed libc/LinuxUAPI adapter保持同内核双fd四封印、readonly mmap、SHA/PIDbirth/inode/size和resident lease。两个独立Linux holder/errno案例OS0；完整source→四fixed programme→17-task同CloudExecutor caller也实际OS0，29requested×10panel=290预测，K0四项不可用116保分母，23graphnodes和所有reader/reducer/finaladmission均完成并退休。原20ms sampler17task均有实际PIDbirth测量且wholeRSS≤明确2GiB/worker，最大fit1.501GiB、prepare1.022GiB，wholepytest约3.047GB另列。平台scope与完整caller保各自来源，相关原实际bindings及独审在主树tmp/cloud_integration_delivery回收；原恢复public成果和软件scope继续分列，详见[平台绑定](../assets/research_resume_20261011/linux_memfd_binding.json)。
 
 ## 独立前缀请求与完成参与者恢复
 

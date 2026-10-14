@@ -8,7 +8,7 @@ binary候选的排名量固定为fit前requested正负样本对的成功credit�
 
 `transfer_scratch_prefix_plan`已将source NN、matched scratch NN及各自NN+xDAWN接入新四候选fixed程序族，只替换新计划的`prefix_selection`。source/scratch共input profile、架构和匹配配方，xDAWN保其自身声明视图；物理decision、预算与可用时间由原owner核。baseline与tie政策预声明，future队列评价最终程序。实际source/scratch初始化、K0、C200/800、五个合法forward选择行、同run图/保存/零fit重放与parent评分已贯通，见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。下一公共计划沿该新roster冻结，与原entry005分别保存身份。
 
-概率尾部的下一规格是pool层uniform-contamination：`pε=(1−ε)p+ε/J`，ε从完整pool的合法OOF概率以凸NLL目标学习。ε>0提供明确概率下限，ε<1保数学排序；有限精度near-tie继续由原decision owner判定。ε在每层训练scope重估，完整专家roster与requested失败账本沿用原owner，实施时给新概率程序和保存身份。当前优先完成其独立数学/行为验证，再接同run训练与重放。
+pool层uniform-contamination的fixed-base第一纵向已接受：`pε=(1−ε)p+ε/J`，ε从该exact roster/weights的全部合法OOF概率以凸NLL目标学习。ε>0给明确概率下限，ε<1保数学排序；truezero/finiteunderflow、ε0/1与near-tie由原概率/decision owner处理，flat目标取最小ε0。每个held组所有专家在真实C\held重拟合，固定control也不拼全C输出；完整requested失败使pool程序不可用。原T OOF与新pool OOF分字段/来源，实际模型 `/3` 和prefix `/2`绑定该新opt-in programme。C800实际final保partial80，六meta行只用720完整标签、每inner600。独立scalar/actualOOF/保存模型/graph及预声明selectedtail29future、normal parent准入和coherentreseal拒绝均已闭合，见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。下一完整温度+ε程序严格更深crossfit，ordinary各exactpool也学习自身状态，当前独立作者继续实施。
 
 fixed使用温度1，grouped按完整selection生成C内OOF概率，并为参与校准的专家学习温度；两个程序共用最终专家。现有K200最终拟合保全部200个raw标签和196个合法trial，完整selection有一个，后80个标签已经参与合法final fit。
 

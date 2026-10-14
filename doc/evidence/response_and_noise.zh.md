@@ -77,13 +77,21 @@ B05数值中枢与history adapter已接通：`native_history_marginal_program`�
 
 冻结C后验的合法state范围按实际C标签条件化的正joint质量判断：每个C-owned selection的正质量状态全部nominal，或它们的full/prefix design均精确为0。显式C-nominal/future-variable joint law获准；更宽C随机响应模型进入新posterior producer。主树54项相关software/synthetic检查通过，最终C-law六案例和多C失败账本另在实际主树复签；mixture独审11项数学案例与32组Decimal110扰动通过。软件验证包含合成拟合/加载/预测，独审曾误调用的4-case fixture按1次合成C fit、7次顶层load、6次prediction attempt单列，public fit/score为0。实际raw源码、行尾差异、验证范围及后续公共评价见[整合绑定](../assets/research_resume_20261012/history_central_integration.json)。真实A01 drift=0与drift=1e3/1e6的原接受/拒绝证据保留其来源。
 
+### 新多通道校准潜状态后验
+
+新 `multichannel_c_latent/1`已完成软件集成：同连续record由实际C binary labels定义合法selection q，全positive amplitude states与同global beta/record-local drift形成联合后验；实际startup/白化一次，原proper prior及physical flat measure各一次。C1一条合法标签可留下六q×两state，C119可唯一识别q，权限沿原compiler而来。fixed external参数角色明确，source/C学习参数及latency/width作为后续新程序接入。
+
+原producer prior factor F及其error、后验R/RHS、flat图、C operands/noise identities保存，load不换图。futureprefix重新更新joint状态，conditional-tail保声明当前uniform prior，whole-observed法使用当前q-prefix证据；独立raw AR/actualselectiondesign对照误差≤1.78e-14。原normalizer误差改为实际small-log/scalar-operation计数，预算与全部state保持；最终int64索引、原upperflat图及C1权限单独验。
+
+严格BNCI合成fixture119标签/八通道的正式三个完整出口OS0：八prediction、1044component延伸，旧Cmodel/MAT全SHA复用且零重拟合，nominal唯一新C fit一次；heldtruth攻击、model-only fit禁项、whole/censoredcapsule保存重放和正式CandidateEvidence均触发。scope是原decoder/factory/caller的纵向软件链。完整source、旧失败、新consumer和后续公共入口见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。下一同支持公共比较与longhistory精确推断按新producer/资源声明推进。
+
 ## B09：可识别效应与source群体forecast
 
 跨reference的共同物理效应输运已接通：直接在source真实joint likelihood中测目标reference-free泛函，保存BLUE均值、完整measurement covariance和native noise归一化，再进入群体forecast与目标prior。共同电极和参考关系来自共享authority；declared CAR的结构零与生成舍入一起核对。三种已声明source路径及source→群体→target→B05有独立逻辑和实际调用证据。最终入口修复冻结tuple/list的等价序列关系后，5项delta验证通过，见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
 
 一般full-row source的结构识别已修为精确物理因子乘积：保存原空间map、时间design与record-local nuisance，并连接同次拟合的QR/噪声压缩关系。四导单行`[1,3,5,−9]`的真实beta-nullity为12，旧浮点归一化再Kronecker的舍入会误报0；新程序恢复12，微小真实未观测方向在直接BLUE和输运两入口均正确拒绝。general、native、实测参考和CAR共消费一次准入的后验，过渡白名单与重复输运入口核已删除。
 
-新posterior `/5`、observation `/3`保存原支持坐标、归一map、尺度、体积和诊断；载入核原数学关系后恢复生产者数值，host SVD只做分辨率准入。1ulp诊断漂移保原记录，极端尺度D/Z先共同去单位再核QR关系。原数值拟合和BLUE方法复用，独审及新state14/实际consumer6/独立prototype分别绑定实际源码，见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。真实长记录source builder可进一步利用因子row-space压缩，再接公共/ensemble消费者。
+原精确因子posterior `/5`、observation `/3`保存原支持坐标、归一map、尺度、体积和诊断；载入核原数学关系后恢复生产者数值，host SVD只做分辨率准入。1ulp诊断漂移保原记录，极端尺度D/Z先共同去单位再核QR关系。原数值拟合和BLUE方法复用，独审及新state14/实际consumer6/独立prototype分别绑定实际源码，见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。真实长记录source builder可进一步利用因子row-space压缩，再接公共/ensemble消费者。
 
 `ERPPhysicalEffect`绑定basis/window/grid/fs/operator/dictionary、真实reference与空间观测map。`ERPChannelEstimate`只从实际joint likelihood提取可识别BLUE，不把已有收缩posterior当独立measurement；measurement noise/dependence由其owner明确绑定。若压缩观测为`y=X beta+e`，物理泛函F必须存在witness`F=W X`，则效应mean为`W y`、covariance为`W W.T`。新关系检查逐entry使用原物理坐标，零观测列不从其它强列借容差；允许界来自浮点算法与运算尺度，不是全输入区间证明。
 
@@ -92,6 +100,8 @@ source group以participant为单位，对效应measurement covariance与人际va
 审查复现并修复tiny未观测泛函被全局sqrt(eps)吞掉、learned目标权限只在fit而可绕constructor/load、source scope/unit在load未完整核、效应coefficient-group关系、measurement schema/d-prime关系与zero-F的虚构population forecast。固定群体保全部participant；超出预声明bounds是整程序typed失败，不删异常人或截断贡献。
 
 该source-group owner已经连接实际spatial posterior/effect/forecast及原B05 given-noise研究入口；独立d-prime学习机制仍未实现，当前continuous ensemble/公共runner/工作站尚未调用learn。真实跨source布局与reference transport、跨人稳定性、超参数选择、variance不确定性与新效能仍是后续出口。
+
+长记录结构识别已升级 `/6`：每record共同 `[Z D]` exact消自己的nuisance，再把其原空间map配对时间quotient stream到shared beta；compact RREF/pivots保存，效应按exact rowspace membership判断。零rank也不生成width² identity nullbasis，显式诊断才请求。18000行实际posterior/BLUE/save-load与独立18行law控制闭合，禁diagnostic nullproperty仍成功；Fraction独立oracle保record-local U、shared beta、末行tiny与非dyadic方向。原numericQR/完整covariance保持，actual source/OOF/ensemble消费者在下一独立切片实现。
 
 ## 后验QR与有效自由度的反例
 

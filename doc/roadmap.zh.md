@@ -4,7 +4,7 @@
 
 另外两条科学主线可独立前进：B07建立多通道C-latent的新拟合后验及其权限、历史预测和持久包；B11建立固定noise shape K₀的真实来源与flat nuisance长记录的共同体积测度。现有native多通道frozen-C history和proper/no-flat联合尺度是可复用底座，新增C潜变量和flat能力分别形成自己的producer与纵向验收。B09先交共同物理效应/reference输运，B00先闭合固定requested风险；各块继续按真实依赖推进。
 
-B09共同物理效应输运和一般观测的精确因子识别已接受。B07当前实施同原record多通道C后验与连续历史延伸，保同global β/flat drift并显式比较conditional-tail与whole-observed current-q两评分法；nominal对照使用同观测范围。云回放代码已合入科研树，四程序/source链组合测试已交，首次执行仅临时目录setup错误、未触发拟合；下一足额窗口补这一实际接缝。
+B09共同物理效应输运和一般观测的精确因子识别已接受。B07当前实施同原record多通道C后验与连续历史延伸，保同global β/flat drift并显式比较conditional-tail与whole-observed current-q两评分法；nominal对照使用同观测范围。云回放代码已合入科研树，Linux原history正控已通过。四程序/source链组合的首次实际执行在target拟合前由原控制门拒绝，原fixture遗漏matched waveform LDA；1656afa只补对照及完整请求/面板断言，新case已完成source/target拟合，现按实际缺失的Linux memfd/fcntl绑定修nativeABI；软件worker依据实测声明2GiB、CPU2/native1。空间长记录exact row-space压缩已接受并集成，12项及final18k行禁null诊断分配正控各保来源，真实source/OOF/ensemble接点继续实施；pool层uniform-contamination的fixed-base候选已接受并集成，完整OOF/保存重放/实际selectedtail及正常parent准入已闭合，下一grouped-temperature联合策略及各ordinary pool独立状态继续实施。
 
 当前科研按[123项进展](evidence/wishlist_progress_20261010.zh.md)和四个主题页并行推进：B03完整组与真正prefix整程序nested选择、同run inner/final保存重放及public parent准入已有软件出口；P1数值稳定化、source cache/shared score、conditional白化和逐decision horizon已集成。B07五家族off-grid/完整history及中央评分/capsule软件切片已接受，B09可识别效应保已有出口；修后entry005独立future评价及BI/BNCI队列已完成；下一新数据泛化、B07公共opt-in评价、C-latent新producer及B13成人确认按各块依赖推进。旧producer与失败保原身份，云窗口拥有公共执行源码和资源调度。
 
@@ -44,7 +44,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B09 空间 | 一般signal-prior/固定graph；source-only group forecast、完整effect绑定和exact structural null软件出口 | Pz4原证据不晋升；真实source builder/跨布局reference transport/OOF与ensemble consumer、d-prime/variance不确定性、joint MLE及新效能 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |
 | B11 动态/稳健 | noise-only Gamma、proper全C/test联合尺度；实际行数增广QR和显式β条件积分接研究owner；共同flat-Z小参考及源尺度反例 | 真实K0/独立noise/C权限、flat长记录采样/持久包、动态state、连续预测准确性与完整效能；多模态不由诊断保证 |
-| B12 公共流程 | 独立C/test/K0、完整requested/final账本；原producer四库binary/八人candidate读数；BI61人与BNCI8人episode三臂终态、保存结果和原输入证明独立复签；entry005完整八人恢复及独立future读数 | 大结果/模型恢复核验、源/目标/资源统一接受与独立泛化 |
+| B12 公共流程 | 独立C/test/K0、完整requested/final账本；原producer四库binary/八人candidate读数；BI61人与BNCI8人episode三臂终态、保存结果和原输入证明独立复签；entry005完整八人恢复及独立future读数；原大结果/P1分数按SHA恢复并逐项复算 | 四fixed程序的新源/目标/资源统一接受、完整单seed矩阵与独立泛化 |
 | B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
 | B14 工程/吞吐 | B12同resource owner/完整账；旧完整candidate恢复、source prepared与共享评分实测云候选，纯CPU尾三拓扑读数；source cache/shared current-view scoring及conditional公共白化已合入并完成相关复核 | 统一新source实际25CPU/4GPU能力及ready工作路由，完整矩阵吞吐、跨host整包和新study owner边界 |
 

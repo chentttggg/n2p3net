@@ -74,12 +74,13 @@
     "public_score": 0,
     "evidence_scope": "software_correctness"
   },
-  "next": {
-    "four_fixed_family": "accepted software; public evaluation awaits actual inputs/resources and final cloud caller",
-    "spatial_exact_factors": "accepted /5 source factor, original observer numeric state and extreme-unit QR; long-record builder separate",
-    "cloud_replay_full_entry": "await final cloud owner delivery",
-    "payload_recovery": "cloud owner"
-  },
+  "next": [
+    "base_full_single_seed_scientific_matrix",
+    "pool_uniform_contamination_complete_programme_and_selected_parent",
+    "B09_actualsource_OOF_ensemble",
+    "B11_actualrecord_scale_flat_measure_and_authority",
+    "new_public_generalization_and_adult_confirmation"
+  ],
   "transfer_scratch_family": {
     "status": "accepted",
     "commit": "1edbeca3018201e7738c4c6156a907a0377ed901",
@@ -196,5 +197,236 @@
     "full_suite": "not rerun",
     "runtime_policy": "existing 250000 scalar /512 column admission; not a theoretical limit",
     "next": "real long-record source builder/factor compression and new public/ensemble consumer; full same-source crosshost acceptance"
+  },
+  "multichannel_c_latent": {
+    "status": "accepted_research_software_actual_decoder_factory_caller_capsule",
+    "author_commit": "96280eae6668b5d47f61092a9ec235b1817db667",
+    "integrated_commit": "319da173bb42e256e42ea1c5a9b72ff1955f4581",
+    "validation_kind": "synthetic_native_BNCI_fixture",
+    "scope": "finite_amplitude_law_fixed_external_physical_prior_noise_native_integer_clock",
+    "model_schema": "n2p3_multichannel_c_latent_model/1",
+    "scoring_laws": [
+      "fixed_current_prior_conditional_tail",
+      "whole_observed_current_q"
+    ],
+    "old_producer": {
+      "model_sha256": "b8185a07629c2afeb6bfcb8082a9aa56452eb5a9003c742e85cb1b327517ea47",
+      "source_sha256": "8b15602708380d7a7f0c6b8761678ee047516338aee9830e39f0793fac0183f1",
+      "model_resigned": false
+    },
+    "final_runtime": {
+      "pid": 14704,
+      "OS_exit": 0,
+      "test_cases": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 847.1705014705658,
+      "source_before_after_identical": true,
+      "children_after_exit": 0,
+      "prediction_attempts": 8,
+      "continuation_components": 1044,
+      "new_nominal_C_model_fits": 1,
+      "old_C_model_refits": 0,
+      "peak_sampled_RSS_bytes": 903053312
+    },
+    "root_source_SHA": {
+      "src/research/channel_noise_mechanism.py": "1fd4cb5711c657f435ad32d0bd5331b3c78e0cc019acec14410c32c70d1fbe9c",
+      "src/research/multichannel_c_latent.py": "42028b6575fac273357ab6b40fb7ccb90285aef7faac2ea844d72b6011cb26e8",
+      "src/research/response_history_identification.py": "6f7991fe24697ac73948eb7de9654d683e149359ce2c7f048cd10cb01674cb69",
+      "src/research/history_artifact.py": "f77122f82f22fffaa6264222637df2d1b08c3514f97a21b3a2954169be766548",
+      "src/transfer/ensemble_views.py": "f5cd9fbfc2964be3c0af57a743f699213be5f3cf41dfde3bd4a01ff5ec62664e"
+    },
+    "root_mixture_line_endings": {
+      "author_runtime_SHA": "687a72d73eaaed0e74aa3b8daab180094ab30e4c387cd2a70fb46b92b34dd405",
+      "root_LF_SHA": "6f7991fe24697ac73948eb7de9654d683e149359ce2c7f048cd10cb01674cb69",
+      "canonical_bytes_and_AST_equal": true,
+      "module_has_no_runtime_source_hash": true
+    },
+    "delivery_recovered": "D:/BCI/worktrees/research-director/tmp/c_latent_delivery",
+    "recovered_members": 43,
+    "author_tree_removed": true,
+    "branch_commit_preserved": true,
+    "review": "root actual module/caller/save/load logic plus independent Spec/Standards final report",
+    "review_report": "tmp/MULTICHANNEL_C_LATENT_MATH_REVIEW.md",
+    "public_fits": 0,
+    "public_scores": 0,
+    "full_suite": false,
+    "next": [
+      "actualsource_or_legalC_parameter_authorities",
+      "same_observation_public_optin_comparison",
+      "long_history_exact_inference_resources",
+      "latency_width_and_local_effect_extensions"
+    ]
+  },
+  "spatial_rowspace": {
+    "status": "accepted_compact_exact_structure_and_long_record_BLUE_software",
+    "author_commit": "4b4c38c7e593fc755d17561d8d1f8f443dbe6c6c",
+    "integrated_commit": "b15bdaf",
+    "production_SHA": "58d61535993b75878c6b3d62d419ff4edfa1fd029ef17bf9bcc7dc139c144c6b",
+    "posterior_schema": "n2p3_spatial_signal_posterior/6",
+    "factor_schema": "n2p3_spatial_physical_C_factors/2",
+    "mathematics": "joint_Z_D_exact_record_local_nuisance_quotient_then_shared_beta_streaming_canonical_rowspace",
+    "measurement_membership": "exact_functional_reduction_no_null_basis_materialization",
+    "original_numeric_QR_noise_and_BLUE_unchanged": true,
+    "diagnostic_null_basis": "explicit_only_host_storage_admitted",
+    "validation": [
+      {
+        "kind": "owner_targeted_cases",
+        "cases": 12,
+        "OS_exit": 0,
+        "runtime_source_hook": false,
+        "RSS_measured": false
+      },
+      {
+        "kind": "actual_18000_row_BLUE_save_load_diagnostic_null_property_forbidden",
+        "cases": 1,
+        "OS_exit": 0,
+        "runtime_production_SHA_matches": true,
+        "RSS_measured": false
+      }
+    ],
+    "independent_review": "exact quotient/full-global local-U oracle and actual AST compact effect gate; source/caller/save/load review accepted",
+    "recovered_delivery": "D:/BCI/worktrees/research-director/tmp/spatial_rowspace_delivery",
+    "author_tree": "D:/BCI/worktrees/spatial-rowspace",
+    "next": "actualsource_builder_OOF_ensemble_consumer_current_independent_WIP",
+    "public_fits": 0,
+    "public_scores": 0,
+    "full_suite": false
+  },
+  "pool_uniform_contamination_fixed_base": {
+    "status": "accepted_exact_pool_fixed_base_actual_OOF_and_selected_parent_software",
+    "author_commits": [
+      "e189e5d6d23dfc1e9164a1367d811287a8c46de3",
+      "bf06b90"
+    ],
+    "integrated_commits": [
+      "bfdc613",
+      "1f19e8d"
+    ],
+    "scope": "fixed_T1_complete_pool_C_only_OOF_convex_uniform_contamination_optin",
+    "programme": "grouped_uniform_contamination",
+    "failure_policy": "all_requested_complete_pool_rows_and_all_declared_experts_required",
+    "OOF_policy": "each_held_training_C_excludes_actual_held_complete_selection; controls_fitted_on_same_subset",
+    "risk": "equal_requested_complete_selection/1",
+    "schemas": {
+      "pool_probability": "n2p3_pool_uniform_contamination/1",
+      "complete_pool_OOF": "n2p3_complete_pool_probability_oof/1",
+      "fitted_ensemble": "n2p3_fitted_ensemble/3"
+    },
+    "actual_cases": [
+      {
+        "scope": "final_kernel_OOF_save_load_attacks_insufficient_missing",
+        "PASS": 13,
+        "original_batch_cases": 14,
+        "original_batch_OS": 1,
+        "failure": "unexecuted_harness_summary_field_after_CLI_complete",
+        "production_unchanged": true
+      },
+      {
+        "scope": "only_corrected_CLI_harness_case",
+        "PASS": 1,
+        "OS": 0,
+        "seconds": 57.882
+      },
+      {
+        "scope": "predeclared_selected_tail_final_future_save_replay_and_parent_attack",
+        "PASS": 1,
+        "OS": 0,
+        "seconds": 65.359,
+        "requested": 29,
+        "selected_predictions": 29,
+        "positive_probability_outputs": 28,
+        "output_unavailable": 1,
+        "OOF_rows": 6,
+        "epsilon": 0.54383712263627,
+        "software_expert_fit_calls": 52,
+        "whole_programme_nodes": 7,
+        "exact_score_checks": 55
+      },
+      {
+        "scope": "actual_normal_parent_admission_from_original_published_rows",
+        "OS": 0,
+        "status": "completed",
+        "requested": 29,
+        "selected_predictions": 29,
+        "new_EEG_fits": 0
+      }
+    ],
+    "review": "root full module/caller/save/load and independent math/actual inner artifacts/selected normal parent and coherent tamper review",
+    "source_identities": [
+      {
+        "file": "src/transfer/pool_calibration.py",
+        "author_runtime_SHA": "20cbacdce1ea188d396f811f14a80507ba5e7bab673fdd5a73b1054f7648b589",
+        "root_SHA": "20cbacdce1ea188d396f811f14a80507ba5e7bab673fdd5a73b1054f7648b589",
+        "canonical_bytes_AST_equal": true
+      },
+      {
+        "file": "src/transfer/ensemble.py",
+        "author_runtime_SHA": "0139c3d46b4bddfd058952ce158c10966e7477725ec85b177bf180ffe76fe72a",
+        "root_SHA": "0139c3d46b4bddfd058952ce158c10966e7477725ec85b177bf180ffe76fe72a",
+        "canonical_bytes_AST_equal": true
+      },
+      {
+        "file": "src/transfer/ensemble_fit.py",
+        "author_runtime_SHA": "fcc024a7a372b438ae330f03e079ca5c0fa0d81367a636fbb20b7e56574883cc",
+        "root_SHA": "fcc024a7a372b438ae330f03e079ca5c0fa0d81367a636fbb20b7e56574883cc",
+        "canonical_bytes_AST_equal": true
+      },
+      {
+        "file": "src/research/calibration_selection.py",
+        "author_runtime_SHA": "93bdd7df392ea04bb6e7993012b1baad7ae99587f07d58feb3014180f245e27a",
+        "root_SHA": "93bdd7df392ea04bb6e7993012b1baad7ae99587f07d58feb3014180f245e27a",
+        "canonical_bytes_AST_equal": true
+      },
+      {
+        "file": "src/research/nested_selection_replay.py",
+        "author_runtime_SHA": "d730453440f1c1766d2c170a8ff30e3f37096cbca2c68664fed0a518d93c69fe",
+        "root_SHA": "d730453440f1c1766d2c170a8ff30e3f37096cbca2c68664fed0a518d93c69fe",
+        "canonical_bytes_AST_equal": true
+      },
+      {
+        "file": "src/research/prefix_inner_replay.py",
+        "author_runtime_SHA": "1b94bd400f8fa8ac5228e6531bf044975cf386b5f6fe49fb0454d732f1007485",
+        "root_SHA": "1b94bd400f8fa8ac5228e6531bf044975cf386b5f6fe49fb0454d732f1007485",
+        "canonical_bytes_AST_equal": true
+      },
+      {
+        "file": "src/research/prefix_selection_replay.py",
+        "author_runtime_SHA": "39c23a8b7de4c26eae4388213295dd8e779ec212bd9d6b60c4a3b850f4ed4a83",
+        "root_SHA": "39c23a8b7de4c26eae4388213295dd8e779ec212bd9d6b60c4a3b850f4ed4a83",
+        "canonical_bytes_AST_equal": true
+      }
+    ],
+    "recovered_delivery": "D:/BCI/worktrees/research-director/tmp/probability_tail_delivery",
+    "author_tree": "D:/BCI/worktrees/probability-tail",
+    "public_fits": 0,
+    "public_scores": 0,
+    "full_suite": false,
+    "next": [
+      "strict_crossfit_grouped_temperature_plus_pool_epsilon",
+      "ordinary_each_exact_roster_weight_pool_own_OOF",
+      "new_public_optin_probability_evaluation"
+    ]
+  },
+  "base_matrix_scientific_review": {
+    "status": "scientific_declarations_accepted_resource_freeze_materialization_follow_cloud_owner",
+    "delivery_SHA": "880e0d9fc013eaa95de8d3862c2ab2148d8664197bcff17fbea2fc5c6c60b35f",
+    "report_SHA": "4fdbe796a2805e577a4dbdd06863bd9490c1aa691326ff71455a769fde85141f",
+    "binding_SHA": "9bda23a1ba737eacf42bd8f900646e43b4899bb12816250c9785cb17ed29d6be",
+    "source_folds": 4,
+    "source_logical_fits": 8,
+    "source_seed": 20260918,
+    "binary_requested_participants": 123,
+    "binary_arm_requests": 2460,
+    "binary_fixed_pool_requests": 1968,
+    "BNCI_candidate_programme_requests": 320,
+    "BI_episode_model_requests": 183,
+    "selector_baseline": "source_nn_fixed",
+    "minimum_selection_rows": 3,
+    "tie": "original_factory_order",
+    "BI_new_cohort_gate": "exact_original01..61_then_original_source_SHA_join",
+    "scientific_findings": 0,
+    "public_fits_this_review": 0
   }
 }
