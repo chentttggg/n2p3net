@@ -4,19 +4,19 @@
 
 ## 当前职责与交付
 
-### 今日工作成果（2026-10-13）
+### 当前工作成果（2026-10-14）
 
-今天的主线是让方案比较公平、物理信息真实、完整程序能重放。三项科研软件交付已接受：binary选择按全部预声明样本对计分，弃答不能抬分；跨参考电极以实测差值连接source效应、不确定性与目标先验；source/scratch单NN及各自NN+xDAWN四个完整程序进入真正校准内前缀选择。直觉上，分别是在同一张试卷上比较成绩、统一电压“零点”后传递实测关系、让目标校准数据决定采用哪种学习程序。
+今天完成空间精确因子与原生产者状态的代码集成，并恢复原云端科研载荷、核回逐人和逐项结果。空间修复解决了“舍入让未测方向看似可测”的实际反例：四导单行观测的真实未观察方向为12，旧归一化再乘法误报0，新实现恢复12。保存原观测坐标与QR因子后，恢复沿原数学关系核验并复用原数值；独立BLUE均值和方差与实际消费者闭合，保存重放逐bit一致。相关原state/consumer反例及最终源码分别记录在整合绑定，已结束空间作者树移除。
 
-source是公共ERP数据预训练的模型，scratch是同架构从随机参数训练；ERP是刺激后形成的事件相关响应，xDAWN是突出该响应的空间滤波方法。AUC衡量二分类排序，当前requested pair量把缺失答案保留在固定分母中。空间链同时保效应均值、完整协方差（不确定性及各方向的关联）和原噪声传播。
+原BI、BNCI、entry005与P1载荷已按原SHA恢复并独立复算。BI预训练后个人全网校准相对同配方随机初始化提高10.8958个百分点，42/61人命中改善；BNCI低3.3333个百分点，A02/A05各净少7个正确。BNCI全网校准的高置信组平均报98.276%而实际正确85.897%，下一程序同时研究命中与概率可信度。前缀K2000选择保持132/152命中并改善概率质量；K800的2项救回、3项损害集中A04。指标和完整分母维护在公共评估与校准选择页。
 
-根窗口逐读真实模块及builder/caller/保存加载链后，binary最终6个独立delta和空间最终5案例通过；四程序factory完成20声明检查、actual CLI/graph/save/replay/parent及3权限案例。新旧正常产品路径参数与预测逐bit一致。原阶段失败、修复及最终源码分别保在紧凑绑定，验证围绕实际变更展开。
+B07新多通道校准潜状态程序已形成真实连续记录的联合后验。C是授权校准数据，潜状态是未直接测到的逐次响应变化；后验把观察后各可能状态的权重及共同响应系数一起保存。独立原始AR噪声协方差oracle核验了两种评分法：观察前缀不含当前ERP时两法相同，包含当前响应时必须按声明法处理当前候选证据；28×2实际design的独立误差在1.78e-14内。ERP指刺激后的事件相关电位。实际119标签、八通道出口运行终态为6权限案例通过、3数值出口因误差certificate略超原预算而不可用；作者修真实运算计数与共同项抵消，保持预算和全部状态，随后再验必要出口。该新producer仍在独审树。
 
-两个方向继续收尾：一般空间观测的舍入误差会让程序误以为看到了本来未测的方向，精确因子核心反例已修正，观测producer状态的保存恢复正在独审；云端完整回放DAG已获作者两轴接受，科研root正按模块合入。DAG是按真实依赖组织的任务图，先准备一次输入，再并行重放小块，最后按原顺序汇总。
+云重放底座已按模块集成并保科研原history权限。今日缓存同源校准组摘要，23MB受控载荷热调用中位0.319607→0.254425秒，约降低20.4%；这是该恢复路径的测量。新source→四固定程序→完整任务图的Linux接缝case已执行，source选择/refit完成；target前被原matched waveform LDA控制门拒绝，原因是新fixture漏声明control。原作者已补同profile waveform对照并同步10面板/完整请求断言，root沿实际CLI复审后提交1656afa；云端独立新freeze只复跑该case。原history正控已实际OS0通过，源码599成员执行前后不变。四程序公共基础队列独立于新C-latent机制收尾。
 
-科研集成树已迁D盘，两个已结束的工作树清理，空间树复用给下一代码任务；memory精简更新收敛长期偏好和科学合同。科研结论持续归入四主题页。下一公共程序将度量这些新方案的实际命中与概率质量，日常使用一个完整训练seed（控制随机初始化及采样的种子）。
+研究结论持续维护四主题页。云端73项有明确恢复关系的临时文件释放4.069GiB；原模型、结果、selection graph及仍有引用或缺完整重建链的冷缓存保留。memory精简请求已写入ad-hoc更新说明，保长期偏好、共享合同和现有文档入口。
 
-科研恢复树已迁至`D:/BCI/worktrees/research-director`。本轮接受binary固定requested选择、共同CE风险、产品共用fit/refit与完整选择保存准入；空间接受物理效应/reference输运、CAR精确结构和原BLUE/完整noise链。root逐读实际模块及调用、保存加载路径后，分别完成6个binary独立delta案例与5个空间最终案例，Ruff与diff检查通过；阶段失败和实际源码保在[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。已整合binary任务树及clean Claude旧树移除，关键提交/交接保留；空间代码树复用给下一精确因子任务。
+科研恢复树已迁至`D:/BCI/worktrees/research-director`。本轮接受binary固定requested选择、共同CE风险、产品共用fit/refit与完整选择保存准入；空间接受物理效应/reference输运、CAR精确结构和原BLUE/完整noise链。root逐读实际模块及调用、保存加载路径后，分别完成6个binary独立delta案例与5个空间最终案例，Ruff与diff检查通过；阶段失败和实际源码保在[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。已整合binary任务树及clean Claude旧树移除，关键提交/交接保留；空间精确因子随后接受，必要证据回收到科研树后作者checkout已移除。
 
 科研主树拥有科学合同和最终集成，云窗口拥有唯一云端资源与实际执行。P1数值作者/审阅者在机制树工作，prefix selector作者/审阅者在已接cache的隔离树工作；cloud resource-phase和continuous score优化在云端独立树交付，root按函数逻辑合入。检查实际模块、调用、保存和重放，针对新风险运行必要反例；源码与产物身份随交付记录。
 
@@ -49,6 +49,12 @@ CloudExecutor的IO调度切片已在科研WIP通过Windows19个相关case。Linu
 近期旧日期页已经先物理归档、逐member验证，再合并为四个主题页；原binding、MAT、缓存、模型和结果保持原位置。源页面恢复方式见[主题整理历史清单](../../frozen/research_topic_documents_history.manifest.json)。后续研究结论更新主题页，代码使用方式更新原六指南。
 
 已交付cache作者树经独立恢复复核后请求应用归档：1,285个保留路径、648源码、59篇Paper与四个source owner可恢复，完整used_union为959对象/275,397,774 bytes、缺件/哈希错误0；七个活动代码/配置根与本机进程未见运行依赖，旧验收locator由恢复映射解释。应用目前返回queued，尚未确认退役；恢复载荷和冗余对象均未删除。请求与实际状态见[工作树整理绑定](../assets/research_resume_20261011/cache_author_archive_request_binding.json)。
+
+## 原云成果恢复与磁盘维护
+
+2026-10-14新实例与已复制数据盘恢复可用，实际quota为25 CPU、RAM硬上限90GiB，管理接口可见RTX5090约32GiB；本次结果恢复与分析未启动公共训练。原BI/BNCI报告、entry005/P1结果和七份terminal已按原字节恢复到`D:/BCI/artifacts/cloud-completed-originals-20261014`。entry005/P1的SHA与原完成绑定一致，两库report与原terminal.artifact_facts一致；旧P1 reference `091fa663…`也已恢复。直接原预测/原分数分析与此前舍入表派生分列，原producer和全部失败终态保持。来源和后续清理账本见[恢复与复算绑定](../assets/research_resume_20261011/cloud_payload_recovery_binding.json)。
+
+复制后的临时清理分两段完成：73个精确regular file（重复安装包、closed软件fixture、61份有原ZIP的CSV解压副本和旧候选缓存），数据盘实际净释放4368982016B（4.07GiB），剩余约8.28GiB。原ZIP、全部正式模型/结果/selection graph及producer/退出凭证保留；CSV原member/headerCRC/SHA清单和原子恢复脚本保持。冷盘删除0B：旧failed源的18275380243B工作视图仍被成功source链引用，27652184687B的inactive旧池缺原完整复建输入，因此继续保护。逐文件删除回执、实际free、完整保留核验和恢复入口随上述绑定持久保存；failed/retry/inactive命名不作为删除依据。
 
 ## 独立前缀请求与完成参与者恢复
 
@@ -115,7 +121,7 @@ SHA`d0f3c86ac8bf311ed1d8287945b527762f8c4c9459a373d34f4dd564bee1d2f5`。
 Recovery21的fixture Path类型错误保留；其10个既有caller/CLI验证与Recovery23运行时源码相同，
 仍分别绑定两个冻结，不拼成一个28项通过声明。上述软件验收未新增公共或NN fit。
 
-上述为恢复切片交付时的阶段状态。随后entry005已完成原首4零拟合准入及余4续跑，科学exit0、所属树0，独审确认8人152请求、92面板及零结构异常。P1也已完成16格、576分数和退出闭合；两份原完成绑定分别见[前缀](../assets/research_resume_20261011/prefix_cloud_completion_binding.json)与[P1](../assets/research_resume_20261011/p1_cloud_completion_binding.json)。2026-10-13当前SSH超时、旧ignored载荷未随Git恢复；完成身份可由Git核回，原始载荷留存仍待核回。新node/chunk执行底座仍在实施，尚无新公共吞吐验收。
+上述为恢复切片交付时的阶段状态。随后entry005已完成原首4零拟合准入及余4续跑，科学exit0、所属树0，独审确认8人152请求、92面板及零结构异常。P1也已完成16格、576分数和退出闭合；两份原完成绑定分别见[前缀](../assets/research_resume_20261011/prefix_cloud_completion_binding.json)与[P1](../assets/research_resume_20261011/p1_cloud_completion_binding.json)。2026-10-14已按原SHA恢复原始载荷并独立复算，见[恢复与复算绑定](../assets/research_resume_20261011/cloud_payload_recovery_binding.json)。新node/chunk底座已模块集成，Linux组合caller与公共实际吞吐按新执行身份验收。
 
 ## 恢复身份与文件所有权
 

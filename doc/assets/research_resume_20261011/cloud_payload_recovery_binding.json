@@ -1,0 +1,320 @@
+{
+  "schema": "n2p3_original_cloud_payload_recovery_and_analysis_binding/1",
+  "observed_at_utc": "2026-10-14T05:04:14.220278+00:00",
+  "analysis_checkout_base_commit": "0794c48df1e5d7c933680e8500d767204c1bf36d",
+  "status": "original_results_restored_and_readonly_analysis_completed_temp_cleanup_completed",
+  "local_payload_root": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014",
+  "new_public_training_fit_calls": 0,
+  "new_model_or_graph_replay_calls": 0,
+  "original_producers_rewritten": false,
+  "restored_payloads": [
+    {
+      "key": "BI",
+      "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\BI\\result.json",
+      "transfer_seconds": 28.24076369999966,
+      "reused_verified": false,
+      "bytes": 18635783,
+      "sha256": "f67c9945262a9538eec03b5819f413afe872814521e348368b7d9a2c85abbd3b",
+      "remote_path": "/root/autodl-tmp/n2p3-research-20261008/cloud_live_20261012/public_dataset_queue01/BI2014a_q1/report.json"
+    },
+    {
+      "key": "BNCI",
+      "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\BNCI\\result.json",
+      "transfer_seconds": 3.0052674999988085,
+      "reused_verified": false,
+      "bytes": 3369208,
+      "sha256": "a300ffa8bd8980a2bc1e72f5a6ff28f7352d9000724ac14bf5a18f8b965654ec",
+      "remote_path": "/root/autodl-tmp/n2p3-research-20261008/cloud_live_20261012/public_dataset_queue01/BNCI2014-008_c600/report.json"
+    },
+    {
+      "key": "P1",
+      "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\P1\\result.json",
+      "transfer_seconds": 1.5734375000010914,
+      "reused_verified": false,
+      "bytes": 303226,
+      "sha256": "f34dfce0f49202748f331b3aed3bc0a5f036743454b162205c0fc67e8f6ac9c0",
+      "remote_path": "/root/autodl-tmp/n2p3-research-20261008/cloud_live_20261012/public_dataset_queue01/BNCI2014-008_P1_stationary16/result.json"
+    },
+    {
+      "key": "entry_000",
+      "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\entry_000\\terminal.json",
+      "transfer_seconds": 1.1497756999997364,
+      "reused_verified": false,
+      "bytes": 8259,
+      "sha256": "cfc1720620a4e018e3e0a7c949f7320668d428740c317da4c66b31d9c11435c1",
+      "remote_path": "/root/autodl-tmp/n2p3-research-20261008/cloud_live_20261012/public_dataset_queue01/.dataset_queue/entry_000/queue_terminal.json"
+    },
+    {
+      "key": "entry_001",
+      "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\entry_001\\terminal.json",
+      "transfer_seconds": 1.2032392000000982,
+      "reused_verified": false,
+      "bytes": 2452,
+      "sha256": "168aa58e5887acfcb727d34ce81708ca0bf93574a24cb3c8f6342f3d6766fcba",
+      "remote_path": "/root/autodl-tmp/n2p3-research-20261008/cloud_live_20261012/public_dataset_queue01/.dataset_queue/entry_001/queue_terminal.json"
+    },
+    {
+      "key": "entry_002",
+      "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\entry_002\\terminal.json",
+      "transfer_seconds": 1.0711720999988756,
+      "reused_verified": false,
+      "bytes": 2301,
+      "sha256": "e5f41dc97fd981238c031eecb9194a8ac70d7eb5d1be288f75ee592cc2417041",
+      "remote_path": "/root/autodl-tmp/n2p3-research-20261008/cloud_live_20261012/public_dataset_queue01/.dataset_queue/entry_002/queue_terminal.json"
+    },
+    {
+      "key": "entry_003",
+      "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\entry_003\\terminal.json",
+      "transfer_seconds": 1.373686799999632,
+      "reused_verified": false,
+      "bytes": 2427,
+      "sha256": "526951c9aed0bc4c1e6f02af62cb09c24581ec77147badf345625def3f1c6d09",
+      "remote_path": "/root/autodl-tmp/n2p3-research-20261008/cloud_live_20261012/public_dataset_queue01/.dataset_queue/entry_003/queue_terminal.json"
+    },
+    {
+      "key": "entry_004",
+      "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\entry_004\\terminal.json",
+      "transfer_seconds": 1.1581014999992476,
+      "reused_verified": false,
+      "bytes": 1425,
+      "sha256": "d6650ee197d01426506e1662e18ba2e0863ef922f79212149a4b292481943738",
+      "remote_path": "/root/autodl-tmp/n2p3-research-20261008/cloud_live_20261012/public_dataset_queue01/.dataset_queue/entry_004/queue_terminal.json"
+    },
+    {
+      "key": "entry_005",
+      "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\entry_005\\terminal.json",
+      "transfer_seconds": 1.1168632000008074,
+      "reused_verified": false,
+      "bytes": 1900,
+      "sha256": "5cf812c0bfc12b7267541adbf812b3cc815056764c47a9dc6efb34bafb5897d9",
+      "remote_path": "/root/autodl-tmp/n2p3-research-20261008/cloud_live_20261012/public_dataset_queue01/.dataset_queue/entry_005/queue_terminal.json"
+    },
+    {
+      "key": "entry_006",
+      "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\entry_006\\terminal.json",
+      "transfer_seconds": 1.1068236000010074,
+      "reused_verified": false,
+      "bytes": 2783,
+      "sha256": "883640396fbc90f1c72a4d6f32ff36d21e0e1431c0c4746e72abb0ace5c2a742",
+      "remote_path": "/root/autodl-tmp/n2p3-research-20261008/cloud_live_20261012/public_dataset_queue01/.dataset_queue/entry_006/queue_terminal.json"
+    },
+    {
+      "key": "prefix",
+      "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\prefix\\result.json",
+      "transfer_seconds": 569.1738726000003,
+      "reused_verified": false,
+      "bytes": 451241859,
+      "sha256": "4b2498325c4a78bc80c0be9066f2baf8ad442424fb75bc72bb272aeae507626f",
+      "remote_path": "/root/autodl-tmp/n2p3-research-20261008/cloud_live_20261012/public_dataset_queue01/BNCI2014-008_prefix_selector_recovery02/result.json"
+    },
+    {
+      "key": "queue",
+      "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\queue\\queue_terminal.json",
+      "transfer_seconds": 1.716721900000266,
+      "reused_verified": false,
+      "bytes": 25727,
+      "sha256": "ac3e8c31fad55c58f71c8dd7ce3c1220e630ed0c7e1574bf20cc64f0a1d15a93",
+      "remote_path": "/root/autodl-tmp/n2p3-research-20261008/cloud_live_20261012/public_dataset_queue01/queue_terminal.json"
+    },
+    {
+      "original_payload": "P1 old law reference",
+      "remote_path": "/root/autodl-tmp/n2p3-research-20261008/cloud_inputs/P1_STATIONARY_STAGE05_ORIGINALS/P1_NUMERIC_PANEL/result.json",
+      "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\P1\\old_reference.json",
+      "bytes": 311854,
+      "sha256": "091fa663769395027e7ee5b9cdabd89079106daec62f77eb56167ec627f3ef7f",
+      "matches_original_completion_binding": true,
+      "new_fit_calls": 0
+    }
+  ],
+  "analysis_artifacts": {
+    "public_report": {
+      "report.zh.md": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\public_report\\report.zh.md",
+        "bytes": 9897,
+        "sha256": "972c07bd38aa55c44f4c5d1de5120a5eedbc4a6f4ebe9ec28b3ead793f3b8528"
+      },
+      "original_report_analysis.json": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\public_report\\original_report_analysis.json",
+        "bytes": 229000,
+        "sha256": "11329b53f6af6d1d1ba94b0884feefa9cf2b6ac4a84461c5f8f873e74d7c5794"
+      },
+      "participant_metrics.original.csv": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\public_report\\participant_metrics.original.csv",
+        "bytes": 25776,
+        "sha256": "79ca44adb99d8b9241d53c6ee88d14f26ee1dcda10740bedcfcf9f6a104f3fdb"
+      },
+      "analyze_original_reports.py": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\public_report\\analyze_original_reports.py",
+        "bytes": 12757,
+        "sha256": "efdc393c14584f72c6c5e208f395eeaaf15d009d62a9681977b4dcb91e400cc8"
+      }
+    },
+    "prefix_and_P1": {
+      "analysis.zh.md": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\prefix_and_P1\\analysis.zh.md",
+        "bytes": 8700,
+        "sha256": "79d76638dfc0942d1456c40ecd5a1fb60add20aae242de30e728cd035f4d1e00"
+      },
+      "raw_analysis.receipt.json": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\prefix_and_P1\\raw_analysis.receipt.json",
+        "bytes": 2020,
+        "sha256": "a293d691f46a629d7a4e48a1b3f63ef17c5c396989afcd16fecfb82d1b374705"
+      },
+      "raw_cloud_analysis.stdout.json": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\prefix_and_P1\\raw_cloud_analysis.stdout.json",
+        "bytes": 274700,
+        "sha256": "64bca4b57208439dbf543b5e597e80d4daba68ee525bf29d9d88a86f763a1c79"
+      },
+      "remote_raw_analysis.py": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\prefix_and_P1\\remote_raw_analysis.py",
+        "bytes": 15032,
+        "sha256": "75d6172af014be0a9a7fc485e8b971994535d3de6966f13bb8d45f02a31acad2"
+      },
+      "raw_law_comparison.receipt.json": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\prefix_and_P1\\raw_law_comparison.receipt.json",
+        "bytes": 3105,
+        "sha256": "c9e2513cbed0518e801580598babb3a79d7808ec1e16234f000f2d6922807842"
+      },
+      "raw_law_comparison.stdout.json": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\prefix_and_P1\\raw_law_comparison.stdout.json",
+        "bytes": 76442,
+        "sha256": "cf497f0c75ef1ebf6d884460f8c9866c1024d6adece036c4251e007859a195f3"
+      },
+      "remote_law_comparison.py": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\prefix_and_P1\\remote_law_comparison.py",
+        "bytes": 9317,
+        "sha256": "8bfca20ed3023154d2a001d4433539d822e224801340efa87af16ca0472f6da4"
+      }
+    },
+    "cleanup": {
+      "cleanup_phase01.plan.json": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\cleanup\\cleanup_phase01.plan.json",
+        "bytes": 14247,
+        "sha256": "4cc0aa4a57b937cfcaf315abecb461cb034a0fcba236011b974ffc768d4d6ef5"
+      },
+      "cleanup_phase01.receipt.json": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\cleanup\\cleanup_phase01.receipt.json",
+        "bytes": 11758,
+        "sha256": "68142c40f7ea52d2b111a7ff37934176e230a3cee887df4fedfea9bea4162188"
+      },
+      "cleanup_phase02.plan.json": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\cleanup\\cleanup_phase02.plan.json",
+        "bytes": 85740,
+        "sha256": "5e2671a4fff63aa4005da7a4c23a14fc20fd76a34e7adb0245b0bebebb979d5b"
+      },
+      "cleanup_phase02.receipt.json": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\cleanup\\cleanup_phase02.receipt.json",
+        "bytes": 60709,
+        "sha256": "15a42fbeb2519c89ecd3f320428dfb510e661a187886f5c61d430d864d279399"
+      },
+      "DELIVERY.binding.json": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\cleanup\\DELIVERY.binding.json",
+        "bytes": 2781,
+        "sha256": "cb16a324db944053a0007506fda4c4672f919048e3baf85957283ad479e1c008"
+      },
+      "report.zh.md": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\cleanup\\report.zh.md",
+        "bytes": 4276,
+        "sha256": "8beb407b715cde127d285dd46ab6040478d342384ddaf235a71ec594295d5770"
+      },
+      "prerequisites.json": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\cleanup\\prerequisites.json",
+        "bytes": 332391,
+        "sha256": "89448140b6994d7db8c8d7d936daf2575ac70aab8ed5a8e2412f6ccbcafeb769"
+      },
+      "restore_bi2014a_stage.py": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\cleanup\\restore_bi2014a_stage.py",
+        "bytes": 3669,
+        "sha256": "fbc31ac95a054905f29b1aba5cdc4df604cca59b523ace92d52bb161aac3fb99"
+      },
+      "final_verification.json": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\cleanup\\final_verification.json",
+        "bytes": 12888,
+        "sha256": "f08f2b4ce69536c7941f1837881f651b805c8a2638def236522c4fbcd9a8e800"
+      },
+      "reference_audit.json": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\cleanup\\reference_audit.json",
+        "bytes": 166137,
+        "sha256": "e0b96ab834eee876aa4b40c06e36ffb160e2094a800494df9b57dd6e8329fff6"
+      },
+      "inventory.json": {
+        "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\analysis\\cleanup\\inventory.json",
+        "bytes": 222086,
+        "sha256": "d2de382733bccf359e9e338d1170bad7bb95f14ec3c9cdbc81eee7052efd3971"
+      }
+    }
+  },
+  "analysis_scope": {
+    "public": "independent original per-decision outcome and per-participant probability-metric aggregation; no trial-logit/model rescoring",
+    "prefix": "all92 panels13984 prediction rows independently reduced under original152 requested denominator",
+    "P1": "all16 original score/receipt SHA checked;576 log densities normalized; old reference original normalized scores compared under identical physical inputs and response/noise producers"
+  },
+  "verification": {
+    "prefix_max_metric_absolute_difference": 1.7763568394002505e-15,
+    "prefix_structural_anomalies": 0,
+    "public_metric_tolerance": 1e-14,
+    "P1_law_comparison": {
+      "private8": {
+        "cells": 8,
+        "winners_identical": 8,
+        "old_correct": 6,
+        "new_correct": 6,
+        "old_mean_nll": 5.554012191080322,
+        "new_mean_nll": 5.5540121012893895,
+        "delta_mean_nll": -8.979093290208025e-08,
+        "old_mean_brier": 0.47767850103985904,
+        "new_mean_brier": 0.4776784948748203,
+        "delta_mean_brier": -6.165038762782164e-09,
+        "max_abs_probability_change": 2.4476277421525694e-08
+      },
+      "shared8": {
+        "cells": 8,
+        "winners_identical": 8,
+        "old_correct": 5,
+        "new_correct": 5,
+        "old_mean_nll": 7.336476583291455,
+        "new_mean_nll": 7.336476583233338,
+        "delta_mean_nll": -5.81167287788857e-11,
+        "old_mean_brier": 0.6790937535735931,
+        "new_mean_brier": 0.6790937535672317,
+        "delta_mean_brier": -6.3614109793825004e-12,
+        "max_abs_probability_change": 3.691502659108892e-11
+      }
+    },
+    "old_P1_absolute_log_density_reread": false
+  },
+  "cleanup": {
+    "removed_file_count": 73,
+    "removed_logical_bytes": 4368829563,
+    "removed_allocated_bytes": 4368982016,
+    "sum_phase_observed_free_increments_bytes": 4368990208,
+    "net_data_free_increment_between_first_and_last_snapshots_bytes": 4368982016,
+    "data_free_after_bytes": 8886972416,
+    "cold_files_deleted": 0,
+    "protected": "originalZIP/EEG, allfinalmodels/results, producerreceipts andsource snapshots, retry01+recovery02 originalselectiongraphs, fd62 sourceviews referenced bysuccessfulsource, inactiveoldpools withoutcomplete regeneration chain",
+    "recovery": "stagedCSV extraction helper and exactZIP/member/headerCRC/originalSHA prerequisites kept with cloudcleanup receipts; nofresh wholeoriginalEEG payloadhash incleanup",
+    "final_delivery_binding_sha256": "cb16a324db944053a0007506fda4c4672f919048e3baf85957283ad479e1c008",
+    "protected_fd62_source_view_bytes": 18275380243,
+    "protected_inactive_pool_bytes": 27652184687,
+    "csv_restore_helper": {
+      "cloud_path": "/root/n2p3-runtime-20261011-control/data_disk_cleanup01/20261014_restore_bi2014a_stage.py",
+      "usage": "--all or --subject 01",
+      "sha256": "fbc31ac95a054905f29b1aba5cdc4df604cca59b523ace92d52bb161aac3fb99",
+      "fresh_original_EEG_payload_hash_during_cleanup": false,
+      "restore_verification": "exactZIPmember extraction, CRC and originalCSV SHA beforeatomic publication"
+    }
+  },
+  "remaining_execution_scope": "Linux caller/family-join software validation and nextscientific source freeze separate from this originalresult analysis; newC-latent optionalproducer separate",
+  "activity_scope": "original result restoration, independent score aggregation and reviewed temporary cleanup; separate synthetic software validation is not included",
+  "P1_original_score_receipts_restored": {
+    "local_archive": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\P1\\original_score_receipts.tar.gz",
+    "archive_bytes": 1873313,
+    "archive_sha256": "c6506ed402ae011364fab01d5216fc633bb3436f9ecc89ac41de9e33b751b265",
+    "member_count": 32,
+    "member_manifest": {
+      "local_path": "D:\\BCI\\artifacts\\cloud-completed-originals-20261014\\P1\\original_score_receipts.manifest.json",
+      "sha256": "96ff0ac64c5f41c566eb1f067ae586e823385c2ae3fb2f5554be165331630358",
+      "bytes": 11389
+    }
+  }
+}

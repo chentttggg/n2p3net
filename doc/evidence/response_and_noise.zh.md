@@ -15,7 +15,7 @@ private仅救回A06，其余七人命中状态相同。A01贡献约71.82%的NLL�
 
 新旧stationary law的16格赢家全部相同，最大归一化概率变化约2.45e-8。private原密度修正接近候选共同偏移，softmax会抵消共同常数；quadratic与predictive logdet实际改变。A06救回在旧law中已经存在，属于噪声臂差异。数值修复完成了initial-state正确性、保存准入与完整执行闭环，其效能评价继续绑定真实候选概率。
 
-原观察后八人配对bootstrap的95% Δhit区间为[0,+37.5]个百分点；仅一个discordant pair，精确双侧McNemar p=1。每人一项且八项真值均为同一候选类别，下一实验预声明多selection和类别。2026-10-13按保存报告的舍入表复算尾部贡献及均值，记录在[当前读数](../assets/research_resume_20261011/cloud_completion_readout.json)；原始大载荷留存待核回，没有新增原分数重放。
+原观察后八人配对bootstrap的95% Δhit区间为[0,+37.5]个百分点；仅一个discordant pair，精确双侧McNemar p=1。每人一项且八项真值均为同一候选类别，下一实验预声明多selection和类别。2026-10-13按保存报告舍入表的[派生](../assets/research_resume_20261011/cloud_completion_readout.json)保原范围；2026-10-14已恢复原P1结果、新16份score/receipt及旧参考`091fa663…`，核SHA、同decision_plan/roster、物理输入和原response/noise来源后独立复算。新576个log density重建概率与原指标一致；与旧参考log probability比较，16/16赢家相同，shared/private最大概率差分别`3.6915e-11`/`2.4476e-8`。新旧平均ΔNLL为`−5.8117e-11`/`−8.9791e-8`，数值关系与原比较一致。原拟合及producer保持，旧参考只保存归一化分数；此次直接核概率/赢家关系，旧绝对密度分解仍用原记录。来源及零新增拟合/模型重放范围见[恢复与复算绑定](../assets/research_resume_20261011/cloud_payload_recovery_binding.json)。
 
 ## 当前模型与数值任务
 

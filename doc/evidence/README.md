@@ -11,6 +11,8 @@
 
 四页按主题持续更新；运行身份由原紧凑binding记录，六指南继续维护活动规范。原日期页已经物理归档并逐member校验，见[恢复清单](../../frozen/research_topic_documents_history.manifest.json)。
 
+原云端四个完成程序的载荷已按原SHA恢复，原分数复算及临时清理的来源集中见[恢复与复算绑定](../assets/research_resume_20261011/cloud_payload_recovery_binding.json)；指标、选择行为、P1关系和磁盘账本分别维护在上列四页。
+
 ## 历史与来源
 
 近期科研续接、八人候选分析、小组协议、P1数值和缓存重放分别更新上方四个主题页。日期页原文与哈希由[主题页历史恢复清单](../../frozen/research_topic_documents_history.manifest.json)保存。

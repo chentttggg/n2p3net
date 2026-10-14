@@ -18,6 +18,14 @@ fixed使用温度1，grouped按完整selection生成C内OOF概率，并为参与
 
 原source10/entry003以failed、OS1结束：首四人包保存重放后由parent因JSON list/FrozenMetadata tuple比较拒绝，后四人遇到FS/RAM预算失败。修后entry005已零fit准入原四人、仅补原未完成四人，完整八人152请求及92面板闭合；32份selection replay对应600个整程序节点、3290次exact-score检查。K2000选择保命中并改善主pool概率风险，K800少1命中且概率指标变差；实际结果与目标端nested范围见[公共评估](public_evaluation.zh.md#估计量与下一步)。原failed终态和各producer保留；下一研究进入合法C内风险与异质性，下一执行底座由云owner优化分块重放和只读输入。
 
+## 完整公共前缀的选择行为
+
+原entry005已完成8人、152共同future请求，seed20260918。2026-10-14直接从原`4b249832…`结果的13984条预测复算全部92面板，最大保存指标差`1.78e-15`、结构异常0；来源见[恢复与复算绑定](../assets/research_resume_20261011/cloud_payload_recovery_binding.json)。K200固定/选择均83/152，K800为113/152与112/152，K2000均132/152；三档选择−固定NLL分别约`+0.000357,+0.061106,−0.104747`。
+
+K800五项预测变化集中A04：救回2项、损害3项，正确数5→4，ΔNLL+0.876779；其他七人平均ΔNLL−0.055418。K2000 A06同时有1项救回和1项损害，各人相同正确数仍可包含不同预测。该档7/8人NLL/Brier改善，96.31%的NLL收益来自A03/A05/A06；选中的四种程序继续保原C内选择身份。
+
+同K2000的matched scratch为135/152、NN+xDAWN固定组合133/152，分别提供更高hit与更低NLL的匹配锚点。选择程序相对主pool的最大错误置信下降，错误集合内平均置信上升；这两个条件描述保各自分母。下一轮优先检验低剂量选择稳定性、C内概率校准和source/scratch完整程序选择。上述future分量用于诊断，新默认和阈值仍通过预声明C内程序学习。8项不完整支持及错误尾部详见[公共评估](public_evaluation.zh.md#修后前缀完整八人152请求)。
+
 ## 小组、部分标签与采样坐标
 
 BNCI原始MAT与事件坐标为256 Hz；trial/NN模型输入为128 Hz、179点。原common profile的source support为`[-51,308)`；P1 raw continuous的1.2秒basis为307点。两种几何由各自owner提供。修后A01 probe与[来源绑定](../assets/research_resume_20261011/prefix_small_group_fixed_binding.json)保存了实际窗口。

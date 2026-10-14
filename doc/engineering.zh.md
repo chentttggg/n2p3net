@@ -448,6 +448,9 @@ unlink成功先登记removed事实与同路径guard；随后free探测失败保�
 即时磁盘信用取最后link的实际分配块与删除前后实测free增量的较小值；未释放部分只记为 deferred upper bound，不直接提升可用容量。
 每次新申请重新读取实际free，并保留所有live snapshot和uncommitted artifact reservation；tmpfs回收不扩固定RAM staging。
 raw、model和唯一evidence不属于此清理名单；压缩/删除失败保留原件和surviving partial。
+离线清理也按实际引用区分临时副本与正式载荷：检查所有成功source/target的plan、source链和artifact账本，
+不能只凭failed、retry或inactive目录名删除。可再生解压stage保原ZIP、唯一member/header、scope及恢复清单；
+已结束测试保最终source/JUnit/terminal摘要，逐regular file记录删除事实和实际free增量。正式selection graph仍是重放证据。
 `GpuPerformanceScheduler.complete_input_staging`在train/held矩阵仍存活时测实际进程RSS；CPU回退只在整场持有的source组预算内
 转为常驻，超预算在optimizer更新前失败并释放暂存，不用长lease静默降低并发。即使没有shared staging，source组预算仍传入实际worker。
 这些端点RSS与ZIP容量估计都不等于全程峰值；tmpfs/ramfs snapshot和工作输出额外计RAM，不能当可回收磁盘页。
