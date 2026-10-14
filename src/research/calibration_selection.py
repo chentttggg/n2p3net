@@ -151,8 +151,12 @@ def _metrics(groups, evidence):
     vocabulary = groups[0].view.decision.candidate_vocabulary
     coverage = {DecisionKey(group.view.participant_key, group.view.decision_id): CandidateCoverage.from_mappings(
         dict(zip(vocabulary, map(int, group.view.decision.membership.sum(axis=0)), strict=True)), {}) for group in groups}
+    levels = {DecisionKey(group.view.participant_key, group.view.decision_id): group.view.decision.repetitions
+              for group in groups}
+    horizon = ({"evidence_level": groups[0].view.decision.repetitions} if len(set(levels.values())) == 1
+               else {"requested_evidence_levels": levels})
     return evaluate_candidate_evidence({0: evidence}, decision_plan=_plan(groups), seeds=(0,),
-        candidate_vocabulary=vocabulary, evidence_level=groups[0].view.decision.repetitions, requested_coverage=coverage)
+        candidate_vocabulary=vocabulary, requested_coverage=coverage, **horizon)
 
 
 def _final_identity(fitted):

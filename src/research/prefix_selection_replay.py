@@ -64,6 +64,16 @@ def _group_map(input_identity):
 
 def _scope_before_held(scope, held):
     input_identity = scope["input"]
+    target = input_identity["target_contract"]
+    if target.get("authority_kind") == "record_aware_calibration_prefix/1":
+        matches = [record for record in target["record_scopes"].values()
+                   if record["source_sha256"] == held["view"]["source_sha256"]
+                   and record["source_relative_path"] == held["view"]["source_relative_path"]]
+        if (len(matches) > 1 or matches and matches[0]["read_sample_support"][1] > held["raw_scope"][0]
+                or scope["actual_K"] != input_identity["budget"]
+                or held["record_id"] in _group_map(input_identity)):
+            raise ValueError("nested prefix record fit includes its held observations or selection labels")
+        return
     if (scope["actual_K"] != input_identity["budget"]
             or input_identity["target_contract"]["raw_scope"][1] > held["raw_scope"][0]
             or held["record_id"] in _group_map(input_identity)):
@@ -151,14 +161,18 @@ def _audit_selection(record, declared, node_records, required_groups, selection,
         raise ValueError("nested prefix structural scopes lost original groups")
     for name, scope in scopes.items():
         _scope_before_held(scope, groups[name])
-        source_onsets = record["training_scope"]["input"]["raw"]["event_onsets"]
+        original = record["training_scope"]["input"]
         held = groups[name]["view"]
-        first = held["onsets"][0] + held["raw_scope"][0]
-        expected_K = sum(onset < first for onset in source_onsets)
         derived = scope["input"]
-        if (scope["actual_K"] != expected_K or expected_K > 0
-                and list(derived["raw"]["event_onsets"]) != list(source_onsets[:expected_K])):
-            raise ValueError("nested structural scope is not the actual prefix before its held group")
+        if original["target_contract"].get("authority_kind") == "record_aware_calibration_prefix/1":
+            _audit_record_before_held(original, scope, held)
+        else:
+            source_onsets = original["raw"]["event_onsets"]
+            first = held["onsets"][0] + held["raw_scope"][0]
+            expected_K = sum(onset < first for onset in source_onsets)
+            if (scope["actual_K"] != expected_K or expected_K > 0
+                    and list(derived["raw"]["event_onsets"]) != list(source_onsets[:expected_K])):
+                raise ValueError("nested structural scope is not the actual prefix before its held group")
     expected = [name for name, scope in scopes.items()
                 if len(scope["input"]["complete_groups"]) >= required_groups]
     if (record["minimum_training_groups"] != required_groups
@@ -189,6 +203,48 @@ def _audit_selection(record, declared, node_records, required_groups, selection,
     metrics = record["decision"]["candidate_metrics"]
     if set(metrics) != set(declared):
         raise ValueError("nested prefix policy lost original candidate metrics")
+
+
+def _audit_record_before_held(original, scope, held):
+    """Independently join the saved earlier K to original record-local operands."""
+    original_scopes = original["target_contract"]["record_scopes"]
+    matches = [(key, record) for key, record in original_scopes.items()
+               if record["source_sha256"] == held["source_sha256"]
+               and record["source_relative_path"] == held["source_relative_path"]]
+    if len(matches) != 1:
+        raise ValueError("nested held group lacks one original physical record authority")
+    key, authority = matches[0]
+    native = next(row for row in original["native_records"] if row["record_id"] == key)
+    onsets = native["event_onsets"]
+    count = sum(onset < held["raw_scope"][0] for onset in onsets)
+    base = authority["global_label_indices"][0]
+    expected_K = base + count
+    actual = scope["input"]
+    derived_scopes = actual["target_contract"]["record_scopes"]
+    expected_records = {name: record for name, record in original_scopes.items()
+                        if record["global_label_indices"][1] <= base}
+    if count:
+        expected_records[key] = authority
+    if scope["actual_K"] != expected_K or set(derived_scopes) != set(expected_records):
+        raise ValueError("nested record structural scope differs from actual earlier global K")
+    original_native = {row["record_id"]: row for row in original["native_records"]}
+    derived_native = {row["record_id"]: row for row in actual["native_records"]}
+    if set(derived_native) != set(expected_records):
+        raise ValueError("nested earlier scope changed its original native record roster")
+    for name, record in expected_records.items():
+        derived = derived_scopes[name]
+        for field in ("source_sha256", "source_relative_path", "source_dataset_id", "source_subject_id",
+                      "native_clock", "record_id"):
+            if derived[field] != record[field]:
+                raise ValueError("nested earlier prefix changed an original record identity")
+        if name == key:
+            if (derived["global_label_indices"] != [base, expected_K]
+                    or list(derived_native[name]["event_onsets"]) != list(onsets[:count])
+                    or derived["read_sample_support"][1] > held["raw_scope"][0]):
+                raise ValueError("nested earlier record scope retains held labels or observations")
+        elif (semantic_sha256(derived) != semantic_sha256(record)
+                or semantic_sha256(derived_native[name]) != semantic_sha256(original_native[name])):
+            raise ValueError("nested earlier prefix changed an already authorized original record")
 
 
 def persist_prefix_selection(selection, directory):
