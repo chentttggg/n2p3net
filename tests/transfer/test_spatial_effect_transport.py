@@ -275,7 +275,7 @@ def test_resigned_source_observation_kind_cannot_grant_physical_transport_capabi
         native_noise_covariance=inputs[0].native_noise_covariance, noise_binding=dict(inputs[0].noise_binding))
     destination = make_source(10, scope="target_calibration", observation="cz")[1]
     dependence = SpatialLikelihoodDependence.independent(posterior, authority_sha256="e" * 64)
-    with pytest.raises(SpatialPriorIdentificationError, match="requires_declared_observation"):
+    with pytest.raises(SpatialPriorIdentificationError, match="structural_C"):
         common_measurement((posterior, source_effect, dependence, temporal, generic_blocks), destination)
     saved = json.loads(json.dumps(posterior.record()))
     for record in saved["fit_records"]:
@@ -286,7 +286,7 @@ def test_resigned_source_observation_kind_cannot_grant_physical_transport_capabi
             record["observation"] = SpatialObservation.native(source_effect.layout).record()
     saved["fit_sha256"] = metadata_digest(saved["fit_records"])
     saved["artifact_sha256"] = metadata_digest({key: value for key, value in saved.items() if key != "artifact_sha256"})
-    restored = SpatialSignalPosterior.from_record(saved)
-    dependence = SpatialLikelihoodDependence.independent(restored, authority_sha256="e" * 64)
-    with pytest.raises(ValueError, match="(?:actual dimensions|structural operator dimensions)"):
-        common_measurement((restored, source_effect, dependence, temporal, generic_blocks), destination)
+    # The new physical factor owner binds its source observation during load.
+    # Changed metadata cannot describe the unchanged original factor/likelihood.
+    with pytest.raises(ValueError, match="(?:actual dimensions|physical C factors)"):
+        SpatialSignalPosterior.from_record(saved)

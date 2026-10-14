@@ -35,8 +35,8 @@ from transfer.temporal_noise import TemporalNoise
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _PRIOR_SCHEMA = "n2p3_spatial_signal_prior/2"
-_POSTERIOR_SCHEMA = "n2p3_spatial_signal_posterior/4"
-_OBSERVATION_SCHEMA = "n2p3_spatial_observation/2"
+_POSTERIOR_SCHEMA = "n2p3_spatial_signal_posterior/5"
+_OBSERVATION_SCHEMA = "n2p3_spatial_observation/3"
 _IDENTITY_RESOLUTION = float(np.sqrt(np.finfo(float).eps))
 _STRUCTURAL_MAX_SCALARS = 250_000
 _STRUCTURAL_MAX_COLUMNS = 512
@@ -49,33 +49,50 @@ def _matrix(value, name):
     return result
 
 
-def _exact_structural_null(operators, width):
-    """Exact binary64 structural null of actual design plus record nuisances.
+def _immutable_array(value):
+    """Reuse already owned immutable bytes instead of copying original factors."""
+    base = value
+    while isinstance(base, np.ndarray):
+        base = base.base
+    return value if isinstance(base, bytes) else frozen_array(value)
 
-    The operators are physical `X|Z` rows in the actual declared observation
-    chart before noise/QR compression. Declared CAR uses exact EEG differences;
-    this preserves its known reference null through floating chart generation.
-    Every stored finite operand is promoted to its exact dyadic Fraction; no
-    tolerance can turn an exact nonzero functional on this null into signal.
-    """
-    operators = tuple(_matrix(value, "actual structural C operator") for value in operators)
+
+def _structural_dimensions(operators, width):
     if not operators or any(operator.shape[1] < width for operator in operators):
         raise ValueError("structural C operators require shared coefficients and local nuisance columns")
     nuisance_width = sum(operator.shape[1] - width for operator in operators)
-    rows = sum(len(operator) for operator in operators)
+    rows = sum(operator.shape[0] for operator in operators)
     columns = width + nuisance_width
     if rows * columns > _STRUCTURAL_MAX_SCALARS or columns > _STRUCTURAL_MAX_COLUMNS:
         raise SpatialPriorIdentificationError("structural_identifiability_unresolved",
             rows=rows, columns=columns, scalar_budget=_STRUCTURAL_MAX_SCALARS,
             column_budget=_STRUCTURAL_MAX_COLUMNS)
+    return rows, columns, nuisance_width
+
+
+def _exact_structural_null(operators, width):
+    """Exact structural null of physical factors or supplied binary64 rows.
+
+    Fitted records supply the original spatial map, D and record-local Z.
+    Their products are formed in Fraction arithmetic, before output-unit
+    normalization, floating Kronecker products or noise/QR compression. Direct
+    binary64 row inputs retain their existing exact stored-operand meaning.
+    """
+    operators = tuple(operators)
+    factorized = bool(operators) and all(isinstance(value, _SpatialStructuralFactors) for value in operators)
+    if not factorized:
+        operators = tuple(_matrix(value, "actual structural C operator") for value in operators)
+    rows, columns, nuisance_width = _structural_dimensions(operators, width)
     matrix = []
     offset = width
     for operator in operators:
         local = operator.shape[1] - width
-        for row in operator:
-            values = [Fraction.from_float(float(value)) for value in row[:width]]
+        exact_rows = (operator.exact_rows() if factorized else
+                      (tuple(Fraction.from_float(float(value)) for value in row) for row in operator))
+        for row in exact_rows:
+            values = list(row[:width])
             values.extend(Fraction(0) for _ in range(nuisance_width))
-            values[offset:offset + local] = (Fraction.from_float(float(value)) for value in row[width:])
+            values[offset:offset + local] = row[width:]
             matrix.append(values)
         offset += local
     rank = 0
@@ -108,7 +125,8 @@ def _exact_structural_null(operators, width):
             basis.append(beta)
     return tuple(tuple(value for value in beta) for beta in basis), {
         "rows": rows, "columns": columns, "rank": rank, "nullity": len(free),
-        "beta_nullity": len(basis), "arithmetic": "exact_binary64_fraction_rref",
+        "beta_nullity": len(basis), "arithmetic": (
+            "exact_binary64_physical_factor_fraction_rref" if factorized else "exact_binary64_fraction_rref"),
     }
 
 
@@ -212,9 +230,15 @@ def _qr_column_relation(actual, q, root):
     is therefore not their roundoff scale. Independent unit-information and
     orthogonality certificates still resolve every weak precision direction.
     """
-    residual = actual - q @ root
-    original_norms = np.sqrt(np.sum(actual**2, axis=0))
-    product_norms = np.sqrt(np.sum((np.abs(q) @ np.abs(root))**2, axis=0))
+    # The same column unit applies to both operands. Original source D/Z can
+    # have arbitrarily small/large finite units; squaring them before removing
+    # those units would turn a twofold generation error into 0>0 or inf>inf.
+    units = np.maximum(np.max(np.abs(actual), axis=0), np.max(np.abs(root), axis=0))
+    units = np.where(units == 0, 1., units)
+    normalized, normalized_root = actual / units, root / units
+    residual = normalized - q @ normalized_root
+    original_norms = np.sqrt(np.sum(normalized**2, axis=0))
+    product_norms = np.sqrt(np.sum((np.abs(q) @ np.abs(normalized_root))**2, axis=0))
     rows, width = actual.shape
     q_generation = _gamma(6 * rows * width) * original_norms
     multiplication = _gamma(width) * product_norms
@@ -335,11 +359,13 @@ class SpatialObservation:
     support_basis: np.ndarray = field(init=False, repr=False, compare=False)
     normalized_support_basis: np.ndarray = field(init=False, repr=False, compare=False)
     normalized_matrix: np.ndarray = field(init=False, repr=False, compare=False)
+    normalized_range_map: np.ndarray = field(init=False, repr=False, compare=False)
     equilibration_scales: np.ndarray = field(init=False, repr=False, compare=False)
     coordinate_log_volume: float = field(init=False, repr=False, compare=False)
     rank_ledger: dict = field(init=False, repr=False, compare=False)
+    restore_state: InitVar[dict | None] = None
 
-    def __post_init__(self):
+    def __post_init__(self, restore_state):
         if not isinstance(self.layout, SpatialLayout):
             raise TypeError("spatial observation needs an owned physical layout")
         matrix = _matrix(self.matrix, "actual observation matrix")
@@ -383,6 +409,14 @@ class SpatialObservation:
             bound = 128 * _gamma(count) * np.maximum(np.abs(expected), np.abs(generated))
             if not np.isfinite(generated).all() or np.any(np.abs(generated - expected) > bound):
                 raise ValueError("actual observation matrix differs from its structural declaration")
+        if restore_state is not None:
+            state = self._admit_numeric_state(matrix, declaration, scales, restore_state)
+            object.__setattr__(self, "matrix", _immutable_array(matrix))
+            object.__setattr__(self, "output_names", tuple(self.output_names))
+            object.__setattr__(self, "declaration", freeze_metadata(declaration))
+            for name, value in state.items():
+                object.__setattr__(self, name, _immutable_array(value) if isinstance(value, np.ndarray) else value)
+            return
         if kind == "average_actual_EEG":
             rank = count - 1
             null = np.sign(gains) / np.sqrt(count)
@@ -396,13 +430,15 @@ class SpatialObservation:
                 - np.max(np.log(np.abs(null)) - logs))
             physical_null /= np.linalg.norm(physical_null)
             physical_support = _null_complement(physical_null)
-            singular = np.linalg.svd(support.T @ normalized, compute_uv=False)
+            range_map = support.T @ normalized
+            singular = np.linalg.svd(range_map, compute_uv=False)
         else:
             rank = rows
             support = np.eye(rows)
             physical_support = support
             volume = float(np.log(scales).sum())
-            singular = np.linalg.svd(normalized, compute_uv=False)
+            range_map = normalized
+            singular = np.linalg.svd(range_map, compute_uv=False)
         threshold = 64 * _gamma(max(matrix.shape)) * singular[0]
         if rank > count or len(singular) != rank or singular[-1] <= threshold:
             raise SpatialPriorIdentificationError("observation_resolution_unresolved",
@@ -414,6 +450,7 @@ class SpatialObservation:
         object.__setattr__(self, "support_basis", frozen_array(physical_support))
         object.__setattr__(self, "normalized_support_basis", frozen_array(support))
         object.__setattr__(self, "normalized_matrix", frozen_array(normalized))
+        object.__setattr__(self, "normalized_range_map", frozen_array(range_map))
         object.__setattr__(self, "equilibration_scales", frozen_array(scales))
         object.__setattr__(self, "coordinate_log_volume", volume)
         object.__setattr__(self, "rank_ledger", freeze_metadata({
@@ -423,6 +460,91 @@ class SpatialObservation:
             "policy": "declared_reference_or_certified_complete_output_range",
             "row_units_removed_before_resolution": True,
             "structural_evidence": kind, "lost_native_directions": matrix.shape[1] - rank}))
+
+    def _admit_numeric_state(self, matrix, declaration, scales, saved):
+        """Admit the original output chart and volume without publishing new ones."""
+        count, rows = len(self.layout.channels), len(matrix)
+        car = declaration["kind"] == "average_actual_EEG"
+        rank = count - 1 if car else rows
+        physical = _matrix(saved["support_basis"], "producer physical observation support")
+        support = _matrix(saved["normalized_support_basis"], "producer normalized observation support")
+        normalized = _matrix(saved["normalized_matrix"], "producer normalized observation map")
+        range_map = _matrix(saved["normalized_range_map"], "producer normalized observation range map")
+        saved_scales = finite_real_array(saved["equilibration_scales"], name="producer observation row scales")
+        if (physical.shape != (rows, rank) or support.shape != (rows, rank)
+                or normalized.shape != matrix.shape or range_map.shape != (rank, count)
+                or not np.array_equal(saved_scales, scales)):
+            raise ValueError("producer observation state differs from actual chart dimensions or row scales")
+        if car:
+            _SpatialCompression._orthogonal(support)
+            _SpatialCompression._orthogonal(physical)
+            signs = np.sign(np.asarray(declaration["row_gains"]))
+            null = signs / np.sqrt(count)
+            physical_null = signs * (scales.min() / scales)
+            physical_null /= np.linalg.norm(physical_null)
+            logs = np.log(scales)
+            # Each Householder column came from e_j - 2 h h_j. Its original
+            # unit column sets the generation scale even when one entry or
+            # the null dot cancels to zero; the resulting dot is not that scale.
+            null_bound = 128 * _gamma(count) + _gamma(count) * (np.abs(support).T @ np.abs(null))
+            physical_bound = 128 * _gamma(count) * (1 + np.max(np.abs(logs))) + _gamma(count) * (
+                np.abs(physical).T @ np.abs(physical_null))
+            if (np.any(np.abs(support.T @ null) > null_bound)
+                    or np.any(np.abs(physical.T @ physical_null) > physical_bound)):
+                raise ValueError("producer observation support differs from its declared reference null")
+            raw = matrix / scales[:, None]
+            projected = support @ (support.T @ raw)
+            magnitude = np.abs(raw) + np.abs(support) @ (np.abs(support).T @ np.abs(raw))
+            generation_bound = 64 * _gamma(count + rank) * magnitude
+            log_term = float(logsumexp(-2 * logs))
+            expected_volume = float(logs.sum() + .5 * log_term - .5 * np.log(count))
+            volume_scale = 1 + float(np.abs(logs).sum()) + abs(log_term) + abs(float(np.log(count)))
+        else:
+            if (not np.array_equal(physical, np.eye(rows)) or not np.array_equal(support, np.eye(rows))):
+                raise ValueError("producer full-row observation coordinates differ from actual output identities")
+            projected = matrix / scales[:, None]
+            generation_bound = 8 * np.finfo(float).eps * (np.abs(projected) + np.abs(normalized))
+            logs = np.log(scales)
+            expected_volume = float(logs.sum())
+            volume_scale = 1 + float(np.abs(logs).sum())
+        if np.any(np.abs(normalized - projected) > generation_bound):
+            raise ValueError("producer normalized observation map differs from its original generation")
+        if car:
+            generated_range = support.T @ normalized
+            range_bound = 16 * _gamma(count) * (np.abs(support).T @ np.abs(normalized))
+            if np.any(np.abs(range_map - generated_range) > range_bound):
+                raise ValueError("producer compact observation map differs from its original dot generation")
+        elif not np.array_equal(range_map, normalized):
+            raise ValueError("producer full-row observation range differs from its original normalized map")
+        volume = saved["coordinate_log_volume"]
+        if (isinstance(volume, bool) or not np.isscalar(volume) or not np.isfinite(volume)
+                or abs(volume - expected_volume) > 256 * _gamma(8 * count) * (volume_scale + abs(volume))):
+            raise ValueError("producer observation coordinate volume differs from its actual generation")
+        ledger = saved["rank_ledger"]
+        roles = {"rank": rank, "structural_rank": rank, "output_dimensions": rows,
+            "native_measured_dimensions": count, "policy": "declared_reference_or_certified_complete_output_range",
+            "row_units_removed_before_resolution": True, "structural_evidence": declaration["kind"],
+            "lost_native_directions": count - rank}
+        if any(ledger.get(key) != value for key, value in roles.items()):
+            raise ValueError("producer observation rank roles differ from actual physical coordinates")
+        singular = finite_real_array(ledger["normalized_singular_values"], name="producer observation range diagnostics")
+        threshold = ledger["normalized_resolution_threshold"]
+        if (singular.shape != (rank,) or np.any(singular <= 0) or np.any(np.diff(singular) > 0)
+                or not np.array_equal(threshold, 64 * _gamma(max(matrix.shape)) * singular[0])
+                or singular[-1] <= threshold):
+            raise ValueError("producer observation range diagnostics differ from their original resolution policy")
+        # Repeat only the established runtime range admission. These host SVD
+        # diagnostics neither replace saved producer values nor alter the chart.
+        host_singular = np.linalg.svd(range_map, compute_uv=False)
+        host_threshold = 64 * _gamma(max(matrix.shape)) * host_singular[0]
+        if rank > count or len(host_singular) != rank or host_singular[-1] <= host_threshold:
+            raise SpatialPriorIdentificationError("observation_resolution_unresolved",
+                declared_output_dimensions=rows, normalized_singular_values=host_singular.tolist(),
+                normalized_resolution_threshold=float(host_threshold), declaration=declaration)
+        return {"support_basis": physical, "normalized_support_basis": support, "normalized_matrix": normalized,
+            "normalized_range_map": range_map,
+            "equilibration_scales": saved_scales, "coordinate_log_volume": volume,
+            "rank_ledger": freeze_metadata(ledger)}
 
     @classmethod
     def native(cls, layout):
@@ -465,10 +587,25 @@ class SpatialObservation:
         return {"schema": _OBSERVATION_SCHEMA, "layout": self.layout.record(), "matrix": self.matrix.tolist(),
                 "output_names": list(self.output_names), "output_reference": self.output_reference,
                 "declaration": json.loads(json.dumps(self.declaration)),
+                "support_basis": self.support_basis.tolist(),
+                "normalized_support_basis": self.normalized_support_basis.tolist(),
+                "normalized_matrix": self.normalized_matrix.tolist(),
+                "normalized_range_map": self.normalized_range_map.tolist(),
                 "equilibration_scales": self.equilibration_scales.tolist(),
                 "coordinate_log_volume": self.coordinate_log_volume,
                 "rank_ledger": json.loads(json.dumps(self.rank_ledger)),
                 "matrix_sha256": array_digest(self.matrix)}
+
+    @classmethod
+    def from_record(cls, record):
+        if record.get("schema") != _OBSERVATION_SCHEMA:
+            raise ValueError("spatial observation schema differs from its physical owner")
+        observation = cls(SpatialLayout.from_record(record["layout"]), record["matrix"],
+                          tuple(record["output_names"]), record["output_reference"], record["declaration"],
+                          restore_state=record)
+        if metadata_digest(observation.record()) != metadata_digest(record):
+            raise ValueError("spatial observation differs from its actual declared relations")
+        return observation
 
     def project(self, native_samples):
         values = _matrix(native_samples, "native measured samples")
@@ -528,7 +665,7 @@ class SpatialObservation:
         of (M L_native).T preserves the generative factor instead. Row units
         are removed before certifying its complete observed noise directions.
         """
-        mapping = self.normalized_support_basis.T @ self.normalized_matrix
+        mapping = self.normalized_range_map
         factor = mapping @ native_root
         scales = np.max(np.abs(factor), axis=1)
         if not np.isfinite(factor).all() or np.any(scales <= 0):
@@ -548,7 +685,7 @@ class SpatialObservation:
             raise SpatialPriorIdentificationError("observed_noise_resolution_unresolved")
         return mapping, root
 
-    def _whiten(self, samples, native_noise, native_root=None):
+    def _whiten(self, samples, native_noise, native_root=None, *, return_factor=False):
         # Pure output gains change a Jacobian, never the measured information.
         normalized = samples / self.equilibration_scales
         if not np.isfinite(normalized).all():
@@ -565,9 +702,10 @@ class SpatialObservation:
         if native_root is None:
             _, native_root = _spd(native_noise, "native residual noise")
         mapping, root = self._noise_root(native_root)
-        return (solve_triangular(root, values.T, lower=True).T,
-                solve_triangular(root, mapping, lower=True),
-                2 * float(np.log(np.diag(root)).sum()) + 2 * self.coordinate_log_volume)
+        result = (solve_triangular(root, values.T, lower=True).T,
+                  solve_triangular(root, mapping, lower=True),
+                  2 * float(np.log(np.diag(root)).sum()) + 2 * self.coordinate_log_volume)
+        return (*result, root) if return_factor else result
 
 
 @dataclass(frozen=True)
@@ -797,10 +935,12 @@ class SpatialResponseBlock:
         object.__setattr__(self, "design", frozen_array(design))
         object.__setattr__(self, "authorization", freeze_metadata(authorization))
 
-    def _compressed(self, native_noise, native_root=None):
-        y, mapping, logdet_noise = self.observation._whiten(self.samples, native_noise, native_root)
+    def _compressed(self, native_noise, native_root=None, *, return_factors=False):
+        whitened = self.observation._whiten(self.samples, native_noise, native_root, return_factor=return_factors)
+        y, mapping, logdet_noise = whitened[:3]
         design = self.design
         nuisance_rank, nuisance_logdet = 0, 0.0
+        nuisance_q, nuisance_root = None, None
         if self.nuisance is not None:
             q, r = np.linalg.qr(self.nuisance, mode="reduced")
             singular = np.linalg.svd(r, compute_uv=False)
@@ -810,14 +950,16 @@ class SpatialResponseBlock:
                 raise SpatialPriorIdentificationError("diffuse_nuisance_not_identified",
                                                       rank=nuisance_rank, threshold=float(threshold))
             nuisance_logdet = 2 * float(np.log(np.abs(np.diag(r))).sum())
+            nuisance_q, nuisance_root = q, r
             design = design - q @ (q.T @ design)
             y = y - q @ (q.T @ y)
         q, root = np.linalg.qr(design, mode="reduced")
         response = q.T @ y
         outside = y - q @ response
-        return (np.kron(mapping, root), response.flatten(order="F"),
-                float(np.sum(outside**2)), len(y) - nuisance_rank, mapping.shape[0],
-                logdet_noise, nuisance_logdet)
+        result = (np.kron(mapping, root), response.flatten(order="F"),
+                  float(np.sum(outside**2)), len(y) - nuisance_rank, mapping.shape[0],
+                  logdet_noise, nuisance_logdet)
+        return (*result, _SpatialCompression(mapping, whitened[3], q, root, nuisance_q, nuisance_root)) if return_factors else result
 
     def record(self):
         return {"authorization": json.loads(json.dumps(self.authorization)),
@@ -827,6 +969,171 @@ class SpatialResponseBlock:
                     np.empty((len(self.samples), 0)) if self.nuisance is None else self.nuisance),
                 "nuisance_dimensions": 0 if self.nuisance is None else self.nuisance.shape[1],
                 "temporal_log_abs_det": self.temporal_log_abs_det}
+
+
+@dataclass(frozen=True)
+class _SpatialCompression:
+    """The noise factor and D/Z QR operands from the original compression."""
+
+    spatial_map: np.ndarray = field(repr=False, compare=False)
+    observed_noise_root: np.ndarray = field(repr=False, compare=False)
+    design_q: np.ndarray = field(repr=False, compare=False)
+    design_root: np.ndarray = field(repr=False, compare=False)
+    nuisance_q: np.ndarray | None = field(default=None, repr=False, compare=False)
+    nuisance_root: np.ndarray | None = field(default=None, repr=False, compare=False)
+
+    def __post_init__(self):
+        for name in ("spatial_map", "observed_noise_root", "design_q", "design_root", "nuisance_q", "nuisance_root"):
+            value = getattr(self, name)
+            if value is not None:
+                object.__setattr__(self, name, _immutable_array(_matrix(value, "source compression " + name)))
+        if (self.nuisance_q is None) != (self.nuisance_root is None):
+            raise ValueError("source nuisance compression needs both original QR operands")
+
+    @staticmethod
+    def _orthogonal(q):
+        tolerance = 256 * _gamma(max(q.shape))
+        with np.errstate(over="ignore", invalid="ignore"):
+            gram = q.T @ q
+            bound = _gamma(len(q)) * (np.abs(q).T @ np.abs(q))
+        if (not np.isfinite(gram).all() or not np.isfinite(bound).all()
+                or np.any(np.abs(gram - np.eye(q.shape[1])) > tolerance + bound)):
+            raise ValueError("saved source compression QR factor is not orthonormal")
+
+    def validate(self, factor, information, native_root):
+        n, p = factor.design.shape
+        rank, channels = len(factor.spatial_map), len(factor.observation.layout.channels)
+        k = min(n, p)
+        noise_root = self.observed_noise_root
+        if (self.spatial_map.shape != (rank, channels) or noise_root.shape != (rank, rank)
+                or np.any(np.triu(noise_root, 1) != 0) or np.any(np.diag(noise_root) <= 0)
+                or self.design_q.shape != (n, k) or self.design_root.shape != (k, p)
+                or np.any(np.tril(self.design_root, -1) != 0)
+                or (self.nuisance_q is None) != (factor.nuisance is None)):
+            raise ValueError("saved source compression differs from its physical factor dimensions")
+        design = factor.design
+        if factor.nuisance is not None:
+            d = factor.nuisance.shape[1]
+            if (self.nuisance_q.shape != (n, d) or self.nuisance_root.shape != (d, d)
+                    or np.any(np.tril(self.nuisance_root, -1) != 0)):
+                raise ValueError("saved source nuisance compression differs from its original factor dimensions")
+            self._orthogonal(self.nuisance_q)
+            _qr_column_relation(factor.nuisance, self.nuisance_q, self.nuisance_root)
+            _unit_information_relation(factor.nuisance, self.nuisance_root)
+            design = design - self.nuisance_q @ (self.nuisance_q.T @ design)
+        self._orthogonal(self.design_q)
+        _qr_column_relation(design, self.design_q, self.design_root)
+        observation = factor.observation
+        mapping = observation.normalized_range_map
+        _unit_information_relation((mapping @ native_root).T, noise_root.T)
+        reconstructed = noise_root @ self.spatial_map
+        bound = 16 * _gamma(rank) * (np.abs(mapping) + np.abs(noise_root) @ np.abs(self.spatial_map))
+        if np.any(np.abs(mapping - reconstructed) > bound):
+            raise ValueError("saved source noise map differs from its original observed noise factor")
+        if not np.array_equal(information, np.kron(self.spatial_map, self.design_root)):
+            raise ValueError("saved source information root differs from its original factor compression")
+
+    def record(self):
+        payload = {"schema": "n2p3_spatial_source_compression/1"}
+        for name in ("spatial_map", "observed_noise_root", "design_q", "design_root", "nuisance_q", "nuisance_root"):
+            value = getattr(self, name)
+            payload[name] = None if value is None else value.tolist()
+        return {**payload, "artifact_sha256": metadata_digest(payload)}
+
+    @classmethod
+    def from_record(cls, record):
+        names = ("spatial_map", "observed_noise_root", "design_q", "design_root", "nuisance_q", "nuisance_root")
+        compression = cls(*(record[name] for name in names))
+        if metadata_digest(compression.record()) != metadata_digest(record):
+            raise ValueError("saved source compression identity differs from its original QR operands")
+        return compression
+
+
+@dataclass(frozen=True)
+class _SpatialStructuralFactors:
+    """Original physical observation/D/Z factors for one actual C record.
+
+    The floating operator is a saved numerical-generation receipt. Structural
+    rank belongs to exact products of the original factors, not to that rounded
+    operator. Declared CAR uses its invertible exact EEG-difference chart.
+    """
+
+    observation: SpatialObservation
+    design: np.ndarray = field(repr=False, compare=False)
+    nuisance: np.ndarray | None = field(default=None, repr=False, compare=False)
+    compression: _SpatialCompression | None = field(default=None, repr=False, compare=False)
+    spatial_map: tuple[tuple[Fraction, ...], ...] = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self):
+        if not isinstance(self.observation, SpatialObservation):
+            raise TypeError("physical C factors require an owned observation")
+        design = _matrix(self.design, "original structural C response design")
+        nuisance = self.nuisance
+        if nuisance is not None:
+            nuisance = _matrix(nuisance, "original structural C nuisance")
+            if len(nuisance) != len(design):
+                raise ValueError("physical C design and nuisance must share actual rows")
+            nuisance = _immutable_array(nuisance)
+        observation = self.observation
+        mapping = (observation._structural_matrix()
+                   if observation.declaration["kind"] == "average_actual_EEG" else observation.matrix)
+        exact = tuple(tuple(Fraction.from_float(float(value)) for value in row) for row in mapping)
+        object.__setattr__(self, "design", _immutable_array(design))
+        object.__setattr__(self, "nuisance", nuisance)
+        object.__setattr__(self, "spatial_map", exact)
+
+    @property
+    def observation_coordinates(self):
+        return ("declared_CAR_exact_EEG_differences"
+                if self.observation.declaration["kind"] == "average_actual_EEG"
+                else "original_binary64_observation_matrix")
+
+    @property
+    def shape(self):
+        rank = len(self.spatial_map)
+        nuisance_width = 0 if self.nuisance is None else self.nuisance.shape[1]
+        return (rank * len(self.design),
+                self.design.shape[1] * len(self.observation.layout.channels) + rank * nuisance_width)
+
+    def exact_rows(self):
+        design = tuple(tuple(Fraction.from_float(float(value)) for value in row) for row in self.design)
+        nuisance = (() if self.nuisance is None else
+                    tuple(tuple(Fraction.from_float(float(value)) for value in row) for row in self.nuisance))
+        nuisance_width = 0 if self.nuisance is None else self.nuisance.shape[1]
+        for output, spatial_row in enumerate(self.spatial_map):
+            for time, temporal_row in enumerate(design):
+                beta = tuple(a * value for a in spatial_row for value in temporal_row)
+                local = [Fraction(0)] * (len(self.spatial_map) * nuisance_width)
+                if nuisance_width:
+                    local[output * nuisance_width:(output + 1) * nuisance_width] = nuisance[time]
+                yield (*beta, *local)
+
+    def numerical_operator(self):
+        mapping = self.observation._structural_matrix()
+        operator = np.kron(mapping, self.design)
+        return (np.column_stack((operator, np.kron(np.eye(len(mapping)), self.nuisance)))
+                if self.nuisance is not None else operator)
+
+    def record(self):
+        payload = {"schema": "n2p3_spatial_physical_C_factors/1",
+            "observation_sha256": metadata_digest(self.observation.record()),
+            "observation_coordinates": self.observation_coordinates,
+            "spatial_map": [[str(value) for value in row] for row in self.spatial_map],
+            "design": self.design.tolist(),
+            "nuisance": None if self.nuisance is None else self.nuisance.tolist(),
+            "source_compression": None if self.compression is None else self.compression.record(),
+            "coefficient_order": "column_major_response_by_native_EEG",
+            "nuisance_order": "record_local_column_major_response_by_observed_coordinate"}
+        return {**payload, "artifact_sha256": metadata_digest(payload)}
+
+    @classmethod
+    def from_record(cls, record, *, observation):
+        compression = (None if record["source_compression"] is None
+                       else _SpatialCompression.from_record(record["source_compression"]))
+        factor = cls(observation, record["design"], record["nuisance"], compression)
+        if metadata_digest(factor.record()) != metadata_digest(record):
+            raise ValueError("saved physical C factors differ from their original factor-generation relations")
+        return factor
 
 
 def _posterior_qr(prior, roots, responses):
@@ -904,6 +1211,7 @@ class SpatialSignalPosterior:
     structural_operators: tuple[np.ndarray, ...] = field(repr=False, compare=False, default=())
     structural_null_basis: tuple[tuple[Fraction, ...], ...] = field(repr=False, compare=False, default=())
     structural_binding: dict = field(default_factory=dict)
+    structural_factors: tuple[_SpatialStructuralFactors, ...] = field(repr=False, compare=False, default=())
     restore_state: InitVar[dict | None] = None
     mean: np.ndarray = field(init=False, repr=False, compare=False)
     covariance: np.ndarray = field(init=False, repr=False, compare=False)
@@ -960,18 +1268,33 @@ class SpatialSignalPosterior:
             raise ValueError("posterior needs actual fitted noise provenance")
         operators = tuple(_matrix(operator, "saved structural C operator") for operator in self.structural_operators)
         if len(operators) != len(roots):
-            raise ValueError("posterior needs one exact structural C operator per actual fit record")
-        null_basis, structural_resolution = _exact_structural_null(operators, width)
+            raise ValueError("posterior needs one structural C numerical receipt per actual fit record")
+        factors = tuple(self.structural_factors)
+        if len(factors) != len(roots) or any(not isinstance(factor, _SpatialStructuralFactors) for factor in factors):
+            raise ValueError("posterior needs original physical C factors for every actual fit record")
+        _structural_dimensions(factors, width)
+        for factor, operator, record, root in zip(factors, operators, self.fit_records, roots, strict=True):
+            observed = factor.observation
+            nuisance_width = 0 if factor.nuisance is None else factor.nuisance.shape[1]
+            if (metadata_digest(observed.record()) != metadata_digest(record["observation"])
+                    or factor.design.shape != (record["samples"], record["response_dimensions"])
+                    or factor.design.shape[1] != self.prior.mean.shape[0]
+                    or nuisance_width != record["nuisance_dimensions"]
+                    or root.shape != (len(factor.spatial_map) * min(factor.design.shape), width)
+                    or record["compression"]["physical_structural_factors_sha256"] != factor.record()["artifact_sha256"]
+                    or not np.array_equal(operator, factor.numerical_operator())):
+                raise ValueError("saved structural C identifiability binding differs from its physical factor generation")
+        null_basis, structural_resolution = _exact_structural_null(factors, width)
         saved_basis = tuple(tuple(Fraction(value) for value in vector) for vector in self.structural_null_basis)
         if saved_basis != null_basis:
             raise ValueError("saved structural C null basis differs from its exact actual design relation")
         if (not isinstance(self.structural_binding, dict)
                 or self.structural_binding.get("operator_sha256") != _structural_operator_digest(operators)
-                or self.structural_binding.get("arithmetic") != "exact_binary64_fraction_rref"
+                or self.structural_binding.get("factors_sha256") != metadata_digest([factor.record() for factor in factors])
+                or self.structural_binding.get("arithmetic") != "exact_binary64_physical_factor_fraction_rref"
                 or self.structural_binding.get("resolution") != structural_resolution
                 or tuple(self.structural_binding.get("observation_coordinates", ())) != tuple(
-                    "declared_CAR_exact_EEG_differences" if record["observation"]["declaration"]["kind"] == "average_actual_EEG"
-                    else "actual_normalized_observation" for record in self.fit_records)):
+                    factor.observation_coordinates for factor in factors)):
             raise ValueError("saved structural C identifiability binding differs from actual operators")
         require_sha256(self.noise_binding.get("authority_sha256"), "fitted noise authority")
         if restore_state is not None:
@@ -988,6 +1311,10 @@ class SpatialSignalPosterior:
             if (record["compression"]["native_noise_root_sha256"] != native_root_digest
                     or record["compression"]["noise_factorization"] != "actual_range_square_root_pushforward_QR"):
                 raise ValueError("actual C likelihood differs from its frozen native noise factorization")
+        for factor, information in zip(factors, roots, strict=True):
+            if not isinstance(factor.compression, _SpatialCompression):
+                raise ValueError("physical C factors require their original source compression witness")
+            factor.compression.validate(factor, information, native_root)
         state = (_posterior_qr(self.prior, roots, responses) if restore_state is None
                  else _posterior_state(self.prior, roots, responses, restore_state))
         root, response, mean, covariance, q, scales = state
@@ -1007,13 +1334,15 @@ class SpatialSignalPosterior:
         object.__setattr__(self, "structural_operators", tuple(frozen_array(operator) for operator in operators))
         object.__setattr__(self, "structural_null_basis", null_basis)
         object.__setattr__(self, "structural_binding", freeze_metadata(self.structural_binding))
+        object.__setattr__(self, "structural_factors", factors)
         object.__setattr__(self, "fit_records", tuple(freeze_metadata(r) for r in self.fit_records))
         object.__setattr__(self, "noise_binding", freeze_metadata(self.noise_binding))
 
     @classmethod
     def fit(cls, prior, blocks, *, native_noise_covariance, noise_binding):
         noise, native_root = _spd(native_noise_covariance, "native residual noise")
-        roots, responses, records, structural_operators = [], [], [], []
+        blocks = tuple(blocks)
+        prepared_factors = []
         for block in blocks:
             if (not isinstance(block, SpatialResponseBlock)
                     or block.authorization["fit_scope"] not in {"target_calibration", "source_training"}
@@ -1021,28 +1350,32 @@ class SpatialSignalPosterior:
                     or block.design.shape[1] != prior.mean.shape[0]
                     or block.authorization["dictionary_sha256"] != prior.design_binding["dictionary_sha256"]):
                 raise ValueError("C actual input differs from the bound spatial signal prior")
-            root, response, *_ = block._compressed(noise, native_root)
+            prepared_factors.append(_SpatialStructuralFactors(block.observation, block.design, block.nuisance))
+        # Admit the actual shared/local dimensions before constructing any dense
+        # structural Kronecker matrix or the original compression QR witnesses.
+        _structural_dimensions(prepared_factors, prior.mean.size)
+        roots, responses, records, structural_operators, structural_factors = [], [], [], [], []
+        for block, prepared in zip(blocks, prepared_factors, strict=True):
+            root, response, *_, compression = block._compressed(noise, native_root, return_factors=True)
             roots.append(root)
             responses.append(response)
+            factors = replace(prepared, compression=compression)
+            structural_factors.append(factors)
             record = block.record()
             record["compression"] = {"native_noise_sha256": array_digest(noise),
                                      "native_noise_root_sha256": array_digest(native_root),
                                      "noise_factorization": "actual_range_square_root_pushforward_QR",
+                                     "physical_structural_factors_sha256": factors.record()["artifact_sha256"],
                                      "likelihood_sha256": array_digest(root, response)}
             records.append(record)
-            mapping = block.observation._structural_matrix()
-            operator = np.kron(mapping, block.design)
-            nuisance = (np.kron(np.eye(mapping.shape[0]), block.nuisance)
-                        if block.nuisance is not None else np.empty((len(operator), 0)))
-            structural_operators.append(np.column_stack((operator, nuisance)))
-        null_basis, structural_resolution = _exact_structural_null(structural_operators, prior.mean.size)
+            structural_operators.append(factors.numerical_operator())
+        null_basis, structural_resolution = _exact_structural_null(structural_factors, prior.mean.size)
         structural_binding = {"operator_sha256": _structural_operator_digest(structural_operators),
-            "arithmetic": "exact_binary64_fraction_rref", "resolution": structural_resolution,
-            "observation_coordinates": ["declared_CAR_exact_EEG_differences"
-                if record["observation"]["declaration"]["kind"] == "average_actual_EEG"
-                else "actual_normalized_observation" for record in records]}
+            "factors_sha256": metadata_digest([factor.record() for factor in structural_factors]),
+            "arithmetic": "exact_binary64_physical_factor_fraction_rref", "resolution": structural_resolution,
+            "observation_coordinates": [factor.observation_coordinates for factor in structural_factors]}
         return cls(prior, noise, tuple(roots), tuple(responses), tuple(records), noise_binding,
-                   tuple(structural_operators), null_basis, structural_binding)
+                   tuple(structural_operators), null_basis, structural_binding, tuple(structural_factors))
 
     def log_density(self, block):
         """Exact predictive likelihood on actual spatial range.
@@ -1103,6 +1436,7 @@ class SpatialSignalPosterior:
                  "responses": [response.tolist() for response in self.responses],
                  "fit_records": json.loads(json.dumps(self.fit_records)),
                  "structural_operators": [operator.tolist() for operator in self.structural_operators],
+                 "structural_factors": [factor.record() for factor in self.structural_factors],
                  "structural_null_basis": [[[value.numerator, value.denominator] for value in vector]
                                             for vector in self.structural_null_basis],
                  "structural_binding": json.loads(json.dumps(self.structural_binding)),
@@ -1138,11 +1472,14 @@ class SpatialSignalPosterior:
         state = {name: payload[name] for name in state_names}
         structural_basis = tuple(tuple(Fraction(numerator, denominator) for numerator, denominator in vector)
                                  for vector in payload["structural_null_basis"])
+        structural_factors = tuple(_SpatialStructuralFactors.from_record(factor,
+            observation=SpatialObservation.from_record(record["observation"]))
+            for factor, record in zip(payload["structural_factors"], payload["fit_records"], strict=True))
         model = cls(SpatialSignalPrior.from_record(payload["prior"]), payload["native_noise_covariance"],
                     tuple(payload["information_roots"]), tuple(payload["responses"]),
                     tuple(payload["fit_records"]), payload["noise_binding"],
                     tuple(payload["structural_operators"]), structural_basis,
-                    payload["structural_binding"], restore_state=state)
+                    payload["structural_binding"], structural_factors, restore_state=state)
         if payload["numeric_sha256"] != array_digest(model.mean, model.covariance, model.native_noise_covariance,
             model.precision_root, model.response, model.orthogonal_factor, model.qr_column_scales, model.native_noise_root):
             raise ValueError("saved spatial posterior numeric identity mismatch")
@@ -1259,9 +1596,7 @@ class ERPPhysicalEffect:
         if payload.get("schema") != "n2p3_physical_ERP_effect_state/2" or metadata_digest(payload) != digest:
             raise ValueError("physical effect state identity mismatch")
         layout = SpatialLayout.from_record(payload["layout"])
-        observed = payload["observation"]
-        observation = SpatialObservation(layout, observed["matrix"], tuple(observed["output_names"]),
-                                         observed["output_reference"], observed["declaration"])
+        observation = SpatialObservation.from_record(payload["observation"])
         effect = cls(layout, payload["design_binding"], payload["basis"], payload["waveform_weights"],
                      payload["grid_seconds"], observation)
         if metadata_digest(effect.record()) != metadata_digest(record):
@@ -1523,34 +1858,9 @@ class ERPChannelEstimate:
         and full native noise factor, then receives its common effect identity.
         """
         source_effect.validate_prior(posterior.prior)
-        source_kinds = {record["observation"]["declaration"]["kind"] for record in posterior.fit_records}
-        if not source_kinds <= {"native_EEG", "measured_reference", "average_actual_EEG"}:
-            raise SpatialPriorIdentificationError("transport_source_physical_structure_requires_declared_observation",
-                actual_source_observation_kinds=sorted(source_kinds),
-                capability="native_measured_reference_or_declared_CAR_source_likelihood")
-        # The posterior's stored likelihood is immutable. Its observation
-        # metadata must still prove this new physical capability at ingress;
-        # a re-signed kind string cannot authorize arbitrary generic matrices.
-        for record, operator, information in zip(posterior.fit_records, posterior.structural_operators,
-                                                  posterior.information_roots, strict=True):
-            saved = record["observation"]
-            observation = SpatialObservation(SpatialLayout.from_record(saved["layout"]), saved["matrix"],
-                tuple(saved["output_names"]), saved["output_reference"], dict(saved["declaration"]))
-            if metadata_digest(observation.record()) != metadata_digest(saved):
-                raise ValueError("source physical observation differs from its actual declared relations")
-            mapping = observation._structural_matrix()
-            samples, width, rank = record["samples"], record["response_dimensions"], len(mapping)
-            nuisance_width = record["nuisance_dimensions"]
-            if (operator.shape != (rank * samples, width * len(observation.layout.channels) + rank * nuisance_width)
-                    or information.shape != (rank * min(samples, width), posterior.prior.mean.size)
-                    or width != posterior.prior.mean.shape[0] or np.any(~np.isin(mapping, (-1., 0., 1.)))):
-                raise ValueError("source physical observation differs from its actual structural operator dimensions")
-            row, channel = np.argwhere(mapping != 0)[0]
-            design = operator[row * samples:(row + 1) * samples, channel * width:(channel + 1) * width] / mapping[row, channel]
-            nuisance = operator[:samples, posterior.prior.mean.size:posterior.prior.mean.size + nuisance_width]
-            expected = np.column_stack((np.kron(mapping, design), np.kron(np.eye(rank), nuisance)))
-            if not np.array_equal(operator, expected):
-                raise ValueError("source physical observation differs from its actual structural operator relation")
+        # Fit/load admitted the original observation, D/Z factors, numerical
+        # generation and exact null certificate once. BLUE consumes that same
+        # immutable physical authority for general as well as declared maps.
         transport = ERPPhysicalTransport.between(source_effect, destination_effect)
         local = cls._from_owned_posterior(posterior, effect=transport.local_effect,
             dependence=dependence, temporal_noise=temporal_noise, physical_transport=transport)
