@@ -769,7 +769,7 @@
     "next": "full_requested_target_matrix_under_cloud_owner"
   },
   "public_candidate_input_authority": {
-    "status": "physical_field_direction_independently_accepted_implementation_in_progress",
+    "status": "original_metadata_full_H13_and_shared_decoder_record_issuer_accepted;new_NN_and_history_verticals_in_progress",
     "original_review_binding_sha256": "af22c05fdef66e2eb46a6ee3e89aac43c448bf39e4f61707900dd43ab9a6cc8e",
     "accepted_direction": {
       "Huebner2017": "Original vmrk physical set and optical clock plus exact per-record NEMAR join; generic32-choice dataset contract/record-aware C/test prefix required. Existing base remains binary.",
@@ -1027,6 +1027,591 @@
     "shared_ingress": "one_record_aware_compiler_with_typed_original_dataset_adapters;no_virtual_continuous_raw_concatenation",
     "BI2014a_numeric_source": "MAT and CSV have exact marker/label/sample identities but materially different rounded EEG; new MAT input producer independent from original CSV",
     "BI2015a_next": "actual_stimulus_instance_log_and_verified_EEG_clock_join",
-    "next": "complete_adapter_compiler_caller_model_capsule_and_parent_acceptance"
+    "next": "complete_adapter_compiler_caller_model_capsule_and_parent_acceptance",
+    "full_H13_metadata_artifact_graph": {
+      "status": "accepted_metadata_artifact_graph",
+      "root_reused_verification": {
+        "manifest_sha256": "a991e29d6cefdf8baef3a47b11ead6505135c24e19b13db3a19cba19f3b787cc",
+        "participant_envelope_byte_receipts": 13
+      },
+      "independent_roster_reduction": {
+        "original_records": 351,
+        "original_scheduled_frames": 167076,
+        "record_with_EEG": 342,
+        "observed_NEMAR_events": 162757,
+        "missing_Optic_frames_with_EEG": 35,
+        "physical_character_requests": 2457,
+        "last_session_physical_character_requests": 819,
+        "last_session_characters_with_EEG": 819,
+        "last_session_characters_with_missing_Optic": 5,
+        "record_without_EEG": 9
+      },
+      "original_metadata_acquisition_roles": {
+        "original_local_truncated_zip_complete_member": 236,
+        "NEMAR_original_sourcedata_header_exact_official_member_crc": 261,
+        "official_http206_original_metadata_member": 205
+      },
+      "linked_original_members_checked": 702,
+      "missing_EEG_record_keys": [
+        [
+          6,
+          1,
+          0
+        ],
+        [
+          6,
+          1,
+          1
+        ],
+        [
+          6,
+          1,
+          2
+        ],
+        [
+          6,
+          1,
+          3
+        ],
+        [
+          6,
+          1,
+          4
+        ],
+        [
+          6,
+          1,
+          5
+        ],
+        [
+          6,
+          1,
+          6
+        ],
+        [
+          6,
+          1,
+          7
+        ],
+        [
+          6,
+          1,
+          8
+        ]
+      ],
+      "source_authority": {
+        "participant_envelope_manifest.json": {
+          "path": "D:\\BCI\\artifacts\\public-candidate-marker-authority\\Huebner2017\\zenodo-5831826\\participant_envelope_manifest.json",
+          "bytes": 5044,
+          "sha256": "a991e29d6cefdf8baef3a47b11ead6505135c24e19b13db3a19cba19f3b787cc",
+          "crc32": "697de08b"
+        },
+        "original_member_manifest.json": {
+          "path": "D:\\BCI\\artifacts\\public-candidate-marker-authority\\Huebner2017\\zenodo-5831826\\original_member_manifest.json",
+          "bytes": 983895,
+          "sha256": "fd53c9dbe934ea521affa96bba4df2cc4b6ac14f14c797c4962437512a89a4ad",
+          "crc32": "3b8d0920"
+        },
+        "physical_authority_readout.json": {
+          "path": "D:\\BCI\\artifacts\\public-candidate-marker-authority\\Huebner2017\\zenodo-5831826\\physical_authority_readout.json",
+          "bytes": 9495248,
+          "sha256": "4303464e4a2e31c38215dd8b7ccdf3add6b4f6052d330db7326555ed871d11f7",
+          "crc32": "61385a8a"
+        },
+        "parent_only_truth_ledger.json": {
+          "path": "D:\\BCI\\artifacts\\public-candidate-marker-authority\\Huebner2017\\zenodo-5831826\\parent_only_truth_ledger.json",
+          "bytes": 824202,
+          "sha256": "98fcbbcfe8530d5901f3a75f9f2c5334752026caced6a094704a4ed7317808fe",
+          "crc32": "f4064c7c"
+        }
+      },
+      "new_code_owner_declaration_producer": {
+        "roster": {
+          "path": "D:\\BCI\\artifacts\\huebner-original-inputs\\full-original-13\\roster.json",
+          "bytes": 83686,
+          "sha256": "ce370b4152a8e6f9fba9cad6efb357db3503fde97d89c219962836ce35ba08fd",
+          "crc32": "63c061e3"
+        },
+        "participant_declarations_checked": 13,
+        "original_acquisition_keys_preserved": 351,
+        "BDF_SHA_role": "owner supplied342 measured payload digests; this graph review checks bindings/path/size, does not rehash EEG",
+        "separate_from_original_marker_metadata_authority": true
+      },
+      "actual_actions": {
+        "metadata_files_hashed": 2358,
+        "metadata_bytes_hashed": 100511213,
+        "stored_central_directories_checked": 13,
+        "original_compressed_metadata_slices_rehashed_without_inflate": 236,
+        "original_members_SHA_bytes_CRC_receipt_central_checked": 702,
+        "network_fetches": 0,
+        "production_BDF_reader_calls": 0,
+        "BDF_payload_reads": 0,
+        "EEG_hashes": 0,
+        "marker_full_redecodes": 0,
+        "fits": 0,
+        "old_test_runs": 0,
+        "original_archive_writes": 0
+      },
+      "finding_count": 0,
+      "checker_source": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\CHECK_FULL_HUEBNER_ARTIFACT_GRAPH.py",
+        "sha256": "a1e84256615599128c3ae48f86b554e95ce72600b81efd36e4118f81c31d907a",
+        "bytes": 16081
+      },
+      "actual_execution": {
+        "OS_exit": 0,
+        "command": "D:/BCI/n2p3-net/.venv/Scripts/python.exe -X utf8 tmp/CHECK_FULL_HUEBNER_ARTIFACT_GRAPH.py",
+        "tool_output_chunk": "77349c",
+        "wall_time_seconds": 6.0118989
+      }
+    },
+    "updated_review_binding": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\PUBLIC_CANDIDATE_ADAPTER_REVIEW.binding.json",
+      "bytes": 20292,
+      "sha256": "f5688a209647537ee25c77c1166860214ec5ae5704016963d64b70e56f3cfe6d"
+    }
+  },
+  "base_binary_complete": {
+    "status": "accepted_complete_original_binary_programme_and_zero_fit_recovery",
+    "execution_binding": "doc/assets/research_resume_20261011/binary_finalizer_recovery_binding.json",
+    "provenance": {
+      "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\finalizer-budget-repair\\cloud-results\\zero-fit-recovery\\FINALIZATION_PROVENANCE.binding.json",
+      "bytes": 107931,
+      "sha256": "2a5d0230a1a0656c4d603f1e264bc399faa1d5a87d8033961824bb230b4e3b6b"
+    },
+    "actual_exit": {
+      "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\finalizer-budget-repair\\cloud-results\\zero-fit-recovery\\zero_fit.actual_exit.json",
+      "bytes": 1918,
+      "sha256": "7767b3daeb73dce55fe024f4ed3f556d537dce38ce960105a3d0844e0d52e047"
+    },
+    "requested": 160,
+    "completed": 128,
+    "protocol_unavailable": 32,
+    "original_target_fits": 120,
+    "recovery_fits": 0,
+    "actual_exit_code": 0,
+    "owned_live_processes": 0,
+    "writer_repair_commit": "5631d7e96757fc5fe581c97a5413ee00c123d9c2",
+    "root_combination_writer_checks": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\FINALIZER_BUDGET_ROOT\\receipt.json",
+      "bytes": 1910,
+      "sha256": "f30e51e940acf563d93e95f34fbf9a8308c2a9ed8adaada0de78937abbc11442"
+    },
+    "root_combination_scope": "three current-root dependency cases; original f3 writer transition separately retained",
+    "analysis_files": {
+      "binary_science_summary.json": {
+        "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\source-run\\binary-analysis\\binary_science_summary.json",
+        "bytes": 65455,
+        "sha256": "628061268c1be0fef1873a2a60c6acb21244611d711a9321ef7eceb8bffb5f1f"
+      },
+      "binary_science_metrics.json": {
+        "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\source-run\\binary-analysis\\binary_science_metrics.json",
+        "bytes": 398231,
+        "sha256": "d8557ab2ee1f07ca8585e5f2a10658f5fbdd72975f05fc20e7357beb38f12b36"
+      },
+      "binary_science_analysis.zh.md": {
+        "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\source-run\\binary-analysis\\binary_science_analysis.zh.md",
+        "bytes": 11579,
+        "sha256": "b54df2576a64806daa39a3378895f099d521f9a50442f531169777519bd9e04f"
+      }
+    },
+    "root_analysis_reduction": {
+      "same_input_digests_checked": 24,
+      "all24_original_statistics_AUC_deltas_exact": true,
+      "K": [
+        200,
+        800,
+        2000
+      ],
+      "mean_AUC_delta": [
+        0.03916186395862653,
+        0.010828314017932106,
+        0.00702274676059958
+      ],
+      "improved_declined": [
+        [
+          5,
+          3
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          5,
+          3
+        ]
+      ],
+      "K200_source_and_scratch_half_xdawn_pool_NLL_Brier_worse_each8": true,
+      "new_fits": 0,
+      "model_decodes": 0,
+      "large_aggregate_reads": 0
+    },
+    "next": "full_requested_candidate_and_remaining_study_matrix_under_cloud_owner"
+  },
+  "record_candidate_issuer": {
+    "status": "accepted_original_record_decoder_C_issuer_classic_and_input_capsule_software_scope",
+    "author_commits": [
+      "0c77f41283d83974feb68598558d700507b2e0d6",
+      "fa8d7de5b1e166094c139ee8351bdbbd7db03919",
+      "7659063"
+    ],
+    "integrated_commits": [
+      "527e1c1",
+      "5e2e32f",
+      "8e1d8ca"
+    ],
+    "root_review": "original markers and clocks; typed metadata ownership; global label K and native per-record scopes; trial projections; fit receipts; raw and inner replay; capsule restoration and parent truth",
+    "axes": {
+      "Standards": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_SHARED_STANDARDS_REVIEW.md",
+        "bytes": 22716,
+        "sha256": "c92c4c0c6522d094685b27b810c8df5757d19375bcb8d3493cdb57e4d418a661",
+        "archive_member": "root/HUEBNER_SHARED_STANDARDS_REVIEW.md",
+        "role": "fixed 765 review bytes at issuer acceptance; subsequent scope reviews append to the live report"
+      },
+      "Spec": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_SHARED_SPEC_REVIEW.md",
+        "bytes": 16253,
+        "sha256": "1e7a673b3375fcdcc51ba66688aba991b0e39a0942a6331f423e77b37054f168",
+        "archive_member": "root/HUEBNER_SHARED_SPEC_REVIEW.md",
+        "role": "fixed 765 review bytes at issuer acceptance; subsequent scope reviews append to the live report"
+      }
+    },
+    "review_finding_closure": {
+      "Standards": [
+        "S1 BDF admitted file identity retained",
+        "S2 metadata deep owned and independent exports"
+      ],
+      "Spec": [
+        "F1 legacy/new K0 authority",
+        "F2 all profile geometry before signal reads",
+        "F3 canonical original marker/NEMAR identity join"
+      ]
+    },
+    "runtime_source_identity": {
+      "commit": "7659063",
+      "runtime_PID": 23372,
+      "worker_PID": 12428,
+      "records": [
+        {
+          "path": "src/data/candidate_input.py",
+          "runtime_sha256": "6c97a6548a4134ef582b0e5bb3244c7b58a77672b07571be0b21a716a63df2ba",
+          "canonical_sha256": "6c97a6548a4134ef582b0e5bb3244c7b58a77672b07571be0b21a716a63df2ba",
+          "only_line_endings_differ": true,
+          "root_raw_sha256": "f581ef2ed4452e1fb59435c194d439ab1e49c9aa40fde5329fc82eb38d4c2c23",
+          "root_canonical_equal": true
+        },
+        {
+          "path": "src/data/candidate_task.py",
+          "runtime_sha256": "478fdf885f4b8ca256bb14ba95862569fd8c6b29afafbba61a75355b4c6a351c",
+          "canonical_sha256": "ae2c268e6d30e42ed4fdb7b973631c215e5247ef8ecd9bf47ade2b1c165bf547",
+          "only_line_endings_differ": true,
+          "root_raw_sha256": "478fdf885f4b8ca256bb14ba95862569fd8c6b29afafbba61a75355b4c6a351c",
+          "root_canonical_equal": true
+        },
+        {
+          "path": "src/data/huebner2017_candidate.py",
+          "runtime_sha256": "8a18318c63456f054278ac98570255a9ebe78287f656cca9717c3536ad2899b5",
+          "canonical_sha256": "8a18318c63456f054278ac98570255a9ebe78287f656cca9717c3536ad2899b5",
+          "only_line_endings_differ": true,
+          "root_raw_sha256": "3ee3432d370e8208fa69d72580cc8f1f56ff25777a8b4517e541b221bf59319e",
+          "root_canonical_equal": true
+        },
+        {
+          "path": "src/transfer/ensemble_views.py",
+          "runtime_sha256": "403bddb7b85deeef792487dbae430ecd000fd70deb0059a9dc7d619f2c6a970c",
+          "canonical_sha256": "3efc6fc7405fea029b03331aadfe7c326a5871761bfbd08bb3b3b3531d9d1ac2",
+          "only_line_endings_differ": true,
+          "root_raw_sha256": "3efc6fc7405fea029b03331aadfe7c326a5871761bfbd08bb3b3b3531d9d1ac2",
+          "root_canonical_equal": true
+        },
+        {
+          "path": "src/research/prefix_replay_inputs.py",
+          "runtime_sha256": "402ca589602edb98863d5ffeac573e5f0693d6dea1b0d1af41b532b0db00127e",
+          "canonical_sha256": "f981a38b9dd93f0df0ad8fae2d5840ebad0912487637e920af574b61d8e26287",
+          "only_line_endings_differ": true,
+          "root_raw_sha256": "402ca589602edb98863d5ffeac573e5f0693d6dea1b0d1af41b532b0db00127e",
+          "root_canonical_equal": true
+        }
+      ]
+    },
+    "new_actual_capsule": {
+      "receipt": {
+        "path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_CAPSULE_INGRESS_DELTA02\\receipt.json",
+        "bytes": 2402,
+        "sha256": "aaba2082ba909ecae03dc3ae121bdee1f2a7f05dd03c4623e249e3daede0c811"
+      },
+      "cloud_run": {
+        "path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_CAPSULE_INGRESS_DELTA02\\cloud_run.json",
+        "bytes": 3042,
+        "sha256": "c73da350e3a244e3fd93cfac80c73f7334248a6fc2b6f9d9dc31e6696d9a55ad"
+      },
+      "parent_pid": 23372,
+      "worker_pid": 12428,
+      "task_completed": true,
+      "OS_exit": 0,
+      "owned_after": 0,
+      "fits": 0,
+      "C_labels_per_original_record": [
+        476,
+        24
+      ],
+      "raw_blob_bytes": 71812312,
+      "requested_future_characters": 7,
+      "independent_complete_characters": 6
+    },
+    "original_classic_evidence": "eight classic C fits use earlier executed producer; never resigned as 765 or root execution",
+    "root_legacy_integration": {
+      "receipt": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_SHARED_ROOT_INTEGRATION\\receipt.json",
+        "bytes": 2145,
+        "sha256": "56997db0c0f0904b2e39332e84a532226c4581254fa494a3f7f3f4c9c8d905d1"
+      },
+      "cases": 2,
+      "OS_exit": 0,
+      "pid": 49968,
+      "seconds": 10.240422100003343,
+      "source_unchanged": true,
+      "public_fits": 0
+    },
+    "delivery_archive": {
+      "schema": "n2p3_huebner_shared_issuer_delivery_archive/1",
+      "source_commits": [
+        "fa8d7de5b1e166094c139ee8351bdbbd7db03919",
+        "7659063"
+      ],
+      "members": [
+        {
+          "member": "author/HUEBNER_CAPSULE/cloud_run.json",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_CAPSULE\\cloud_run.json",
+          "bytes": 3015,
+          "sha256": "e3aadd4c51eea387f0d6baf051c35c447089b69eca17c25aee4954e4bf369b73"
+        },
+        {
+          "member": "author/HUEBNER_CAPSULE/receipt.json",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_CAPSULE\\receipt.json",
+          "bytes": 2354,
+          "sha256": "52240707f123992be3a63bb888860f3e88969b3e994b490e11e621af5b8ca0f8"
+        },
+        {
+          "member": "author/HUEBNER_CAPSULE_INGRESS_DELTA/cloud_run.json",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_CAPSULE_INGRESS_DELTA\\cloud_run.json",
+          "bytes": 2968,
+          "sha256": "b8605ece51d0fff837d194c81ad52f4c2bb1e543d86e7371d83473bf2b307840"
+        },
+        {
+          "member": "author/HUEBNER_CAPSULE_INGRESS_DELTA02/actual_request.json",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_CAPSULE_INGRESS_DELTA02\\actual_request.json",
+          "bytes": 5182,
+          "sha256": "f3b1f4db72b3198c524144fafd6e276312d722ea84e46acbd3a6def56ab83f11"
+        },
+        {
+          "member": "author/HUEBNER_CAPSULE_INGRESS_DELTA02/cloud_run.json",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_CAPSULE_INGRESS_DELTA02\\cloud_run.json",
+          "bytes": 3042,
+          "sha256": "c73da350e3a244e3fd93cfac80c73f7334248a6fc2b6f9d9dc31e6696d9a55ad"
+        },
+        {
+          "member": "author/HUEBNER_CAPSULE_INGRESS_DELTA02/inputs/capsule.json",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_CAPSULE_INGRESS_DELTA02\\inputs\\capsule.json",
+          "bytes": 1573934,
+          "sha256": "6df1f812e9d6e3ebdc909a69b7738ae61711410ea8a6dacbac32978ce4c8d112"
+        },
+        {
+          "member": "author/HUEBNER_CAPSULE_INGRESS_DELTA02/receipt.json",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_CAPSULE_INGRESS_DELTA02\\receipt.json",
+          "bytes": 2402,
+          "sha256": "aaba2082ba909ecae03dc3ae121bdee1f2a7f05dd03c4623e249e3daede0c811"
+        },
+        {
+          "member": "author/HUEBNER_DELIVERY/producer_source/experiments/prepare_huebner_candidate_sources.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_DELIVERY\\producer_source\\experiments\\prepare_huebner_candidate_sources.py",
+          "bytes": 898,
+          "sha256": "3670a780c630e7afc1f0c6ceff753f73acf36718b4021fe00e538758941995e9"
+        },
+        {
+          "member": "author/HUEBNER_DELIVERY/producer_source/experiments/run_candidate_ensemble_study.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_DELIVERY\\producer_source\\experiments\\run_candidate_ensemble_study.py",
+          "bytes": 173711,
+          "sha256": "fdfdcb2860dd71775989a42e902d3a1f5f08ece3f0ac0355f812b96d526ef15b"
+        },
+        {
+          "member": "author/HUEBNER_DELIVERY/producer_source/src/data/candidate_input.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_DELIVERY\\producer_source\\src\\data\\candidate_input.py",
+          "bytes": 6897,
+          "sha256": "8eaed5eba106a6feb3bd68891e578aa8baf207953018e6e1c29ce58fff76eca4"
+        },
+        {
+          "member": "author/HUEBNER_DELIVERY/producer_source/src/data/candidate_task.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_DELIVERY\\producer_source\\src\\data\\candidate_task.py",
+          "bytes": 31362,
+          "sha256": "478fdf885f4b8ca256bb14ba95862569fd8c6b29afafbba61a75355b4c6a351c"
+        },
+        {
+          "member": "author/HUEBNER_DELIVERY/producer_source/src/data/huebner2017_candidate.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_DELIVERY\\producer_source\\src\\data\\huebner2017_candidate.py",
+          "bytes": 17719,
+          "sha256": "99579c3432ff2a3edc2f4acbcfd9b727e8e2b938536b31a3aaa2542495395f90"
+        },
+        {
+          "member": "author/HUEBNER_DELIVERY/producer_source/src/data/huebner2017_preparation.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_DELIVERY\\producer_source\\src\\data\\huebner2017_preparation.py",
+          "bytes": 4269,
+          "sha256": "da1e6dd520c020b748037003d8151310454413fcb9a0df9a3673f6cfed0185fd"
+        },
+        {
+          "member": "author/HUEBNER_DELIVERY/producer_source/src/research/prefix_inner_replay.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_DELIVERY\\producer_source\\src\\research\\prefix_inner_replay.py",
+          "bytes": 59452,
+          "sha256": "807f874d80c00801e4b98f3949c01dc314294867185092220192b645d74b921d"
+        },
+        {
+          "member": "author/HUEBNER_DELIVERY/producer_source/src/research/prefix_replay_execution.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_DELIVERY\\producer_source\\src\\research\\prefix_replay_execution.py",
+          "bytes": 32635,
+          "sha256": "30c41cf0096ec1f0563ed78133b381c4018c717abddba0660a13533cc67e7884"
+        },
+        {
+          "member": "author/HUEBNER_DELIVERY/producer_source/src/research/prefix_replay_inputs.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_DELIVERY\\producer_source\\src\\research\\prefix_replay_inputs.py",
+          "bytes": 40371,
+          "sha256": "402ca589602edb98863d5ffeac573e5f0693d6dea1b0d1af41b532b0db00127e"
+        },
+        {
+          "member": "author/HUEBNER_DELIVERY/producer_source/src/transfer/ensemble_fit.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_DELIVERY\\producer_source\\src\\transfer\\ensemble_fit.py",
+          "bytes": 93087,
+          "sha256": "4a415520724ee0819340326fc38c6c6fc439f8c8d32b82b1048abf8f8621b4a0"
+        },
+        {
+          "member": "author/HUEBNER_DELIVERY/producer_source/src/transfer/ensemble_views.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_DELIVERY\\producer_source\\src\\transfer\\ensemble_views.py",
+          "bytes": 123308,
+          "sha256": "1d96d32ece701cc2514994e86098e867aa305e86186ef175e68de2b8839e0a36"
+        },
+        {
+          "member": "author/HUEBNER_INGRESS_DELTA.xml",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_INGRESS_DELTA.xml",
+          "bytes": 3895,
+          "sha256": "69170c6cf765978435dda93a2e29a418219c3650aedab0120fe1e346a95dc1d8"
+        },
+        {
+          "member": "author/HUEBNER_INGRESS_DELTA_DELIVERY/producer_source/src/data/candidate_input.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_INGRESS_DELTA_DELIVERY\\producer_source\\src\\data\\candidate_input.py",
+          "bytes": 7526,
+          "sha256": "6c97a6548a4134ef582b0e5bb3244c7b58a77672b07571be0b21a716a63df2ba"
+        },
+        {
+          "member": "author/HUEBNER_INGRESS_DELTA_DELIVERY/producer_source/src/data/candidate_task.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_INGRESS_DELTA_DELIVERY\\producer_source\\src\\data\\candidate_task.py",
+          "bytes": 31362,
+          "sha256": "478fdf885f4b8ca256bb14ba95862569fd8c6b29afafbba61a75355b4c6a351c"
+        },
+        {
+          "member": "author/HUEBNER_INGRESS_DELTA_DELIVERY/producer_source/src/data/huebner2017_candidate.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_INGRESS_DELTA_DELIVERY\\producer_source\\src\\data\\huebner2017_candidate.py",
+          "bytes": 22285,
+          "sha256": "8a18318c63456f054278ac98570255a9ebe78287f656cca9717c3536ad2899b5"
+        },
+        {
+          "member": "author/HUEBNER_INGRESS_DELTA_DELIVERY/producer_source/src/research/prefix_replay_inputs.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_INGRESS_DELTA_DELIVERY\\producer_source\\src\\research\\prefix_replay_inputs.py",
+          "bytes": 40371,
+          "sha256": "402ca589602edb98863d5ffeac573e5f0693d6dea1b0d1af41b532b0db00127e"
+        },
+        {
+          "member": "author/HUEBNER_INGRESS_DELTA_DELIVERY/producer_source/src/transfer/ensemble_views.py",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_INGRESS_DELTA_DELIVERY\\producer_source\\src\\transfer\\ensemble_views.py",
+          "bytes": 123852,
+          "sha256": "403bddb7b85deeef792487dbae430ecd000fd70deb0059a9dc7d619f2c6a970c"
+        },
+        {
+          "member": "author/HUEBNER_INGRESS_DELTA_DELIVERY/source_identity.json",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_INGRESS_DELTA_DELIVERY\\source_identity.json",
+          "bytes": 1561,
+          "sha256": "e8d41d67cdb1c139577fb58851a7a58799c7cd0c3c93a6ed42ad6f5b41ad1ac9"
+        },
+        {
+          "member": "author/HUEBNER_INGRESS_K0_DELTA.xml",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_INGRESS_K0_DELTA.xml",
+          "bytes": 407,
+          "sha256": "90c4d2a1bde6d303d2aadcb7c37112324af39c1245c54de3249aa2aceaf9e4a8"
+        },
+        {
+          "member": "author/HUEBNER_VERTICAL/receipt.json",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_VERTICAL\\receipt.json",
+          "bytes": 541100,
+          "sha256": "f9e6780c04f104b95712f8cec5b0db22b89e303e67a74a6891931bd760114866"
+        },
+        {
+          "member": "author/HUEBNER_VERTICAL_02/receipt.json",
+          "source_path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_VERTICAL_02\\receipt.json",
+          "bytes": 541165,
+          "sha256": "3d6da59640c4a27878ed008687048722400626d75b3b070f052405c8d332c6a3"
+        },
+        {
+          "member": "root/HUEBNER_SHARED_ROOT_INTEGRATION/receipt.json",
+          "source_path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_SHARED_ROOT_INTEGRATION\\receipt.json",
+          "bytes": 2145,
+          "sha256": "56997db0c0f0904b2e39332e84a532226c4581254fa494a3f7f3f4c9c8d905d1"
+        },
+        {
+          "member": "root/HUEBNER_SHARED_ROOT_INTEGRATION/results.xml",
+          "source_path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_SHARED_ROOT_INTEGRATION\\results.xml",
+          "bytes": 557,
+          "sha256": "cb61a07e63a05c18a4088ea2c97bd3c29951fdf2aa6f41c34d8341d85c602ae5"
+        },
+        {
+          "member": "root/HUEBNER_SHARED_SPEC_REVIEW.md",
+          "source_path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_SHARED_SPEC_REVIEW.md",
+          "bytes": 16253,
+          "sha256": "1e7a673b3375fcdcc51ba66688aba991b0e39a0942a6331f423e77b37054f168"
+        },
+        {
+          "member": "root/HUEBNER_SHARED_STANDARDS_REVIEW.md",
+          "source_path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_SHARED_STANDARDS_REVIEW.md",
+          "bytes": 22716,
+          "sha256": "c92c4c0c6522d094685b27b810c8df5757d19375bcb8d3493cdb57e4d418a661"
+        },
+        {
+          "member": "root/PUBLIC_CANDIDATE_ADAPTER_REVIEW.binding.json",
+          "source_path": "D:\\BCI\\worktrees\\research-director\\tmp\\PUBLIC_CANDIDATE_ADAPTER_REVIEW.binding.json",
+          "bytes": 20292,
+          "sha256": "f5688a209647537ee25c77c1166860214ec5ae5704016963d64b70e56f3cfe6d"
+        }
+      ],
+      "EEG_or_numeric_blob_members": 0,
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\huebner-shared-input.zip",
+      "bytes": 577387,
+      "sha256": "422f46965e7aa98d11123002e2b889e781f23bf558ef4e2b8c348adcbffb1282",
+      "all_members_readback_SHA_verified": true
+    },
+    "next": [
+      "Huebner NN quartet/forward selector actual original-data software chain",
+      "BI2014a dedicated original MAT labelK caller/capsule/parent",
+      "same-record history prepared authority and typed B11 ensemble",
+      "full thirteen-person predeclared final-session 819-request panel"
+    ],
+    "existing_BI_source_mirror": {
+      "BI2014a_seed20261014.entry.json": {
+        "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\shared-source-checkpoints\\BI2014a_seed20261014.entry.json",
+        "bytes": 307,
+        "sha256": "152f3b92a97d2ad478d67e7fb86b5939b7d8bf96e6cebd67f74f947e1dfd5b6f"
+      },
+      "BI2014a_seed20261014.mirror.json": {
+        "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\shared-source-checkpoints\\BI2014a_seed20261014.mirror.json",
+        "bytes": 1453,
+        "sha256": "76a6b4d6113730d1271483d0813471fdec4033155c668d373056f37e9a85943d"
+      },
+      "payload": {
+        "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\shared-source-checkpoints\\BI2014a_seed20261014.pt",
+        "bytes": 72660879,
+        "sha256": "669306ebd08b95c0ff9acea1bd4737c2802615122d98ea244396d4cd7fb45bae",
+        "root_streamed_SHA_verified": true,
+        "root_model_decode_calls": 0,
+        "new_source_fits": 0
+      }
+    }
   }
 }

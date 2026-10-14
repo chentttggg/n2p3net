@@ -1,5 +1,7 @@
 # P300 模型输入合同：离散时间、单位与分组
 
+原始候选输入按真实acquisition record授权：全局K计最早的原刺激标签，每段record保本地native sample轴、C读取范围与label索引；raw不拼成跨文件连续噪声。Huebner物理屏幕42位置含32可选及10空白，每次实际集合刺激保12个物理位置，概率仅在32候选归一。原target编码在decoder侧变为授权C标签和parent truth，prediction只收公共集合与时钟。缺光学onset和缺EEG以具名不可用保请求；完整dataset roster、C最大支持与future请求分别记录。BI2014a原MAT与CSV使用同sample-index事件轴，但EEG舍入不同，各声明独立numeric producer。实现与验收入口见[技术结构](technical_structure.zh.md)。
+
 信息界`/2`的估计量分列：同C的raw Mahalanobis plug-in保留拟合偏差；独立flash/共同已知covariance模型用完整binary activation A和`h[t,q]=sum_i(A[i,q]-A[i,t])²`定义候选log-likelihood差的mean `-d²h/2`、variance `d²h`。pairwise上下界、finite MC、实际生产tie/abstention分别持有自己的角色。有限算子传播用pre-filter AR输入law的`F K_AR F.T`；SPD ambient密度、显式正交支撑的Euclidean密度和regularized ridge诊断分别保存测度。符号公式和小型反例接受见[响应与噪声](evidence/response_and_noise.zh.md#当前模型与数值任务)。
 
 2026-10-10[新增科研切片](evidence/wishlist_progress_20261010.zh.md)继续区分函数、先验与观测算子：固定graph的同C/noise centered信号能量相等不等于effective response df相等；reference/gain/缺导须同步推送同physical S与Sigma，剩余通道上重建graph是另一个模型。B07有限状态参考以精确`L/fs`及stored binary64的有理数半开边界统一mask、retained rows和censor；浮点秒数只用于显示。B11共同scalar改变半径但不改变逐记录角向比，跨记录shared-beta contrast在独立record尺度下须另推角向law。

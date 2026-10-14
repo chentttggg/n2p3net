@@ -1,5 +1,7 @@
 # 工程指南
 
+新版构建确认可用后，删除已无复用价值的旧构建。先核实际运行引用、当前版本和恢复来源，再清理对应旧输出；仍持有科研producer、原模型/数据/结果或必要失败证据的载荷保在其稳定位置。科研工作树以D盘代码副本为主，完成整合及必要交接后移除，环境与数据共用。可无损压缩的完成派生大JSON按解码SHA核同一原bytes，更新稳定locator后退休裸副本。
+
 当前科研恢复树为`codex/research-director-resume-20261013`，位置`D:/BCI/worktrees/research-director`，从保留的科研提交`f1d0ec0`恢复；原D树dirty checkout保其并发修改。旧checkout目录及ignored大载荷定位已失效，历史Git提交/完成绑定与原始载荷恢复分列，云owner继续核恢复来源。实际模块、调用链与能区分对错的反例优先，已通过范围有新改动或疑点才复验。研究结论维护在四个[主题页](evidence/README.md#当前主题结论)，工作树整理保恢复证据；活动科研源的行尾通过`.gitattributes`明确LF，冻结仍按实际执行raw bytes。当前云状态以唯一云窗口的实际凭证为准。
 
 中央CUDA floor由`source_execution._resolved_cloud_resource_floor`统一供helper和direct resolver解释：非豁免计划的省略/null使用`configs/cloud_training_resources.json`最低值，显式override可提高两轴，低于中央CPU25/GPU4则拒绝；local/software probe须明确scope。CPU准备与单ready source依赖尾保持各自资源角色。两类入口旁路反例、31项定向检查及来源见[中央floor修复](assets/research_resume_20261012/cloud_floor_authority_repair.json)，未来云执行另核actual source/config/plan和真实利用率。

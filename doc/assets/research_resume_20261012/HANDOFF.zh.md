@@ -4,6 +4,11 @@
 
 ## 最新集成与当前工作
 
+- 原始record共享接口已整合`527e1c1/5e2e32f/8e1d8ca`：BI minimal原MAT/CSV、H marker/NEMAR decoder、C全局labelK/本地scope、fit receipts、inner/capsule/parent。Spec与Standards各自接受765增量；root两项旧BNCI/Ccapsule组合合同2PASS、PID49968/OS0/10.24s，源码前后一致、publicfit0。33成员577387B小交付归档`D:/BCI/artifacts/research-deliveries/huebner-shared-input.zip`，SHA422f4696…逐member回读核验；原classic8与新capsule各保producer。H下一history/roster切片cea74cb由两轴审阅，完整H/BI NN quartet/selector在各自冻结源码软件窗推进，不能用已接受input切片替代。
+- H完整13人metadata图独审通过：702原marker/header成员、351原录制=342EEG+9缺失、2457字符、最后session819，35缺Optic、162757NEMAR事件。完整manifest a991e29…及newcode-owner full13roster ce370b…分角色；更新绑定及全部source pointers进入[整合绑定](research_integration_acceptance.json)。原初始37member字段档案保持。
+- BNCI binary已接受零新fit恢复，原160/128/32、120fit与实际scienceOS0/owned0/167.62s全部核回。云doc回执整合`9e6aa3b`，原f3 fit producer与writer-only consumer分列；root核24个源–scratch AUC差及K200两固定half-xDAWN池各八人NLL/Brier变差，结论维护公共评估/校准选择页。新BNCI candidate由云owner唯一执行，剩余完整目标阶段继续，当前process状态向云owner取实际receipt。
+- source-lineage-storage作者已交原H67MB source的shared/embedded保存载入计量软件probe；完整原source authority在公共运行内共享一次，独立load重新准入。deepowner/binary与candidate save/load sourceblob依赖闭包按单owner后续交付，尚未集成或改变live来源。B11 source正控明确participant2首record C68、31导/nose/1000Hz、显式1.2s的rawstop19947，唯一必要真实sourcefit按账本与target1排除关系执行；不与已有NN source角色混用。
+
 - 科研主树已接受binary固定requested风险、四fixed source/scratch整程序、Linux sealed replay/source线程与E2接缝；完整来源见[整合绑定](research_integration_acceptance.json)。代码、软件、公共评估各保持实际范围。
 - B03 fixed与strict cross-fitted温度+ε、ordinary各exactpool独立OOF/ε/保存重放和正常parent已集成`937cbae`。原首片与最终5case/selected29/ordinary464预测保独立producer；新公共opt-in比较沿冻结程序推进。
 - B07多通道finite C-latent已集成`319da17`，同原record/globalβ/flat measure、完整正状态、两current-q评分法与原包回放保原来源。严格BNCI-shaped合成fixture正式三个出口通过，原模型零refit；下一source/C参数学习、longhistory和公共效能。

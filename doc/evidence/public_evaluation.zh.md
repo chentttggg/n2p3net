@@ -2,9 +2,21 @@
 
 本轮seed20261014完整source程序已完成，原f3f32f8、四fold最终模型和八次成功fit经原SourceSeedCatalog逐项准入。原三个成功模型保持，Huebner selected14的fresh refit作为补集完成；原失败attempt的38,820steps/19,875,840draws及未知refit曝光单列。源闭包为独立programme状态，原queue exit1和新tail exit0/owned0各保来源，目标训练结果沿自身receipt验收。完整SHA、原producer合同和root审阅见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)；下文原20260918读数保持。
 
+## 本轮BNCI二分类与个人校准量
+
+seed20261014的八人完整binary结果已由原128份预测逐SHA/行/标签复算。160请求分为128完成与32个K0协议不可用，原目标fit120次；writer修复后原产物零新fit恢复，科学退出0。源预训练NN与同结构scratch在同人、同K、同输入下的24个AUC差值与正式statistics逐项精确一致。AUC表示随机一条目标反应排在非目标反应前面的能力；K是授权校准trial数。本表为八人等权平均，概率质量的NLL/Brier越小越好。
+
+| K | 源NN AUC | scratch AUC | 配对AUC差 | 改善/下降人数 | 配对NLL差 | 配对Brier差 |
+|---|---:|---:|---:|---:|---:|---:|
+| 200 | 0.694765 | 0.655603 | +0.039162 | 5/3 | −0.019173 | −0.005340 |
+| 800 | 0.788075 | 0.777246 | +0.010828 | 4/4 | −0.013967 | −0.002306 |
+| 2000 | 0.841479 | 0.834456 | +0.007023 | 5/3 | −0.010317 | −0.002432 |
+
+这轮固定程序的迁移平均收益随个人校准量增加而缩小；少量个人数据时，已有群体规律提供较大的起点优势。逐人差异继续支持C内整程序选择这一研究方向。固定0.5NN+0.5xDAWN在K200使source和scratch各八人的NLL/Brier全部变差；两程序的概率与互补性应一起学习和评价。分析范围为固定八人、一个source→target seed的公开二分类开发。原预测、完整身份、逐人指标、root归约和后续候选评价见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)的`base_binary_complete`；[恢复绑定](../assets/research_resume_20261011/binary_finalizer_recovery_binding.json)保原失败与新consumer。
+
 ## 新公共候选输入与记录权限
 
-原字段审阅确认Huebner原vmrk可恢复32-choice真实集合刺激：156个本地完整标记成员中154为拼字记录，146与已有NEMAR EEG逐事件时钟/标签连接；原缺Optic和8份without-optical记录保各自来源。完整68flash一字符、每候选16次曝光，交错type21/type22有原4×8/2×18关系；视觉blank10留物理集合，概率词表为32。root独立读原ZIP小marker及TSV，两个run共952事件的CRC/clock/labels和68×32矩阵全部吻合，未解压EEG或拟合。
+Huebner原vmrk可恢复32-choice真实集合刺激。原本地154拼字/146EEG join的审阅已扩展到完整13人：702个marker/header成员、351段原录制、2457次已知truth字符请求，最后session固定819请求；342段有NEMAR EEG，9段原录制无对应EEG。独立artifact图逐字节核原metadata SHA/CRC、官方range/ZIP成员和canonical acquisition joins，归约167076次原scheduled flash、162757个NEMAR事件与35个缺Optic时钟。完整68flash一字符、每候选16次曝光，交错type21/type22有原4×8/2×18关系；视觉blank10留物理集合，概率词表为32。root原两个run952事件的独立CRC/clock/labels与68×32矩阵检查保原范围。完整manifest和原metadata闭包本地保存，新code-owner的13份BDF声明另封producer；本次独立图核验读取metadata、原压缩slice，不重新读取BDF或拟合。
 
 BI2014a原MAT可支撑label-K，但与约5有效位CSV有实际数值差：所读4096行marker/label/indices一致，float32伏特EEG有65316/65536值不同，最大约`4.97326e-7 V`。新MAT输入独立封producer，旧CSV成果保持。BI2015a目前官方仅Trigger/Target，下一候选数据任务是取得真实stimulus-instance日志及EEG时钟连接键；完整binary路线继续。
 
