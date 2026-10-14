@@ -12,6 +12,87 @@ from data.digests import file_sha256
 from data.identity import DatasetIdentityTable
 from research.trial_candidate_programme import _load_prepared, compile_participants
 from tests.support.datasets import binary_dataset
+from transfer.recipes import TargetRecipe
+
+
+def _daily_plan(seed_pairs):
+    recipe = TargetRecipe("source_full_fine", seed=20261014,
+                          trial_loss_reduction="calibration_balanced_fixed_mass")
+    return {"schema": "n2p3_trial_candidate_programme/1", "seed_pairs": seed_pairs,
+            "recipes": [recipe.record(), replace(recipe, name="matched_scratch", initialization="scratch").record()],
+            "execution_manifest": "frozen-source.json"}
+
+
+@pytest.mark.parametrize("seed", [20260918, 20261014])
+def test_declared_daily_seed_reaches_original_snapshot_admission(tmp_path, monkeypatch, seed):
+    import research.trial_candidate_programme as programme
+
+    plan = _daily_plan([[seed, seed]])
+    plan["recipes"] = [{**row, "seed": seed} for row in plan["recipes"]]
+    path = tmp_path / "plan.json"
+    path.write_text(json.dumps(plan))
+
+    class OriginalSnapshotAdmissionReachedError(Exception):
+        pass
+
+    def original_admission(*args, **kwargs):
+        raise OriginalSnapshotAdmissionReachedError
+
+    monkeypatch.setattr(programme, "verified_executed_snapshot", original_admission)
+    with pytest.raises(OriginalSnapshotAdmissionReachedError):
+        programme.run_programme(path, tmp_path / "output")
+    assert not (tmp_path / "output").exists()
+
+
+@pytest.mark.parametrize("pairs", [[], [[20261014, 20261014], [20261015, 20261015]],
+                                   [[20260918, 20261014]], [[True, True]], [[-1, -1]], [[20261014]]])
+def test_daily_seed_rejects_unpaired_or_multiple_programmes_before_snapshot(tmp_path, monkeypatch, pairs):
+    import research.trial_candidate_programme as programme
+
+    path = tmp_path / "plan.json"
+    path.write_text(json.dumps(_daily_plan(pairs)))
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("invalid seed declaration reached source admission")
+
+    monkeypatch.setattr(programme, "verified_executed_snapshot", forbidden)
+    with pytest.raises(ValueError, match="one-seed"):
+        programme.run_programme(path, tmp_path / "output")
+
+
+def test_new_daily_seed_keeps_recipe_and_actual_source_seed_admission(tmp_path, monkeypatch):
+    import research.trial_candidate_execution as execution
+    import research.trial_candidate_programme as programme
+    from research.trial_candidate_execution import TrialCandidateDecision
+    from tests.support.checkpoints import write_checkpoint
+    from transfer.ensemble_fit import FrozenSourceCheckpoint
+
+    plan = _daily_plan([[20261014, 20261014]])
+    plan["recipes"][1]["seed"] = 20260918
+    path = tmp_path / "plan.json"
+    path.write_text(json.dumps(plan))
+    with pytest.raises(ValueError, match="same declared target procedure"):
+        programme.run_programme(path, tmp_path / "recipe-mismatch")
+
+    calibration = binary_dataset(count=40)
+    future = replace(calibration, y=None)
+    source = FrozenSourceCheckpoint.from_path(write_checkpoint(tmp_path / "source.pt", calibration,
+                                                              source_snapshot_sha256="b" * 64))
+    decision = MembershipDecision.direct(("left", "right"), ("left", "right"),
+        event_ids=("e38", "e39"), repetition_indices=np.array([0, 0]), repetitions=1,
+        evidence_indices=np.array([38, 39]))
+    request = TrialCandidateDecision("person", "future", decision, "a" * 64, 1)
+
+    def forbidden_fit(*args, **kwargs):
+        raise AssertionError("wrong source seed reached target fitting")
+
+    monkeypatch.setattr(execution, "fit_calibration_candidate", forbidden_fit)
+    recipes = tuple(TargetRecipe(**row) for row in _daily_plan([[20261014, 20261014]])["recipes"])
+    with pytest.raises(ValueError, match="declared source seed"):
+        execution.execute_trial_candidate_participant(calibration=calibration, future=future,
+            requests=(request,), source=source, recipes=recipes, local_subject=str(calibration.subject_ids[0]),
+            output=tmp_path / "source-mismatch", source_snapshot_sha256="b" * 64,
+            execution_source_sha256="c" * 64, source_seed=20261014)
 
 
 @pytest.mark.parametrize("dataset_id,subject,depth,extra", [

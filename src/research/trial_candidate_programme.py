@@ -187,7 +187,11 @@ def run_programme(plan_path, output):
     plan = json.loads(plan_path.read_bytes())
     if plan["schema"] == "n2p3_bi2014a_trial_programme/1":
         plan = {**plan, "schema": SCHEMA, "dataset_id": "BI2014a"}
-    if plan["schema"] != SCHEMA or plan["seed_pairs"] != [[20260918, 20260918]]:
+    pairs = plan.get("seed_pairs")
+    if (plan["schema"] != SCHEMA or not isinstance(pairs, list) or len(pairs) != 1
+            or not isinstance(pairs[0], list) or len(pairs[0]) != 2
+            or any(type(seed) is not int or seed < 0 for seed in pairs[0])
+            or pairs[0][0] != pairs[0][1]):
         raise ValueError("trial daily programme requires its frozen one-seed pipeline declaration")
     recipes = tuple(TargetRecipe(**row) for row in plan["recipes"])
     if (tuple(row.initialization for row in recipes) != ("source", "scratch")
