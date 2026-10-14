@@ -23,6 +23,7 @@ from research.contracts import semantic_sha256
 from research.evaluation import verified_executed_snapshot
 from tests.support.bnci import bnci_mat_fields
 from tests.support.source_programs import independent_source_plan, prepared_finite_source
+from transfer.calibration_candidates import waveform_lda_recipe
 from transfer.checkpoint import load_checkpoint_payload
 from transfer.ensemble import EnsembleProgram
 from transfer.ensemble_fit import CalibrationExpertProgram, FittedEnsemble, FrozenSourceCheckpoint
@@ -103,8 +104,9 @@ def test_actual_source_chain_four_family_replay_keeps_original_source_and_comple
         CalibrationExpertProgram("scratch", "trial", replace(source_recipe, name="scratch",
             initialization="scratch", input_statistics="target_prefix"), profile),
         CalibrationExpertProgram("xdawn", "trial", erp_target_recipe("xdawn_erp", bin_width=16, seed=21),
-            xdawn_profile))
-    mixtures = [EnsembleProgram.equal_weights(name, (name,)).record() for name in ("NN", "scratch", "xdawn")]
+            xdawn_profile),
+        CalibrationExpertProgram("waveform", "trial", waveform_lda_recipe(seed=21), profile))
+    mixtures = [EnsembleProgram.equal_weights(expert.expert_id, (expert.expert_id,)).record() for expert in experts]
     expected = {"pos_weight": 8., "val_groups_min": 2, "val_groups_max": 12}
     candidate_plan = {"schema": "n2p3_candidate_ensemble_study/1", "evaluation_design": "independent_prefix",
         "evidence_scope": "software_correctness", "records": [{"path": str(raw), "sha256": raw_sha}],
@@ -148,11 +150,13 @@ def test_actual_source_chain_four_family_replay_keeps_original_source_and_comple
     assert result["decision_denominator_complete"] and participant["status"] == "completed"
     assert participant["selection_inflight_programmes"] == participant["selection_failed_programmes"] == []
     requested = participant["requested"]
-    assert len(participant["pipeline_requests"]) == len(participant["predictions"]) == 8 * len(requested)
+    assert len(participant["pipeline_requests"]) == len(participant["predictions"]) == 10 * len(requested)
     assert {row["status"] for row in participant["pipeline_requests"]} <= {"completed", "output_unavailable"}
     missing_zero = [row for row in participant["pipeline_requests"]
-        if row["actual_K"] == 0 and row["mixture"] in {"scratch", "xdawn", "selected-family"}]
-    assert len(missing_zero) == 3 * len(requested) and all(row["status"] == "output_unavailable" for row in missing_zero)
+        if row["actual_K"] == 0 and row["mixture"] in {"scratch", "xdawn", "waveform", "selected-family"}]
+    assert len(missing_zero) == 4 * len(requested) and all(row["status"] == "output_unavailable" for row in missing_zero)
+    assert set(result["metrics"]) == {f"{expert.expert_id}@fixed@K{budget}" for expert in experts for budget in (0, 800)} | {
+        f"selected-family@nested_selection@K{budget}" for budget in (0, 800)}
     for metric in result["metrics"].values():
         assert [row["requested_decisions"] for row in metric["participants"]] == [len(requested)]
     ledger = _sealed(tmp_path / "candidate/participant_groups/participant_000/participant_000/request_ledger.json")
@@ -226,7 +230,8 @@ def test_actual_source_chain_four_family_replay_keeps_original_source_and_comple
     assert len(set(consumer["requested_tasks"])) == len(consumer["requested_tasks"])
     assert len(consumer["participant_task_ids"]) == 1
     assert sum(key.endswith(":replay_prepare") for key in by_id) == 1
-    assert any(":node_" in key for key in by_id) and any(":ordinary_" in key for key in by_id)
+    assert any(":node_" in key for key in by_id)
+    assert sum(":ordinary_" in key for key in by_id) == 2
     assert sum(":reduce_selection_" in key for key in by_id) == 2
     assert sum(":reduce_ordinary_" in key for key in by_id) == 2
     assert sum(key.endswith(":admission") for key in by_id) == 1
