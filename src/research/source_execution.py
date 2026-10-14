@@ -951,6 +951,7 @@ class HostMemoryAdmission:
         self.target_limit = resources["target_workers"]
         self.cpu_budget = resources["cpu_budget"]
         self.gpu_worker_limit = resources["gpu_slots"]
+        self.native_threads = resources["native_threads_per_worker"]
         self.source_cpu_threads = resources.get("source_cpu_threads_per_worker", resources["native_threads_per_worker"])
         self.source_limit = resources["source_workers"]
         self.gpu_backed = resources.get("gpu_backed_workers", True)
