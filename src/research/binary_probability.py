@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import hashlib
+from contextlib import nullcontext
 
 import numpy as np
 from scipy.special import expit, logsumexp
 from sklearn.metrics import roc_auc_score
 
 from research.comparison import ContrastPlan
+from research.source_execution import current_input_admission
 from transfer.ensemble import EnsembleProgram
 
 
@@ -68,8 +70,14 @@ def export_binary_pools(cells, declarations, output):
                 raise ValueError("binary probability experts must share actual calibration/test rows and labels")
             logits = arithmetic_binary_pool(np.stack([value["posterior_logits"] for value in loaded]), program.weights)
             path = output / f"probability_pool_{len(exported):05d}.npz"
-            np.savez_compressed(path, y=first["y"], test_rows=first["test_rows"], calibration_rows=first["calibration_rows"],
-                                posterior_logits=logits, probability=expit(logits))
+            arrays = {"y": first["y"], "test_rows": first["test_rows"], "calibration_rows": first["calibration_rows"],
+                      "posterior_logits": logits, "probability": expit(logits)}
+            # The epoch-cache writer uses this same NPY/ZIP/deflate growth
+            # bound. Reserve before NumPy opens the final pool path.
+            estimate = sum(value.nbytes for value in arrays.values()) * 1001 // 1000 + len(arrays) * 65536 + 2**20
+            admission = current_input_admission()
+            with admission.artifact_writer(path, estimate) if admission is not None else nullcontext():
+                np.savez_compressed(path, **arrays)
             record.update(status="completed", expert_origins=origins, prediction_path=path.name,
                           prediction_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
                           **binary_probability_metrics(first["y"], logits))

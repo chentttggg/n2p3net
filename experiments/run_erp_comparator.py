@@ -1108,8 +1108,15 @@ class BinaryCloudProgramme:
             return _finalize_comparison(report, self.plan, self.output, self.tree)
         estimate = (1 << 20) + sum(Path(path).stat().st_size for path in self.admitted_files if path.endswith(".npz")) * max(
             1, len(self.plan.get("probability_pools", [])))
-        with input_admission.artifact_directory(self.output, estimate):
-            return _finalize_comparison(report, self.plan, self.output, self.tree)
+        from research.source_execution import current_input_admission, install_input_admission
+
+        previous = current_input_admission()
+        install_input_admission(input_admission)
+        try:
+            with input_admission.artifact_directory(self.output, estimate):
+                return _finalize_comparison(report, self.plan, self.output, self.tree)
+        finally:
+            install_input_admission(previous)
 
 
 def build_binary_cloud_tasks(plan_path, output, resources, *, source_seed_catalog=None, source_snapshot=None,
