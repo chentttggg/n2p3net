@@ -997,12 +997,13 @@ class PreparedTransferCheckpoint:
 class _AdmittedTransferSource:
     """Private immutable-source prototype, never fitted or exposed to callers."""
 
-    def __init__(self, content):
+    def __init__(self, content, *, _decoded_payload=None):
         from research.frozen_metadata import freeze_metadata
         from transfer.noise_model import _FrozenMetadata
         from transfer.noise_model import freeze_metadata as freeze_source_calibration
 
-        payload = load_checkpoint_payload(io.BytesIO(content))
+        self.content = content
+        payload = load_checkpoint_payload(io.BytesIO(content)) if _decoded_payload is None else _decoded_payload
         self.admission = _validate_source_metadata(payload)
         self.source_membership_present = payload.get("source_study_membership") is not None
         if self.source_membership_present:
@@ -1024,6 +1025,9 @@ class _AdmittedTransferSource:
             "training_contract", "training_contract_digest", "training_identity_ledger",
             "training_identity_ledger_digest", "source_calibration", "source_study_membership") if name in payload})
         self.source_snapshot_sha256 = payload["training_contract"]["source_snapshot_sha256"]
+        self.evidence_scope = ("software_correctness" if payload.get("evidence_scope") == "software_correctness"
+            or payload["training_contract"]["optimizer"].get("kind") == "synthetic_test_fixture"
+            else "public_development")
         self.input_domain_digest = semantic_sha256({
             "channels": payload["input_channel_names"], "preprocessing": payload["input_preprocessing"],
             "source_reference": payload["input_source_reference"],
@@ -1053,6 +1057,15 @@ class _BoundTransferSource:
         self.payload = source.metadata
         self.selection_epoch_capability = dataset.provenance.get("selection_epoch_capability")
         self.input_statistics = tuple(value.copy() for value in source._input_statistics)
+        from research.frozen_metadata import freeze_metadata
+
+        self._target_binding = freeze_metadata({
+            "identity": dataset.identity_table.payload(), "preprocessing": dataset.preprocessing.record(),
+            "channel_names": list(dataset.channel_names), "provenance": {
+                name: dataset.provenance[name] for name in (
+                    "source_reference", "preprocessing_execution", "selection_epoch_capability", "data_alignment")
+                if name in dataset.provenance}})
+        self._target_membership = None
 
     @property
     def training_identity(self):
@@ -1066,6 +1079,22 @@ class _BoundTransferSource:
     def trunk_for_target(self, subject):
         self.assert_target_excluded(subject)
         return copy.deepcopy(self._source._trunk)
+
+    def model_origin(self, checkpoint_sha256):
+        return {"kind": "checkpoint", "checkpoint_sha256": checkpoint_sha256,
+                "training_contract_digest": self.payload["training_contract_digest"]}
+
+    def source_storage_context(self, subject):
+        """Complete original source and this already-compiled target authority."""
+        from research.source_metadata_store import source_contract_reference
+
+        self.assert_target_excluded(subject)
+        if self._target_membership is None:
+            return None
+        binding = {**self._target_binding, "subject": str(subject), "study_membership": self._target_membership}
+        reference = source_contract_reference(self._source.content, self.payload["training_contract_digest"],
+                                             binding, self._source.evidence_scope)
+        return self._source.content, reference
 
     def assert_library_exclusion(self, *, target_membership=None, excluded_source_datasets=()):
         """Recheck current target studies against the admitted source proof.
@@ -1087,6 +1116,10 @@ class _BoundTransferSource:
         overlap = actual_source & (target_studies | set(excluded_source_datasets))
         if overlap:
             raise ValueError(f"checkpoint source contains excluded target libraries: {sorted(overlap)}")
+        if target_membership is not None:
+            from research.frozen_metadata import freeze_metadata
+
+            self._target_membership = freeze_metadata(target_membership)
 
 
 class ScopedSourceCheckpointPreparation:

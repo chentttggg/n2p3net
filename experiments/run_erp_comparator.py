@@ -67,6 +67,7 @@ from transfer.calibration_candidates import (  # noqa: E402
 from transfer.calibration_state import FrozenTrialPredictor  # noqa: E402
 from transfer.checkpoint import (  # noqa: E402
     PreparedTransferCheckpoint,
+    ScopedSourceCheckpointPreparation,
     load_checkpoint_payload,
 )
 from transfer.recipes import TargetRecipe, erp_target_recipe  # noqa: E402
@@ -78,6 +79,28 @@ FAMILIES = ERP_FAMILIES | NN_FAMILIES | {"waveform_lda"}
 def _executing_tree():
     paths = sorted([*ROOT.joinpath("src").rglob("*.py"), Path(__file__)])
     return {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+
+
+def _write_binary_json(path, report):
+    from research.source_metadata_store import compact_source_semantics
+
+    return atomic_write_json(path, compact_source_semantics(report))
+
+
+def load_binary_report(path, *, metadata_store=None):
+    """Independent ingress restores complete probability origins from original bytes."""
+    from research.source_metadata_store import _SourceMetadataAdmission
+
+    return _load_binary_report(path, _SourceMetadataAdmission(store=metadata_store))
+
+
+def _load_binary_report(path, admission):
+    from research.source_metadata_store import expand_source_semantics
+
+    report = json.loads(Path(path).read_bytes())
+    if report["schema"] not in {"n2p3_erp_comparator_result/2", "n2p3_erp_comparator_result/3"}:
+        raise ValueError("unsupported binary scientific report schema")
+    return expand_source_semantics(report, admission)
 
 
 def _resolve(plan_path, value):
@@ -220,14 +243,18 @@ def _source_snapshot(checkpoints, catalog_snapshots, arm, study, source_seed):
     return catalog_snapshots[(study, source_seed)]
 
 
-def _nn_anchor(snapshot, data, subject):
+def _nn_anchor(snapshot, data, subject, preparation=None):
     content, digest = snapshot
-    prepared = PreparedTransferCheckpoint(io.BytesIO(content), data)
-    training = DatasetIdentityTable.from_payload(prepared.payload["training_identity_ledger"])
-    if set(study_ids_for_identity(training, checkpoint_study_membership(prepared.payload))) & set(
-        study_ids_for_identity(data.identity_table, dataset_study_membership(data))
-    ):
-        raise ValueError("NN anchor source must exclude the complete target study")
+    if preparation is None:
+        prepared = PreparedTransferCheckpoint(io.BytesIO(content), data)
+        training = DatasetIdentityTable.from_payload(prepared.payload["training_identity_ledger"])
+        if set(study_ids_for_identity(training, checkpoint_study_membership(prepared.payload))) & set(
+            study_ids_for_identity(data.identity_table, dataset_study_membership(data))
+        ):
+            raise ValueError("NN anchor source must exclude the complete target study")
+    else:
+        prepared = preparation.prepare(content, data, subject)
+        prepared.assert_library_exclusion(target_membership=dataset_study_membership(data))
     trunk = prepared.trunk_for_target(subject)
     if type(trunk) is not N2P3Net or trunk.splitbn_config is not None:
         raise ValueError("NN comparator anchors require a plain source N2P3Net")
@@ -317,7 +344,8 @@ def _validate_transfer_contrast(name, weights, cells):
                                  "an exploratory budget/architecture difference is not a transfer effect")
 
 
-def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=None, finalize=True):
+def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=None, finalize=True,
+                           metadata_directory=None):
     plan = json.loads(Path(plan_path).read_bytes())
     authority_plan_sha256 = semantic_sha256(plan)
     if plan.get("schema") != "n2p3_erp_comparator_plan/1":
@@ -370,6 +398,10 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
     contrasts = plan.get("contrasts", {f"{a['name']}_minus_{arms[0]['name']}":
         {a["name"]: 1., arms[0]["name"]: -1.} for a in arms[1:]})
     contrast_plans = {name: contrast.record() for name in contrasts} | plan.get("contrast_plans", {})
+    from research.source_metadata_store import SourceMetadataStore
+
+    metadata_store = SourceMetadataStore(metadata_directory or Path(output) / "source_metadata")
+    source_preparations = {subject: ScopedSourceCheckpointPreparation() for subject in subjects}
     cells, requests, identities, authority = [], [], {}, {}
     # Keep only small preflight receipts. EEG memory is bounded to one arm and
     # participant; independent prefix loader owns per-K raw support validation.
@@ -420,7 +452,8 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
                 for source_seed, seed in pairs:
                     origin, architecture = None, None
                     if available and arm["family"] in NN_FAMILIES:
-                        prepared, trunk, origin = _nn_anchor(_source_snapshot(checkpoints, catalog_snapshots, arm, study, source_seed), data, subject)
+                        prepared, trunk, origin = _nn_anchor(_source_snapshot(checkpoints, catalog_snapshots, arm, study, source_seed), data, subject,
+                                                           source_preparations[subject])
                         architecture = trunk.architecture_record()
                         del prepared, trunk
                     recipe = _recipe(arm, seed) if budget > 0 else None
@@ -477,7 +510,8 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
     output.mkdir(parents=True, exist_ok=False)
     atomic_write_json(output / "execution_source.json", {"schema": "n2p3_executing_python_files/1",
         "files": tree, "digest": semantic_sha256(tree), "verified_snapshot": freeze})
-    report = {"schema": "n2p3_erp_comparator_result/2", "plan": plan, "plan_sha256": semantic_sha256(plan),
+    report = {"schema": "n2p3_erp_comparator_result/3", "plan": plan, "plan_sha256": semantic_sha256(plan),
+        "source_metadata": {"schema": "n2p3_complete_source_store/1", "directory": str(metadata_store.directory)},
         "authority_plan_sha256": authority_plan_sha256, "participant_authority": authority,
         "input_manifests": _prefix_bindings(plan, plan_path),
         "source_sha256": semantic_sha256(tree), "execution_snapshot": freeze, "evidence_scope": scope,
@@ -489,7 +523,7 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
         "requested_participants": requests, "cells": cells}
     report["matched_controls"] = matched_controls
     report["omitted_unmatched_default_contrasts"] = omitted_contrasts
-    atomic_write_json(output / "result.json", report)
+    _write_binary_json(output / "result.json", report)
     for subject in subjects:
         entries = _participant_entries(arms, plan_path, subject)
         deterministic_results = {}
@@ -514,14 +548,14 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
                         cell.update({key: origin[key] for key in ("probability_status", "probability_semantics", "nll", "brier",
                             "probability_scored_rows", "probability_failure", "probability_auc") if key in origin})
                         cell.update(reused_prediction_cell=origin_index, physical_target_fit=False)
-                        atomic_write_json(output / "result.json", report)
+                        _write_binary_json(output / "result.json", report)
                         continue
                     try:
                         source, stats = None, None
                         device = plan.get("device", "cpu")
                         if arm["family"] in NN_FAMILIES:
                             prepared, source, _ = _nn_anchor(_source_snapshot(checkpoints, catalog_snapshots, arm,
-                                cell["study"], cell["source_seed"]), data, subject)
+                                cell["study"], cell["source_seed"]), data, subject, source_preparations[subject])
                             stats = prepared.input_statistics if arm["family"] == "full_fine" else None
                         if budget == 0:
                             predictor = FrozenTrialPredictor.from_source(prepared, subject)
@@ -533,7 +567,7 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
                             mask[train] = True
                             report["physical_target_fits"] += 1
                             cell.update(physical_target_fit=None, physical_target_fit_state="invocation_pending")
-                            atomic_write_json(output / "result.json", report)
+                            _write_binary_json(output / "result.json", report)
                             with worker_compute_phase(device if arm["family"] in NN_FAMILIES else "cpu"):
                                 fitted = fit_calibration_candidate(data, TargetRecipe(**cell["recipe"]), mask,
                                     source_trunk=source, source_input_stats=stats, device=device,
@@ -541,7 +575,7 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
                             predictor = FrozenTrialPredictor.from_fitted(fitted)
                             history, tolerance = fitted.fit_history, 1e-6 if fitted.adapter is not None else 0.
                             cell.update(physical_target_fit=True, physical_target_fit_state="returned", fit_history=history)
-                            atomic_write_json(output / "result.json", report)
+                            _write_binary_json(output / "result.json", report)
                         with worker_compute_phase(device if arm["family"] in NN_FAMILIES else "cpu"):
                             probability = (predictor.probability_scores(data.X[test], observed[test], device=device)
                                            if predictor.posterior_available else None)
@@ -553,12 +587,12 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
                         if not np.isfinite(scores).all() or set(np.unique(data.y[test])) != {0, 1}:
                             raise ValueError("primary AUC requires all requested test trials and both classes")
                         model_path, prediction_path = output / f"{index:05d}.pt", output / f"{index:05d}.npz"
-                        predictor.save(model_path)
-                        restored = FrozenTrialPredictor.load(model_path)
+                        predictor.save(model_path, metadata_store=metadata_store)
+                        restored = FrozenTrialPredictor.load(model_path, metadata_store=metadata_store)
                         cell.update(model_artifact={"path": model_path.name,
                             "sha256": hashlib.sha256(model_path.read_bytes()).hexdigest()},
                             model_state_digest=restored.digest(), fit_history=history)
-                        atomic_write_json(output / "result.json", report)
+                        _write_binary_json(output / "result.json", report)
                         with worker_compute_phase(device if arm["family"] in NN_FAMILIES else "cpu"):
                             probability_replay = (restored.probability_scores(data.X[test], observed[test], device=device)
                                                   if probability is not None else None)
@@ -574,6 +608,8 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
                                 probability_payload[key] = probability[key]
                             metrics = binary_probability_metrics(data.y[test], probability["posterior_logits"])
                             cell.update(probability_status="completed", probability_semantics=probability["semantics"], **metrics)
+                            if predictor.source_contract_reference is not None:
+                                cell["source_contract_reference"] = predictor.source_contract_reference
                         else:
                             cell.update(probability_status="unavailable", probability_failure="no_actual_posterior_programme")
                         np.savez_compressed(prediction_path, calibration_rows=train, test_rows=test, y=data.y[test],
@@ -590,13 +626,13 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
                         if cell.get("physical_target_fit_state") == "invocation_pending":
                             cell.update(physical_target_fit=True, physical_target_fit_state="raised")
                         cell.update(status="failed", auc=None, error=str(error))
-                    atomic_write_json(output / "result.json", report)
+                    _write_binary_json(output / "result.json", report)
                 del data, train, test, observed
             del entry
         del entries, deterministic_results
     if not finalize:
         report["execution_source_status"] = "unchanged" if _executing_tree() == tree else "changed_during_execution"
-        atomic_write_json(output / "result.json", report)
+        _write_binary_json(output / "result.json", report)
         if report["execution_source_status"] != "unchanged":
             raise RuntimeError("executing source files changed during comparator")
         atomic_write_json(output / "participant_terminal.json", {"schema": "n2p3_binary_participant_terminal/1",
@@ -624,7 +660,7 @@ def _finalize_comparison(report, plan, output, tree):
     report["probability_pools"] = export_binary_pools(cells, plan.get("probability_pools", []), output)
     if _executing_tree() != tree:
         report["execution_source_status"] = "changed_during_execution"
-        atomic_write_json(output / "result.json", report)
+        _write_binary_json(output / "result.json", report)
         raise RuntimeError("executing source files changed during comparator")
     report["execution_source_status"] = "unchanged"
     report["matched_transfer_effects"] = []
@@ -659,10 +695,10 @@ def _finalize_comparison(report, plan, output, tree):
         # alternatives; only these explicitly bound controls identify transfer.
         stats["transfer_effect_interpretation"] = "only matched_transfer_effects identify source initialization effects"
         stats["requested_budget_coverage"] = report["requested_budget_coverage"]
-        atomic_write_json(output / "statistics.json", stats)
+        _write_binary_json(output / "statistics.json", stats)
     if "seed_pairs" in plan:
         report["b12_execution_binding"] = validate_b12_execution_manifest(report, plan)
-    atomic_write_json(output / "result.json", report)
+    _write_binary_json(output / "result.json", report)
     return report
 
 
@@ -685,7 +721,8 @@ def comparison_participant_adapter(arguments):
     writer = (nullcontext() if admission is None else admission.artifact_directory(
         output, _participant_output_estimate(plan, plan_path, arguments["subject"])))
     with writer:
-        _run_comparison_serial(plan_path, output, selected_subjects=[arguments["subject"]], finalize=False)
+        _run_comparison_serial(plan_path, output, selected_subjects=[arguments["subject"]], finalize=False,
+                               metadata_directory=arguments.get("metadata_directory"))
     return str(output / "result.json")
 
 
@@ -709,7 +746,7 @@ def _participant_output_estimate(plan, plan_path, subject):
     return (1 << 20) + cells * ((1 << 16) + maximum_model + prediction_bytes)
 
 
-def comparison_tasks(plan_path, output, resources, *, dependencies=(), task_prefix="binary"):
+def comparison_tasks(plan_path, output, resources, *, dependencies=(), task_prefix="binary", metadata_directory=None):
     from research.cloud_execution import CloudTask, target_phase_resources
 
     plan_path, output = Path(plan_path).resolve(), Path(output).resolve()
@@ -718,7 +755,8 @@ def comparison_tasks(plan_path, output, resources, *, dependencies=(), task_pref
                "input_manifests": _prefix_bindings(plan, plan_path), "checkpoint_manifests": _checkpoint_bindings(plan, plan_path)}
     return [CloudTask(f"{task_prefix}:{index:03d}",
         "experiments.run_erp_comparator:comparison_participant_adapter",
-        {"plan": str(plan_path), "output": str(output / "participants" / f"participant_{index:03d}"), "subject": subject, **binding},
+        {"plan": str(plan_path), "output": str(output / "participants" / f"participant_{index:03d}"), "subject": subject,
+         "metadata_directory": str(metadata_directory or output / "source_metadata"), **binding},
         str(output / "participants" / f"participant_{index:03d}"),
         target_phase_resources(resources, plan.get("device", "cpu")), tuple(dependencies))
         for index, subject in enumerate(plan["subjects"])]
@@ -778,7 +816,7 @@ def _artifact_path(directory, artifact, verified):
     return path
 
 
-def _admit_binary_participant(task, outcome, plan, tree):
+def _admit_binary_participant(task, outcome, plan, tree, *, _metadata_admission=None):
     """Completed and partial artifacts cross the same scientific boundary."""
     directory = Path(task.output).resolve()
     path = directory / "result.json"
@@ -788,9 +826,17 @@ def _admit_binary_participant(task, outcome, plan, tree):
         if outcome.status == "completed":
             raise ValueError("completed participant has no scientific result")
         return None
-    report = json.loads(path.read_bytes())
+    from research.source_metadata_store import SourceMetadataStore, _SourceMetadataAdmission
+
+    store = SourceMetadataStore(task.arguments.get("metadata_directory", directory / "source_metadata"))
+    metadata_admission = _metadata_admission or _SourceMetadataAdmission(store=store)
+    report = _load_binary_report(path, metadata_admission)
+    if report["schema"] == "n2p3_erp_comparator_result/3" and report.get("source_metadata") != {
+        "schema": "n2p3_complete_source_store/1", "directory": str(store.directory)
+    }:
+        raise ValueError("binary report source store differs from its actual declared package")
     subject = task.arguments["subject"]
-    if (report["schema"] != "n2p3_erp_comparator_result/2"
+    if (report["schema"] not in {"n2p3_erp_comparator_result/2", "n2p3_erp_comparator_result/3"}
             or report["plan"] != {**plan, "subjects": [subject]}
             or report["plan_sha256"] != semantic_sha256(report["plan"])
             or report["authority_plan_sha256"] != semantic_sha256(plan)):
@@ -883,10 +929,23 @@ def _admit_binary_participant(task, outcome, plan, tree):
         if "model_artifact" in cell:
             model_path = _artifact_path(directory, cell["model_artifact"], verified)
             if model_path not in models:
-                models[model_path] = FrozenTrialPredictor.load(model_path)
+                models[model_path] = FrozenTrialPredictor._load_with_admission(model_path, metadata_admission)
             predictor = models[model_path]
             if predictor.digest() != cell["model_state_digest"]:
                 raise ValueError("binary model numeric state differs from its saved receipt")
+            reference = predictor.source_contract_reference
+            if reference is not None:
+                from research.frozen_metadata import plain_metadata
+
+                target = plain_metadata(reference["target_binding"])
+                target_identity = DatasetIdentityTable.from_payload(target["identity"])
+                if (semantic_sha256(cell.get("source_contract_reference")) != semantic_sha256(reference)
+                        or target["subject"] != subject
+                        or target_identity.record_for(subject).payload() != receipt["identity_record"]
+                        or study_ids_for_identity(target_identity, target["study_membership"]) != (cell["study"],)
+                        or reference["checkpoint_sha256"] != cell["checkpoint_origin"]["checkpoint_sha256"]
+                        or predictor.record["class_calibration"]["fit_contract"]["training_contract"]["seed"] != cell["source_seed"]):
+                    raise ValueError("binary source reference differs from its actual cell and target authority")
         if cell["status"] != "completed":
             continue
         if not {"model_artifact", "prediction_artifact"} <= cell.keys():
@@ -937,15 +996,20 @@ def _admit_binary_participant(task, outcome, plan, tree):
 class BinaryCloudProgramme:
     """Scientific adapter hooks for a caller-owned shared CloudExecutor."""
 
-    def __init__(self, plan_path, output, resources, *, dependencies=(), task_prefix="binary", input_admission=None):
+    def __init__(self, plan_path, output, resources, *, dependencies=(), task_prefix="binary", input_admission=None,
+                 metadata_directory=None):
         self.original_plan_path = Path(plan_path).resolve()
         self.plan = json.loads(self.original_plan_path.read_bytes())
         _validate_declaration(self.plan, self.original_plan_path)
         self.output, self.resources = Path(output).resolve(), resources
+        self.metadata_directory = Path(metadata_directory or self.output / "source_metadata").resolve()
         self.dependencies, self.task_prefix = tuple(dependencies), task_prefix
         self.input_admission = input_admission
         self.tree, self.admitted, self.admission_failures = _executing_tree(), {}, {}
         self.admitted_files = {}
+        from research.source_metadata_store import SourceMetadataStore, _SourceMetadataAdmission
+
+        self._metadata_admission = _SourceMetadataAdmission(store=SourceMetadataStore(self.metadata_directory))
         # The execution host compiles its own locators; no platform aliases.
         for arm in self.plan["arms"]:
             for key in ("prefix_collection", "checkpoint", "source_temporal_basis"):
@@ -974,7 +1038,8 @@ class BinaryCloudProgramme:
     def _write_plan(self):
         self._write_json(self.plan_path.name, self.plan)
         self.tasks = comparison_tasks(self.plan_path, self.output, self.resources,
-                                      dependencies=self.dependencies, task_prefix=self.task_prefix)
+                                      dependencies=self.dependencies, task_prefix=self.task_prefix,
+                                      metadata_directory=self.metadata_directory)
         self.by_id = {task.task_id: task for task in self.tasks}
 
     def bind_source(self, catalog, snapshot):
@@ -996,7 +1061,8 @@ class BinaryCloudProgramme:
     def on_finished(self, outcome):
         task = self.by_id[outcome.task_id]
         try:
-            report = _admit_binary_participant(task, outcome, self.plan, self.tree)
+            report = _admit_binary_participant(task, outcome, self.plan, self.tree,
+                                              _metadata_admission=self._metadata_admission)
         except Exception as error:
             self.admission_failures[outcome.task_id] = {"type": type(error).__name__, "message": str(error)}
             raise
@@ -1007,6 +1073,10 @@ class BinaryCloudProgramme:
                 for kind in ("model_artifact", "prediction_artifact"):
                     if kind in cell:
                         self.admitted_files[str(Path(task.output) / cell[kind]["path"])] = cell[kind]["sha256"]
+                reference = cell.get("source_contract_reference")
+                if reference is not None:
+                    source_path = Path(task.arguments["metadata_directory"]) / (reference["checkpoint_sha256"] + ".pt")
+                    self.admitted_files[str(source_path)] = reference["checkpoint_sha256"]
         self._write_json("participant_admission.json", {"schema": "n2p3_binary_admission/1",
             "accepted": {key: hashlib.sha256((Path(self.by_id[key].output) / "result.json").read_bytes()).hexdigest()
                          for key in self.admitted}, "rejected": self.admission_failures})
@@ -1023,7 +1093,9 @@ class BinaryCloudProgramme:
         resolved = next(iter(self.admitted.values()), None)
         if resolved is not None:
             pairs = resolved["seed_pairs"]
-        report = {"schema": "n2p3_erp_comparator_result/2", "plan": self.plan,
+        report = {"schema": "n2p3_erp_comparator_result/3", "plan": self.plan,
+            "source_metadata": {"schema": "n2p3_complete_source_store/1", "directory": str(
+                getattr(self, "metadata_directory", self.output / "source_metadata"))},
             "plan_sha256": semantic_sha256(self.plan), "source_sha256": semantic_sha256(self.tree),
             "authority_plan_sha256": semantic_sha256(self.plan),
             "execution_snapshot": None if resolved is None else resolved["execution_snapshot"],
@@ -1120,9 +1192,10 @@ class BinaryCloudProgramme:
 
 
 def build_binary_cloud_tasks(plan_path, output, resources, *, source_seed_catalog=None, source_snapshot=None,
-                             dependencies=(), task_prefix="binary", input_admission=None):
+                             dependencies=(), task_prefix="binary", input_admission=None, metadata_directory=None):
     programme = BinaryCloudProgramme(plan_path, output, resources, dependencies=dependencies,
-                                    task_prefix=task_prefix, input_admission=input_admission)
+                                    task_prefix=task_prefix, input_admission=input_admission,
+                                    metadata_directory=metadata_directory)
     if source_seed_catalog is not None:
         programme.bind_source(source_seed_catalog, source_snapshot)
     return programme
@@ -1138,6 +1211,7 @@ def run_comparison(plan_path: Path, output: Path):
         resolve_source_resources,
         with_cloud_resource_floor,
     )
+    from research.source_metadata_store import compact_source_semantics
 
     plan_path, output = Path(plan_path).resolve(), Path(output).resolve()
     plan = json.loads(plan_path.read_bytes())
@@ -1157,7 +1231,7 @@ def run_comparison(plan_path: Path, output: Path):
         report = programme.finalize(run.results, input_admission=inputs)
         report["execution"] = {"status": run.status, "resources": resources, "input_admission": inputs.record(),
                                "diagnostics": run.diagnostics, "observation_failures": run.observation_failures}
-        atomic_write_json(output / "result.json", report, input_admission=inputs)
+        atomic_write_json(output / "result.json", compact_source_semantics(report), input_admission=inputs)
     return report
 
 

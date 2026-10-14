@@ -23,6 +23,7 @@ from transfer.checkpoint import (
 from transfer.class_calibration import TrialProbabilityTransform
 
 FROZEN_TRIAL_SCHEMA = "n2p3_frozen_trial_predictor/2"
+SOURCE_REFERENCE_TRIAL_SCHEMA = "n2p3_frozen_trial_predictor/3"
 
 
 class FrozenTrialPredictor:
@@ -30,6 +31,7 @@ class FrozenTrialPredictor:
 
     def __init__(self, record, state):
         self._record = freeze_metadata(record)
+        self._source_storage = None
         self._state = {name: value.detach().cpu().clone() for name, value in state.items()}
         self._probability_transform = None
         if any(not bool(torch.isfinite(value).all()) for value in self._state.values()):
@@ -122,7 +124,9 @@ class FrozenTrialPredictor:
             or calibration["fit_contract"]["class_risk"]["loss_reduction"] == "calibration_balanced_fixed_mass")
 
     def with_fit_binding(self, binding):
-        return type(self)({**self._record, "ensemble_fit_binding": binding}, self._state)
+        result = type(self)({**self._record, "ensemble_fit_binding": binding}, self._state)
+        result._source_storage = self._source_storage
+        return result
 
     @classmethod
     def from_fitted(cls, fitted: FittedCalibrationCandidate):
@@ -175,7 +179,10 @@ class FrozenTrialPredictor:
                 "fit_contract": {"training_contract": prepared.payload["training_contract"],
                     "training_contract_digest": prepared.payload["training_contract_digest"],
                     "frozen_state_digest": _numeric_state_digest(state)}}
-        return cls(record, state)
+        result = cls(record, state)
+        if "class_calibration" in record and hasattr(prepared, "source_storage_context"):
+            result._source_storage = prepared.source_storage_context(subject)
+        return result
 
     def predict_raw_logit(self, X, trial_channel_mask=None, *, device="cpu"):
         if self.record["kind"] == "n2p3":
@@ -217,14 +224,38 @@ class FrozenTrialPredictor:
         return {"raw_logits": raw, "llr": llr, "posterior_logits": posterior, "probability": expit(posterior),
                 "semantics": self.record["class_calibration"]}
 
-    def save(self, path: str | Path):
-        from research.source_execution import save_source_checkpoint
+    def storage_record(self):
+        """The public record stays complete; only explicit storage replaces it."""
+        from research.source_metadata_store import compact_source_record
 
-        save_source_checkpoint(path, {
+        return (self.record if self._source_storage is None
+                else compact_source_record(self.record, self._source_storage[1]))
+
+    @property
+    def source_contract_reference(self):
+        return None if self._source_storage is None else self._source_storage[1]
+
+    def save(self, path: str | Path, *, metadata_store=None):
+        from research.source_execution import save_source_checkpoint
+        from research.source_metadata_store import SOURCE_STORE_SCHEMA
+
+        payload = {
             "schema": (FROZEN_TRIAL_SCHEMA if "class_calibration" in self.record
                        else "n2p3_frozen_trial_predictor/1"),
-            "record": plain_metadata(self._record), "state": self._state,
-        })
+            "record": plain_metadata(freeze_metadata(self.storage_record())), "state": self._state,
+        }
+        if self._source_storage is not None:
+            content, reference = self._source_storage
+            source = {"schema": SOURCE_STORE_SCHEMA, "mode": "shared" if metadata_store is not None else "embedded"}
+            if metadata_store is not None:
+                if metadata_store.publish(content) != reference["checkpoint_sha256"]:
+                    raise ValueError("source publisher differs from the original admitted checkpoint")
+            else:
+                source["sources"] = {reference["checkpoint_sha256"]: content}
+            payload.update(schema=SOURCE_REFERENCE_TRIAL_SCHEMA,
+                record=plain_metadata(freeze_metadata(self.storage_record())), source_metadata=source,
+                expanded_record_digest=semantic_sha256(self.record))
+        save_source_checkpoint(path, payload)
         return Path(path)
 
     def digest(self):
@@ -244,8 +275,43 @@ class FrozenTrialPredictor:
         return digest.hexdigest()
 
     @classmethod
-    def load(cls, path: str | Path):
+    def load(cls, path: str | Path, *, metadata_store=None):
+        from research.source_metadata_store import _SourceMetadataAdmission
+
+        return cls._load_with_admission(path, _SourceMetadataAdmission(store=metadata_store))
+
+    @classmethod
+    def _load_with_admission(cls, path, admission):
         payload = torch.load(path, weights_only=True, map_location="cpu")
+        return cls._load_payload(payload, admission)
+
+    @classmethod
+    def _load_payload(cls, payload, admission):
+        from research.source_metadata_store import (
+            SOURCE_STORE_SCHEMA,
+            _SourceMetadataAdmission,
+            expand_source_record,
+            source_contract_reference_in,
+        )
+
+        if payload["schema"] == SOURCE_REFERENCE_TRIAL_SCHEMA:
+            source = payload["source_metadata"]
+            reference = source_contract_reference_in(payload["record"])
+            if source.get("schema") != SOURCE_STORE_SCHEMA or reference is None:
+                raise ValueError("source-reference predictor requires its complete source dependency")
+            if source["mode"] == "embedded":
+                if set(source) != {"schema", "mode", "sources"} or set(source["sources"]) != {reference["checkpoint_sha256"]}:
+                    raise ValueError("standalone source closure differs from its required dependencies")
+                admission = _SourceMetadataAdmission(embedded=source["sources"])
+            elif source["mode"] != "shared" or set(source) != {"schema", "mode"}:
+                raise ValueError("unsupported source metadata closure")
+            record = expand_source_record(payload["record"], admission)
+            if semantic_sha256(record) != payload["expanded_record_digest"]:
+                raise ValueError("restored complete source predictor metadata changed")
+            admission.validate_predictor(reference, record, payload["state"])
+            result = cls(record, payload["state"])
+            result._source_storage = admission.content(reference), freeze_metadata(reference)
+            return result
         if payload["schema"] not in {FROZEN_TRIAL_SCHEMA, "n2p3_frozen_trial_predictor/1"}:
             raise ValueError("unsupported frozen trial predictor schema")
         if payload["schema"] == FROZEN_TRIAL_SCHEMA and "class_calibration" not in payload["record"]:

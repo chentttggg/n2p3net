@@ -58,7 +58,9 @@ def validate_b12_execution_manifest(report: Mapping, plan: Mapping) -> dict:
     fitter, where both checkpoint and target dataset membership are available.
     """
 
-    if not isinstance(report, Mapping) or report.get("schema") != "n2p3_erp_comparator_result/2":
+    if not isinstance(report, Mapping) or report.get("schema") not in {
+        "n2p3_erp_comparator_result/2", "n2p3_erp_comparator_result/3"
+    }:
         raise ValueError("B12 admission requires an ERP comparator result")
     if not isinstance(plan, Mapping) or plan.get("schema") != "n2p3_erp_comparator_plan/1":
         raise ValueError("B12 admission requires an ERP comparator plan")

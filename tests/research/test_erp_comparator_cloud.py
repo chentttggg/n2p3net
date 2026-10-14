@@ -43,11 +43,11 @@ def _native_fault(arguments):
 
 
 def _native_bad_output(arguments):
-    original_write, tampered = runner.atomic_write_json, False
+    original_write, tampered = runner._write_binary_json, False
 
     def write(path, report, **kwargs):
         nonlocal tampered
-        if (not tampered and report.get("schema") == "n2p3_erp_comparator_result/2"
+        if (not tampered and report.get("schema") in {"n2p3_erp_comparator_result/2", "n2p3_erp_comparator_result/3"}
                 and all(cell["status"] == "completed" for cell in report["cells"])):
             tampered = True
             violation = arguments["violation"]
@@ -75,7 +75,7 @@ def _native_bad_output(arguments):
             return Path(path)
         return original_write(path, report, **kwargs)
 
-    runner.atomic_write_json = write
+    runner._write_binary_json = write
     return runner.comparison_participant_adapter(arguments)
 
 

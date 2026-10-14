@@ -64,6 +64,8 @@ def export_binary_pools(cells, declarations, output):
                     loaded.append({key: artifact[key].copy() for key in ("y", "test_rows", "calibration_rows", "posterior_logits")})
                 origins.append({"expert_id": name, "model_artifact": cell["model_artifact"],
                                 "prediction_artifact": cell["prediction_artifact"], "probability_semantics": cell["probability_semantics"]})
+                if "source_contract_reference" in cell:
+                    origins[-1]["source_contract_reference"] = cell["source_contract_reference"]
             first = loaded[0]
             if any(not np.array_equal(first[key], value[key]) for value in loaded[1:]
                    for key in ("y", "test_rows", "calibration_rows")):
