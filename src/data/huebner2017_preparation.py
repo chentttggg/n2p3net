@@ -130,6 +130,10 @@ def write_huebner_original_manifest_declarations(manifest_path, output, *, evalu
     manifest_path = Path(manifest_path)
     manifest_payload = manifest_path.read_bytes()
     manifest = json.loads(manifest_payload)
+    sessions = tuple(evaluation_session_ids)
+    if (not sessions or len(set(sessions)) != len(sessions)
+            or any(s not in {"0", "1", "2"} for s in sessions)):
+        raise ValueError("Huebner evaluation sessions require unique original acquisition session identities")
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     participants, records = [], []
@@ -141,7 +145,7 @@ def write_huebner_original_manifest_declarations(manifest_path, output, *, evalu
         if hashlib.sha256(payload).hexdigest() != row["sha256"]:
             raise ValueError("original participant envelope differs from its exact metadata manifest")
         declaration = json.loads(payload)
-        declaration["evaluation_session_ids"] = list(evaluation_session_ids)
+        declaration["evaluation_session_ids"] = list(sessions)
         for record in declaration["record_sources"]:
             bdf = record.get("bdf")
             if bdf is not None:
@@ -162,8 +166,9 @@ def write_huebner_original_manifest_declarations(manifest_path, output, *, evalu
     roster = {"schema": "n2p3_Huebner_candidate_input_roster/2", "dataset_id": "Huebner2017",
         "original_metadata_manifest": {"path": str(manifest_path.resolve()),
             "sha256": hashlib.sha256(manifest_payload).hexdigest()},
-        "evaluation_session_ids": list(evaluation_session_ids), "participant_declarations": participants,
-        "record_statuses": records, "requested_last_session_characters": 13*9*7,
+        "evaluation_session_ids": list(sessions), "participant_declarations": participants,
+        "record_statuses": records,
+        "requested_evaluation_characters": sum(str(r["session"]) in sessions for r in records)*7,
         "EEG_payload_hashes": sum(r["status"] == "original_marker_and_NEMAR_EEG_available" for r in records),
         "EEG_preload": 0, "model_fits": 0, "original_archive_writes": 0}
     (output/"roster.json").write_text(json.dumps(roster, sort_keys=True, indent=2)+"\n", encoding="utf-8")

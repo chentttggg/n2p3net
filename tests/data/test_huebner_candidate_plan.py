@@ -44,3 +44,20 @@ def test_manifest_bytes_remain_bound_to_original_rows_across_later_file_change(t
     roster = write_huebner_original_manifest_declarations(source, tmp_path/"output")
     assert roster["original_metadata_manifest"]["sha256"] == original_sha
     assert hashlib.sha256(original_read(source)).hexdigest() != original_sha
+    assert roster["requested_evaluation_characters"] == 7
+
+
+def test_evaluation_denominator_uses_declared_records_and_sessions(tmp_path):
+    declaration = {"dataset_id": "Huebner2017", "source_format": "original_vmrk_plus_NEMAR_BDF",
+        "source_subject_id": "1", "record_sources": [
+            {"subject": "1", "block": block, "run": 0, "bdf": None, "marker": {"sha256": "a"*64}}
+            for block in (0, 1, 2)]}
+    source = tmp_path/"subject01.json"
+    source.write_text(json.dumps(declaration), encoding="utf-8")
+    manifest = tmp_path/"manifest.json"
+    manifest.write_text(json.dumps({"schema": "n2p3_huebner_participant_envelope_manifest/1", "records": [
+        {"path": str(source), "sha256": hashlib.sha256(source.read_bytes()).hexdigest()}]}), encoding="utf-8")
+    default = write_huebner_original_manifest_declarations(manifest, tmp_path/"one")
+    combined = write_huebner_original_manifest_declarations(manifest, tmp_path/"two", evaluation_session_ids=("1", "2"))
+    assert default["requested_evaluation_characters"] == 7
+    assert combined["requested_evaluation_characters"] == 14
