@@ -1,5 +1,11 @@
 # 执行、保存重放与代码集成
 
+原record共享接口已完成C权限、history C/P/T、per-record最大raw backing、prepared exact lookup和声明future roster集成。H最后session的819请求由原13人记录归约，test event预算只计已声明future录制；BI变长R与prefix graph按真实record/globalK/held preroll核回。旧冻结producer无history回放继续使用其原能力。代码及原receipt小归档保持实际版本，来源见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
+
+NN完整source metadata共享存储已集成binary软件链。原H67,247,311B checkpoint在公共store保存一次，八份同状态K0模型与源依赖由342,489,096B降为67,442,231B，每模型24,365B；单cell完整pretty报告由127,347,082B降为23,695B。独立shared加载和移到孤立目录的75,416,129B standalone闭包都重新走原source程序门，raw/LLR/posterior/probability逐值相等。原计量仅软件三行推理、0EEG/fit，保持自己的实际producer；新源长度/报告ref反例已单独闭合，当前root组合tinybinary caller通过。candidate完整model/graph dependency由同owner继续接入。
+
+本轮Windows源复用遇到Linux原source的Butterworth gain末位差；相同Scipy/MNE版本下，仅总positive gain1–3 ULP，目标BI512Hz、poles/zerosshape/notch/padding全部exact。独立六rate及七wrong-programme反例后，集中source-family门声明4 ULP gain-only关系，原source系数不换、target/replay精确关系保持。实际新BI consumer已通过该门；早期软件观察counter随后在K0 metadata shape失败，其原OS1保留，受影响完整caller继续。
+
 本文按主题维护已复核的结论、代码接点和下一步。运行日期与源码身份留在各证据及绑定中；使用方式和工程规则由原六指南维护。
 
 ## 当前职责与交付

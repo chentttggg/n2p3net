@@ -1,5 +1,7 @@
 # 当前技术结构与完整链条
 
+`research.source_metadata_store`持有完整原NN source bytes的一次共享发布及每独立ingress的真实准入；typed ref保存source SHA/size、原training contract与当前target identity/geometry/study exclusion。事务首次decode沿原source procedure/metadata门，之后每bind核当前target并生成fresh trunk/BN/C statistics。`FrozenTrialPredictor/3`的K0模型可共享原blob或独立嵌入完整闭包，positive `/2`保持小包；binary report `/3`与pool origins持同dependency，fresh public loader要求完整ref并重新准入。parent复算和finalize核原source/model/prediction身份。此处binary已集成`0d076fc/0c15b8d`；candidate ensemble/graph的shared source依赖保存与独立parent正在按同owner迁移，现有运行保持原冻结源码。
+
 `data.candidate_input`统一原始record/selection适配接口，Huebner原marker/NEMAR BDF与BI2014a原MAT/CSV各自持有字节、真实clock与parent truth。`RecordCalibrationPrefixCompiler`在同一owner按全局label-K授予各真实record的本地raw scope、trial和完整C组；文件之间保独立时钟。`CalibrationPrefix.calibration_records/fit_receipts`、inner/final replay、prepared capsule及parent truth `/2`消费同一权限。BDF仅在admission做一次完整SHA，延迟range读取前后核原file identity；metadata在入口深freeze、序列化给独立快照。source declaration SHA、adapter digest、每段acquisition SHA与实际consumer源码分别保存。原BNCI路线继续由同owner恢复，root两项兼容合同在组合树通过。完整history/typed ensemble和H/BI四fixed NN/selector是后续纵向交付，当前接受来源见[整合绑定](assets/research_resume_20261012/research_integration_acceptance.json)。
 
 空间后验现由`spatial_signal_prior/6`持有原物理A/D/Z因子及同次source QR/noise生成凭证，exact结构null取因子乘积，数值后验和BLUE沿原算法。`SpatialObservation/3`保存原Q、归一map、scale/volume/诊断，load集中核关系并恢复原态；general可识别reference-free效应也进入同一个source输运入口。

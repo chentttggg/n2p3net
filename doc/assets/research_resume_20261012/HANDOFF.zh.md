@@ -4,20 +4,17 @@
 
 ## 最新集成与当前工作
 
-- 原始record共享接口已整合`527e1c1/5e2e32f/8e1d8ca`：BI minimal原MAT/CSV、H marker/NEMAR decoder、C全局labelK/本地scope、fit receipts、inner/capsule/parent。Spec与Standards各自接受765增量；root两项旧BNCI/Ccapsule组合合同2PASS、PID49968/OS0/10.24s，源码前后一致、publicfit0。33成员577387B小交付归档`D:/BCI/artifacts/research-deliveries/huebner-shared-input.zip`，SHA422f4696…逐member回读核验；原classic8与新capsule各保producer。H下一history/roster切片cea74cb由两轴审阅，完整H/BI NN quartet/selector在各自冻结源码软件窗推进，不能用已接受input切片替代。
-- H完整13人metadata图独审通过：702原marker/header成员、351原录制=342EEG+9缺失、2457字符、最后session819，35缺Optic、162757NEMAR事件。完整manifest a991e29…及newcode-owner full13roster ce370b…分角色；更新绑定及全部source pointers进入[整合绑定](research_integration_acceptance.json)。原初始37member字段档案保持。
-- BNCI binary已接受零新fit恢复，原160/128/32、120fit与实际scienceOS0/owned0/167.62s全部核回。云doc回执整合`9e6aa3b`，原f3 fit producer与writer-only consumer分列；root核24个源–scratch AUC差及K200两固定half-xDAWN池各八人NLL/Brier变差，结论维护公共评估/校准选择页。新BNCI candidate由云owner唯一执行，剩余完整目标阶段继续，当前process状态向云owner取实际receipt。
-- source-lineage-storage作者已交原H67MB source的shared/embedded保存载入计量软件probe；完整原source authority在公共运行内共享一次，独立load重新准入。deepowner/binary与candidate save/load sourceblob依赖闭包按单owner后续交付，尚未集成或改变live来源。B11 source正控明确participant2首record C68、31导/nose/1000Hz、显式1.2s的rawstop19947，唯一必要真实sourcefit按账本与target1排除关系执行；不与已有NN source角色混用。
-
-- 科研主树已接受binary固定requested风险、四fixed source/scratch整程序、Linux sealed replay/source线程与E2接缝；完整来源见[整合绑定](research_integration_acceptance.json)。代码、软件、公共评估各保持实际范围。
-- B03 fixed与strict cross-fitted温度+ε、ordinary各exactpool独立OOF/ε/保存重放和正常parent已集成`937cbae`。原首片与最终5case/selected29/ordinary464预测保独立producer；新公共opt-in比较沿冻结程序推进。
-- B07多通道finite C-latent已集成`319da17`，同原record/globalβ/flat measure、完整正状态、两current-q评分法与原包回放保原来源。严格BNCI-shaped合成fixture正式三个出口通过，原模型零refit；下一source/C参数学习、longhistory和公共效能。
-- B09 exact compact rowspace及真实source/OOF/ensemble已集成`b15bdaf/ff131b8`，immutable原producer修复为`138e2bf`。root实际组合旧包零fit/QR重放通过，原record/digest/file/baseline保持；原数值QR/noise/BLUE复用。完整审阅`tmp/SPATIAL_ROWSPACE_INDEPENDENT_REVIEW.md`。
-- B11同record一个Gammaλ、properβ一次、原flat测度、source/C issuer与direct augmented QR持久包已集成`dd63d32`。最终7case与root原16draw零fit/白化/QR回放接受。下一typed ensemble同record OOF/fullhistory/candidate/capsule已交作者`D:/BCI/worktrees/joint-flat-ensemble`及独审，先补真实law和权限，不套旧nonchronological独立组程序。
-- B12原字段方向已独审：Huebner154原拼字marker/146NEMAR join、32choice/68flash、Optic/feedback/缺失ordinal有真实依据；root原两run952事件独立复核通过。BI2014a MAT label-K可实施但与CSV数值不同，新producer独封；BI2015a需真实stimulus日志。Huebner/通用record-aware compiler作者`multichannel_c_latent`，BI neutralreader/专属route作者`global_research_review`，B11 typed history消费同record接口。37成员550077B档案与manifest见整合绑定，原file/source角色保持。
-- 新base source四fold闭包完成：seed20261014、原f3f32f8、原3成功+Huebner补集共8成功fit，SourceSeedCatalog四键准入。原queue OS1/失败曝光和新tail OS0/owned0各保持。root审阅`D:/BCI/artifacts/base-matrix-20261014/source-run/SOURCE_CLOSURE_ROOT_REVIEW.json`，closure原SHA59e1d817…；原terminal audit改写元文件事件保留，模型/report/catalog未写。云owner继续完整目标队列。
-- 原BI/BNCI、entry005/P1载荷与模型producer保原SHA，恢复位置`D:/BCI/artifacts/cloud-completed-originals-20261014`；科研原dirty main保持。C-latent/空间/B11旧作者树已回收证据并删除；概率树长路径残留已归档，原递归删除自动拒绝后保留。大交付归档`D:/BCI/artifacts/research-deliveries`，逐成员manifest已核验。
-- memory精简按允许机制写入`C:/Users/chent/.codex/memories/extensions/ad_hoc/notes/20261013-215044-research-memory-simplification.md`，保全局推导、实际模块/调用链审阅、定向验证、科研质量、D盘代码树及主题文档。
+- 权威科研树仍是D盘本目录，原dirty main及原数据保持。123愿望/B00–B14完整目标继续，六指南与四主题页持活动规范；详细接受身份见[整合绑定](research_integration_acceptance.json)。完成模块先审实际调用链，再运行能区分新行为的必要验证。
+- B03完整温度+ε与ordinary各exactpool、B07 finite多通道C-latent、B09compact物理效应/source/OOF/ensemble及B11同record Gamma/flat已接受独立软件切片；旧模型/公共结果保原producer，后续新公共opt-in各自执行。
+- 新seed20261014四source已完整完成，八次成功fit及原失败曝光分账。BNCI binary160请求/128评分/32协议不可用、120目标fit已零新fit恢复，真实scienceOS0/owned0/167.62s；root核24个源–scratch AUC差及K200两个half-xDAWN池各八人的概率退化，读数维护公共评估/校准选择页。唯一云窗口继续完整六目标阶段，实际进程向云owner取receipt，不另启重复队列。
+- H原输入与record compiler已集成527e1c1/5e2e32f/8e1d8ca，history/panel为0083ebb/8e56ae8/25858e6/b8c33d5/10baa35，BI recordgraph/variableR为6df4953及frozen序列等价修复102d0eb。C全局labelK、本地clock、fit receipts、C/P/T physicalmap、prepared exactlookup、future-only test预算和实际requested归约共用原owner。已用C24标签的当前字符继续embargo，typedparent按原current标签交集核独立未来。
+- 完整H13 metadata：702原成员、351录制=342EEG+9缺失、2457字符，最后session819；35缺Optic/162757NEMAR事件和原member/时钟joins独审通过。原manifest a991e29…与新code-owner full13roster ce370b…分角色。两份小软件档案huebner-shared-input.zip与huebner-shared-history.zip共约743KB，原bytes逐member核验；原初始37member字段档案保持。
+- H首NN attempt只在RAM门失败，source/targetfit均0。BI新完整caller已通过source gate并保存三ordinary、K0/K48选择图；原生产及test13SHA前后同，实际OS1/511.826s来自新graph tuple/list误拒。6542fad→102d0eb只修这一表示关系。作者先零fit恢复已有图/模型，再执行尚未开始的K134选择补集；实际原MAT01/57字段出口已核，toy软件纵向与实际原MAT完整labelK/capsule/parent分别验收。H完整NN wrapper保持原四fixed/selector及必要waveformcontrol，等待candidate存储及可用窗口后继续。
+- Linux原NN source与Windows重生成source-family的总gain出现1–3 ULP差，同版Scipy/MNE、poles/zerosshape/notch/padding及BI512目标均exact。39db2f0集中声明正normal gain[k,2k,k]最多4ULP关系；原系数/数据/target执行/replay精确身份不换。独立Fraction、六rate及七错误反例保原证据。
+- SourceMetadataStore binary第一片已集成0d076fc/0c15b8d：完整原source bytes共享一次、每独立load重新原程序准入、target重新绑定/fresh数值态、positive2轻包，report3/pool/model完整ref。root组合tinycaller PID38756/OS0/13.36s；原H67MB存储计量与三actual代码exactSHA恢复，软件档案source-metadata-storage.zip约90KB。candidate ensemble/prefix/graph完整dependency第二片由同owner收尾，不注入当前live云freeze。
+- B11唯一真实source正控已保存91936B NPZ及约29MB原参数codec，participant2首recordC68/31导/nose/1000Hz/rawstop19947。sourcefit只有一次，原Decimal992×992 startup随后用约689秒编译；attempt_000在forwardOOF K0的joint profile=None入口失败，所有实际进程已退。作者修入口与同ingress原sourcecodec缓存后只复用已保存NPZ/codec，继续target1 C500、六独立future及完整typed/parent链。collapsed β/a/currentq与真T-only otherq的64component rawcov正控已独审。
+- H owner另在D:/BCI/worktrees/shared-ar-stationary-factor推有实测依据的sharedAR⊗Σ startup分解/严格误差见证，generic/private与旧保存root保持原法。该优化和B11同byte缓存分工独立，H原NN全任务仍保留。
+- 新版构建确认后移除无用旧build。source-store17个旧fixture/legacy namespace共92346883B已用Windows回收站可恢复移除，原数据/source/JUnit/最终闭包保留；这不等于物理磁盘立即释放。旧概率树长路径残留的原永久删除拒绝保持历史记录，未用等效方式绕过。活动D代码树完成整合与交接后再清理，环境/数据共用；memory精简更新仍沿允许的ad_hoc note。
 
 ## 工作身份与恢复
 

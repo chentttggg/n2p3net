@@ -1613,5 +1613,512 @@
         "new_source_fits": 0
       }
     }
+  },
+  "record_public_history_scope": {
+    "status": "accepted_original_record_C_P_T_issuer_and_frozen_preparation_software",
+    "author_commits": [
+      "cea74cb",
+      "2a58452",
+      "2738961",
+      "c36328d",
+      "19d0fe2"
+    ],
+    "integrated_commits": [
+      "0083ebb",
+      "8e56ae8",
+      "25858e6",
+      "b8c33d5",
+      "10baa35"
+    ],
+    "scope": "original decoder/C physical mapping/explicit evaluation record roster/maximal raw backing/prepared exact scope lookup;NN quartet runtime remains separate",
+    "closed_review_items": [
+      "old producer no-history capability",
+      "short history versus long C backing",
+      "single admitted manifest bytes",
+      "history capability digest",
+      "matched waveform control",
+      "parameterized evaluation denominator",
+      "test event budget uses original future roster"
+    ],
+    "validation": {
+      "legacy_frozen_c432_current_consumer": {
+        "cases": 1,
+        "OS_exit": 0
+      },
+      "history_master_short1450_long5450": {
+        "cases": 1,
+        "OS_exit": 0
+      },
+      "builder_and_manifest_bytes": {
+        "cases": 2,
+        "OS_exit": 0
+      },
+      "history_digest": {
+        "cases": 1,
+        "OS_exit": 0
+      },
+      "evaluation_session_denominator": {
+        "cases": 1,
+        "OS_exit": 0
+      },
+      "new_future_test_budget": {
+        "cases": 1,
+        "OS_exit": 0
+      },
+      "root_repeated_old_green_cases": 0,
+      "public_fits": 0
+    },
+    "actual_history_capsule": {
+      "worker_pid": 53552,
+      "OS_exit": 0,
+      "owned_after": 0,
+      "model_fits": 0,
+      "blob_bytes": 81062464,
+      "runtime_producer": "cea74cb executed bytes preserved in archive; subsequent repair commits not attributed to this run"
+    },
+    "first_NN_quartet_attempt": {
+      "scientific_pid": 8660,
+      "OS_exit": 1,
+      "cause": "local RAM admission before actor fit",
+      "source_fits": 0,
+      "target_fits": 0,
+      "receipt_archive_member": "evidence/HUEBNER_QUARTET/receipt.json"
+    },
+    "archive": {
+      "schema": "n2p3_huebner_record_history_delivery/1",
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\huebner-shared-history.zip",
+      "bytes": 165116,
+      "sha256": "2c900602ab6acf714f6685e0f4c19eea1ebc415ba4c98befa9233f20d7749216",
+      "members": [
+        {
+          "member": "accepted-final/src/data/candidate_input.py",
+          "bytes": 8222,
+          "sha256": "bd39251ebc69094de2e9d3fa06293b688d3a5a1c2bc4d5a57d8f733b9f4c1eb6"
+        },
+        {
+          "member": "accepted-final/src/data/huebner2017_candidate.py",
+          "bytes": 22793,
+          "sha256": "60e18e01f345580ec5dd533999fb445903ffcd871c89356327ba83fdb49b3bd4"
+        },
+        {
+          "member": "accepted-final/src/data/huebner2017_preparation.py",
+          "bytes": 11284,
+          "sha256": "9702eef6892b1d96f39f2d21a04afb9759c81269a905841cc9ef92d2c772ad09"
+        },
+        {
+          "member": "accepted-final/src/research/prefix_inner_replay.py",
+          "bytes": 58689,
+          "sha256": "2cbd0f51d861ca1b66f111f5645c6cb952cf4afe8441c5124373de6ef5743a20"
+        },
+        {
+          "member": "accepted-final/src/research/prefix_replay_inputs.py",
+          "bytes": 44253,
+          "sha256": "01a3131fe7263f6e42e4961e6f967e65ebe0701e84a1136c08991cd049fc7ac0"
+        },
+        {
+          "member": "accepted-final/src/transfer/ensemble_views.py",
+          "bytes": 132790,
+          "sha256": "0518a03535bee7e920ae69d9c8b1edca5ea9ab6ce5fd30497a9cbaa3b4886468"
+        },
+        {
+          "member": "accepted-final/tests/data/test_huebner_candidate_plan.py",
+          "bytes": 3818,
+          "sha256": "8ca84eea3fa9cb1233a64d992f600952c048ac8e99ddf3744b72a1ac59d29617"
+        },
+        {
+          "member": "accepted-final/tests/research/test_record_public_history_scope.py",
+          "bytes": 8122,
+          "sha256": "52bbd5ee5e7725f23cab644ddf0119f1806389cfc8281f672a101045d900b206"
+        },
+        {
+          "member": "evidence/BNCI_RECORD_HISTORY_SCOPE_DELTA.xml",
+          "bytes": 420,
+          "sha256": "4348d4259dee58a3da105de088d5ef6534d8c09b18658430a49ee48d839e263e"
+        },
+        {
+          "member": "evidence/HUEBNER_EVALUATION_SESSION_DENOMINATOR_DELTA.xml",
+          "bytes": 388,
+          "sha256": "daefc0164de2f8415e00929b627315e94c3c4fc06c2f0594af1ab9de75a58b0d"
+        },
+        {
+          "member": "evidence/HUEBNER_HISTORY_DIGEST_DELTA.xml",
+          "bytes": 428,
+          "sha256": "fcd252a9c19eeb1acdfcc62c65e272e4b5eb6b65d2c5fcffd0eb8ccf73281113"
+        },
+        {
+          "member": "evidence/HUEBNER_HISTORY_PANEL_DELIVERY/source_identity.json",
+          "bytes": 1479,
+          "sha256": "aa153edb71794969b9c818430244bf6f9fa9d6ffd78d72763119f7c35b2d042d"
+        },
+        {
+          "member": "evidence/HUEBNER_HISTORY_SCOPE_DELTA.xml",
+          "bytes": 758,
+          "sha256": "0e718ebdecbf03c635518c5cf1b33686455e92544d0dc4e7db191201314e4548"
+        },
+        {
+          "member": "evidence/HUEBNER_LONGEST_HISTORY_MASTER_GREEN.xml",
+          "bytes": 416,
+          "sha256": "07b45d2395be5f50e5df7114fba27524c4d78dd5c39545da0fc6f44c188edc31"
+        },
+        {
+          "member": "evidence/HUEBNER_PUBLIC_BUILDER_DELTA.xml",
+          "bytes": 567,
+          "sha256": "6a0a1a8b43b09300415fb508dd48f303ecb259b83ee27f661e67d2dbfdd93300"
+        },
+        {
+          "member": "evidence/HUEBNER_QUARTET/receipt.json",
+          "bytes": 693,
+          "sha256": "748f667dec4e1151f6b6a2a1729b2c1d8e3f61ea4ac3d3f622acfe311976f182"
+        },
+        {
+          "member": "evidence/HUEBNER_RECORD_TEST_BUDGET_DELTA.xml",
+          "bytes": 416,
+          "sha256": "8a15693f841ab10f228fb63384c3411b8bcde1fa76d7918a4de9cdd410c9bcf2"
+        },
+        {
+          "member": "evidence/HUEBNER_SHARED_PREFIX_HANDOFF.binding.json",
+          "bytes": 2481,
+          "sha256": "6cdc65602becf621e3ca0d3bb6a1796ae69c92dac2e219c58baf5f1f09bc8920"
+        },
+        {
+          "member": "evidence/HUEBNER_SHARED_PREFIX_HANDOFF.md",
+          "bytes": 15397,
+          "sha256": "a3b78c1b841370f2111b7da8a68a5b1ef24a13a6d5c13bce822dd436f9b32afb"
+        },
+        {
+          "member": "evidence/REAL_OLD_PREFIX_PRODUCER_NO_HISTORY_DELTA.xml",
+          "bytes": 391,
+          "sha256": "a4fd096c85ab4bd1f5ae3f24df082e5b010a8e81c97f9605713daaee34af25cb"
+        },
+        {
+          "member": "review/HUEBNER_SHARED_SPEC_765_273.binding.json",
+          "bytes": 5205,
+          "sha256": "2c44a861c5e7472b0880363c1591c7e392357fdb56005b3eb7e69b228e431c73"
+        },
+        {
+          "member": "review/HUEBNER_SHARED_SPEC_REVIEW.md",
+          "bytes": 23001,
+          "sha256": "acce868a9681e2be559217fc63742e69efd1c78d775de243d5686b885e4376d8"
+        },
+        {
+          "member": "review/HUEBNER_SHARED_STANDARDS_REVIEW.md",
+          "bytes": 33259,
+          "sha256": "49ce272c3a32b352f626f05d515975ee2d34c745f78a5bf656dc114d00cdf838"
+        },
+        {
+          "member": "runtime/src/data/candidate_input.py",
+          "bytes": 8222,
+          "sha256": "bd39251ebc69094de2e9d3fa06293b688d3a5a1c2bc4d5a57d8f733b9f4c1eb6"
+        },
+        {
+          "member": "runtime/src/data/huebner2017_candidate.py",
+          "bytes": 22793,
+          "sha256": "60e18e01f345580ec5dd533999fb445903ffcd871c89356327ba83fdb49b3bd4"
+        },
+        {
+          "member": "runtime/src/data/huebner2017_preparation.py",
+          "bytes": 10876,
+          "sha256": "5136c1a7ef34cf8305c671f6bf1a4adb35add59c3be47f7645cd4ceb85543aca"
+        },
+        {
+          "member": "runtime/src/research/prefix_replay_inputs.py",
+          "bytes": 44766,
+          "sha256": "63b99470aa580f2dc271707686c441ef5c6c3d40d959d0c9a961cc50510195fd"
+        },
+        {
+          "member": "runtime/src/transfer/ensemble_views.py",
+          "bytes": 134531,
+          "sha256": "3474fac5050dbcf9d1565605cc985b89e352f0cedbbfe9a9ee6db9ac192c7771"
+        }
+      ],
+      "member_readback_verified": true,
+      "EEG_blob_or_models_copied": 0
+    },
+    "independent_future_policy": "C24 current character remains embargo/unavailable; typed parent validates actual current-label intersection separately",
+    "next": [
+      "actual source NN/scratch quartet and graph caller",
+      "typed B11 source/C/OOF/future/package/parent chain",
+      "full13 final-session819 public plan"
+    ]
+  },
+  "record_selection_graph": {
+    "status": "accepted_saved_original_record_scope_and_variable_R_audit",
+    "author_commit": "2a3ba5e1ac72a0b33b059c75b535db7474747623",
+    "integrated_commit": "6df4953",
+    "root_review": "held SHA/path to unique source record; original global label interval and local preroll cutoff; all earlier full records unchanged; same metrics owner for uniform/mixed R",
+    "owner": "global_research_review",
+    "validation": "record scope and original operands eight targeted cases; mixedR RED1 to GREEN2;0fit/FFT/PT gate;actual NN graph exit remains next",
+    "original_failure": "raw None/target raw_scope None TypeError retained in author evidence",
+    "frozen_sequence_repair": {
+      "author_commit": "6542faddf6c9e9461b6941001bbff75d542ec076",
+      "integrated_commit": "102d0eb",
+      "actual_counterexample": "FrozenMetadata tuple interval versus JSON list;RED1 to GREEN1",
+      "original_runtime_OS1_retained": true,
+      "resume_scope": "old ordinary3 and K0/K48 graphs only; K134 selector remains new required fits"
+    }
+  },
+  "source_metadata_storage_binary": {
+    "status": "accepted_complete_source_bytes_shared_binary_model_report_pool_and_fresh_admission_software",
+    "author_commits": [
+      "08e6ce871e777b84bf48ea356d1187e3c8b714a5",
+      "39631c6eca64edb88dd324301c5fc7da5798af01"
+    ],
+    "integrated_commits": [
+      "0d076fc",
+      "0c15b8d"
+    ],
+    "root_spec_review": "full original source and procedure; immutable prototype with target rebind/fresh numerical state; shared publication/write reservation; model/fullreport/parent/pool dependency closure; positive2 unchanged",
+    "independent_standards": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\SOURCE_LINEAGE_STORAGE_STANDARDS_REVIEW.md",
+      "bytes": 12902,
+      "sha256": "8f89a790eff227f4536211731b8ab0e60a37a351bfedee46388e2cfae8341b33"
+    },
+    "closed_review_findings": [
+      "SS1 same-ingress cached source size revalidated",
+      "SS2 new public report3 requires source refs;legacy2 preserved"
+    ],
+    "delta_evidence_directory": "D:\\BCI\\artifacts\\source-lineage-storage-validation\\ref-gates-green",
+    "root_combination_caller": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\SOURCE_STORAGE_ROOT_INTEGRATION\\receipt.json",
+      "bytes": 2097,
+      "sha256": "5f64934474bab1b5309a50dde96d7912e9968d69b1e685155748d760ba980898"
+    },
+    "root_OS_exit": 0,
+    "probe": {
+      "schema": "n2p3_original_source_storage_probe/1",
+      "source_checkpoint": "D:\\BCI\\artifacts\\base-matrix-20261014\\shared-source-checkpoints\\Huebner2017_seed20261014.pt",
+      "source_sha256": "134a5bc1beef8a64870bae7f2ca3a29da33ddad689ccc90b5419170f9c467236",
+      "source_bytes": 67247311,
+      "native_threads": 1,
+      "scientific_fits": 0,
+      "public_EEG_rows": 0,
+      "software_inference_rows": 3,
+      "model_digest": "fd96c0b951660e9d4b68baff77533f7d74247e4327341ec632dc61cefd0b1d59",
+      "legacy_K0_model_bytes": 42811137,
+      "eight_legacy_model_bytes": 342489096,
+      "shared_model_bytes": [
+        24365,
+        24365,
+        24365,
+        24365,
+        24365,
+        24365,
+        24365,
+        24365
+      ],
+      "source_blobs": 1,
+      "shared_source_plus_eight_models_bytes": 67442231,
+      "one_cell_full_report_encoded_bytes": 127347082,
+      "one_cell_shared_report_encoded_bytes": 23695,
+      "standalone_embedded_bytes": 75416129,
+      "numeric_replay_equal": true,
+      "original_contract_digest": "2a59438eff530f5a4e0442702122fa478db0adc433fffa76e09c4af09f989b1d",
+      "complete_source_rows_recoverable": true,
+      "independent_full_procedure_admitted": true,
+      "stages": [
+        {
+          "phase": "original_decode_metadata_and_legacy_storage",
+          "wall_seconds": 15.958933699999761,
+          "rss_bytes": 704487424
+        },
+        {
+          "phase": "shared_write_eight_models_one_original_source",
+          "wall_seconds": 0.6480994999947143,
+          "rss_bytes": 498778112
+        },
+        {
+          "phase": "independent_shared_full_source_procedure_load_and_numeric_replay",
+          "wall_seconds": 30.289747199996782,
+          "rss_bytes": 968265728
+        },
+        {
+          "phase": "standalone_embedded_closure_fresh_load_isolated_numeric_replay",
+          "wall_seconds": 21.862218199996278,
+          "rss_bytes": 1305309184
+        }
+      ],
+      "source_members": {
+        "src/research/source_metadata_store.py": "0f4ff3d9299333947ca2c701aab71152cb5707c7d7f5443cbc769167335bd374",
+        "src/transfer/checkpoint.py": "4f73b98982e718c2e92ef7e6267770c0d30c4eee2ae44ab75f342fef8dd44912",
+        "src/transfer/calibration_state.py": "6a7bce10caaf3e78648f9b0874ea36b99cce1e5d142eeb24a1c4fd5abe5e6fd8"
+      }
+    },
+    "probe_source_recovery": {
+      "path": "D:\\BCI\\artifacts\\source-lineage-storage-validation\\original-source-probe-03\\original_producer\\RECOVERY.binding.json",
+      "bytes": 1204,
+      "sha256": "54ce78727c817bebabd998ff2677261f59de291c31b73bcf9b635b5c7507cfd5"
+    },
+    "probe_scope": "original source checkpoint,3 software inference rows,0 publicEEG or scientific fits; prior executed store source retained exact SHA",
+    "archive": {
+      "schema": "n2p3_source_metadata_software_delivery_archive/1",
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-metadata-storage.zip",
+      "bytes": 89797,
+      "sha256": "99039b038112fe21c73e4a4a5adeb276e5706418ec6f99d7d069f26a127f8e27",
+      "member_readback_verified": true,
+      "members": [
+        {
+          "member": "accepted-final/experiments/run_erp_comparator.py",
+          "bytes": 79575,
+          "sha256": "19f25ec933b78b17fc62590577f67ea266705ed2ec0ce9b8676ea70317461d70"
+        },
+        {
+          "member": "accepted-final/src/research/b12_contract.py",
+          "bytes": 15944,
+          "sha256": "ba2198e3ad80ce95d5657d15abef5f5254a68143eebeb1f3266d75bc4fbcf080"
+        },
+        {
+          "member": "accepted-final/src/research/binary_probability.py",
+          "bytes": 5637,
+          "sha256": "bf28d35894c3176b30ce935555ce610f1584b971b135da8380b932ca001ecd27"
+        },
+        {
+          "member": "accepted-final/src/research/source_metadata_store.py",
+          "bytes": 13098,
+          "sha256": "6a7886dee762f43f6d4ad9dec9f16a2a0bcaa850347a898c38223eb1148678be"
+        },
+        {
+          "member": "accepted-final/src/transfer/calibration_state.py",
+          "bytes": 20179,
+          "sha256": "6a7bce10caaf3e78648f9b0874ea36b99cce1e5d142eeb24a1c4fd5abe5e6fd8"
+        },
+        {
+          "member": "accepted-final/src/transfer/checkpoint.py",
+          "bytes": 56087,
+          "sha256": "4f73b98982e718c2e92ef7e6267770c0d30c4eee2ae44ab75f342fef8dd44912"
+        },
+        {
+          "member": "accepted-final/tests/research/test_erp_comparator_cloud.py",
+          "bytes": 10340,
+          "sha256": "821bdd89522957eb659621efe3c11f56825394c3ef9adf4d3f10036825fd531d"
+        },
+        {
+          "member": "accepted-final/tests/transfer/test_source_metadata_store.py",
+          "bytes": 14855,
+          "sha256": "c1fd1b9b1e9faf48327c190b55b4ea9bc8695a4dd570d0aee6baebb6e8b5cef0"
+        },
+        {
+          "member": "evidence/SOURCE_STORAGE_BINARY_DELIVERY.binding.json",
+          "bytes": 3583,
+          "sha256": "7acce3ec6d8b9cabb29aab610a7387b45d8dbfe74f243e43328db78bab84e80d"
+        },
+        {
+          "member": "evidence/SOURCE_STORAGE_HANDOFF.md",
+          "bytes": 5316,
+          "sha256": "3841f2d51f031c352588425e7a93c35bdc061dcb35e4e86ebca8677f220dab7b"
+        },
+        {
+          "member": "evidence/callers-02.xml",
+          "bytes": 1906,
+          "sha256": "697003b660a332b4a0d5b7e9dbaac63db60c8ade6ddf22fac09597943376079b"
+        },
+        {
+          "member": "evidence/contracts-04.xml",
+          "bytes": 2142,
+          "sha256": "0ae1f293409d4e37bfd2001d61fdac6e69111b678a82052d52931331a645707f"
+        },
+        {
+          "member": "evidence/original-source-probe-03/STORAGE_PROBE.binding.json",
+          "bytes": 2168,
+          "sha256": "df0557221439081b763c4a2607be659325376082eafe721c058e39f2c3226404"
+        },
+        {
+          "member": "evidence/original-source-probe-03/original_producer/RECOVERY.binding.json",
+          "bytes": 1204,
+          "sha256": "54ce78727c817bebabd998ff2677261f59de291c31b73bcf9b635b5c7507cfd5"
+        },
+        {
+          "member": "evidence/original-source-probe-03/original_producer/src/research/source_metadata_store.py",
+          "bytes": 12539,
+          "sha256": "0f4ff3d9299333947ca2c701aab71152cb5707c7d7f5443cbc769167335bd374"
+        },
+        {
+          "member": "evidence/original-source-probe-03/original_producer/src/transfer/calibration_state.py",
+          "bytes": 20179,
+          "sha256": "6a7bce10caaf3e78648f9b0874ea36b99cce1e5d142eeb24a1c4fd5abe5e6fd8"
+        },
+        {
+          "member": "evidence/original-source-probe-03/original_producer/src/transfer/checkpoint.py",
+          "bytes": 56087,
+          "sha256": "4f73b98982e718c2e92ef7e6267770c0d30c4eee2ae44ab75f342fef8dd44912"
+        },
+        {
+          "member": "evidence/shared-root-final.xml",
+          "bytes": 395,
+          "sha256": "66764c184f3e263fe7d4b12eade96e97cf4455b5f4845f7251c6be39e3f6f7be"
+        },
+        {
+          "member": "evidence/storage-final.xml",
+          "bytes": 1016,
+          "sha256": "db26d932b73335257bae91266754c3afbd5d7549271494de552c39e6d4e87283"
+        },
+        {
+          "member": "review/SOURCE_LINEAGE_STORAGE_STANDARDS_REVIEW.md",
+          "bytes": 12902,
+          "sha256": "8f89a790eff227f4536211731b8ab0e60a37a351bfedee46388e2cfae8341b33"
+        },
+        {
+          "member": "root/receipt.json",
+          "bytes": 2097,
+          "sha256": "5f64934474bab1b5309a50dde96d7912e9968d69b1e685155748d760ba980898"
+        },
+        {
+          "member": "root/results.xml",
+          "bytes": 396,
+          "sha256": "a6724688d5414ee5bcce97673de9b2f3d6b67436e9aa5e0992d07736f8fa739d"
+        }
+      ]
+    },
+    "next": "candidate ensemble/prefix/graph shared-source dependencies and isolated fresh export/load",
+    "root_software_fixture_target_fits": 3
+  },
+  "source_filter_family": {
+    "status": "accepted_explicit_source_regeneration_scalar_gain_policy",
+    "author_commit": "0c076e7ec204ed1121b1480fe339339c6b2ef25a",
+    "integrated_commit": "39db2f0",
+    "policy": "butterworth_bandpass_order4_scalar_gain_four_ulp/1",
+    "independent_math": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\SOURCE_FILTER_FAMILY_STDLIB_ORACLE.json",
+      "bytes": 2503,
+      "sha256": "53dd52b3659bb2d9696ffbb0277e72cca67912af38b0cca3cba1cdf92881d98e"
+    },
+    "oracle_source": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\SOURCE_FILTER_FAMILY_STDLIB_ORACLE.py",
+      "bytes": 4253,
+      "sha256": "8214055c787d2270a955204ea80d53f93f1ed95d47a4b9aafeecb8a9c8390f5b"
+    },
+    "actual_source_readout": {
+      "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\source_SOS_readout.json",
+      "bytes": 13395,
+      "sha256": "8f8e8d8685c0a79cf5b2aec3fceca40d47ac2339ec2b51c713b3653844144463"
+    },
+    "actual_source_original_checkpoint_sha256": "669306ebd08b95c0ff9acea1bd4737c2802615122d98ea244396d4cd7fb45bae",
+    "gate_scope": "source recipe regenerated on its native grids only; target exactexecution and saved-model replay unchanged",
+    "positive_normal_binary64_gain_max_ULPs": 4,
+    "exact_relationships": [
+      "normalized k,2k,k zero shape",
+      "all denominator coefficients",
+      "all other SOS including notch",
+      "padding limit"
+    ],
+    "maximum_actual_gain_ULPs": 3,
+    "maximum_exact_arithmetic_bidirectional_gain_relative_difference": 1.0964892252549162e-15,
+    "policy_role": "explicit family admission; not universal platform design error theorem",
+    "tests": "actual6 source-native rates+7wrongprogramme cases and one4ULP boundary; noEEG/fit/checkpointgate repeats",
+    "actual_affected_BI_call": "new consumer source gate and K0 source-only returned; complete caller/recovery continues with original fit producer"
+  },
+  "owned_source_storage_cleanup": {
+    "binding": {
+      "path": "D:\\BCI\\artifacts\\source-lineage-storage-validation\\OWNED_CLEANUP.binding.json",
+      "bytes": 70824,
+      "sha256": "41b39d362133075a310ef1459a284b03e321ffec25150ee0062eea265c18ea4a"
+    },
+    "status": "obsolete generated namespaces removed recoverably after current build confirmed",
+    "performed": true,
+    "method": "reversible_recycle_bin",
+    "old_namespace_count": 17,
+    "logical_bytes": 92346883,
+    "physical_space_reclaimed_not_inferred": true,
+    "original_source_JUnit_final_closures_protected": true,
+    "prior_permanent_delete_review_rejections_retained": true
   }
 }

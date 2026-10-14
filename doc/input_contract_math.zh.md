@@ -1,5 +1,7 @@
 # P300 模型输入合同：离散时间、单位与分组
 
+source程序与当前selection输入的数值family相容由`validate_selection_checkpoint_execution`集中核验。已验证原source recipe重新生成的order4 Butterworth bandpass，只对正normal binary64总增益`[k,2k,k]`声明最多4 ULP关系；归一分子形状、全部denominator/其他SOS/notch/padding保持exact，unsupported shape走原exact路径。ULP是相邻可表示浮点数的一步。实际同版本Linux/Windows六rate最多3步，独立Fraction核最大双向增益差约`1.09649e-15`；这是明确的family准入政策。原source系数、执行字节和保存数值保持，target实际变换、有限支持及model replay继续精确核。原数据和准入关系见[执行主题](evidence/execution_and_integration.zh.md)。
+
 原始候选输入按真实acquisition record授权：全局K计最早的原刺激标签，每段record保本地native sample轴、C读取范围与label索引；raw不拼成跨文件连续噪声。Huebner物理屏幕42位置含32可选及10空白，每次实际集合刺激保12个物理位置，概率仅在32候选归一。原target编码在decoder侧变为授权C标签和parent truth，prediction只收公共集合与时钟。缺光学onset和缺EEG以具名不可用保请求；完整dataset roster、C最大支持与future请求分别记录。BI2014a原MAT与CSV使用同sample-index事件轴，但EEG舍入不同，各声明独立numeric producer。实现与验收入口见[技术结构](technical_structure.zh.md)。
 
 信息界`/2`的估计量分列：同C的raw Mahalanobis plug-in保留拟合偏差；独立flash/共同已知covariance模型用完整binary activation A和`h[t,q]=sum_i(A[i,q]-A[i,t])²`定义候选log-likelihood差的mean `-d²h/2`、variance `d²h`。pairwise上下界、finite MC、实际生产tie/abstention分别持有自己的角色。有限算子传播用pre-filter AR输入law的`F K_AR F.T`；SPD ambient密度、显式正交支撑的Euclidean密度和regularized ridge诊断分别保存测度。符号公式和小型反例接受见[响应与噪声](evidence/response_and_noise.zh.md#当前模型与数值任务)。
