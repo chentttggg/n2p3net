@@ -46,7 +46,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B09 空间 | physical effect/exact结构、compact长record rowspace、source group forecast与真实source/OOF/ensemble；immutable producer旧包零fit回放 | 公共跨布局与reference效能、d-prime/variance不确定性、joint MLE；Pz4保原范围 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |
 | B11 动态/稳健 | noise-only Gamma、proper与同record flat联合尺度；原raw有效行数、prefix漂移后验direct QR；实际source/C issuer和/2原包重放 | typed ensemble/public候选适配、finite Gamma连续预测精度、动态state及完整公共效能 |
-| B12 公共流程 | 独立C/test/K0、完整requested/final账本；原producer四库binary/八人candidate读数；BI61人与BNCI8人episode三臂终态、保存结果和原输入证明独立复签；entry005完整八人恢复及独立future读数；原大结果/P1分数按SHA恢复并逐项复算 | 四fixed程序的新源/目标/资源统一接受、完整单seed矩阵与独立泛化 |
+| B12 公共流程 | 完整C/test/K0/requested与原BI/BNCI/entry005/P1读数；新seed source四fold闭合；Huebner32-choice原marker/clock与BI2014a MAT label-K方向经真实字段审阅 | 当前完整目标矩阵；record-aware通用compiler/Huebner adapter与BI新MAT输入/caller/model/capsule；BI2015a真实stimulus日志；新公共配对与泛化 |
 | B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
 | B14 工程/吞吐 | B12同resource owner/完整账；旧完整candidate恢复、source prepared与共享评分实测云候选，纯CPU尾三拓扑读数；source cache/shared current-view scoring及conditional公共白化已合入并完成相关复核 | 统一新source实际25CPU/4GPU能力及ready工作路由，完整矩阵吞吐、跨host整包和新study owner边界 |
 

@@ -767,5 +767,266 @@
       "scope": "original terminal metadata rewritten during audit; parsed payload equality checked; original before-byte hash and mtime not recorded; models/report/catalog not written"
     },
     "next": "full_requested_target_matrix_under_cloud_owner"
+  },
+  "public_candidate_input_authority": {
+    "status": "physical_field_direction_independently_accepted_implementation_in_progress",
+    "original_review_binding_sha256": "af22c05fdef66e2eb46a6ee3e89aac43c448bf39e4f61707900dd43ab9a6cc8e",
+    "accepted_direction": {
+      "Huebner2017": "Original vmrk physical set and optical clock plus exact per-record NEMAR join; generic32-choice dataset contract/record-aware C/test prefix required. Existing base remains binary.",
+      "BI2014a": "Original MAT/CSV code fields support labelK. MAT is a distinct numeric input producer; existing CSV behavior and results preserved.",
+      "BI2015a": "Current official Trigger/Target fields do not identify membership; actual stimulus-instance logs plus exact EEG clock join needed."
+    },
+    "archive_manifest": {
+      "schema": "n2p3_public_candidate_authority_archive/1",
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\public-candidate-authority.zip",
+      "bytes": 550077,
+      "sha256": "8c5b874606c243cd7e943268a44bf1f67149a7d2d50903f7998ed2bce042da64",
+      "member_bytes_verified": true,
+      "members": [
+        {
+          "member": "review/report.md",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\PUBLIC_CANDIDATE_ADAPTER_REVIEW.md",
+          "bytes": 17333,
+          "sha256": "ff8c71817f27faa761e93d090792d9daec6c43d3f453873f7a79ca9861317ac9"
+        },
+        {
+          "member": "review/original.binding.json",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\PUBLIC_CANDIDATE_ADAPTER_REVIEW.binding.json",
+          "bytes": 10379,
+          "sha256": "af22c05fdef66e2eb46a6ee3e89aac43c448bf39e4f61707900dd43ab9a6cc8e"
+        },
+        {
+          "member": "review/root_field_check.json",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_ROOT_FIELD_CHECK.json",
+          "bytes": 1606,
+          "sha256": "89940c0d8ba59617178864bca42a4a9e495c6cd60856c468793c86b7487f7038"
+        },
+        {
+          "member": "evidence/HUEBNER_LOCAL_MARKER_INVENTORY.json",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_LOCAL_MARKER_INVENTORY.json",
+          "bytes": 60039,
+          "sha256": "195797ce197d6238c58f9baeb4238e2661c4e1962e04a7af411c48b998c1e527"
+        },
+        {
+          "member": "evidence/HUEBNER_COMPLETE_LOCAL_MARKER_READOUT.json",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_COMPLETE_LOCAL_MARKER_READOUT.json",
+          "bytes": 2132470,
+          "sha256": "9ed351002d08e8ead482cef52e62f84414b734a5d2f1fb116e81cdb525e513bf"
+        },
+        {
+          "member": "evidence/HUEBNER_PHYSICAL_MARKER_JOIN.json",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_PHYSICAL_MARKER_JOIN.json",
+          "bytes": 3391,
+          "sha256": "6c87feea64cfdc7ab2eaa5c991af8827b8c12634ac7cc48a0f3ca35b2f096cfd"
+        },
+        {
+          "member": "evidence/HUEBNER_REMOTE_MARKER_RANGE_RECEIPT.json",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_REMOTE_MARKER_RANGE_RECEIPT.json",
+          "bytes": 719,
+          "sha256": "94d7981e37c7ecb562ba5a06fb02bad3334290c38473d532c28e4ae93b3700a6"
+        },
+        {
+          "member": "evidence/HUEBNER_REMOTE_PHYSICAL_JOIN.json",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_REMOTE_PHYSICAL_JOIN.json",
+          "bytes": 1040,
+          "sha256": "cd65437e20e458bb0e9c66b322df0ea9d8aba3ec95e2449b2a291ba0b73eee02"
+        },
+        {
+          "member": "evidence/HUEBNER_OFFICIAL_RECORD_METADATA.json",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_OFFICIAL_RECORD_METADATA.json",
+          "bytes": 11348,
+          "sha256": "19539b652c714fea6bb13504cb661f800f50bcd7cc95aa88cd0ffd6e1a1a11bc"
+        },
+        {
+          "member": "evidence/HUEBNER_OFFICIAL_PAPER.xml",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\HUEBNER_OFFICIAL_PAPER.xml",
+          "bytes": 158356,
+          "sha256": "8457d3f1ba90b4a4187c834c1a041c7f8ca902ba4f40d159857c492a83681ff5"
+        },
+        {
+          "member": "evidence/BI2014A_ORIGINAL_MAT_CSV_READOUT.json",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI2014A_ORIGINAL_MAT_CSV_READOUT.json",
+          "bytes": 2068,
+          "sha256": "9209efa6bee77910fceb2257c44639e89ce80f894099ce2ceeba379f73b20d7d"
+        },
+        {
+          "member": "evidence/BI2015_OFFICIAL_RECORD_METADATA.json",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI2015_OFFICIAL_RECORD_METADATA.json",
+          "bytes": 33303,
+          "sha256": "713d5a0765bb04582a38a2935915dabb7c7b0f9979401232c99bb444d52b1c24"
+        },
+        {
+          "member": "evidence/BI2015_OFFICIAL_REPOSITORY_TREE.json",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI2015_OFFICIAL_REPOSITORY_TREE.json",
+          "bytes": 52771,
+          "sha256": "cadf5d012e5ddb87849802ec7a1502b0517516c06487a39034cc1ad6584036fb"
+        },
+        {
+          "member": "evidence/BI2015_OFFICIAL_dataset.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI2015_OFFICIAL_dataset.py",
+          "bytes": 4241,
+          "sha256": "78c9c7b1e8cb5b19b1c07e11a311bd478bbf7a8eaa78372594d35a5134657749"
+        },
+        {
+          "member": "evidence/BI2015_OFFICIAL_HAL_METADATA.json",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI2015_OFFICIAL_HAL_METADATA.json",
+          "bytes": 2260,
+          "sha256": "e34802c7916df17a0ad26954f8fa0537c065f1612688b7fd9c5e56db32074fb8"
+        },
+        {
+          "member": "evidence/PUBLIC_CANDIDATE_ADAPTER_FIELD_PROBE.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\tmp\\PUBLIC_CANDIDATE_ADAPTER_FIELD_PROBE.py",
+          "bytes": 10894,
+          "sha256": "f240432921ee7328b4d43c46b2f25473e9b38f8abfa169e3a7417d0abfc009e0"
+        },
+        {
+          "member": "source/00_moabb.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\data\\moabb.py",
+          "bytes": 85015,
+          "sha256": "3e83324a6c3e3a1c71d4cda262314e5d37d18dbb3af343e6b059a02189aea7d4"
+        },
+        {
+          "member": "source/01_dataset.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\data\\dataset.py",
+          "bytes": 19013,
+          "sha256": "9addf53d08a58bd64db1a0b11a82a7b5aea0a51210d12529d777e46ebb7c3128"
+        },
+        {
+          "member": "source/02_source_records.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\data\\source_records.py",
+          "bytes": 61914,
+          "sha256": "fdda21493a3f3a7143434be19b82781472a3dbf06fdeec68dd8a727305078b39"
+        },
+        {
+          "member": "source/03_source_parsers.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\data\\source_parsers.py",
+          "bytes": 13831,
+          "sha256": "5150897310e8d3c43ff0a1249034968bcab2ff0edff74ec59a90bb8d0095a680"
+        },
+        {
+          "member": "source/04_bi2014a_candidate.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\data\\bi2014a_candidate.py",
+          "bytes": 35387,
+          "sha256": "2e646c2b9ced63d6976f51b21887bceef634af0f08e15ae3c5ffc6a96db97e7b"
+        },
+        {
+          "member": "source/05_bnci2014_008_candidate.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\data\\bnci2014_008_candidate.py",
+          "bytes": 30354,
+          "sha256": "ec2a6fc5279da68f6662331a00d0240ad527c30a32d3bdb4754340933acec5d1"
+        },
+        {
+          "member": "source/06_candidate_task.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\data\\candidate_task.py",
+          "bytes": 27435,
+          "sha256": "6efa9be063bf1f9dfe5473dcb6e83404ff0e403d104a0c3344ffccf21d04839d"
+        },
+        {
+          "member": "source/07_identity.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\data\\identity.py",
+          "bytes": 17623,
+          "sha256": "d468e2599d97e54cd50b5b680b1daad39aaa625ef3b678aedac66ed92c282805"
+        },
+        {
+          "member": "source/08_study.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\data\\study.py",
+          "bytes": 12440,
+          "sha256": "2ee86bc1b6ee91aa0211a7f7cda93a1263aa551b888733fe9c0f4f198f4df69e"
+        },
+        {
+          "member": "source/09_contract.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\data\\contract.py",
+          "bytes": 10665,
+          "sha256": "d30b4dca4b004d8351686d56090407a86e7810d2503db3b31fb64e3c43d604b0"
+        },
+        {
+          "member": "source/10_candidate_evidence.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\models\\candidate_evidence.py",
+          "bytes": 36589,
+          "sha256": "ed132e58fb2ecd6d7ca1ce2a06b1f9dd2278b4528a582f0b145e218a70f47d5c"
+        },
+        {
+          "member": "source/11_ensemble_views.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\ensemble_views.py",
+          "bytes": 82785,
+          "sha256": "f5cd9fbfc2964be3c0af57a743f699213be5f3cf41dfde3bd4a01ff5ec62664e"
+        },
+        {
+          "member": "source/12_ensemble_fit.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\ensemble_fit.py",
+          "bytes": 93321,
+          "sha256": "3744c78daea10faa8f8cdfb956e7f7a04ef1457c553d421b51eb89743debd94a"
+        },
+        {
+          "member": "source/13_trial_candidate_programme.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\research\\trial_candidate_programme.py",
+          "bytes": 18579,
+          "sha256": "9bf97732e7d36f511f517d67973e3b8390eef699f2dd25544167d45b24f5c3a9"
+        },
+        {
+          "member": "source/14_trial_candidate_execution.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\src\\research\\trial_candidate_execution.py",
+          "bytes": 17174,
+          "sha256": "7296f9faeece3e8c8e488b8568eb6b49496fc5468e737a19ba3d0b5cdd0dd4d9"
+        },
+        {
+          "member": "source/15_prepare_bi2014a_candidate.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\experiments\\prepare_bi2014a_candidate.py",
+          "bytes": 13669,
+          "sha256": "d69d9f306546d8cccff54e2dc3b60a2465a35b135ed52a8c9b84533475f73cb0"
+        },
+        {
+          "member": "source/16_run_candidate_ensemble_study.py",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\experiments\\run_candidate_ensemble_study.py",
+          "bytes": 168255,
+          "sha256": "0dea63be66f521787d47094257d169f83c5ba78167ebb3f703f418b572da44d9"
+        },
+        {
+          "member": "source/17_pyproject.toml",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\pyproject.toml",
+          "bytes": 1457,
+          "sha256": "2754e73819422a0764ba2ce6b18bc5e42f3e01ef4346d0f008b102e9e0a66156"
+        },
+        {
+          "member": "source/18_uv.lock",
+          "original_path": "D:\\BCI\\worktrees\\research-director\\uv.lock",
+          "bytes": 726207,
+          "sha256": "bd89b87d264818f8cd8e364f2627cb3a2ef4e634cbbcad42a7e48dbc9d9245f3"
+        },
+        {
+          "member": "source/19_braininvaders.py",
+          "original_path": "D:\\BCI\\n2p3-net\\.venv\\Lib\\site-packages\\moabb\\datasets\\braininvaders.py",
+          "bytes": 91179,
+          "sha256": "7f647c0a254fd60b968a949c4dbe5b5581aec9f3385543cb603b7d8c154fa805"
+        },
+        {
+          "member": "source/20_huebner_llp.py",
+          "original_path": "D:\\BCI\\n2p3-net\\.venv\\Lib\\site-packages\\moabb\\datasets\\huebner_llp.py",
+          "bytes": 35664,
+          "sha256": "964060a7fd15222b26e67e1b922000139884cee05747539cc1185a611f0a2dee"
+        }
+      ]
+    },
+    "root_small_original_field_check": {
+      "scope": "two_original_local_marker_runs_all_952_events;not_full_146_reexecution",
+      "marker_CRC": "both_match",
+      "clock_and_labels": "all_match",
+      "membership_per_character": [
+        68,
+        32
+      ],
+      "exposure": 16,
+      "minimum_pair_Hamming_distance": 12,
+      "public_fits": 0
+    },
+    "new_code_owners": {
+      "Huebner2017": "D:/BCI/worktrees/huebner-candidate",
+      "BI2014a": "D:/BCI/worktrees/bi2014a-label-prefix",
+      "B11_history": "D:/BCI/worktrees/joint-flat-ensemble"
+    },
+    "shared_ingress": "one_record_aware_compiler_with_typed_original_dataset_adapters;no_virtual_continuous_raw_concatenation",
+    "BI2014a_numeric_source": "MAT and CSV have exact marker/label/sample identities but materially different rounded EEG; new MAT input producer independent from original CSV",
+    "BI2015a_next": "actual_stimulus_instance_log_and_verified_EEG_clock_join",
+    "next": "complete_adapter_compiler_caller_model_capsule_and_parent_acceptance"
   }
 }

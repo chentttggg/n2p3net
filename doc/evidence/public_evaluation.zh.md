@@ -2,6 +2,14 @@
 
 本轮seed20261014完整source程序已完成，原f3f32f8、四fold最终模型和八次成功fit经原SourceSeedCatalog逐项准入。原三个成功模型保持，Huebner selected14的fresh refit作为补集完成；原失败attempt的38,820steps/19,875,840draws及未知refit曝光单列。源闭包为独立programme状态，原queue exit1和新tail exit0/owned0各保来源，目标训练结果沿自身receipt验收。完整SHA、原producer合同和root审阅见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)；下文原20260918读数保持。
 
+## 新公共候选输入与记录权限
+
+原字段审阅确认Huebner原vmrk可恢复32-choice真实集合刺激：156个本地完整标记成员中154为拼字记录，146与已有NEMAR EEG逐事件时钟/标签连接；原缺Optic和8份without-optical记录保各自来源。完整68flash一字符、每候选16次曝光，交错type21/type22有原4×8/2×18关系；视觉blank10留物理集合，概率词表为32。root独立读原ZIP小marker及TSV，两个run共952事件的CRC/clock/labels和68×32矩阵全部吻合，未解压EEG或拟合。
+
+BI2014a原MAT可支撑label-K，但与约5有效位CSV有实际数值差：所读4096行marker/label/indices一致，float32伏特EEG有65316/65536值不同，最大约`4.97326e-7 V`。新MAT输入独立封producer，旧CSV成果保持。BI2015a目前官方仅Trigger/Target，下一候选数据任务是取得真实stimulus-instance日志及EEG时钟连接键；完整binary路线继续。
+
+Huebner与BI新代码分别在D盘独立树实施，通用record-aware compiler持有真实record clock/raw support、全局label-K和private C/public future分流；多文件raw不拼成虚构连续录制。原字段、installed source、官方材料与root小复核已逐成员压缩归档到`D:/BCI/artifacts/research-deliveries/public-candidate-authority.zip`（37成员、550077 B），完整manifest和代码owner见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。此处接受科学输入方向；完整adapter/caller/model/capsule/parent与公开效能沿实际交付继续。
+
 ## 已完成云端程序：当前读数
 
 2026-10-14数据盘复制完成后，原BI2014a Q1、BNCI C600报告、entry005结果、P1结果及七项队列终态已恢复到本地持久目录，并逐文件核SHA。entry005的`4b249832…`（451241859B）和P1的`f34dfce0…`（303226B）与原完成绑定完全一致；两库report与各自原terminal的artifact账本一致。四个成功程序科学退出0、退出后所属树0；外层队列exit1保留三次历史失败。本次直接解析原报告、13984条前缀预测和576个P1原log density，没有新增拟合或模型重放。恢复位置、原producer、分析脚本及紧凑派生见[原载荷恢复与复算绑定](../assets/research_resume_20261011/cloud_payload_recovery_binding.json)。此前仅从保存报告舍入表计算的[读数](../assets/research_resume_20261011/cloud_completion_readout.json)继续保留其原范围。
