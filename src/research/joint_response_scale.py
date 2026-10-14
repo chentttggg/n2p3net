@@ -182,6 +182,25 @@ class CompiledDecision:
     def __init__(self, *args, **kwargs):
         raise TypeError("compiled proper likelihoods require a canonical compiler factory")
 
+    @property
+    def density_dimension(self):
+        """Original observations for a proper likelihood, not QR root height."""
+        return self.observed_rows
+
+    @property
+    def density_logdet(self):
+        return self.noise_logdet
+
+    @property
+    def likelihood_measure(self):
+        return "original_raw_observations"
+
+    def validate_energy(self, charts, residual, energy):
+        """Proper compiled likelihood retains its existing numeric policy."""
+
+    def validate_precision(self, charts, precision):
+        """Proper compiled likelihood retains its existing numeric policy."""
+
 
 def _compiled(root, *, decision_id, role, rows, logdet, start, kind, chart, source, mapping, raw):
     _numeric(root, logdet, name="compiled augmented likelihood")
@@ -196,15 +215,37 @@ def _compiled(root, *, decision_id, role, rows, logdet, start, kind, chart, sour
     return result
 
 
-def _augmented_qr(rows, chunk_rows):
+def _augmented_qr(rows, chunk_rows, *, with_error=False):
     """Preserve all p+1 columns and the final residual-only row."""
     if type(chunk_rows) is not int or chunk_rows < 1:
         raise ValueError("QR work-block size must be a positive integer")
     root = np.empty((0, rows.shape[1]))
+    errors = np.zeros(rows.shape[1])
     for start in range(0, len(rows), chunk_rows):
-        root = np.linalg.qr(np.vstack((root, rows[start:start + chunk_rows])), mode="r")
+        block = np.vstack((root, rows[start:start + chunk_rows]))
+        if with_error:
+            # The same QR, with Q retained only for its actual factorization
+            # and orthogonality defects; no second likelihood compression.
+            from research.channel_noise_mechanism import (
+                _column_norms,
+                _roundoff_gamma,
+                _row_dot,
+                _row_dot_gamma,
+            )
+
+            q, root = np.linalg.qr(block, mode="reduced")
+            reconstruction = _column_norms(block-q@root)
+            reconstruction += _roundoff_gamma(root.shape[0]+1)*_column_norms(np.abs(q)@np.abs(root))
+            defect = (float(np.linalg.norm(_row_dot(q, q)-np.eye(q.shape[1]), ord=2))
+                +_row_dot_gamma(len(q))*float(np.linalg.norm(_row_dot(np.abs(q), np.abs(q)), ord=2)))
+            if not np.isfinite(defect) or defect >= 1:
+                raise NumericalResolutionError("augmented QR has unresolved orthogonality")
+            polar_error = defect/(1+np.sqrt(1-defect))
+            errors += reconstruction+polar_error*_column_norms(root)
+        else:
+            root = np.linalg.qr(block, mode="r")
     _numeric(root, name="augmented QR root")
-    return root
+    return (root, errors) if with_error else root
 
 
 def _compile_white(white, *, decision_id, role, full_logdet, prefix_logdet, cut,
@@ -370,6 +411,7 @@ def _root_energy(record, charts):
     residual = vectors @ record.augmented_root.T
     result = np.einsum("bi,bi->b", residual, residual)
     _numeric(result, name="augmented residual energy")
+    record.validate_energy(charts, residual, result)
     return result
 
 
@@ -515,8 +557,9 @@ def _conditional_gaussian(prior, prepared, lambdas):
         quadratic = float(chart_mean @ chart_mean)
         normalization = 0.
         for block, lam in zip(prepared, scales, strict=True):
+            block.validate_precision(chart_mean[None], lam)
             quadratic += lam * _root_energy(block, chart_mean[None])[0]
-            normalization += block.noise_logdet + block.observed_rows * (np.log(2*np.pi)-np.log(lam))
+            normalization += block.density_logdet + block.density_dimension * (np.log(2*np.pi)-np.log(lam))
         log_density[index] = -.5 * (normalization+2*np.log(abs(np.diag(root))).sum()+quadratic)
         means[index] = prior.mean+prior.root @ chart_mean
         covariances[index] = prior.root @ chart_covariance @ prior.root.T
@@ -529,7 +572,9 @@ def _conditional_gaussian(prior, prepared, lambdas):
 def conditional_gaussian_components(prior, blocks, hyperparameters, scale_values):
     """Reusable same-beta likelihood and moments for a batch of declared scales.
 
-Returns immutable (log likelihood, beta means, beta covariances). ``scale_values``
+Returns immutable (log potential, beta means, beta covariances). Proper decisions
+use the raw-observation density; factory flat decisions use their declared da
+potential with effective dimension and coordinate volume. ``scale_values``
 has batch x actual-decision axes; each row integrates ONE global proper beta.
 Future inference engines reuse this owner and these prior/block classes, rather
 than inventing another model. No Gamma weights or hyperparameters are fit here.
@@ -583,6 +628,8 @@ node count or properness. Supply scale_rule to replay the actual prior rule.
         raise ValueError("owned fixed hyperparameters are required")
     blocks = prepared = _prepare(prior, blocks, hyperparameters)
     rule = scale_rule
+    if any(block.likelihood_measure != "original_raw_observations" for block in blocks):
+        raise TypeError("proper joint_evidence cannot relabel a physical-da flat potential as ambient density")
     if not isinstance(rule, DiscreteGammaRule) or rule.degrees_of_freedom != hyperparameters.degrees_of_freedom:
         raise ValueError("actual finite rule must agree with the declared prior nu")
     if not blocks:

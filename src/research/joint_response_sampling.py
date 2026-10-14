@@ -186,8 +186,9 @@ def _conditional_scale_parameters(model, u):
     except NumericalResolutionError as error:
         raise SamplingResolutionError("conditional Gamma energy is not representable") from error
     nu = model.hyperparameters.degrees_of_freedom
-    # Original raw scalar dimension, never compressed root height or n-p.
-    shapes = np.asarray([(nu+v.observed_rows)/2 for v in model.blocks])
+    # Proper: n_raw. Factory-owned flat quotient: n_raw-rank(Z).
+    # Neither compressed root height nor proper beta width changes this count.
+    shapes = np.asarray([(nu+v.density_dimension)/2 for v in model.blocks])
     rates = (nu+energies)/2
     if not np.isfinite(shapes).all() or not np.isfinite(rates).all() or np.any(rates <= 0):
         raise SamplingResolutionError("conditional Gamma operands are not representable")
@@ -230,6 +231,8 @@ conditional-Gaussian draws; no finite nu is silently relabelled infinity.
         for iteration in range(burnin + draws):
             mean, root = gaussian_conditional if gaussian else _conditional_beta_chart(model, lambdas)
             u = mean + solve_triangular(root.T, rng.normal(size=p), lower=False)
+            for record, precision in zip(model.blocks, lambdas, strict=True):
+                record.validate_precision(u[None], precision)
             if not gaussian:
                 shape, rate = _conditional_scale_parameters(model, u)
                 lambdas = rng.gamma(shape, 1 / rate)
