@@ -60,6 +60,8 @@ src/research/source_execution.py af464538c1525dd71b95c952e90d64a3ee930b399d574b4
 
 云owner chat `01a10b0f-c672-7e73-8449-4ebdaf6fc5eb` 独占云资源、freeze、source/target调度与实际利用率检查。新endpoint及原lockedvenv已恢复，软件case使用独立system code checkout、native1/hiddenCUDA、完整599member身份。下一公共执行仍按CPU25/GPU4和完整约定矩阵；base四程序不等待B07/B09新机制收尾。
 
+当前真实base source已经启动：seed20261014、冻结f3f32f8、supervisor9726/birth1791965155.85。Huebner选轮20epoch早停后refit staging23.01GiB超过18GiB原门，其余三fold继续，完整终态待云owner交付。总监已逐源核`SourceChainResume`与`SourceSeedCatalog`：原三成功模型零fit复用，原Huebner失败attempt保留，剩余1任务以独立计划实测预算补跑选轮+refit，最终catalog保原3+新1四键及完整master/requested；CPU25/GPU4容量保持。紧凑交接`D:/BCI/artifacts/base-matrix-20261014/source-run/SOURCE_RESUME_ROOT_REVIEW.md`及[执行主题页](../../evidence/execution_and_integration.zh.md)覆盖下文仍称等待启动的阶段描述。本次不改running freeze。
+
 下一cloud正式交付是native ABI实际holder/reader及组合case真实terminal/JUnit、内层task/source ledger、同run注册/失败分母、input lease与owned-tree RSS、source before/after SHA。41cecd6软件fixture worker2GiB来自原1.531GiB实测，最终whole-tree采样仍核同声明。软件完整接缝已接受，base科学声明也经独立14文件/四fold/123名单审阅finding0；云owner修明确source native5+interop1/claim6的25线程预算、冻结真实plan/source/inputs/resources后直接执行全约定base矩阵。BI新cohort核exact01..61，B07新增C-latent/概率ε另有opt-in freeze。只同步重要接口、阻塞及可整合交付。
 
 ## 续接的决策与实施顺序

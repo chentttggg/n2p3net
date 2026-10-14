@@ -442,5 +442,52 @@
       "prepared_input_reuse": "original_attested_input_authority_only",
       "reviewed_hyperparameters_scope_controls_unchanged": true
     }
+  },
+  "base_source_resume_review": {
+    "status": "root_source_review_complete_cloud_original_terminal_and_actual_checkpoint_admission_pending",
+    "source_seed": 20261014,
+    "target_seed": 20261014,
+    "actual_frozen_base_commit": "f3f32f8b234823d3d54aaa8a8d525b4679722715",
+    "original_archive_sha256": "d0f3214973c3bd67dac9ffca0c4a2d249b235f9191102631ef1be189331ecc7a",
+    "reviewed_source_sha256": {
+      "src/research/source_resume.py": "382bc2fe6db9b04cb79ad0f7357432e82f2fac2601ad306c0090364f3436684c",
+      "src/research/source_selection.py": "9b15c98cb113c3293d27fe59c9a27748999776b228009ab9077cba3b3a8c3708",
+      "src/research/source_execution.py": "38b4fd9d618734ea75f8a0dbe0612c69cef22a083e0d287289817828cbf1bb31",
+      "src/research/source_catalog.py": "3ecd71d823c6a153ee41f79db8c8dc824882b8345995c1aab26a263310ff3a1d",
+      "src/baselines/deep.py": "5693c2ae9d0a752d806a7e9c72b2fe0b4bc16cfed8ccabe9f846d04a5369912f",
+      "src/train/runtime.py": "3370903d94620851e9ed36bb74b29a53e8034beb1648a48aa9d7c935a8870fc0",
+      "experiments/run_source_training_chain.py": "75455bf857a6a795f9b820c28d4229bf9577265379902b21a79b6834c0e12ec7"
+    },
+    "failure_receipt": {
+      "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\source-run\\source_queue.Huebner_failure_pending_final.json",
+      "sha256_at_review": "4414f9ab968b7ffe1c478c595a3e534e043018d134b28e9fde2afc35a950f5fd",
+      "scope": "original_pending_final_source_attempt_observation"
+    },
+    "handoff": {
+      "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\source-run\\SOURCE_RESUME_ROOT_REVIEW.md",
+      "sha256": "9f6ddb323a50f62eda70fb5d8bd9ce82ddaf4f47babf6a6fbb66fe4b2ce20f92"
+    },
+    "original_Huebner_failure": {
+      "status": "fit_failure",
+      "staging_rss_bytes": 24707035136,
+      "original_task_budget_bytes": 19327352832,
+      "retained_normalized_bytes": 5447263560,
+      "budget_kind": "actual_unmeasured_after_fit_failure"
+    },
+    "resume_schema": "n2p3_source_resume_inventory/1",
+    "completed_source_reuse": "immutable completed task and original checkpoint only",
+    "failed_source_resume_unit": "original Huebner selection_plus_fresh_refit task",
+    "master_requested_folds": 4,
+    "master_logical_fits": 8,
+    "remaining_training_groups": 1,
+    "proposed_remaining_task_memory_gib": 30,
+    "resource_condition": "actual host/GPU resources admitted after original writers and leases retire; CPU25/GPU4 capacity retained",
+    "full_catalog_admission": "original three source_catalog_entry values plus new Huebner entry through SourceSeedCatalog and validate_source_procedure",
+    "full_catalog_complete": false,
+    "retry_launched_by_root": false,
+    "original_running_source_modified": false,
+    "new_test_runs": 0,
+    "new_fits": 0,
+    "memory_source_review": "source and validation_source cleared; CPU normalized matrix kept only for actual host fallback; inner boundary lacks explicit allocator cleanup; redundant live alias not established"
   }
 }
