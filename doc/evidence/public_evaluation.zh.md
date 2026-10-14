@@ -1,5 +1,7 @@
 # 公共数据评估与配对分析
 
+当前新base矩阵使用source/target seed20261014及冻结f3f32f8，源选轮/refit已实际启动。Huebner触发原单路内存门，其余fold继续；云owner核原terminal与成功产物后按失败补集恢复。完整source四键准入后执行约定目标矩阵；新结果使用自己的producer和requested账本，下文原20260918读数保持。
+
 ## 已完成云端程序：当前读数
 
 2026-10-14数据盘复制完成后，原BI2014a Q1、BNCI C600报告、entry005结果、P1结果及七项队列终态已恢复到本地持久目录，并逐文件核SHA。entry005的`4b249832…`（451241859B）和P1的`f34dfce0…`（303226B）与原完成绑定完全一致；两库report与各自原terminal的artifact账本一致。四个成功程序科学退出0、退出后所属树0；外层队列exit1保留三次历史失败。本次直接解析原报告、13984条前缀预测和576个P1原log density，没有新增拟合或模型重放。恢复位置、原producer、分析脚本及紧凑派生见[原载荷恢复与复算绑定](../assets/research_resume_20261011/cloud_payload_recovery_binding.json)。此前仅从保存报告舍入表计算的[读数](../assets/research_resume_20261011/cloud_completion_readout.json)继续保留其原范围。

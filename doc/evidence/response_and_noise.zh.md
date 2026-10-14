@@ -99,9 +99,15 @@ source group以participant为单位，对效应measurement covariance与人际va
 
 审查复现并修复tiny未观测泛函被全局sqrt(eps)吞掉、learned目标权限只在fit而可绕constructor/load、source scope/unit在load未完整核、效应coefficient-group关系、measurement schema/d-prime关系与zero-F的虚构population forecast。固定群体保全部participant；超出预声明bounds是整程序typed失败，不删异常人或截断贡献。
 
-该source-group owner已经连接实际spatial posterior/effect/forecast及原B05 given-noise研究入口；独立d-prime学习机制仍未实现，当前continuous ensemble/公共runner/工作站尚未调用learn。真实跨source布局与reference transport、跨人稳定性、超参数选择、variance不确定性与新效能仍是后续出口。
+`transfer.spatial_programme`已将原baseline噪声、物理response refit、可识别BLUE、共同效应和source-group forecast接入真实目标OOF/partial-prefix、ensemble及保存重放。原continuous baseline持有实际noise-fit来源，新物理response只在同冻结噪声下拟合一次；source/controller/raw/label/study与prior-generation关系逐项关联。合成official-shaped MAT8→共同三导的纵向已通过，公共跨布局稳定性、d-prime机制及variance不确定性继续按新程序推进。
 
-长记录结构识别已升级 `/6`：每record共同 `[Z D]` exact消自己的nuisance，再把其原空间map配对时间quotient stream到shared beta；compact RREF/pivots保存，效应按exact rowspace membership判断。零rank也不生成width² identity nullbasis，显式诊断才请求。18000行实际posterior/BLUE/save-load与独立18行law控制闭合，禁diagnostic nullproperty仍成功；Fraction独立oracle保record-local U、shared beta、末行tiny与非dyadic方向。原numericQR/完整covariance保持，actual source/OOF/ensemble消费者在下一独立切片实现。
+长记录结构识别已升级 `/6`：每record共同 `[Z D]` exact消自己的nuisance，再把原空间map配对时间quotient stream到shared beta；compact RREF/pivots保存，效应直接按exact rowspace membership判断。18000行实际posterior/BLUE/save-load和独立Fraction oracle已闭合，原numericQR/完整covariance保持。真实source/OOF/ensemble消费者已集成`ff131b8`，原producer保存修复已集成`138e2bf`；root在实际组合ensemble零fit/零QR载入旧包，原record、digest、baseline及文件字节保持，三项篡改反例拒绝。来源见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
+
+## B11：同记录漂移与噪声尺度
+
+同record Gamma/flat科研程序已接受并集成`dd63d32`：global proper β prior一次，每真实record一个Gamma λ和原物理flat漂移测度。有效信息量按原raw行数减漂移rank计数，同一full-record白化用于C、prefix与tail。固定noise shape与动态λ分开，proper β不随test λ缩放。source参数从原保存Continuous模型恢复，原prior因子经等价QR转换，原noise-fit保持；C-plugin与source-only权限各用真实issuer。
+
+尾部保prefix漂移后验，以直接增广QR计算，避免巨大中间量取消；原17个状态的energy/logdensity/logdet保持，实际误差估计由超预算降至约`3.32594e-5 nats`，低于原`.00111961`预算。最终7个定向案例和root旧包16draw的零fit/白化/QR重放通过，原package SHA和producer数值保持。此处为合成MAT真实软件链，原Gaussian∞包与finite Gamma law分别声明。下一切片接typed ensemble、候选prefix、模型包与public opt-in，连续Gamma预测精度沿真实law验收。
 
 ## 后验QR与有效自由度的反例
 

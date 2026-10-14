@@ -75,11 +75,12 @@
     "evidence_scope": "software_correctness"
   },
   "next": [
-    "base_full_single_seed_scientific_matrix",
-    "pool_uniform_contamination_complete_programme_and_selected_parent",
-    "B09_actualsource_OOF_ensemble",
-    "B11_actualrecord_scale_flat_measure_and_authority",
-    "new_public_generalization_and_adult_confirmation"
+    "base_full_single_seed_source_failed_complement_then_full_target_matrix",
+    "frozen_probability_temperature_optin_public_paired_evaluation",
+    "B11_typed_ensemble_same_record_OOF_and_full_history_candidate_adapter",
+    "B12_actual_raw_candidate_membership_clock_adapters",
+    "B07_source_C_parameter_learning_and_long_history",
+    "B13_new_adult_device_confirmation"
   ],
   "transfer_scratch_family": {
     "status": "accepted",
@@ -289,7 +290,7 @@
     "independent_review": "exact quotient/full-global local-U oracle and actual AST compact effect gate; source/caller/save/load review accepted",
     "recovered_delivery": "D:/BCI/worktrees/research-director/tmp/spatial_rowspace_delivery",
     "author_tree": "D:/BCI/worktrees/spatial-rowspace",
-    "next": "actualsource_builder_OOF_ensemble_consumer_current_independent_WIP",
+    "next": "source_OOF_ensemble_slice_accepted_separately_in_spatial_source_ensemble; public_generalization_next",
     "public_fits": 0,
     "public_scores": 0,
     "full_suite": false
@@ -489,5 +490,127 @@
     "new_test_runs": 0,
     "new_fits": 0,
     "memory_source_review": "source and validation_source cleared; CPU normalized matrix kept only for actual host fallback; inner boundary lacks explicit allocator cleanup; redundant live alias not established"
+  },
+  "pool_probability_temperature_complete": {
+    "status": "accepted_synthetic_actual_source_OOF_save_load_selected_ordinary_parent",
+    "author_commit": "742e504d24c9ea3ea2cdbc817ca295a2e704d88d",
+    "integrated_commit": "937cbae",
+    "delivery": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\probability_tail_delivery\\full\\tmp\\PROBABILITY_TAIL\\temperature-ordinary-delivery.json",
+      "sha256": "8f4718bf78142216f4917ff67fb71640ace1064a4ca96c87a6c7cf9448a79ede"
+    },
+    "validation": {
+      "scope": "synthetic_software_correctness",
+      "run_handle": 47364,
+      "actual_pid": 18972,
+      "exit_code": 0,
+      "cases": 5,
+      "native_threads": 1,
+      "junit_seconds": 451.748,
+      "junit_path": "D:\\BCI\\worktrees\\probability-tail\\tmp\\PROBABILITY_TAIL\\temperature-ordinary.xml",
+      "junit_sha256": "5dbfe3d701e7ed295586b805e63f03a48cdf3ba9f8900044755e39cbc3468ab7",
+      "source_before_after_equal": true,
+      "source_digest": "1f57988da85777e0fff6d991d9fc7deccc13d9445f07388dacb1b2469d1e855c",
+      "source_fits": 0,
+      "public_fits": 0,
+      "adult_fits": 0,
+      "instrumented_classic_expert_fit_calls": {
+        "predeclared_temperature_tail_case": 84,
+        "ordinary_exact_pool_case": 109
+      },
+      "other_cases_primitive_fit_calls": "not_instrumented"
+    },
+    "full_scope": [
+      "fixed exact-pool epsilon",
+      "strict cross-fitted grouped temperature then exact-pool epsilon",
+      "ordinary mixtures own exact roster weights OOF epsilon",
+      "selected and ordinary original saved parent positive and negative",
+      "declared temperature subset joins actual saved numeric algorithm",
+      "typed warmup and actual partial hierarchy preservation"
+    ],
+    "independent_review": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\PROBABILITY_TAIL_INDEPENDENT_REVIEW.md",
+      "sha256": "6654e1f499fe86295c3ee1c1a05dcab20969a3f90ddabc25fa2ae96dcf9bc602"
+    },
+    "root_integrated_source_sha256": {
+      "src/transfer/pool_calibration.py": "ed4ecccfa15cd66210f1f1c7a54cb2f8f72443590c59a3dcd5e197de20d52c1c",
+      "src/transfer/ensemble.py": "0139c3d46b4bddfd058952ce158c10966e7477725ec85b177bf180ffe76fe72a",
+      "src/transfer/ensemble_fit.py": "3744c78daea10faa8f8cdfb956e7f7a04ef1457c553d421b51eb89743debd94a",
+      "src/research/calibration_selection.py": "de261a215489d552642fc8a7ebfb2258f242b7c9c724c7bf8dd6ccb8bda9519e",
+      "src/research/nested_selection_replay.py": "5168e88126113a5f72747a76d9a4012b367a06edf8d57476f14be45fcdfda1cb",
+      "src/research/prefix_inner_replay.py": "537c5d4c278accd1b8de4e81827d34bd7766734db0df64bb1bfeae67e00ef866",
+      "src/research/prefix_selection_replay.py": "dd98858714a7e4e13f24a3701a43ec9ec6e368d5a6345cbdb6a0b05f2f444197",
+      "experiments/run_candidate_ensemble_study.py": "0dea63be66f521787d47094257d169f83c5ba78167ebb3f703f418b572da44d9",
+      "tests/research/test_temperature_pool_probability.py": "17da3f3ca14d99cb12a39cbd3515450070bc4171c2a3b68f84e4c5712a5eae58",
+      "tests/research/test_ordinary_pool_probability.py": "3c52db3a33dedf0a4f929ea7df529cbfc63c65998c76573bad90c4626132971e"
+    },
+    "runtime_line_endings": "original author bytes preserved; integrated canonical body and AST independently reviewed",
+    "next": "frozen_public_optin_paired_evaluation"
+  },
+  "spatial_source_ensemble": {
+    "status": "accepted_actual_source_prior_group_OOF_partial_prefix_ensemble_and_original_producer_replay_software",
+    "author_commits": [
+      "257a6a3b06ed71ad56654503d84ebe64cfa916ed",
+      "85d384debdf344c263444070e88616fcc41ec3fa"
+    ],
+    "integrated_commits": [
+      "ff131b8",
+      "138e2bf"
+    ],
+    "scope": "synthetic_official_shaped_raw_MAT_source_baseline_frozen_noise_one_physical_response_refit_BLUE_common_effect_source_group_target_OOF_ensemble",
+    "noise_scale": "causal whitening unit_shape and original native covariance physical scale exactly once",
+    "root_model_only_replay": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\SPATIAL_ROOT_PRODUCER_REPLAY\\source_binding.json",
+      "sha256": "6822a82f6fe482f514648b7c655da4a3a3629842797deb14d98d8aca4242f68c"
+    },
+    "root_replay_OS_exit": 0,
+    "root_replay_fit_or_chart_selection_calls": [],
+    "original_producer_sha256": "04b3c1503ce746638dc89b88f7175b0685812bfec8dbf6f58a946a1862232636",
+    "current_consumer_sha256": "285bde1d020dfdfba5f7f44702710a7f7081cfe2161366cbbf055f21106bc00b",
+    "original_record_digest_file_and_baseline_preserved": true,
+    "independent_review": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\SPATIAL_ROWSPACE_INDEPENDENT_REVIEW.md",
+      "sha256": "635dc6459c26e41d58f2fbc4967bfd1b9473d9021884ebd1ceee729ac28ec4e0"
+    },
+    "public_fits_this_validation": 0,
+    "next": "frozen_public_cross_layout_reference_programme_and_variance_uncertainty"
+  },
+  "joint_flat_recording": {
+    "status": "accepted_same_original_record_flat_Gamma_mathematics_actual_source_C_authority_and_readonly_software",
+    "author_commits": [
+      "593236426727b3208432d45362c80490727a0334",
+      "c1eec213716997697cb8a82fec0d08850d474344",
+      "d768c59b6559d75debf257f22f4d7078ef63044b"
+    ],
+    "integrated_commit": "dd63d32",
+    "scope": "synthetic_original_MAT_decoder_source_model_no_target_labels_and_model_only_replay",
+    "law": "global proper beta once; original physical da measure and one Gamma lambda per original continuous record",
+    "effective_dimensions": "raw_scalar_rows_minus_actual_record_nuisance_rank",
+    "same_record_noise": "one full causal whitening; prefix drift posterior retained; test does not restart AR or lambda",
+    "numerical_method": "direct_augmented_QR_tail_integral_preserving_original_energy_and_logdet",
+    "direct_delta_receipt": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\joint_flat_delivery\\joint_flat_direct_delta\\receipt.json",
+      "sha256": "d2c06860bc1e2ee6bfe54f13e5c398ed75e962276120d9198019bb5f89a6ab5e"
+    },
+    "direct_delta_OS_exit": 0,
+    "direct_delta_elapsed_seconds": 16.398786306381226,
+    "direct_delta_source_before_after_equal": true,
+    "direct_delta_owned_live_pids": [],
+    "root_model_only_replay": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\JOINT_FLAT_ROOT_REPLAY\\receipt.json",
+      "sha256": "48cb517e04389eff924536316466b21c21343af0ff02e3bc1c8788ade1976be4"
+    },
+    "root_replay_OS_exit": 0,
+    "root_saved_charts": 16,
+    "root_fit_whiten_QR_calls": [],
+    "original_package_sha256": "7142d176846aeb38a3230450f227572190e213993c5dc9f3a95a2c902dfb6781",
+    "Gaussian_zero_chart_bit_exact": true,
+    "continuous_Gamma_and_Gaussian_limit": "separate explicit laws; final saved source-only replay is Gaussian infinity",
+    "independent_review": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\JOINT_FLAT_SCALE_INDEPENDENT_REVIEW.md",
+      "sha256": "7fe75496d19ce4a8cf5bdf6769f72f2c1c52e58061f2af8d6f1ede949691eb83"
+    },
+    "public_fits_this_validation": 0,
+    "next": "typed_ensemble_same_record_OOF_full_observed_history_candidate_capsule_and_continuous_Gamma_accuracy"
   }
 }

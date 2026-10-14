@@ -2,19 +2,21 @@
 
 空间后验现由`spatial_signal_prior/6`持有原物理A/D/Z因子及同次source QR/noise生成凭证，exact结构null取因子乘积，数值后验和BLUE沿原算法。`SpatialObservation/3`保存原Q、归一map、scale/volume/诊断，load集中核关系并恢复原态；general可识别reference-free效应也进入同一个source输运入口。
 
-B09结构识别先对每record原joint `[Z D]`取exact rowspace、消其独立nuisance，再stream配对空间/时间约束到shared beta canonical rowspace；普通fit/load/BLUE不构造原大Kronecker或完整nullbasis。physical factors `/2`保存原D/Z和生成证书，数值QR/noise及BLUE仍消费原完整record。
+B09结构识别先对每record原joint `[Z D]`取exact rowspace、消其独立nuisance，再stream空间/时间约束到shared beta canonical rowspace；普通fit/load/BLUE按compact结构准入。`transfer.spatial_programme`连接原Continuous baseline噪声、真实source/C raw response refit、BLUE/common effect、source group与target OOF/ensemble。保存模型持有immutable原producer SHA/digest，current consumer另记，`dataclass.replace`与OOF绑定保原身份；root组合旧包零fit/QR重放通过。
 
 B07 `research.multichannel_c_latent`新增明确外部固定参数的finite C producer；原compiler分别颁发C标签/观测权限和截止内未标签history权限，B05中枢复用共同QR/flat chart，保存原prior F及后验R/RHS。`history_artifact`的newmodel capsule直接拷原模型字节，conditional-tail和whole-observed current-q各声明法与完整positive mass保存；旧frozen-C权限由原owner保持。
 
 `research.calibration_selection.transfer_scratch_prefix_plan`仅派生新的四fixed完整程序族：source/scratch单NN及各自NN+xDAWN。实际expert IDs、baseline/output/选择行政策显式传入，原source catalog、匹配architecture、time scope和checkpoint权限由原CLI消费；NN配对同profile，经典专家可保自己声明视图。原prefix selector、graph保存重放和parent核回概率继续持有实际执行。
 
-`transfer.pool_calibration`是exact arithmetic pool之后的uniform-contamination唯一概率owner。新fixed-base `grouped_uniform_contamination`每poolnode全roster C-only OOF拟ε；`FittedEnsemble`独立保存原temperature OOF与pool OOF，numeric模型绑定actualfinal base/inner producers，scorer/graph/publicparent统一按冻结poolstate重算。ε0/1/truezero与unavailable由原完整decision owner消费，新参数不迁移到另一个roster或weights。
+`transfer.pool_calibration`是exact arithmetic pool之后uniform-contamination的唯一概率owner。fixed-base及strict cross-fitted temperature-base各从真实完整pool OOF学习ε；温度与pool OOF独立保存，nested排除关系及实际temperature subset由同模型/parent核验。ordinary各exact名单/权重组合持有自己的OOF与ε。`FittedEnsemble`、graph、保存包和publicparent统一按原producer与冻结poolstate复算，完整requested失败和原decision tie owner保持。
 
 `transfer.information_bound`持有`/2`完整activation/模型诊断、raw plug-in估计量及不可变JSON报告，`save/load/replay_model`保护全部输出与原producer。`transfer.exact_covariance/2`持有raw传播、resolved SPD/显式identified support及独立ridge诊断，当前是内存诊断接口。二者没有生产调用；来源、反例和完整性验收见[数学整合](assets/research_resume_20261012/diagnostic_mathematics_integration.json)。原D树local-only `run_information_bound.py`保原字节，迁移membership、actual activation和报告schema后才可复用。
 
-2026-10-10[愿望清单整合](evidence/wishlist_progress_20261010.zh.md)继续复用原owner：`CandidateEvidence`在原tie判定处保存赢家索引；`candidate_metrics`持有requested层级的最大置信度、错时置信度、分箱ECE及实际J的uniform NLL contrast，原report consumer自动导出，现阶段只作描述性诊断。`SpatialSignalPrior.expected_whitened_signal_energy/energy_matched_graph`复用原response压缩root，以同C/noise匹配固定graph的centered信号能量；原posterior及B05物理因子继续消费该prior，learned空间估计器尚未准入。
+2026-10-10[愿望清单整合](evidence/wishlist_progress_20261010.zh.md)继续复用原owner：`CandidateEvidence`在原tie判定处保存赢家索引；`candidate_metrics`持有requested层级的最大置信度、错时置信度、分箱ECE及实际J的uniform NLL contrast，原report consumer自动导出，现阶段只作描述性诊断。`SpatialSignalPrior.expected_whitened_signal_energy/energy_matched_graph`复用原response压缩root，以同C/noise匹配固定graph的centered信号能量；原posterior及B05物理因子继续消费该prior；新BLUE/source-group programme的实际ensemble接点见上文，固定graph与learned测量保持各自来源。
 
 `research.latent_response_reference`只有五个科研入口：状态law、off-grid analytic basis、physical selection design、proper层级prior和有限conditional evidence。它复用`joint_response_scale`的prior/decision factory/联合Gaussian积分；global beta只一次，selection additive deviation独立零均值，full/prefix共同更新离散state权重。没有生产注册、真实产品caller或第二posterior/noise fitter。
+
+`research.joint_flat_response/joint_flat_authority/joint_flat_artifact`持有同record一个Gamma λ、global proper β与原flat漂移测度的完整科研owner。原source/C issuer颁发参数与raw-prefix权限；direct augmented QR保prefix漂移后验及point误差，`/2`包保存原sampling/numeric/noise/parameter来源，load/model-only replay恢复原producer数值。typed ensemble/public注册属于下一独立切片。
 
 `ResponseDictionarySpec("bspline", duration, k, endpoint)`编译固定cubic/open-clamped/uniform字典，free或hard-value消费同ambient与interior selector。原`dictionary_artifact`唯一owner的 `/3`核exact rational表达，Gaussian/cosine仍 `/2`；同五数组进入已有prior/geometry/continuous/ensemble/OOF与保存链。cubic非零shift/width及off-grid导数尚unsupported，零状态直接消费保存native矩阵。
 
