@@ -59,7 +59,7 @@ from transfer.ensemble_fit import (  # noqa: E402
 )
 from transfer.ensemble_views import (  # noqa: E402
     prepare_bnci_calibration_groups,
-    prepare_bnci_independent_prefixes,
+    prepare_dataset_independent_prefixes,
 )
 from transfer.kernel_prior import KernelPriorRankError  # noqa: E402
 from transfer.noise_model import freeze_metadata  # noqa: E402
@@ -189,7 +189,7 @@ def _expected_fit_roster(plan, scopes):
         sources = dict(plan.get("source_checkpoint_sha256", {}))
         if independent:
             digests = {entry["source_seed"]: entry["checkpoint_sha256"] for entry in plan["source_seed_catalog"]
-                       if entry["outer_target_study"] == BNCI2014_008_DATASET_ID}
+                       if entry["outer_target_study"] == _target_study(plan)}
             sources = {spec.expert_id: digests[source_seed] for spec in specs
                        if spec.family == "trial" and spec.recipe.initialization == "source"}
             for source in specs:
@@ -272,6 +272,8 @@ def _participant_ledger(row, plan, directory, source, views, truths, scopes, fit
         "requested": requested, "coverage": coverage, "candidate_vocabulary": list(views[0].decision.candidate_vocabulary),
         "evidence_level": views[0].decision.repetitions, "participant_key": views[0].participant_key,
         "pipeline_requests": resolved, "fit_requests": fit_requests}
+    if _target_study(plan) != BNCI2014_008_DATASET_ID:
+        ledger["requested_evidence_levels"] = {view.decision_id: view.decision.repetitions for view in views}
     if "requested_to_actual_K" in scopes:
         ledger.update(requested_to_actual_K=scopes["requested_to_actual_K"], budget_adjustments=scopes["budget_adjustments"])
         if plan.get("prefix_selection") is not None:
@@ -654,7 +656,7 @@ def _subject_impl(row, plan, directory, expected_source, source_snapshots):
                 atomic_write_json(directory / "progress.json", {"completed_prediction_cells": len(predictions),
                     "seed": seed, "fold": fold, "status": "running"})
     result = {"status": "completed", "predictions": predictions, **{key: ledger[key] for key in
-        ("requested", "coverage", "candidate_vocabulary", "evidence_level", "participant_key")}}
+        ("requested", "coverage", "candidate_vocabulary", "evidence_level", "participant_key", *(["requested_evidence_levels"] if "requested_evidence_levels" in ledger else []))}}
     atomic_write_json(directory / "result.json", result)
     atomic_write_json(directory / "progress.json", {"completed_prediction_cells": len(predictions), "status": "completed"})
     # The persisted record is the process wire format; fitted metadata stays
@@ -795,7 +797,7 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
     """Fit C once per expert/seed/K; score the same future queue for every pool."""
     declared = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
     mixtures = tuple(EnsembleProgram.from_record(value) for value in plan["mixtures"])
-    views = prepare_bnci_independent_prefixes(row["path"], source_sha256=row["sha256"],
+    views = prepare_dataset_independent_prefixes(_candidate_source_declaration(row),
         budgets=plan["budgets"], profiles=[spec.profile for spec in declared if spec.family == "trial"],
         authorization_preprocessing=parse_preprocessing_spec(plan["authorization_preprocessing"]),
         response_seconds=plan["observation_response_seconds"], pre_roll_seconds=plan["pre_roll_seconds"])
@@ -804,7 +806,7 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
     for source_seed, seed in plan["seed_pairs"]:
         specs = tuple(replace(spec, recipe=None if spec.recipe is None else replace(spec.recipe, seed=seed))
                       for spec in declared)
-        sources = {spec.expert_id: source_snapshots[(BNCI2014_008_DATASET_ID, source_seed)] for spec in specs
+        sources = {spec.expert_id: source_snapshots[(_target_study(plan), source_seed)] for spec in specs
             if spec.family == "trial" and spec.recipe.initialization == "source"}
         paired_specs[source_seed] = specs
         paired_sources[source_seed], paired_controls[source_seed] = _matched_source_controls(specs, sources)
@@ -925,7 +927,7 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
             extra, selection_fits = _run_prefix_selection_outputs(plan, directory, expected_source, views, paired_sources)
         predictions.extend(extra)
     result = {"status": "completed", "predictions": predictions, "fits": fits, "selection_fits": selection_fits, **{key: ledger[key] for key in
-        ("requested", "requested_to_actual_K", "budget_adjustments", "coverage", "candidate_vocabulary", "evidence_level", "participant_key")}}
+        ("requested", "requested_to_actual_K", "budget_adjustments", "coverage", "candidate_vocabulary", "evidence_level", "participant_key", *(["requested_evidence_levels"] if "requested_evidence_levels" in ledger else []))}}
     atomic_write_json(directory / "result.json", result)
     atomic_write_json(directory / "progress.json", {"completed_prediction_cells": len(predictions), "status": "completed"})
     return json.loads((directory / "result.json").read_bytes())
@@ -1082,7 +1084,7 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, 
     # The normalized catalog is a producer record, not a second raw path
     # declaration. Reuse the exact bytes admitted by the canonical preparer.
     declared_sources = {(entry["outer_target_study"], entry["source_seed"]): entry["checkpoint_sha256"]
-        for entry in plan["source_seed_catalog"] if entry["outer_target_study"] == BNCI2014_008_DATASET_ID
+        for entry in plan["source_seed_catalog"] if entry["outer_target_study"] == _target_study(plan)
         and entry["source_seed"] in {pair[0] for pair in plan["seed_pairs"]}}
     prepared = {} if source_snapshots is None else source_snapshots
     if replay_admission is None and (set(prepared) != set(declared_sources) or any(not isinstance(prepared[key], FrozenSourceCheckpoint)
@@ -1093,7 +1095,7 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, 
     declared = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
     if replay_admission is None:
         with cpu_thread_budget(1):
-            views = prepare_bnci_independent_prefixes(row["path"], source_sha256=row["sha256"], budgets=plan["budgets"],
+            views = prepare_dataset_independent_prefixes(_candidate_source_declaration(row), budgets=plan["budgets"],
                 profiles=[spec.profile for spec in declared if spec.family == "trial"],
                 authorization_preprocessing=parse_preprocessing_spec(plan["authorization_preprocessing"]),
                 response_seconds=plan["observation_response_seconds"], pre_roll_seconds=plan["pre_roll_seconds"])
@@ -1177,12 +1179,16 @@ def _candidate_participant_authority(task, outcome, plan, source):
             or _file_receipt(directory / "scopes.json", directory)["sha256"] != ledger["scopes_sha256"]):
         raise ValueError("candidate participant source, plan or physical-record authority differs")
     scopes = json.loads((directory / "scopes.json").read_bytes())
-    if scopes["source_sha256"] != plan["records"][index]["sha256"]:
+    if _target_study(plan) != BNCI2014_008_DATASET_ID:
+        declaration = _candidate_source_declaration(plan["records"][index])
+        if declaration["dataset_id"] != _target_study(plan) or scopes["dataset_id"] != declaration["dataset_id"]:
+            raise ValueError("candidate participant differs from its admitted original dataset declaration")
+    elif scopes["source_sha256"] != plan["records"][index]["sha256"]:
         raise ValueError("candidate participant scopes differ from its actual raw record")
     return group, index, directory, expected_path, ledger, scopes
 
 
-def _prefix_replay_participant_anchor(task, plan, source, consumer_source, authority):
+def _prefix_replay_participant_anchor(task, plan, source, consumer_source, authority, *, source_root=None):
     """Derive replay identity from the original physical participant ingress."""
     from research.prefix_replay_execution import SCHEMA as REPLAY_SCHEMA
     from research.prefix_replay_execution import artifact_receipt
@@ -1210,7 +1216,7 @@ def _prefix_replay_participant_anchor(task, plan, source, consumer_source, autho
             "phase": "independent_prefix"}
         ordinary.append({"package": request["package"], "prefix_record_sha256": semantic_sha256(prefix),
             "original_request": request, "context": context, "files": seal["files"], "saved_seal": artifact_receipt(path)})
-    return {"schema": REPLAY_SCHEMA, "preparation_task_id": preparation_id, "participant_directory": str(directory),
+    replay = {"schema": REPLAY_SCHEMA, "preparation_task_id": preparation_id, "participant_directory": str(directory),
         "mat": {"path": str(mat_path), "sha256": ledger["record"]["sha256"], "bytes": mat_path.stat().st_size},
         "scopes": {"path": str((directory / "scopes.json").resolve()), "sha256": ledger["scopes_sha256"],
                    "bytes": (directory / "scopes.json").stat().st_size},
@@ -1223,6 +1229,17 @@ def _prefix_replay_participant_anchor(task, plan, source, consumer_source, autho
             "authorization_preprocessing": plan["authorization_preprocessing"],
             "observation_response_seconds": plan["observation_response_seconds"], "pre_roll_seconds": plan["pre_roll_seconds"]},
         "selection_packages": selections, "ordinary_packages": ordinary}
+    if _target_study(plan) != BNCI2014_008_DATASET_ID:
+        replay["input_request"].update(schema="n2p3_prefix_replay_input_request/2",
+            dataset_source=_candidate_source_declaration(ledger["record"]),
+            original_source_sha256=scopes["source_sha256"],
+            source_relative_path="ordered_original_candidate_acquisitions")
+        names = ("data.candidate_task", "data.candidate_input", *(
+            ("data.huebner2017_candidate",) if _target_study(plan) == "Huebner2017" else
+            ("data.bi2014a_candidate", "data.bi2014a_recording")))
+        replay["producer_input_modules"] = {name: artifact_receipt(Path(source_root or ROOT)/"src"/(name.replace(".", "/")+".py"))
+                                             for name in names}
+    return replay
 
 
 def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshots=None, replay_admission=None):
@@ -1436,7 +1453,7 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
                 or prediction["score_source_digest"] != semantic_sha256(source)
                 or evidence.physical_support_digest != support[key]
                 or list(evidence.candidate_vocabulary) != ledger["candidate_vocabulary"]
-                or evidence.evidence_level != ledger["evidence_level"]
+                or evidence.evidence_level != ledger.get("requested_evidence_levels", {}).get(evidence.decision_id, ledger["evidence_level"])
                 or dict(zip(evidence.candidate_vocabulary, evidence.expected_event_counts, strict=True)) != coverage[key]):
             raise ValueError("candidate prediction differs from its prefit request or score source")
         if strategy == "nested_selection":
@@ -1489,7 +1506,7 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
         if evidence.probability_available and (not prediction["saved_replay_exact"] or any(
                 models.get(value.expert_id) != value.model_digest for value in evidence.expert_identities)):
             raise ValueError("candidate probability output is not bound to its replayed saved models")
-    metadata = {key: ledger[key] for key in ("requested", "coverage", "candidate_vocabulary", "evidence_level", "participant_key")}
+    metadata = {key: ledger[key] for key in ("requested", "coverage", "candidate_vocabulary", "evidence_level", "participant_key", *(["requested_evidence_levels"] if "requested_evidence_levels" in ledger else []))}
     if "requested_to_actual_K" in ledger:
         metadata.update(requested_to_actual_K=ledger["requested_to_actual_K"], budget_adjustments=ledger["budget_adjustments"])
     pipeline = []
@@ -1708,13 +1725,14 @@ class CandidateCloudProgramme:
         def inputs_for(request):
             if not request["source_checkpoint_sha256"]:
                 return {}
-            key = BNCI2014_008_DATASET_ID, request["source_seed"]
+            key = _target_study(self.plan), request["source_seed"]
             receipt = source_artifacts[key]
             if any(digest != receipt["sha256"] for digest in request["source_checkpoint_sha256"].values()):
                 raise ValueError("replay source artifacts differ from the original prefit source request")
             return {name: receipt for name in request["source_checkpoint_sha256"]}
 
-        request = _prefix_replay_participant_anchor(producer_task, plan, source, self.source, authority)
+        request = _prefix_replay_participant_anchor(producer_task, plan, source, self.source, authority,
+                                                   source_root=source_root)
         selection, ordinary = request["selection_packages"], request["ordinary_packages"]
         for row in selection + ordinary:
             row["source_checkpoints"] = inputs_for(row["original_request"])
@@ -1966,7 +1984,7 @@ class CandidateCloudProgramme:
             return None
         ledger = authority[-2]
         failure = self._unresolved_pipeline_outcome(task.task_id, results)
-        metadata = {key: ledger[key] for key in ("requested", "coverage", "candidate_vocabulary", "evidence_level", "participant_key")}
+        metadata = {key: ledger[key] for key in ("requested", "coverage", "candidate_vocabulary", "evidence_level", "participant_key", *(["requested_evidence_levels"] if "requested_evidence_levels" in ledger else []))}
         metadata.update({key: ledger[key] for key in ("requested_to_actual_K", "budget_adjustments") if key in ledger})
         return {**metadata, "status": "unresolved_admission", "predictions": [], "fits": [],
             "selection_fits": [], "record_index": task.arguments["record_index"],
@@ -2198,7 +2216,8 @@ def _prepare_candidate_plan(plan_path, *, native_threads=None, load_sources=True
         normalized["prior_panel"] = prior_panel
     if dictionary_panel is not None:
         normalized["dictionary_panel"] = dictionary_panel
-    normalized["records"] = [{**row, "path": str((plan_path.parent / row["path"]).resolve())}
+    normalized["records"] = [{**row, **({"dataset_id": _target_study(plan)} if _target_study(plan) != BNCI2014_008_DATASET_ID else {}),
+                              "path": str((plan_path.parent / row["path"]).resolve())}
                               for row in plan["records"]]
     normalized["source_checkpoints"] = {name: str((plan_path.parent / path).resolve())
                                         for name, path in plan["source_checkpoints"].items()}
@@ -2214,12 +2233,12 @@ def _prepare_candidate_plan(plan_path, *, native_threads=None, load_sources=True
                                     expected_source_config=plan.get("expected_source_config"))
         if any(spec.family == "trial" and spec.recipe.initialization == "source" for spec in expert_programs):
             available = {(entry["outer_target_study"], entry["source_seed"]) for entry in catalog.record()}
-            required = {(BNCI2014_008_DATASET_ID, pair[0]) for pair in pairs}
+            required = {(_target_study(plan), pair[0]) for pair in pairs}
             if required != available:
                 raise ValueError("candidate source catalog differs from declared outer-study/source-seed producers")
         source_snapshots = {(entry["outer_target_study"], entry["source_seed"]):
             FrozenSourceCheckpoint(catalog.content(entry["outer_target_study"], entry["source_seed"]))
-            for entry in catalog.record() if load_sources and entry["outer_target_study"] == BNCI2014_008_DATASET_ID
+            for entry in catalog.record() if load_sources and entry["outer_target_study"] == _target_study(plan)
             and entry["source_seed"] in {pair[0] for pair in pairs}}
         normalized.update(source_seed_catalog=catalog.record(), seed_pairs=[list(pair) for pair in pairs], seeds=seeds)
     else:
@@ -2232,6 +2251,22 @@ def _prepare_candidate_plan(plan_path, *, native_threads=None, load_sources=True
     source = _executing_source()
     normalized["resume_binding"] = _prepare_package_resume(normalized, source)
     return normalized, source, source_snapshots
+
+
+def _target_study(plan):
+    return plan.get("dataset_id", BNCI2014_008_DATASET_ID)
+
+
+def _candidate_source_declaration(row):
+    if row.get("dataset_id", BNCI2014_008_DATASET_ID) == BNCI2014_008_DATASET_ID:
+        return row
+    payload = Path(row["path"]).read_bytes()
+    if hashlib.sha256(payload).hexdigest() != row["sha256"]:
+        raise ValueError("candidate participant original source declaration changed")
+    declaration = json.loads(payload)
+    if declaration["dataset_id"] != row["dataset_id"]:
+        raise ValueError("candidate participant declaration belongs to another original study")
+    return declaration
 
 
 def run_study(plan_path: str | Path, output: str | Path, *, _actor_index=None, _native_threads=None,
@@ -2318,8 +2353,13 @@ def _finalize_candidate_report(plan, source, completed, output, *, status="compl
                 for row in completed for item in row["coverage"]}
     vocabularies = {tuple(row["candidate_vocabulary"]) for row in completed}
     levels = {row["evidence_level"] for row in completed}
-    if len(vocabularies) != 1 or len(levels) != 1:
+    by_key = {DecisionKey(row["participant_key"], entry["decision_id"]):
+        row.get("requested_evidence_levels", {}).get(entry["decision_id"], row["evidence_level"])
+        for row in completed for entry in row["requested"]}
+    if len(vocabularies) != 1 or len(levels) != 1 and not all("requested_evidence_levels" in row for row in completed):
         raise ValueError("candidate study mixes different physical vocabularies or evidence levels")
+    level_arguments = ({"requested_evidence_levels": by_key} if any("requested_evidence_levels" in row for row in completed)
+                       else {"evidence_level": next(iter(levels))})
     metrics = {}
     budgets = sorted({budget for row in completed for budget in row["requested_to_actual_K"].values()}) if independent else [None]
     for budget in budgets:
@@ -2332,7 +2372,7 @@ def _finalize_candidate_report(plan, source, completed, output, *, status="compl
                     and (not independent or cell["K"] == budget and cell["calibration_strategy"] == strategy)] for seed in seeds}
                 name = f"{mixture.name}@{strategy}@K{budget}" if independent else mixture.name
                 metrics[name] = evaluate_candidate_evidence(scores, decision_plan=decision_plan,
-                    seeds=seeds, candidate_vocabulary=next(iter(vocabularies)), evidence_level=next(iter(levels)),
+                    seeds=seeds, candidate_vocabulary=next(iter(vocabularies)), **level_arguments,
                     requested_coverage=coverage)
     if plan.get("prefix_selection") is not None:
         selected_output = plan["prefix_selection"]["output_name"]
@@ -2342,7 +2382,7 @@ def _finalize_candidate_report(plan, source, completed, output, *, status="compl
                 and cell["K"] == budget and cell["calibration_strategy"] == "nested_selection"] for seed in seeds}
             metrics[f"{selected_output}@nested_selection@K{budget}"] = evaluate_candidate_evidence(scores,
                 decision_plan=decision_plan, seeds=seeds, candidate_vocabulary=next(iter(vocabularies)),
-                evidence_level=next(iter(levels)), requested_coverage=coverage)
+                **level_arguments, requested_coverage=coverage)
     contrasts = {}
     for budget in budgets:
         for strategy in strategies:

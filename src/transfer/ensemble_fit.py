@@ -42,7 +42,7 @@ from transfer.ensemble_views import (
     build_calibration_epoch_dataset,
 )
 from transfer.kernel_prior import KernelPriorSpec, resolve_kernel_prior
-from transfer.noise_model import array_digest, freeze_metadata
+from transfer.noise_model import freeze_metadata
 from transfer.pool_calibration import (
     POOL_OOF_SCHEMA,
     POOL_STRATEGIES,
@@ -1101,16 +1101,14 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
     if set(sources) - set(program.expert_ids) or any(spec.expert_id in sources and
             (spec.family != "trial" or spec.recipe.initialization not in {"source", "scratch"}) for spec in specs):
         raise ValueError("prefix sources must belong to declared source or matched scratch experts")
-    receipts = [] if prefix.raw is None else [{**prefix.target_contract, "record_id": prefix.raw.record_id,
-        "raw_input_digest": array_digest(prefix.raw.samples, prefix.raw.onsets, prefix.raw.target_mask),
-        "label_use": prefix.label_use}]
+    receipts = prefix.fit_receipts()
     experts = []
     for spec in specs:
         source_only = prefix.budget == 0 and spec.family == "trial" and spec.recipe.initialization == "source"
         data = (prefix.trial_target(spec.profile) if source_only else
                 prefix.trial_datasets.get(spec.profile.digest) if spec.family == "trial" else None)
         reason = None
-        if not source_only and (prefix.raw is None or spec.family == "trial" and data is None):
+        if not source_only and (not prefix.calibration_records or spec.family == "trial" and data is None):
             reason = "K0_target_fitted_expert_unavailable" if prefix.budget == 0 else "no_complete_authorized_trial_rows"
         elif spec.family == "trial" and not source_only and (data.n_epochs < 3 or set(np.unique(data.y)) != {0, 1}):
             reason = "insufficient_authorized_trial_classes_or_rows"
@@ -1119,7 +1117,7 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
             expert = _FittedExpert(spec, None, None, fit_digest, None, 0., reason)
         else:
             try:
-                expert = _fit_expert(spec, data, [] if prefix.raw is None else [prefix.raw], prefix.target_contract,
+                expert = _fit_expert(spec, data, prefix.calibration_records, prefix.target_contract,
                     sources.get(spec.expert_id), receipts, prefix.record(), device=device, source_only=source_only,
                     target_contract=prefix.target_contract, source_preparation=preparation)
             except (ExpectedSubjectError, UnidentifiableFitError, np.linalg.LinAlgError) as error:

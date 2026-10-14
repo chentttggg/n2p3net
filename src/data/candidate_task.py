@@ -209,6 +209,8 @@ class MembershipDecision:
             return cls.direct(codes, candidate_vocabulary, **common)
         if not isinstance(task_contract, CandidateTaskContract) or candidate_vocabulary is not None:
             raise ValueError("row/column membership requires one explicit task contract")
+        if task_contract.membership_kind == "set_membership":
+            raise ValueError("set-valued physical membership must be supplied by its original set-ledger owner")
         lookup = {str(code): code for code in task_contract.candidate_ids}
         try:
             indices = np.asarray([lookup[code] for code in codes], dtype=np.int64)
@@ -275,6 +277,9 @@ class CandidateTaskContract:
     column_candidate_ids: tuple[int, ...]
     target_representation: str
     raw_target_label_is_target: Mapping[str, bool] | None = None
+    physical_stimulus_ids: tuple[int, ...] = ()
+    blank_position_ids: tuple[int, ...] = ()
+    schedule_kind: str = "cartesian_repetitions"
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "dataset_id", _nonempty_text(self.dataset_id, "dataset_id"))
@@ -290,8 +295,8 @@ class CandidateTaskContract:
             raise ValueError("evidence_scope.product_confirmation must be boolean.")
         object.__setattr__(self, "population", population)
         object.__setattr__(self, "evidence_scope", evidence_scope)
-        if self.membership_kind != "row_column":
-            raise ValueError("Only membership_kind='row_column' is currently supported.")
+        if self.membership_kind not in {"row_column", "set_membership"}:
+            raise ValueError("unsupported physical candidate membership kind")
         if (
             len(self.grid_shape) != 2
             or any(
@@ -301,6 +306,20 @@ class CandidateTaskContract:
         ):
             raise ValueError("grid_shape must contain row and column counts of at least two.")
         n_rows, n_columns = self.grid_shape
+        if self.membership_kind == "set_membership":
+            choices = _integer_tuple(self.candidate_ids, "selectable physical positions")
+            physical = _integer_tuple(self.physical_stimulus_ids, "complete visual positions")
+            blanks = _integer_tuple(self.blank_position_ids, "visual blank positions")
+            if (set(choices) & set(blanks) or set(choices) | set(blanks) != set(physical)
+                    or len(choices) < 2 or physical != tuple(range(1, n_rows*n_columns+1))
+                    or self.row_candidate_ids or self.column_candidate_ids
+                    or self.target_representation != "physical_selectable_position"
+                    or self.schedule_kind != "original_68_frame_character_programme"):
+                raise ValueError("set-membership task must preserve its selectable/blank physical raster and programme")
+            object.__setattr__(self, "candidate_ids", choices)
+            object.__setattr__(self, "physical_stimulus_ids", physical)
+            object.__setattr__(self, "blank_position_ids", blanks)
+            return
         expected_rows = tuple(range(n_rows))
         expected_columns = tuple(range(n_rows, n_rows + n_columns))
         if self.row_candidate_ids != expected_rows:
@@ -351,6 +370,10 @@ class CandidateTaskContract:
         }
         if self.raw_target_label_is_target is not None:
             output["raw_target_label_is_target"] = dict(self.raw_target_label_is_target)
+        if self.membership_kind == "set_membership":
+            output.update(schema="n2p3_candidate_task_contract/2",
+                physical_stimulus_ids=list(self.physical_stimulus_ids),
+                blank_position_ids=list(self.blank_position_ids), schedule_kind=self.schedule_kind)
         return output
 
     @classmethod
@@ -371,6 +394,8 @@ class CandidateTaskContract:
             "target_representation",
         }
         optional = {"raw_target_label_is_target"}
+        if value.get("schema") == "n2p3_candidate_task_contract/2":
+            required |= {"physical_stimulus_ids", "blank_position_ids", "schedule_kind"}
         unknown = set(value) - required - optional
         missing = required - set(value)
         if missing or unknown:
@@ -378,7 +403,7 @@ class CandidateTaskContract:
                 "candidate_task_contract fields disagree with the active schema: "
                 f"missing={sorted(missing)}, unknown={sorted(unknown)}."
             )
-        if value.get("schema") != CANDIDATE_TASK_CONTRACT_SCHEMA:
+        if value.get("schema") not in {CANDIDATE_TASK_CONTRACT_SCHEMA, "n2p3_candidate_task_contract/2"}:
             raise ValueError(
                 f"candidate_task_contract.schema must be {CANDIDATE_TASK_CONTRACT_SCHEMA!r}."
             )
@@ -401,6 +426,9 @@ class CandidateTaskContract:
                 value["target_representation"], "target_representation"
             ),
             raw_target_label_is_target=value.get("raw_target_label_is_target"),
+            physical_stimulus_ids=_integer_tuple(value.get("physical_stimulus_ids", ()), "physical_stimulus_ids"),
+            blank_position_ids=_integer_tuple(value.get("blank_position_ids", ()), "blank_position_ids"),
+            schedule_kind=value.get("schedule_kind", "cartesian_repetitions"),
         )
 
 
@@ -414,6 +442,8 @@ class CandidateMembershipMetadata:
     selection_ids: np.ndarray
     repetition_indices: np.ndarray
     is_target: np.ndarray
+    physical_membership: np.ndarray | None = None
+    target_positions: np.ndarray | None = None
 
 
 def candidate_task_contract_from_provenance(
@@ -456,6 +486,26 @@ def validate_candidate_membership_metadata(
 ) -> CandidateMembershipMetadata:
     """Validate structural and label semantics without acquisition-code assumptions."""
 
+    if contract.membership_kind == "set_membership":
+        import json
+
+        required = {"candidate_id", "physical_positions", "target_position", "selection_id", "repetition_index"}
+        if required-set(metadata):
+            raise ValueError("set-membership calibration metadata lacks its physical sets or authorized truth")
+        physical = [json.loads(x) if isinstance(x, str) else list(x) for x in metadata.physical_positions]
+        if any(len(p) != len(set(p)) or set(p)-set(contract.physical_stimulus_ids) for p in physical):
+            raise ValueError("physical flash set differs from declared visual raster")
+        targets = _integer_column(metadata, "target_position")
+        if not np.isin(targets, contract.candidate_ids).all():
+            raise ValueError("authorized target is not one of the declared selectable positions")
+        membership = np.asarray([[q in p for q in contract.candidate_ids] for p in physical], dtype=bool)
+        derived = np.asarray([q in p for q, p in zip(targets, physical, strict=True)])
+        if labels is not None and not np.array_equal(np.asarray(labels), derived):
+            raise ValueError("calibration binary label differs from actual physical set membership")
+        sentinel = np.full(len(metadata), -1, dtype=np.int64)
+        return CandidateMembershipMetadata(_integer_column(metadata, "candidate_id"), sentinel, sentinel,
+            sentinel, sentinel, metadata.selection_id.astype(str).to_numpy(),
+            _integer_column(metadata, "repetition_index"), derived, membership, targets)
     required = {
         "candidate_id",
         "row_code",

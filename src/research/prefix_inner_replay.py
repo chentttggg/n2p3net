@@ -116,7 +116,7 @@ def actual_expert_fit_inputs(spec, data, raw_records, target, *, source_only=Fal
 def prefix_native_fit_inputs(prefix, expert_programs):
     return {spec.expert_id: actual_expert_fit_inputs(spec,
         prefix.trial_datasets.get(spec.profile.digest) if spec.family == "trial" else None,
-        [] if prefix.raw is None else [prefix.raw], prefix.target_contract, source_only=prefix.budget == 0)
+        prefix.calibration_records, prefix.target_contract, source_only=prefix.budget == 0)
         for spec in expert_programs}
 
 
@@ -185,7 +185,7 @@ def prefix_input_identity(prefix: CalibrationPrefix) -> dict[str, Any]:
             "label_use": prefix.label_use["trial"][digest],
         }
     groups = [_group_identity(group) for group in prefix.complete_groups]
-    return {
+    result = {
         "budget": prefix.budget,
         "target_contract": prefix.target_contract,
         "label_use": prefix.label_use,
@@ -194,6 +194,14 @@ def prefix_input_identity(prefix: CalibrationPrefix) -> dict[str, Any]:
         "complete_groups": groups,
         "prefix_record_sha256": semantic_sha256(prefix.record()),
     }
+    if prefix.target_contract.get("authority_kind") == "record_aware_calibration_prefix/1":
+        result["native_records"] = [{"record_id": r.record_id,
+            "raw_scope": list(prefix.target_contract["record_scopes"][r.record_id]["read_sample_support"]),
+            "fit_input_digest": array_digest(r.samples, r.onsets, r.target_mask),
+            "samples_sha256": _array_identity(r.samples, r.onsets), "event_onsets": r.onsets.tolist(),
+            "labels_sha256": _array_identity(r.target_mask), "right_censored": r.right_censored}
+            for r in prefix.calibration_records]
+    return result
 
 
 def future_input_identity(view):
@@ -264,6 +272,23 @@ def _check_seeds(specs, sources, context):
 def _validate_future(view, record):
     identity = future_input_identity(view)
     target = record["prefix_input"]["target_contract"]
+    if target.get("authority_kind") == "record_aware_calibration_prefix/1":
+        candidates = [r for r in target["source_record_roster"].values()
+                      if r["source_sha256"] == view.source_sha256 and r["source_relative_path"] == view.source_relative_path]
+        if (len(candidates) != 1 or view.participant_key != target["participant_key"]
+                or tuple(view.decision.candidate_vocabulary) != tuple(target["candidate_vocabulary"])):
+            raise ValueError("future view differs from its actual record-aware original source roster")
+        original = candidates[0]
+        c_scope = target["record_scopes"].get(original["record_id"])
+        if view.samples is not None and c_scope is not None and view.raw_scope[0] < c_scope["read_sample_support"][1]:
+            raise ValueError("future view overlaps actual record-local C fit samples")
+        test = record["fit_context"].get("test_scope")
+        if test is None:
+            raise ValueError("record-aware replay requires actual common test-record scopes")
+        scope = test["record_scopes"][original["record_id"]] if "record_scopes" in test else test
+        if view.samples is not None and not scope["start_sample"] <= view.raw_scope[0] < view.raw_scope[1] <= scope["stop_sample"]:
+            raise ValueError("future view exceeds actual record-local independent test samples")
+        return identity
     if (view.participant_key != target["participant_key"] or view.source_sha256 != target["source_sha256"]
             or tuple(view.decision.candidate_vocabulary) != tuple(target["candidate_vocabulary"])
             or (view.samples is not None and view.raw_scope[0] < target["raw_scope"][1])):
@@ -309,12 +334,25 @@ def _check_final_authority(record, loaded):
     expected_receipts = [] if identity["raw"] is None else [{**identity["target_contract"],
         "record_id": identity["raw"]["record_id"], "raw_input_digest": identity["raw"]["fit_input_digest"],
         "label_use": identity["label_use"]}]
+    if "native_records" in identity:
+        expected_receipts = [{**identity["target_contract"],
+            **identity["target_contract"]["record_scopes"][row["record_id"]],
+            "record_id": row["record_id"], "raw_scope": row["raw_scope"],
+            "raw_input_digest": row["fit_input_digest"], "label_use": identity["label_use"]}
+            for row in identity["native_records"]]
     for digest, trial in identity["trial_datasets"].items():
         if trial["numerical_input_digest"] != identity["label_use"]["trial"][digest]["numerical_input_digest"]:
             raise ValueError("prefix actual trial samples/labels differ from fit authority")
     for spec in specs:
         native = record["native_fit_inputs"][spec.expert_id]
-        if spec.family == "continuous_ar" and identity["raw"] is not None:
+        if spec.family == "continuous_ar" and "native_records" in identity:
+            rows = native["records"]
+            wanted = identity["native_records"]
+            if len(rows) != len(wanted) or any(a["record_id"] != b["record_id"]
+                or a["n_events"] != len(b["event_onsets"]) or a["original_input_sha256"] != b["fit_input_digest"]
+                for a, b in zip(rows, wanted, strict=True)):
+                raise ValueError("native fitted records differ from original acquisition-specific C inputs")
+        elif spec.family == "continuous_ar" and identity["raw"] is not None:
             rows = native["records"]
             if (len(rows) != 1 or rows[0]["record_id"] != identity["raw"]["record_id"]
                     or rows[0]["n_events"] != record["actual_K"]

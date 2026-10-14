@@ -128,9 +128,12 @@ def _validate_request(request):
     inputs = request["input_request"]
     if (request["producer_source"].get("src/transfer/ensemble_views.py") != old["sha256"]
             or inputs["producer_source_sha256"] != old["sha256"]
-            or inputs["original_source_sha256"] != request["mat"]["sha256"]
+            or inputs.get("dataset_source") is None and inputs["original_source_sha256"] != request["mat"]["sha256"]
             or inputs["preparation_task_id"] != request["preparation_task_id"]):
         raise ValueError("prefix replay original module/MAT/preparation authority changed")
+    for name, artifact in request.get("producer_input_modules", {}).items():
+        if artifact["sha256"] != request["producer_source"].get("src/"+name.replace(".", "/")+".py"):
+            raise ValueError("prefix replay original dataset decoder differs from the actual producer source")
     _roster(request, "selection")
     _roster(request, "ordinary")
     return identity
@@ -209,6 +212,18 @@ def _frozen_preparation(arguments):
     verified_code = _artifact_bytes(old)
     if "transfer.ensemble_views" in sys.modules:
         raise RuntimeError("frozen preparation must start before consumer transfer classes are imported")
+    modules = request.get("producer_input_modules", {})
+    ordered = sorted(modules, key=lambda name: (0 if name == "data.candidate_task" else
+                                              1 if name == "data.candidate_input" else 2, name))
+    for name in ordered:
+        artifact = modules[name]
+        content = _artifact_bytes(artifact)
+        if name in sys.modules or not name.startswith("data."):
+            raise ValueError("original candidate decoder must be installed before consumer data classes")
+        import_spec = importlib.util.spec_from_file_location(name, artifact["path"])
+        original = importlib.util.module_from_spec(import_spec)
+        sys.modules[name] = original
+        exec(compile(content, artifact["path"], "exec"), original.__dict__)
     spec = importlib.util.spec_from_file_location("transfer.ensemble_views", old["path"])
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
@@ -221,8 +236,9 @@ def _frozen_preparation(arguments):
     inputs = request["input_request"]
     profiles = tuple(module.SelectionEpochProfile.from_record(row) for row in inputs["profiles"])
     with cpu_thread_budget(1):
-        views = module.prepare_bnci_independent_prefixes(request["mat"]["path"],
-            source_sha256=inputs["original_source_sha256"], budgets=inputs["requested_Ks"], profiles=profiles,
+        declaration = inputs.get("dataset_source", {"path": request["mat"]["path"], "sha256": inputs["original_source_sha256"]})
+        views = module.prepare_dataset_independent_prefixes(declaration,
+            budgets=inputs["requested_Ks"], profiles=profiles,
             authorization_preprocessing=parse_preprocessing_spec(inputs["authorization_preprocessing"]),
             response_seconds=inputs["observation_response_seconds"], pre_roll_seconds=inputs["pre_roll_seconds"])
         scopes = json.loads(_artifact_bytes(request["scopes"]))

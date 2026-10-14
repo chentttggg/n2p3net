@@ -105,7 +105,9 @@ def _validate_request(request):
     expected = {"schema", "preparation_task_id", "original_source_sha256", "producer_source_sha256",
                 "participant_key", "source_relative_path", "requested_Ks", "actual_Ks", "profiles",
                 "authorization_preprocessing", "observation_response_seconds", "pre_roll_seconds"}
-    if set(request) != expected or request["schema"] != _REQUEST_SCHEMA:
+    if request.get("schema") == "n2p3_prefix_replay_input_request/2":
+        expected.add("dataset_source")
+    if set(request) != expected or request["schema"] not in {_REQUEST_SCHEMA, "n2p3_prefix_replay_input_request/2"}:
         raise ValueError("prepared prefix request must bind the original compiler and physical programme")
     for name in ("original_source_sha256", "producer_source_sha256"):
         require_sha256(request[name], name)
@@ -130,20 +132,22 @@ class _ArrayWriter:
         self.stream, self.arrays, self.identical = stream, [], {}
         self.raw_master = None
         self.raw_master_entry = None
+        self.record_masters = {}
 
-    def array(self, values, *, raw_scope=None):
+    def array(self, values, *, raw_scope=None, raw_key=None):
         value = np.asarray(values)
         if value.dtype.hasobject:
             value = value.astype(str)
         value = np.ascontiguousarray(value)
         if value.dtype.kind not in "biufUS":
             raise TypeError("prefix capsules support plain numeric and Unicode input arrays")
-        if raw_scope is not None and self.raw_master is not None:
+        master_values, master_entry = self.record_masters.get(raw_key, (self.raw_master, self.raw_master_entry))
+        if raw_scope is not None and master_values is not None:
             start, stop = raw_scope
-            expected = self.raw_master[start:stop]
+            expected = master_values[start:stop]
             if value.shape != expected.shape or value.dtype != expected.dtype or not np.array_equal(value, expected):
                 raise ValueError("prepared raw slice differs from the original native master observations")
-            master = self.arrays[self.raw_master_entry]
+            master = self.arrays[master_entry]
             return self._entry(value, master["offset"] + start * value.shape[1] * value.dtype.itemsize)
         key = (value.dtype.str, value.shape, _sha256_buffer(value))
         if key in self.identical:
@@ -208,7 +212,8 @@ def _pack_dataset(data, writer):
 
 def _pack_view(view, writer, *, calibration=False):
     return {"record": view.record(), "samples": None if view.samples is None else
-            writer.array(view.samples, raw_scope=view.raw_scope if calibration else None)}
+            writer.array(view.samples, raw_scope=view.raw_scope if calibration else None,
+                         raw_key=(view.source_sha256, view.source_relative_path))}
 
 
 def export_prepared_views(views, profiles, directory, request):
@@ -267,6 +272,10 @@ def export_prepared_views(views, profiles, directory, request):
         if largest.raw is not None:
             master = writer.array(largest.raw.samples)
             writer.raw_master, writer.raw_master_entry = largest.raw.samples, master["array"]
+        for native in largest.native_records:
+            scope = largest.target_contract["record_scopes"][native.record_id]
+            master = writer.array(native.samples)
+            writer.record_masters[(scope["source_sha256"], scope["source_relative_path"])] = native.samples, master["array"]
         records = {}
         for budget, prefix in sorted(prefixes.items()):
             raw = prefix.raw
@@ -284,6 +293,15 @@ def export_prepared_views(views, profiles, directory, request):
                 "complete_groups": [{"view": _pack_view(group.view, writer, calibration=True),
                                      "labels": writer.array(group.labels), "target_candidate": group.target_candidate}
                                     for group in prefix.complete_groups]}
+            if prefix.native_records:
+                records[str(budget)]["native_records"] = []
+                for raw in prefix.native_records:
+                    scope = prefix.target_contract["record_scopes"][raw.record_id]
+                    records[str(budget)]["native_records"].append({"record_id": raw.record_id,
+                        "samples": writer.array(raw.samples, raw_scope=(0, len(raw.samples)),
+                            raw_key=(scope["source_sha256"], scope["source_relative_path"])),
+                        "onsets": writer.array(raw.onsets), "target_mask": writer.array(raw.target_mask),
+                        "right_censored": raw.right_censored})
         decisions = [_pack_view(view, writer) for view in views.decisions]
     blob_digest = hashlib.sha256()
     with blob_path.open("rb") as stream:
@@ -298,10 +316,13 @@ def export_prepared_views(views, profiles, directory, request):
     capsule_path.write_bytes(_json_bytes(document))
     # Future truth belongs only to the parent scoring owner, never reader capsules.
     truth_path = directory / "scoring_truth.json"
-    truth_path.write_bytes(_json_bytes({"schema": "n2p3_prefix_scoring_truth/1",
+    truth_record = {"schema": "n2p3_prefix_scoring_truth/1",
         "request_sha256": document["request_sha256"], "capsule_sha256": _artifact(capsule_path)["sha256"],
         "source_sha256": request["original_source_sha256"], "scoring_truth": views.scoring_truth,
-        "future_support": [view.record() for view in views.decisions]}))
+        "future_support": [view.record() for view in views.decisions]}
+    if target.get("authority_kind") == "record_aware_calibration_prefix/1":
+        truth_record.update(schema="n2p3_prefix_scoring_truth/2", source_record_roster=target["source_record_roster"])
+    truth_path.write_bytes(_json_bytes(truth_record))
     return _artifact(capsule_path)
 
 
@@ -632,7 +653,10 @@ def _restore_views(document, reader):
             {name: _unpack_dataset(data, reader) for name, data in record["trial_datasets"].items()},
             tuple(CalibrationSelection(_unpack_view(group["view"], reader), reader.array(group["labels"]),
                                        group["target_candidate"]) for group in record["complete_groups"]),
-            record["target_contract"], record["label_use"])
+            record["target_contract"], record["label_use"], native_records=tuple(
+                CalibrationRecord(row["record_id"], reader.array(row["samples"]), reader.array(row["onsets"]),
+                    reader.array(row["target_mask"]), right_censored=row["right_censored"])
+                for row in record.get("native_records", ())))
         object.__setattr__(prefix, "_prepared_capabilities", freeze_metadata(record["capabilities"]))
         identity = calibration_prefix_identity(prefix)
         if identity != record["identity"]:
@@ -640,7 +664,12 @@ def _restore_views(document, reader):
         prefixes[int(key)] = prefix
         identities[int(key)] = identity
 
-    compiler = _PreparedCalibrationPrefixCompiler(prefixes, identities=identities,
+    factory = _PreparedCalibrationPrefixCompiler
+    if any(p.target_contract.get("authority_kind") == "record_aware_calibration_prefix/1" for p in prefixes.values()):
+        from transfer.ensemble_views import _PreparedRecordCalibrationPrefixCompiler
+
+        factory = _PreparedRecordCalibrationPrefixCompiler
+    compiler = factory(prefixes, identities=identities,
         producer_source_sha256=document["producer_source_sha256"],
         consumer_source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
     # Re-run the unchanged original structural authority, never synthesize missing K.
@@ -701,10 +730,19 @@ def open_prepared_inputs(descriptor, *, expected_request_sha, expected_capsule_s
 def read_scoring_truth(descriptor, *, capsule_sha, request_sha, future_views):
     """Parent-only scoring truth, bound to the same original future observations."""
     document = json.loads(_read_artifact(descriptor))
-    if (document["schema"] != "n2p3_prefix_scoring_truth/1" or document["capsule_sha256"] != capsule_sha
+    if document["schema"] == "n2p3_prefix_scoring_truth/2":
+        originals = tuple(document["source_record_roster"].values())
+        actual_sources = all(len([r for r in originals if r["source_sha256"] == view.source_sha256
+            and r["source_relative_path"] == view.source_relative_path
+            and r["sample_rate_hz"] == view.sample_rate_hz and r["source_subject_id"] == view.source_subject_id]) == 1
+            for view in future_views)
+    else:
+        actual_sources = all(view.source_sha256 == document["source_sha256"] for view in future_views)
+    if (document["schema"] not in {"n2p3_prefix_scoring_truth/1", "n2p3_prefix_scoring_truth/2"}
+            or document["capsule_sha256"] != capsule_sha
             or document["request_sha256"] != request_sha
             or semantic_sha256(document["future_support"]) != semantic_sha256([view.record() for view in future_views])
-            or any(view.source_sha256 != document["source_sha256"] for view in future_views)
+            or not actual_sources
             or set(document["scoring_truth"]) != {view.decision_id for view in future_views}
             or any(value not in view.decision.candidate_vocabulary
                    for view in future_views for key, value in document["scoring_truth"].items() if key == view.decision_id)):

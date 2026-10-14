@@ -303,6 +303,7 @@ class SelectionEpochProfile:
     operator: FiniteFilterOperator | None
     reference_channel: str | None = None
     output_dtype: str = "float32"
+    allow_missing_channels: bool = False
     _source_start: int = field(init=False, repr=False, compare=False)
     _source_stop: int = field(init=False, repr=False, compare=False)
     _resampled_samples: int = field(init=False, repr=False, compare=False)
@@ -349,9 +350,9 @@ class SelectionEpochProfile:
 
     @classmethod
     def from_preprocessing(cls, preprocessing, *, source_sample_rate_hz, channel_names,
-                           reference, reference_channel=None, output_dtype="float32"):
+                           reference, reference_channel=None, output_dtype="float32", allow_missing_channels=False):
         return cls(preprocessing, source_sample_rate_hz, tuple(channel_names), reference,
-                   _profile_operator(preprocessing, source_sample_rate_hz), reference_channel, output_dtype)
+                   _profile_operator(preprocessing, source_sample_rate_hz), reference_channel, output_dtype, allow_missing_channels)
 
     @property
     def epoch_geometry(self):
@@ -371,12 +372,15 @@ class SelectionEpochProfile:
                 + (self.preprocessing.n_times - 1) / self.preprocessing.sfreq * 1000}
 
     def record(self):
-        return {"schema": "n2p3_selection_epoch_profile/1", "preprocessing": self.preprocessing.record(),
+        record = {"schema": "n2p3_selection_epoch_profile/1", "preprocessing": self.preprocessing.record(),
                 "source_sample_rate_hz": self.source_sample_rate_hz,
                 "channel_names": list(self.channel_names), "reference": self.reference,
                 "reference_channel": self.reference_channel, "output_dtype": self.output_dtype,
                 "operator": None if self.operator is None else self.operator.record(),
                 "epoch_geometry": self.epoch_geometry}
+        if self.allow_missing_channels:
+            record["allow_missing_channels"] = True
+        return record
 
     @property
     def digest(self):
@@ -406,7 +410,8 @@ class SelectionEpochProfile:
         required = (*map(canonical_channel_name, self.channel_names),)
         if self.reference_channel is not None:
             required += (self.reference_channel,)
-        if set(required) - set(native):
+        missing = set(required)-set(native)
+        if missing and (not self.allow_missing_channels or self.reference_channel in missing):
             raise ValueError("epoch projection requests EEG or measured-reference channels absent from actual observations")
 
     def transform(self, view: PredictionDecisionView):
@@ -611,6 +616,57 @@ class _FrozenPrefixDataset(EpochDataset):
 
 
 @dataclass(frozen=True)
+class CalibrationRecordScope:
+    """A real acquisition record's C prefix, in that record's native clock.
+
+    Global label indices order permission across files; they never turn files
+    into one continuous sample axis or authorize a noise/flat-state carryover.
+    """
+
+    record_id: str
+    source_sha256: str
+    source_relative_path: str
+    source_dataset_id: str
+    source_subject_id: str
+    read_sample_support: tuple[int, int]
+    global_label_indices: tuple[int, int]
+    available_sample: int
+    authorized_native_onsets: tuple[int, ...]
+    native_clock: str = "actual_record_native_sample"
+
+    def __post_init__(self):
+        for name in ("record_id", "source_relative_path", "source_dataset_id", "source_subject_id"):
+            value = getattr(self, name)
+            if not isinstance(value, str) or not value or value != value.strip():
+                raise ValueError("record calibration scope requires exact physical source identities")
+        require_sha256(self.source_sha256, "original acquisition record")
+        start, stop = self.read_sample_support
+        lo, hi = self.global_label_indices
+        if (any(type(x) is not int for x in (start, stop, lo, hi, self.available_sample))
+                or start != 0 or stop <= 0 or not 0 <= lo < hi
+                or self.available_sample != stop or self.native_clock != "actual_record_native_sample"
+                or len(self.authorized_native_onsets) != hi-lo
+                or any(type(x) is not int for x in self.authorized_native_onsets)
+                or any(a >= b for a, b in zip(self.authorized_native_onsets[:-1], self.authorized_native_onsets[1:], strict=True))
+                or not 0 <= self.authorized_native_onsets[0] < self.authorized_native_onsets[-1]+1 <= stop):
+            raise ValueError("actual record clock/read boundary and global C-label authority differ")
+
+    def record(self):
+        return {"schema": "n2p3_calibration_record_scope/1", **{
+            item.name: list(value) if isinstance(value, tuple) else value
+            for item in fields(self) for value in (getattr(self, item.name),)}}
+
+    @classmethod
+    def from_record(cls, value):
+        values = dict(value)
+        if values.pop("schema") != "n2p3_calibration_record_scope/1":
+            raise ValueError("unknown actual acquisition C-scope schema")
+        for name in ("read_sample_support", "global_label_indices", "authorized_native_onsets"):
+            values[name] = tuple(values[name])
+        return cls(**values)
+
+
+@dataclass(frozen=True)
 class CalibrationPrefix:
     """One authorized physical prefix, with distinct raw and epoch label use."""
 
@@ -620,6 +676,7 @@ class CalibrationPrefix:
     complete_groups: tuple[CalibrationSelection, ...]
     target_contract: dict
     label_use: dict
+    native_records: tuple[CalibrationRecord, ...] = ()
     _prepared_capabilities: dict | None = field(default=None, init=False, repr=False, compare=False)
 
     def __post_init__(self):
@@ -629,6 +686,9 @@ class CalibrationPrefix:
                 samples=_immutable_array(self.raw.samples, self.raw.samples.dtype),
                 onsets=_immutable_array(self.raw.onsets, self.raw.onsets.dtype),
                 target_mask=_immutable_array(self.raw.target_mask, bool)))
+        object.__setattr__(self, "native_records", tuple(replace(raw,
+            samples=_immutable_array(raw.samples, raw.samples.dtype), onsets=_immutable_array(raw.onsets, raw.onsets.dtype),
+            target_mask=_immutable_array(raw.target_mask, bool)) for raw in self.native_records))
         object.__setattr__(self, "trial_datasets", freeze_metadata({
             key: _FrozenPrefixDataset.from_dataset(value) for key, value in self.trial_datasets.items()}))
         object.__setattr__(self, "complete_groups", tuple(self.complete_groups))
@@ -642,6 +702,8 @@ class CalibrationPrefix:
     def _validate_authority(self):
         """Bind actual dosage, row identity and read support once at ingress."""
         target = self.target_contract
+        if target.get("authority_kind") == "record_aware_calibration_prefix/1":
+            return self._validate_record_authority()
         start, cutoff = target["raw_scope"]
         if type(self.budget) is not int or self.budget < 0 or start != 0:
             raise ValueError("prefix authorization requires a chronological nonnegative K")
@@ -712,6 +774,65 @@ class CalibrationPrefix:
                 raise ValueError("temperature groups must be complete observations inside actual C authority")
         return self
 
+    @property
+    def calibration_records(self):
+        return self.native_records if self.native_records else (() if self.raw is None else (self.raw,))
+
+    def fit_receipts(self):
+        if self.target_contract.get("authority_kind") != "record_aware_calibration_prefix/1":
+            return [] if self.raw is None else [{**self.target_contract, "record_id": self.raw.record_id,
+                "raw_input_digest": array_digest(self.raw.samples, self.raw.onsets, self.raw.target_mask),
+                "label_use": self.label_use}]
+        scopes = self.target_contract["record_scopes"]
+        return [{**self.target_contract, **scopes[raw.record_id], "record_id": raw.record_id,
+            "raw_scope": list(scopes[raw.record_id]["read_sample_support"]),
+            "raw_input_digest": array_digest(raw.samples, raw.onsets, raw.target_mask),
+            "label_use": self.label_use} for raw in self.calibration_records]
+
+    def _validate_record_authority(self):
+        target = self.target_contract
+        if type(self.budget) is not int or self.budget < 0 or self.raw is not None or target["raw_scope"] is not None:
+            raise ValueError("record-aware C uses global label K and separate actual native records")
+        scopes = {key: CalibrationRecordScope.from_record(value) for key, value in target["record_scopes"].items()}
+        if set(scopes) != {r.record_id for r in self.native_records}:
+            raise ValueError("C numerical records differ from their actual acquisition scope roster")
+        used = []
+        for raw in self.native_records:
+            scope = scopes[raw.record_id]
+            if (raw.samples.shape != (scope.read_sample_support[1], len(target["channel_names"]))
+                    or raw.target_mask.dtype != bool or not np.isfinite(raw.samples).all()
+                    or not np.array_equal(raw.onsets, scope.authorized_native_onsets)
+                    or raw.target_mask.shape != raw.onsets.shape):
+                raise ValueError("actual record C samples/onsets/labels exceed its source-owned permission")
+            used.extend(range(*scope.global_label_indices))
+        raw_use = self.label_use["raw"]
+        if (raw_use["requested_labels"] != self.budget or raw_use["used_labels"] != len(used)
+                or tuple(raw_use["used_label_indices"]) != tuple(used) or any(i >= self.budget for i in used)):
+            raise ValueError("global requested C-label dose differs from actual per-record authorized rows")
+        for digest, data in self.trial_datasets.items():
+            use = self.label_use["trial"][digest]
+            data.validate(require_labels=True)
+            indices = tuple(map(int, data.metadata["global_label_index"]))
+            if (indices != tuple(use["used_label_indices"]) or use["used_labels"] != len(indices)
+                    or use["requested_labels"] != self.budget or any(i not in used for i in indices)
+                    or use["numerical_input_digest"] != array_digest(data.X, data.y, data.trial_channel_mask)):
+                raise ValueError("record-aware epoch labels/numerical rows differ from original C permissions")
+        for group in self.complete_groups:
+            key = group.view.source_sha256
+            candidates = [r for r in self.native_records if scopes[r.record_id].source_sha256 == key]
+            if len(candidates) != 1:
+                raise ValueError("C group belongs to another acquisition record")
+            raw = candidates[0]
+            absolute = group.view.onsets+group.view.raw_scope[0]
+            indices = np.searchsorted(raw.onsets, absolute)
+            if (group.view.samples is None or not group.view.decision.schedule_complete
+                    or np.any(indices >= len(raw.onsets)) or not np.array_equal(raw.onsets[indices], absolute)
+                    or not np.array_equal(group.labels, raw.target_mask[indices])
+                    or group.view.raw_scope[1] > len(raw.samples)
+                    or not np.array_equal(group.view.samples, raw.samples[slice(*group.view.raw_scope)])):
+                raise ValueError("complete C group differs from its actual record-local fit observations")
+        return self
+
     def trial_target(self, profile):
         contract = self.target_contract
         channels = tuple(map(canonical_channel_name, profile.channel_names))
@@ -719,9 +840,10 @@ class CalibrationPrefix:
         required = set(channels)
         if profile.reference_channel is not None:
             required.add(profile.reference_channel)
+        missing = required-set(native)
         if (profile.source_sample_rate_hz != contract["sample_rate_hz"]
                 or profile.reference != contract["reference"]
-                or required - set(native)):
+                or missing and (not profile.allow_missing_channels or profile.reference_channel in missing)):
             raise ValueError("prefix profile must use the actual measured native channels/reference")
         reference = ("measured_channel:" + profile.reference_channel if profile.reference_channel is not None else
                      contract["reference"] if channels == native else "native:" + contract["reference"])
@@ -828,11 +950,15 @@ def _compile_bnci_calibration_prefix(record, raw, events, budget, *, maximum, pr
 
 def calibration_prefix_identity(prefix):
     """Actual immutable observations and labels, beyond a presentation digest."""
-    return semantic_sha256({"prefix": prefix.record(),
+    identity = {"prefix": prefix.record(),
         "raw": None if prefix.raw is None else array_digest(
             prefix.raw.samples, prefix.raw.onsets, prefix.raw.target_mask),
         "trial": {key: array_digest(data.X, data.y, data.trial_channel_mask)
-                  for key, data in prefix.trial_datasets.items()}})
+                  for key, data in prefix.trial_datasets.items()}}
+    if prefix.native_records:
+        identity["native_records"] = [{"record_id": raw.record_id,
+            "input_sha256": array_digest(raw.samples, raw.onsets, raw.target_mask)} for raw in prefix.native_records]
+    return semantic_sha256(identity)
 
 
 def _prefix_owner_snapshot(prefix):
@@ -954,6 +1080,13 @@ class CalibrationPrefixCompiler:
         else:
             self._prefix_ownership[budget].assert_unchanged(self._prefixes[budget])
         return self._prefixes[budget]
+
+    @classmethod
+    def from_dataset_source(cls, declaration, **arguments):
+        """Dispatch only registered actual source formats into the shared issuer."""
+        from data.candidate_input import resolve_candidate_dataset_adapter
+
+        return RecordCalibrationPrefixCompiler(resolve_candidate_dataset_adapter(declaration), **arguments)
 
     def assert_original_prefix(self, prefix):
         if not isinstance(prefix, CalibrationPrefix):
@@ -1307,3 +1440,421 @@ def build_calibration_epoch_dataset(groups, profile: SelectionEpochProfile, *, t
     )
     dataset.validate(require_labels=True)
     return dataset
+
+
+class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
+    """The original multi-file source owner; no stitched continuous recording."""
+
+    def __init__(self, adapter, *, budgets, profiles, authorization_preprocessing,
+                 response_seconds=1.203125, pre_roll_seconds=.2):
+        from data.candidate_input import CandidateDatasetAdapter
+
+        if not isinstance(adapter, CandidateDatasetAdapter):
+            raise TypeError("shared prefix issuer requires its registered original dataset adapter")
+        self.adapter, self.sources = adapter, adapter.recordings
+        self.profiles = {p.digest: p for p in profiles}
+        self.budgets = tuple(sorted(set(budgets)))
+        total = sum(len(s.native_onsets) for s in self.sources)
+        if not self.budgets or any(type(k) is not int or k < 0 for k in self.budgets):
+            raise ValueError("global requested K must declare nonnegative ordered label doses")
+        first = self.sources[0]
+        self.rate, self.reference = first.sample_rate_hz, first.reference
+        self.response_samples = max([round(response_seconds*self.rate), *(p._source_stop for p in self.profiles.values())])
+        self.preroll_samples = max([round(pre_roll_seconds*self.rate), *(-p._source_start for p in self.profiles.values())])
+        self.authorization_preprocessing = authorization_preprocessing
+        self._prefixes, self._prefix_ownership = {}, {}
+        self._offsets = np.r_[0, np.cumsum([len(s.native_onsets) for s in self.sources])]
+        from transfer.binary import BinaryTimeSplit
+
+        def split(k, maximum):
+            if not 0 <= k <= maximum < total:
+                raise ValueError("requested global C labels would consume the original later event pool")
+            test, purged = [], []
+            for source, base in zip(self.sources, self._offsets[:-1], strict=True):
+                count = min(len(source.native_onsets), max(0, maximum-int(base)))
+                last = source.native_onsets[:count]
+                last = last[last >= 0]
+                boundary = int(last[-1])+round(authorization_preprocessing.tmax_ms/1000*self.rate)+1 if len(last) else 0
+                for local in range(count, len(source.native_onsets)):
+                    value = int(source.native_onsets[local])
+                    start = value+round(authorization_preprocessing.tmin_ms/1000*self.rate)
+                    stop = value+round(authorization_preprocessing.tmax_ms/1000*self.rate)+1
+                    admissible = (source.native_sample_count is not None and value >= 0 and start >= max(0, boundary)
+                                  and stop <= source.native_sample_count)
+                    (test if admissible else purged).append(int(base)+local)
+            return BinaryTimeSplit(np.arange(k, dtype=np.int64), np.asarray(test, dtype=np.int64),
+                                   np.asarray(purged, dtype=np.int64))
+        self._splits, self._adjustments = resolve_calibration_splits(self.budgets, split,
+            minimum_test_trials=1, available_trials=total)
+        self.actual_budgets, self.maximum = tuple(sorted(self._splits)), max(self._splits)
+        self._read_cache = {}
+        self.target = {"participant_key": adapter.participant_key, "source_dataset_id": adapter.dataset_id,
+            "source_subject_id": adapter.source_subject_id, "source_sha256": adapter.digest,
+            "source_relative_path": "ordered_original_candidate_acquisitions",
+            "sample_rate_hz": self.rate, "channel_names": list(first.channel_names),
+            "channel_types": ["EEG"]*len(first.channel_names), "reference": self.reference,
+            "signal_unit": "V", "candidate_vocabulary": list(first.selections[0].decision.candidate_vocabulary),
+            "candidate_task_contract": adapter.candidate_task_contract, "endpoint": adapter.endpoint,
+            "authority_kind": "record_aware_calibration_prefix/1", "raw_scope": None,
+            "source_record_roster": {s.record_id: {"record_id": s.record_id, "source_sha256": s.source_sha256,
+                "source_relative_path": s.source_relative_path, "native_sample_count": s.native_sample_count,
+                "sample_rate_hz": s.sample_rate_hz, "source_subject_id": s.source_subject_id,
+                "session_id": s.session_id, "run_id": s.run_id} for s in self.sources}}
+        for source in self.sources:
+            if (source.channel_names,source.reference,source.sample_rate_hz) != (first.channel_names,self.reference,self.rate):
+                raise ValueError("original participant records have incompatible measured native layouts/reference/clock")
+        self._history_ingress = {"dataset_id": adapter.dataset_id, "source_format": adapter.source_format,
+            "record_sources": list(adapter.source_artifacts), "budgets": list(self.budgets),
+            "profiles": [p.record() for p in self.profiles.values()],
+            "authorization_preprocessing": authorization_preprocessing.record(),
+            "response_seconds": response_seconds, "pre_roll_seconds": pre_roll_seconds,
+            "original_adapter_digest": adapter.digest, "original_factory_source_sha256": adapter.original_factory_source_sha256}
+        self._arguments = {"maximum": self.maximum, "profiles": self.profiles,
+            "authorization_preprocessing": authorization_preprocessing, "width": self.response_samples,
+            "preroll": self.preroll_samples, "target": self.target}
+
+    def _read(self, source, cutoff):
+        key = source.record_id, cutoff
+        if key not in self._read_cache:
+            masters = [(n, value) for (record, n), value in self._read_cache.items()
+                       if record == source.record_id and n >= cutoff]
+            self._read_cache[key] = (min(masters, key=lambda item: item[0])[1][:cutoff] if masters else
+                                    _immutable_array(source.read_native(0, cutoff), np.float64))
+        return self._read_cache[key]
+
+    def _current_view(self, source, selection, *, permitted_event_stop=None, maximum_read_stop=None,
+                      minimum_read_start=0, read_samples=True, forced_unavailable=None):
+        declared = source.selections[selection]
+        rows = np.asarray(declared.event_indices, dtype=np.int64)
+        decision = declared.decision
+        onsets = source.native_onsets[rows]
+        reason = forced_unavailable
+        if source.native_sample_count is None or np.any(onsets < 0):
+            reason = "original_EEG_or_optical_clock_unavailable"
+            if source.unavailable_public_onsets is None:
+                raise ValueError("unavailable native clocks need their declared physical-unavailable view adapter")
+            onsets = source.unavailable_public_onsets[rows]
+        start = max(0, int(onsets[0])-self.preroll_samples)
+        stop = int(onsets[-1])+self.response_samples
+        if source.native_sample_count is not None and stop > source.native_sample_count:
+            reason = "original_response_support_right_censored"
+        if rows[0] > 0 and source.native_onsets[rows[0]-1] >= 0 and source.native_onsets[rows[0]-1]+self.response_samples > start:
+            reason = "previous_unknown_decision_overlaps_finite_response_support"
+        if rows[-1]+1 < len(source.native_onsets) and 0 <= source.native_onsets[rows[-1]+1] < stop:
+            reason = "next_unknown_decision_overlaps_finite_response_support"
+        if permitted_event_stop is not None and rows[-1] >= permitted_event_stop:
+            reason = "partial_selection_at_global_C_label_boundary"
+        if maximum_read_stop is not None and stop > maximum_read_stop:
+            reason = "response_outside_original_C_read_cutoff"
+        if start < minimum_read_start:
+            reason = "response_overlaps_common_C_test_embargo"
+        if not read_samples:
+            reason = "physical_geometry_only_no_signal_read"
+        if reason:
+            decision = replace(decision, evidence_indices=np.full(len(rows), -1, dtype=np.int64))
+        values = None if reason else source.read_native(start, stop)
+        return PredictionDecisionView(f"{source.record_id}:selection:{selection}", source.participant_key,
+            declared.selection_id, values, onsets-start, decision, source.source_sha256, (start, stop),
+            self.rate, source.channel_names, ("EEG",)*len(source.channel_names), self.reference,
+            source.source_relative_path, self.adapter.dataset_id, source.source_subject_id, stop, unavailable_reason=reason)
+
+    def compile(self, budget):
+        if type(budget) is not int or not 0 <= budget <= self.maximum:
+            raise ValueError("derived record-aware C prefix exceeds original global label authority")
+        if budget in self._prefixes:
+            self._prefix_ownership[budget].assert_unchanged(self._prefixes[budget])
+            return self._prefixes[budget]
+        records, scopes, groups, unavailable, trial_parts = [], {}, [], [], {p: [] for p in self.profiles}
+        for source, base in zip(self.sources, self._offsets[:-1], strict=True):
+            count = min(len(source.native_onsets), max(0, budget-int(base)))
+            if not count:
+                continue
+            onsets = source.native_onsets[:count]
+            if source.native_sample_count is None or np.any(onsets < 0):
+                unavailable.append({"record_id": source.record_id, "global_label_indices": [int(base), int(base)+count],
+                    "reason": "original_EEG_or_C_optical_clock_unavailable"})
+                continue
+            next_onset = int(source.native_onsets[count]) if count < len(source.native_onsets) else source.native_sample_count
+            if next_onset < 0:
+                unavailable.append({"record_id": source.record_id, "global_label_indices": [int(base), int(base)+count],
+                    "reason": "original_next_unknown_optical_cutoff_unavailable"})
+                continue
+            cutoff = min(next_onset, int(onsets[-1])+self.response_samples, source.native_sample_count)
+            samples = self._read(source, cutoff)
+            labels = source.authorized_binary_labels[:count]
+            raw = CalibrationRecord(source.record_id, samples, onsets, labels, right_censored=True)
+            records.append(raw)
+            scope = CalibrationRecordScope(source.record_id, source.source_sha256,
+                source.source_relative_path, self.adapter.dataset_id, source.source_subject_id, (0, cutoff), (int(base), int(base)+count),
+                cutoff, tuple(map(int, onsets)))
+            scopes[source.record_id] = scope.record()
+            for selection, declared in enumerate(source.selections):
+                event_rows = np.asarray(declared.event_indices, dtype=np.int64)
+                if event_rows[0] >= count:
+                    break
+                group = self._current_view(source, selection, permitted_event_stop=count, maximum_read_stop=cutoff)
+                if group.samples is not None and group.raw_scope[1] <= cutoff and declared.parent_target_candidate is not None:
+                    groups.append(CalibrationSelection(group, labels[event_rows], declared.parent_target_candidate))
+            for digest, profile in self.profiles.items():
+                profile.validate_observation(self._current_view(source, 0, read_samples=False))
+                available = (onsets+profile._source_start >= 0) & (onsets+profile._source_stop <= cutoff)
+                indices = np.flatnonzero(available)
+                if not len(indices):
+                    continue
+                m = np.vstack([s.decision.membership for s in source.selections])[indices]
+                all_events = tuple(e for s in source.selections for e in s.decision.event_ids)
+                event_ids = tuple(all_events[i] for i in indices)
+                physical = MembershipDecision(tuple(self.target["candidate_vocabulary"]), m, event_ids, event_ids,
+                    np.arange(len(indices)), np.zeros(len(indices), dtype=np.int64), np.arange(len(indices)),
+                    1, source.selections[0].decision.protocol, False)
+                view = PredictionDecisionView(f"{source.record_id}:C{count}", source.participant_key,
+                    f"{source.record_id}:authorized_C", samples, onsets[indices], physical,
+                    source.source_sha256, (0, cutoff), self.rate,
+                    tuple(self.target["channel_names"]), tuple(self.target["channel_types"]), self.reference,
+                    source.source_relative_path, self.adapter.dataset_id, source.source_subject_id, cutoff)
+                X, mask, receipt = profile.transform(view)
+                trial_parts[digest].append((X, mask, receipt, view, indices+int(base), labels[indices], source))
+        datasets, trial_use = {}, {}
+        for digest, profile in self.profiles.items():
+            parts = trial_parts[digest]
+            used = np.concatenate([p[4] for p in parts]).tolist() if parts else []
+            use = {"requested_labels": budget, "used_labels": len(used), "used_label_indices": used,
+                "unused_label_indices": sorted(set(range(budget))-set(used)), "profile": profile.record(),
+                "record_scopes": scopes}
+            if parts:
+                data = _record_epoch_prefix(parts, profile, self.target, budget)
+                datasets[digest] = data
+                use["numerical_input_digest"] = array_digest(data.X, data.y, data.trial_channel_mask)
+            trial_use[digest] = use
+        used_raw = [i for s in scopes.values() for i in range(*s["global_label_indices"])]
+        prefix = CalibrationPrefix(budget, None, datasets, tuple(groups), {**self.target, "record_scopes": scopes},
+            {"raw": {"requested_labels": budget, "used_labels": len(used_raw), "used_label_indices": used_raw,
+                "unused_label_indices": sorted(set(range(budget))-set(used_raw)), "record_scopes": scopes,
+                "unavailable_records": unavailable}, "trial": trial_use}, native_records=tuple(records))
+        self._prefixes[budget] = prefix
+        self._prefix_ownership[budget] = _OwnedCalibrationPrefix(prefix, calibration_prefix_identity(prefix))
+        return prefix
+
+    def before_group(self, parent, held):
+        parent = self.assert_original_prefix(parent)
+        self._prefix_ownership[parent.budget].assert_group_match(held)
+        matches = [(s, int(base)) for s, base in zip(self.sources, self._offsets[:-1], strict=True)
+                   if s.source_sha256 == held.view.source_sha256]
+        if len(matches) != 1:
+            raise ValueError("held C group has no unique actual acquisition identity")
+        source, base = matches[0]
+        absolute = held.view.onsets+held.view.raw_scope[0]
+        positions = np.searchsorted(source.native_onsets, absolute)
+        if not np.array_equal(source.native_onsets[positions], absolute):
+            raise ValueError("held group clocks differ from the original record event ledger")
+        # Its preroll must also stay out of earlier C observations. Original
+        # next-event geometry is applied before any filtering/statistics.
+        earlier_count = int(np.searchsorted(source.native_onsets, held.view.raw_scope[0], side="left"))
+        earlier = self.compile(base+earlier_count)
+        scope = earlier.target_contract["record_scopes"].get(source.record_id)
+        if scope is not None and scope["read_sample_support"][1] > held.view.raw_scope[0]:
+            raise ValueError("earlier record-aware prefix overlaps actual held raw observations")
+        return earlier
+
+    def record_read_scope(self, view, *, prefix, conditioning_stop, available_stop=None,
+                          program="record_prequential_public_history/1"):
+        """New named P/T history permission; the independent holdout stays strict.
+
+        C may overlap the observed conditioning prefix. C must end before P's
+        cutoff, scored T follows P, and no held binary/target label leaves this
+        issuer. Original acquisition boundaries remain explicit.
+        """
+        from research.history_authority import HistoryUnavailableError
+
+        prefix = self.assert_original_prefix(prefix)
+        stop = view.available_sample if available_stop is None else available_stop
+        matches = [r for r in self.sources if r.source_sha256 == view.source_sha256
+                   and r.source_relative_path == view.source_relative_path]
+        if len(matches) != 1 or program != "record_prequential_public_history/1":
+            raise ValueError("history scope requires one actual record and the named prequential programme")
+        source = matches[0]
+        selections = [s for s in source.selections if s.selection_id == view.decision_id]
+        if (len(selections) != 1 or view.participant_key != source.participant_key
+                or type(conditioning_stop) is not int or type(stop) is not int
+                or not 0 < conditioning_stop < stop == view.available_sample
+                or source.native_sample_count is None or stop > source.native_sample_count
+                or view.sample_rate_hz != self.rate or view.channel_names != source.channel_names
+                or view.reference != source.reference):
+            raise ValueError("actual record P/T native clock, reference, request or cutoff changed")
+        declared = selections[0]
+        native = source.native_onsets[np.asarray(declared.event_indices)]
+        actual_decision, original_decision = view.decision.record(), declared.decision.record()
+        actual_decision.pop("evidence_indices")
+        original_decision.pop("evidence_indices")
+        if (np.any(native < 0) or not np.array_equal(native, view.onsets+view.raw_scope[0])
+                or original_decision != actual_decision
+                or view.unavailable_reason not in {None,
+                    "previous_unknown_decision_overlaps_finite_response_support",
+                    "next_unknown_decision_overlaps_finite_response_support",
+                    "response_overlaps_common_C_test_embargo"}):
+            raise ValueError("current history view differs from original event-set/native-clock authority")
+        c_scope = prefix.target_contract["record_scopes"].get(source.record_id)
+        if c_scope is not None and c_scope["read_sample_support"][1] > conditioning_stop:
+            raise ValueError("C observations exceed the new past-conditioning cutoff")
+        public = []
+        for selection in source.selections:
+            rows = np.asarray(selection.event_indices, dtype=np.int64)
+            known = source.native_onsets[rows] >= 0
+            possible_past = (source.unavailable_public_onsets[rows] < stop if source.unavailable_public_onsets is not None
+                             else np.ones(len(rows), dtype=bool))
+            if np.any(~known & possible_past):
+                raise HistoryUnavailableError("record_history_unresolved_actual_event_clock")
+            occurred = known & (source.native_onsets[rows] < stop)
+            if not occurred.any():
+                continue
+            public.append({"selection_id": selection.selection_id,
+                "candidate_vocabulary": list(selection.decision.candidate_vocabulary),
+                "event_ids": list(np.asarray(selection.decision.event_ids)[occurred]),
+                "onsets": source.native_onsets[rows[occurred]].tolist(),
+                "membership": selection.decision.membership[occurred].tolist(),
+                "complete_requested_current": selection.selection_id == view.decision_id})
+        samples = source.read_native(0, stop)
+        if view.samples is not None and not np.array_equal(samples[slice(*view.raw_scope)], view.samples):
+            raise ValueError("current history samples differ from actual original record read")
+        binding = {"schema": "n2p3_authorized_record_public_history/1", "program": program,
+            "record_id": source.record_id, "source_sha256": source.source_sha256,
+            "native_clock": "actual_record_native_sample", "participant_key": source.participant_key,
+            "prefix_identity": calibration_prefix_identity(prefix), "C_record_scopes": prefix.target_contract["record_scopes"],
+            "read_sample_support": [0, stop], "conditioning_sample_support": [0, conditioning_stop],
+            "score_sample_support": [conditioning_stop, stop], "available_sample": stop,
+            "current_decision_id": view.decision_id, "public_selections": public,
+            "channel_names": list(source.channel_names), "sample_rate_hz": self.rate,
+            "reference": self.reference, "signal_unit": "V", "samples_sha256": array_digest(samples),
+            "current_view": view.record(), "original_decoder_receipt": source.source_receipt,
+            "original_factory_source_sha256": self.adapter.original_factory_source_sha256,
+            "source_owner_sha256": _SELECTION_EXECUTION_SOURCE_SHA256, "future_truth_consumed": False}
+        result = object.__new__(AuthorizedRecordPublicHistory)
+        for name, value in {"record_id": source.record_id, "samples": _immutable_array(samples, np.float64),
+            "calibration_records": prefix.calibration_records, "binding": freeze_metadata(binding)}.items():
+            object.__setattr__(result, name, value)
+        return result
+
+    def independent_views(self):
+        decisions, truths, test_scopes = [], {}, {}
+        for source, base in zip(self.sources, self._offsets[:-1], strict=True):
+            count = min(len(source.native_onsets), max(0, self.maximum-int(base)))
+            c_scope = self.compile(self.maximum).target_contract["record_scopes"].get(source.record_id)
+            earlier = source.native_onsets[:count]
+            earlier = earlier[earlier >= 0]
+            epoch_boundary = (int(earlier[-1])+round(self.authorization_preprocessing.tmax_ms/1000*self.rate)+1
+                              if len(earlier) else 0)
+            earliest = max(epoch_boundary, 0 if c_scope is None else c_scope["read_sample_support"][1])
+            for selection, declared in enumerate(source.selections):
+                if declared.event_indices[-1] < count:
+                    continue
+                view = self._current_view(source, selection, minimum_read_start=earliest,
+                    forced_unavailable="partial_selection_after_common_Kmax" if declared.event_indices[0] < count else None)
+                decisions.append(view)
+                truths[view.decision_id] = declared.parent_target_candidate
+            valid = source.native_onsets[count:]
+            valid = valid[valid >= 0]
+            test_scopes[source.record_id] = {"source_sha256": source.source_sha256,
+                "start_sample": earliest,
+                "stop_sample": source.native_sample_count or 0}
+        ledger = {"schema": "n2p3_independent_record_prefixes/1", "dataset_id": self.adapter.dataset_id,
+            "source_sha256": self.target["source_sha256"], "requested_Ks": list(self.budgets),
+            "requested_to_actual_K": {str(k): min(k, self.maximum) for k in self.budgets}, "maximum_calibration_events": self.maximum,
+            "budget_adjustments": {str(k): value for k, value in self._adjustments.items()},
+            "test_scope": {"record_scopes": test_scopes}, "test_budget": self._splits[self.maximum].test_budget.record(),
+            "calibration": {str(k): self.compile(k).record() for k in self.actual_budgets},
+            "requested_decisions": len(decisions), "scorable_decisions": sum(v.samples is not None for v in decisions),
+            "test_views": [v.record() for v in decisions], "operator_identity": "native_unfiltered_volts/1",
+            "endpoint": self.adapter.endpoint,
+            "input_records": [s.public_record() for s in self.sources], "truth_consumed_by_prediction": False}
+        return IndependentSubjectViews({k: self.compile(k) for k in self.actual_budgets}, tuple(decisions), truths, ledger, self)
+
+
+def _record_epoch_prefix(parts, profile, target, budget):
+    arrays, masks, labels = [np.concatenate([p[i] for p in parts]) for i in (0, 1, 5)]
+    metadata, timeline = [], []
+    for _X, _, _, view, global_indices, _, source in parts:
+        for j, (event, index) in enumerate(zip(view.decision.event_ids, global_indices, strict=True)):
+            local = int(np.searchsorted(source.native_onsets, view.onsets[j]))
+            declared = next(s for s in source.selections if local in s.event_indices)
+            metadata.append({"subject": source.source_subject_id, "source_dataset_id": target["source_dataset_id"],
+                "source_subject_id": source.source_subject_id, "source_record_id": source.record_id,
+                "global_label_index": int(index), "source_native_sample": int(view.onsets[j]),
+                "selection_id": declared.selection_id, "repetition_index": 0, "candidate_id": local})
+            timeline.append({"event": event, "sample": int(view.onsets[j]), "source": source,
+                "selection": declared.selection_id, "available": view.available_sample})
+    count = len(timeline)
+    t = ScheduledEventTimeline(event_ids=np.asarray([r["event"] for r in timeline]),
+        group_ids=np.asarray([r["selection"] for r in timeline]), subject_ids=np.repeat(target["source_subject_id"], count),
+        stimulus_ids=np.arange(count), onset_samples=np.asarray([r["sample"] for r in timeline]),
+        onset_times_s=np.asarray([r["sample"] for r in timeline] )/target["sample_rate_hz"],
+        evidence_available_times_s=np.asarray([r["available"] for r in timeline] )/target["sample_rate_hz"],
+        evidence_indices=np.arange(count), statuses=np.repeat("available", count), status_details=np.repeat("", count),
+        dataset_ids=np.repeat(target["source_dataset_id"], count), session_ids=np.asarray([r["source"].session_id for r in timeline]),
+        run_ids=np.asarray([r["source"].run_id for r in timeline]), selection_ids=np.asarray([r["selection"] for r in timeline]),
+        candidate_ids=np.asarray([r["event"] for r in timeline]), target_candidate_ids=np.repeat("", count),
+        repetition_indices=np.zeros(count, dtype=np.int64), complete=True, online_causal=False,
+        timing_source="actual_original_candidate_record_native_sample")
+    geometry = build_channel_identity(profile.channel_names, allow_missing_positions=False)
+    data = EpochDataset(name=f"{target['source_dataset_id']}-C{budget}", X=arrays, y=labels.astype(np.int64),
+        subject_ids=np.repeat(target["source_subject_id"], count), channel_names=geometry.names,
+        channel_positions_m=geometry.coords, channel_mask=np.any(masks, axis=0).any(axis=0) if masks.ndim == 3 else masks.any(axis=0),
+        trial_channel_mask=masks, preprocessing=profile.preprocessing, metadata=pd.DataFrame(metadata), event_timeline=t,
+        identity_table=DatasetIdentityTable.from_source_rows([target["source_subject_id"]], [target["source_dataset_id"]]),
+        provenance={"source": "original_candidate_record_aware_authorized_prefix", "source_sha256": target["source_sha256"],
+            "source_reference": target["reference"] if profile.reference_channel is None else "measured_channel:"+profile.reference_channel,
+            "parent_source_reference": target["reference"], "signal_unit": "V", "source_sample_rate_hz": target["sample_rate_hz"],
+            "selection_epoch_capability": profile.execution_capability(), "selection_epoch_profile": profile.record(),
+            "selection_epoch_execution": [p[2] for p in parts], "source_records": [p[3].record() for p in parts],
+            "authorized_label_count": count, "candidate_task_contract": target["candidate_task_contract"]})
+    data.validate(require_labels=True)
+    return data
+
+
+@dataclass(frozen=True, init=False)
+class AuthorizedRecordPublicHistory:
+    record_id: str
+    samples: np.ndarray
+    calibration_records: tuple[CalibrationRecord, ...]
+    binding: dict
+
+    @property
+    def digest(self):
+        return semantic_sha256(self.binding)
+
+
+class _PreparedRecordCalibrationPrefixCompiler(_PreparedCalibrationPrefixCompiler):
+    """The same original record-aware before-group join from admitted bytes."""
+
+    def before_group(self, parent, held):
+        parent = self.assert_original_prefix(parent)
+        self._prefix_ownership[parent.budget].assert_group_match(held)
+        scopes = parent.target_contract["record_scopes"]
+        records = [r for r in parent.calibration_records if scopes[r.record_id]["source_sha256"] == held.view.source_sha256]
+        if len(records) != 1:
+            raise ValueError("prepared held group has no unique original physical record")
+        raw = records[0]
+        base = scopes[raw.record_id]["global_label_indices"][0]
+        absolute = held.view.onsets+held.view.raw_scope[0]
+        indices = np.searchsorted(raw.onsets, absolute)
+        if (np.any(indices >= len(raw.onsets)) or not np.array_equal(raw.onsets[indices], absolute)
+                or not np.array_equal(raw.target_mask[indices], held.labels)):
+            raise ValueError("prepared C group differs from its original clock/label authority")
+        count = int(np.searchsorted(raw.onsets, held.view.raw_scope[0], side="left"))
+        earlier = self.compile(base+count)
+        scope = earlier.target_contract["record_scopes"].get(raw.record_id)
+        if scope is not None and scope["read_sample_support"][1] > held.view.raw_scope[0]:
+            raise ValueError("prepared earlier prefix overlaps actual held raw observations")
+        return earlier
+
+
+def prepare_dataset_independent_prefixes(declaration, *, budgets, profiles, authorization_preprocessing,
+                                          response_seconds=1.2, pre_roll_seconds=.2):
+    """One original-data resolver shared by public preparation and replay."""
+    if declaration.get("dataset_id", BNCI2014_008_DATASET_ID) == BNCI2014_008_DATASET_ID:
+        return prepare_bnci_independent_prefixes(declaration["path"], source_sha256=declaration["sha256"],
+            budgets=budgets, profiles=profiles, authorization_preprocessing=authorization_preprocessing,
+            response_seconds=response_seconds, pre_roll_seconds=pre_roll_seconds)
+    compiler = CalibrationPrefixCompiler.from_dataset_source(declaration, budgets=budgets, profiles=profiles,
+        authorization_preprocessing=authorization_preprocessing, response_seconds=response_seconds,
+        pre_roll_seconds=pre_roll_seconds)
+    return compiler.independent_views()
