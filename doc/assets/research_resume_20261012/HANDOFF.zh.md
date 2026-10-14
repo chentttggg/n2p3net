@@ -1,6 +1,10 @@
 # 科研总监交接
 
-科研已按用户授权持续推进。当前入口为 `D:/BCI/worktrees/research-director`，分支 `codex/research-director-resume-20261013`，最新已提交状态可由该分支解析；当前已接受源码含35adb7e。原暂停检查点和旧producer保持历史身份。活动规范由六指南维护，科学结论由四主题页维护。
+科研已按用户2026-10-14“收尾暂停”指令暂停。本地科研计算及各子代理已退出，代码和剩余任务保留；云端按同用户在云窗口明确的“云端可继续”例外，沿已有唯一队列继续。当前入口为 `D:/BCI/worktrees/research-director`，分支 `codex/research-director-resume-20261013`，已接受代码与文档基点为`5efb629`；本次暂停文档另行提交。活动规范由六指南维护，科学结论由四主题页维护。
+
+统一恢复入口是[10月14日机器检查点](pause_checkpoint_20261014.json)：五棵D盘作者树、37个未提交代码文件、各owner handoff及原运行身份已记录；51成员429281B代码小档案`D:/BCI/artifacts/research-deliveries/research-pause-code-20261014.zip`逐member回读核验，SHA62307bb8…，没有复制环境、数据或模型。原dirty main保持，未验WIP保持未提交。
+
+暂停时BI已完成K0/K48原图零新增拟合回放，parent正向准入尚未完成、negative/capsule未启动；精确owned进程按用户暂停终止，原101产物SHA保持。K134选择补集没有启动。B11唯一原source/参数包保留，attempt000终态后未启动attempt001；source-store candidate/serial-owner与sharedAR草稿均停在WIP。恢复先读各owner检查点和实际Git，再核云owner当前进程；完整123项/B00–B14目标与各未完成范围保持。
 
 ## 最新集成与当前工作
 

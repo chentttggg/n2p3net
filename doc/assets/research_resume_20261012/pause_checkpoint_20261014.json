@@ -1,0 +1,406 @@
+{
+  "schema": "n2p3_research_director_pause/1",
+  "status": "paused_at_explicit_user_request",
+  "recorded_at": "2026-10-14T21:09:24.305198+08:00",
+  "request": "收尾暂停",
+  "goal_scope": "full123wishes_B00_B14_remains_preserved",
+  "accepted_source_head": "5efb629113443878c18e6aa0f81593b641256881",
+  "research_worktree": "D:\\BCI\\worktrees\\research-director",
+  "root_pre_checkpoint_git_status": "",
+  "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+  "worktrees": [
+    {
+      "name": "BI2014a",
+      "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix",
+      "HEAD": "6542faddf6c9e9461b6941001bbff75d542ec076",
+      "branch": "codex/bi2014a-label-prefix",
+      "git_status": " M src/data/bi2014a_recording.py\n M tests/data/test_bi2014a_original_recording.py\n?? experiments/run_bi2014a_label_prefix_study.py\n?? tests/research/test_bi2014a_label_prefix_programme.py\n",
+      "changed_code": [
+        {
+          "path": "experiments/run_bi2014a_label_prefix_study.py",
+          "bytes": 7985,
+          "sha256": "aa588bc1f300bc72e23a2ea325ec8718b99a27f36e07bd877d67c09e9aaccc7d",
+          "kind": "untracked"
+        },
+        {
+          "path": "src/data/bi2014a_recording.py",
+          "bytes": 11955,
+          "sha256": "6b303a852c302ff9664943ed53315b22b4f64e2461868de8f01356c534214e9d",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "tests/data/test_bi2014a_original_recording.py",
+          "bytes": 7085,
+          "sha256": "4942ed6ff34d749cd243dcea716f7b5723ee43801a82f3f73d24a61a93ef4851",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "tests/research/test_bi2014a_label_prefix_programme.py",
+          "bytes": 14021,
+          "sha256": "75dc796fea872a343dba110f195dfa1a04ae814421456f23503b0773dd2d09b9",
+          "kind": "untracked"
+        }
+      ],
+      "handoffs": [
+        {
+          "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX_HANDOFF.md",
+          "bytes": 18887,
+          "sha256": "b5a01ad37740d0a9a3a5705935a3c69abcda489194ee1e9f5a88ada34598c6ce"
+        },
+        {
+          "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\PAUSE_CHECKPOINT.json",
+          "bytes": 4330,
+          "sha256": "0197c9dc5cffb1577fef14ebbfc790720a8809f588fb5b715fba2c9939d9683c"
+        }
+      ]
+    },
+    {
+      "name": "Huebner",
+      "path": "D:\\BCI\\worktrees\\huebner-candidate",
+      "HEAD": "55f1413de11cae0f845926893d269b8f239519e7",
+      "branch": "codex/huebner-candidate",
+      "git_status": "",
+      "changed_code": [],
+      "handoffs": [
+        {
+          "path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_SHARED_PREFIX_HANDOFF.md",
+          "bytes": 16607,
+          "sha256": "6aeff55aea12cfb92761566a03cfca5339288943f083f1b1f81e2a5a59d2af14"
+        },
+        {
+          "path": "D:\\BCI\\worktrees\\huebner-candidate\\tmp\\HUEBNER_PAUSE_CHECKPOINT.json",
+          "bytes": 1209,
+          "sha256": "d8a5c1f975c96b8ac8938d7b3edef42daf7c3125eab042fe03942832e42c9b75"
+        }
+      ]
+    },
+    {
+      "name": "B11",
+      "path": "D:\\BCI\\worktrees\\joint-flat-ensemble",
+      "HEAD": "1c7590ca018f686112cc9c16747c3336150b02e2",
+      "branch": "codex/joint-flat-ensemble",
+      "git_status": " M src/data/candidate_task.py\n M src/research/calibration_selection.py\n M src/research/joint_flat_authority.py\n M src/research/prefix_inner_replay.py\n M src/research/prefix_replay_execution.py\n M src/research/prefix_replay_inputs.py\n M src/transfer/ensemble_fit.py\n M src/transfer/ensemble_views.py\n?? src/data/candidate_input.py\n?? src/data/huebner2017_candidate.py\n?? src/data/huebner2017_preparation.py\n?? src/research/joint_flat_chain.py\n?? src/research/joint_flat_collapsed_predictive.py\n?? src/research/joint_flat_factor_history.py\n?? src/research/joint_flat_history_builder.py\n?? src/research/joint_flat_replay.py\n?? src/research/joint_flat_sparse.py\n?? src/transfer/joint_flat_model.py\n?? src/transfer/joint_flat_programme.py\n?? tests/research/test_joint_flat_chain.py\n?? tests/research/test_joint_flat_collapsed_predictive.py\n?? tests/research/test_joint_flat_factor_history.py\n",
+      "changed_code": [
+        {
+          "path": "src/data/candidate_input.py",
+          "bytes": 8371,
+          "sha256": "5b4db492a46cef879d99ac759a9da4a2a7762e9769733da4d962aea2e2c417d6",
+          "kind": "untracked"
+        },
+        {
+          "path": "src/data/candidate_task.py",
+          "bytes": 31362,
+          "sha256": "478fdf885f4b8ca256bb14ba95862569fd8c6b29afafbba61a75355b4c6a351c",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "src/data/huebner2017_candidate.py",
+          "bytes": 23191,
+          "sha256": "debb754c5949f032e93fd9f9e87eb7bcc05fd380a6f1455399e4d0328e9b7f93",
+          "kind": "untracked"
+        },
+        {
+          "path": "src/data/huebner2017_preparation.py",
+          "bytes": 11459,
+          "sha256": "2cf08f21cc7c0d2782e4e70e94cad51f9bc6b9a9b75166d497b28eb45f887e49",
+          "kind": "untracked"
+        },
+        {
+          "path": "src/research/calibration_selection.py",
+          "bytes": 43059,
+          "sha256": "a7ab45f9ecc2e7c85cc07d25f4dfdc7a4d5cef53f26284363248d14939b16b77",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "src/research/joint_flat_authority.py",
+          "bytes": 41138,
+          "sha256": "5cbe020771c964dd31d8473c2e150564f12d683ab1e4ec0ae805b993155ea7bb",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "src/research/joint_flat_chain.py",
+          "bytes": 28064,
+          "sha256": "000c462058fc7b3fa306039f9e4c414c7e9744ae18f3e9915e256f5c9261f2f8",
+          "kind": "untracked"
+        },
+        {
+          "path": "src/research/joint_flat_collapsed_predictive.py",
+          "bytes": 12488,
+          "sha256": "32841155c25d2e8a08cdd0fe45dcf390df45ff6fb5cd3a0eecfab692507e2ca7",
+          "kind": "untracked"
+        },
+        {
+          "path": "src/research/joint_flat_factor_history.py",
+          "bytes": 36023,
+          "sha256": "f1987d936039cb73d34dcec8db6c01dfa984351f42136bec341ab8ca778be10c",
+          "kind": "untracked"
+        },
+        {
+          "path": "src/research/joint_flat_history_builder.py",
+          "bytes": 12321,
+          "sha256": "95ef464460ba35637f16fc0548ef3582b49c011d0af889bfc1e97099a8c4b62d",
+          "kind": "untracked"
+        },
+        {
+          "path": "src/research/joint_flat_replay.py",
+          "bytes": 18299,
+          "sha256": "2c77c71fb643f5caf38c23661655dab352f3e7007c5042234d77c076855fe168",
+          "kind": "untracked"
+        },
+        {
+          "path": "src/research/joint_flat_sparse.py",
+          "bytes": 8333,
+          "sha256": "6dddc827d748fe3bbd8ed7b90cd1dd7da14dedc3e6c832034192cc4b76f87716",
+          "kind": "untracked"
+        },
+        {
+          "path": "src/research/prefix_inner_replay.py",
+          "bytes": 62122,
+          "sha256": "fe4eae51acb9a9a773f6d8c630239b81e495c85b8e50e62689956c83370d9e70",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "src/research/prefix_replay_execution.py",
+          "bytes": 32696,
+          "sha256": "2935f54e8c21e92fef41c658da17a586783f6bdcef05ab6a15e455b169741c19",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "src/research/prefix_replay_inputs.py",
+          "bytes": 45068,
+          "sha256": "661f9efad3c15c17c6ad01dd04c5763274bd315600aeb2c1a9c9f7f5a2acefd6",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "src/transfer/ensemble_fit.py",
+          "bytes": 106184,
+          "sha256": "9dd35e00f5fdfe8ed6efb8ef7eef4cee65a56fa1fb49c230371a55a4bfb0e6f0",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "src/transfer/ensemble_views.py",
+          "bytes": 132517,
+          "sha256": "5e62ec75adb5884799968f8fdaa0a0e7f7125f6275a0280fb9f5577933753b26",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "src/transfer/joint_flat_model.py",
+          "bytes": 24169,
+          "sha256": "0e5abf0b718ffc746d9cf82bacb351c45b1a8882b9e85269bafaf0d31e84629f",
+          "kind": "untracked"
+        },
+        {
+          "path": "src/transfer/joint_flat_programme.py",
+          "bytes": 22206,
+          "sha256": "0f9d04e3bfa171388fe92cbb3ebf1db6ca23d3cc0cd109e7b4265bcc7840ae57",
+          "kind": "untracked"
+        },
+        {
+          "path": "tests/research/test_joint_flat_chain.py",
+          "bytes": 12061,
+          "sha256": "45f71d6ebf33a6d9c7d1c55a9aaef7c41db6f5d5e31036cb4b82b724c5c98336",
+          "kind": "untracked"
+        },
+        {
+          "path": "tests/research/test_joint_flat_collapsed_predictive.py",
+          "bytes": 5461,
+          "sha256": "065cc148aece9bf801647ecf099437259e242815d92c8704874371be9a7ad5a9",
+          "kind": "untracked"
+        },
+        {
+          "path": "tests/research/test_joint_flat_factor_history.py",
+          "bytes": 7065,
+          "sha256": "ab995e105f9ff1ff97bbe54e43bcf2e46f452c889a3d2ef04d3cab4d5c7cb122",
+          "kind": "untracked"
+        }
+      ],
+      "handoffs": [
+        {
+          "path": "D:\\BCI\\worktrees\\joint-flat-ensemble\\tmp\\JOINT_FLAT_ENSEMBLE_HANDOFF.md",
+          "bytes": 8859,
+          "sha256": "0ab735f7e350f974063701da70100f9a09999a221866ae6cc62523c66451ac81"
+        },
+        {
+          "path": "D:\\BCI\\worktrees\\joint-flat-ensemble\\tmp\\joint_flat_pause_checkpoint.json",
+          "bytes": 7529,
+          "sha256": "0588e6559605ece05ab6f36cede06723610c874904a9d7662a613cb49112465a"
+        }
+      ]
+    },
+    {
+      "name": "source_storage",
+      "path": "D:\\BCI\\worktrees\\source-lineage-storage",
+      "HEAD": "39631c6eca64edb88dd324301c5fc7da5798af01",
+      "branch": "codex/source-lineage-storage",
+      "git_status": " M experiments/run_candidate_ensemble_study.py\n M experiments/run_erp_comparator.py\n M experiments/run_source_training_chain.py\n M src/research/prefix_inner_replay.py\n M src/research/prefix_selection_replay.py\n M src/research/source_metadata_store.py\n M src/transfer/checkpoint.py\n M src/transfer/ensemble_fit.py\n M tests/transfer/test_source_metadata_store.py\n?? tests/research/test_source_storage_prefix.py\n",
+      "changed_code": [
+        {
+          "path": "experiments/run_candidate_ensemble_study.py",
+          "bytes": 169846,
+          "sha256": "d31ab99ca854f4c643b6c89bb09080d79753191972b7add323a63e9782918114",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "experiments/run_erp_comparator.py",
+          "bytes": 80755,
+          "sha256": "da623f86c0ed26fbc96310a9c764ed557a49a3fcd2e30996267ddcde2392df0a",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "experiments/run_source_training_chain.py",
+          "bytes": 149664,
+          "sha256": "362c96fcd622d9c46989f224fe2d217189fd5e7d0c83ca3c7340aaf5dd9b65bc",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "src/research/prefix_inner_replay.py",
+          "bytes": 59293,
+          "sha256": "c8c3044acab23cd360b97a264eeff97718b5437ab9517a22fda0e48e8301e6be",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "src/research/prefix_selection_replay.py",
+          "bytes": 37098,
+          "sha256": "37ee33e396e2b6ace005d482f8f776d88ac6be24bffe6a4426432e829628f9e8",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "src/research/source_metadata_store.py",
+          "bytes": 19825,
+          "sha256": "fd3ced3868010897c804fd845c458960097286d0f91ad23dc133a8e38f911fe2",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "src/transfer/checkpoint.py",
+          "bytes": 56665,
+          "sha256": "b44f0764170ef37d77576fba1922ff0b19352a3babf08412698422fbfc817118",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "src/transfer/ensemble_fit.py",
+          "bytes": 98343,
+          "sha256": "b0fdad260f9586c28f1320272aeebd9594d7f664c05f52bef0771d44e127dd4f",
+          "kind": "tracked_change"
+        },
+        {
+          "path": "tests/research/test_source_storage_prefix.py",
+          "bytes": 9509,
+          "sha256": "e9a54a7b1b782d5d6f8e06efe9a9a8b5bba5a55a37212ee80edd59bfa0bd4d89",
+          "kind": "untracked"
+        },
+        {
+          "path": "tests/transfer/test_source_metadata_store.py",
+          "bytes": 16647,
+          "sha256": "9dd146ffe2812279578950edb80bd1619480a5cff014219e14165876733cd8ef",
+          "kind": "tracked_change"
+        }
+      ],
+      "handoffs": [
+        {
+          "path": "D:\\BCI\\worktrees\\source-lineage-storage\\tmp\\SOURCE_STORAGE_HANDOFF.md",
+          "bytes": 10291,
+          "sha256": "78308fd9097af766b4da4373e9ea8b82286f3ba1ac1e7843110689cd314d11c4"
+        },
+        {
+          "path": "D:\\BCI\\worktrees\\source-lineage-storage\\tmp\\SOURCE_STORAGE_PAUSE.binding.json",
+          "bytes": 3575,
+          "sha256": "2c23730c05fed4cae51b0fca5607b33c126b198ddfbcf89a09b05a5f67bd44d3"
+        }
+      ]
+    },
+    {
+      "name": "shared_AR",
+      "path": "D:\\BCI\\worktrees\\shared-ar-stationary-factor",
+      "HEAD": "39db2f00b036a127cc869765d80dbf4c11eceae5",
+      "branch": "codex/shared-ar-stationary-factor",
+      "git_status": "?? src/research/shared_stationary_factor.py\n",
+      "changed_code": [
+        {
+          "path": "src/research/shared_stationary_factor.py",
+          "bytes": 11145,
+          "sha256": "81f39b6bbdbf2210131dcd91abb1387ede492e0e8315beddd2cd7cb4bd35b250",
+          "kind": "untracked"
+        }
+      ],
+      "handoffs": [
+        {
+          "path": "D:\\BCI\\worktrees\\shared-ar-stationary-factor\\tmp\\SHARED_AR_STATIONARY_FACTOR_HANDOFF.md",
+          "bytes": 6839,
+          "sha256": "4ec93210e2ae7082e4ac12ee177b8d15fa34e82c91d020a4a90b63d6797e3199"
+        }
+      ]
+    }
+  ],
+  "code_only_recovery_archive": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\research-pause-code-20261014.zip",
+    "bytes": 429281,
+    "sha256": "62307bb839ffe69f47c2400f3f3fdb21859e4d821673d3efa39626b33a2be862",
+    "members": 51,
+    "all_member_bytes_readback_verified": true,
+    "environments_data_models_copied": 0
+  },
+  "original_dirty_main": {
+    "path": "D:\\BCI\\n2p3-net",
+    "HEAD": "f1a303c42c68173e8b1452ceb26bd84923b8a6aa",
+    "porcelain_rows": 345,
+    "untouched": true
+  },
+  "owned_process_observation": [
+    {
+      "pid": 54208,
+      "currently_present": false
+    },
+    {
+      "pid": 4376,
+      "currently_present": false
+    },
+    {
+      "pid": 37400,
+      "currently_present": false
+    },
+    {
+      "pid": 51564,
+      "currently_present": false
+    },
+    {
+      "pid": 46820,
+      "currently_present": false
+    },
+    {
+      "pid": 17396,
+      "currently_present": false
+    },
+    {
+      "pid": 34628,
+      "currently_present": false
+    },
+    {
+      "pid": 8660,
+      "currently_present": false
+    }
+  ],
+  "all_local_scientific_owners_reported_zero_live": true,
+  "cloud_exception": {
+    "instruction": "user in cloud owner thread explicitly said 收尾暂停，云端可继续",
+    "thread_id": "01a10b0f-c672-7e73-8449-4ebdaf6fc5eb",
+    "existing_candidate_supervisor_PID": 19766,
+    "existing_birth": 1791978202.88,
+    "state_role": "cloud-owner live authority; local pause does not stop or restart it",
+    "continue": "existing reviewed full six-stage driver and current cloud work; no new research delegation",
+    "owner_pause_handoff": "request final exact driver receipt from cloud thread on resume"
+  },
+  "remaining": [
+    "source-store candidate second slice and serial owner WIP require review and remaining targeted validation",
+    "BI original saved packages/graphs zero-fit parent admission plus unstartedK134 selector complement;actual original01/57 full route remains",
+    "Huebner original-data complete quartet/selector/capsule/parent using accepted sources and shared interfaces",
+    "B11 target/forwardOOF failure ledger/typed capsule/graph/publicparent;reuse successful sourceNPZ and codec,never refit source2C68",
+    "shared_AR startup-factor draft is static only;derive and verify before any integration",
+    "full public matrix results and remaining B00-B14/adult scope retain original acceptance requirements"
+  ],
+  "resume_order": [
+    "read this checkpoint and existing HANDOFF/four topic pages",
+    "inspect actual Git/dirty state and cloud-owner latest actual handles before starting new work",
+    "reuse each original producer/source/model and complete remaining partitions only",
+    "review WIP with affected module/caller/save-load logic before integration;keep source code and fitted payload identities distinct"
+  ]
+}
