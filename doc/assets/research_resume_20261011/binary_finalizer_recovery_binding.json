@@ -1,0 +1,70 @@
+{
+  "schema": "n2p3_binary_finalizer_recovery_execution_binding/1",
+  "scope": "BNCI2014-008 complete binary programme, seed 20261014, zero-fit finalization recovery",
+  "source_training_producer": {
+    "base_commit": "f3f32f8b234823d3d54aaa8a8d525b4679722715",
+    "archive_sha256": "d0f3214973c3bd67dac9ffca0c4a2d249b235f9191102631ef1be189331ecc7a",
+    "runtime_digest": "bc2f8263282380ac71eda6b268d1d2b86ac8a339c53738e2ee160b28e31b2ac2",
+    "programme_closure_sha256": "59e1d8178af57cd5149534cdf64e7c6c4206c3f6d22b684db3721d2ee2fc8565"
+  },
+  "finalizer_consumer": {
+    "archive_sha256": "b961101fcf1b9f776d82e406b439500ee66f663d222d5d79d11a3efb3d726ef7",
+    "manifest_sha256": "e1df3db6a29a82ed77f00d086ff0369ec7925179fd8083527a28d5f4b793c1df",
+    "runtime_digest": "bda28e7910032ee869ea5b5e269789fca8daf3dc64b71a9c9c39218b46357bc3",
+    "members": 612,
+    "runtime_changes": ["experiments/run_erp_comparator.py", "src/research/binary_probability.py"],
+    "change_role": "artifact writer ownership and prewrite reservation; scientific formula functions unchanged",
+    "reviewed_transition_sha256": "7b4e8d1e01feacfd43ee25929016cff32a541a51f86fe4d0d36cb0ab262319b5",
+    "integration_commit": "5631d7e96757fc5fe581c97a5413ee00c123d9c2",
+    "integration_commit_role": "same production writer hunks integrated separately; its other research-tree code was not used in this recovery"
+  },
+  "immutable_inputs_sha256": "87d2c4a2f04fdf8d134f3712f876bf01b1652b7896f15aacfbdbc7b3045816d8",
+  "original_failure": {
+    "science_exit_code": 1,
+    "original_report_sha256": "c6b0abfd025f3d2c4ed7e773730a4b436db880ed68d0cbd18460c60e1879e1ec",
+    "original_report_bytes": 2343141609,
+    "estimate_bytes": 39241128,
+    "cause": "standalone finalizer omitted installation of its actual input owner; JSON encoded-size admission was disconnected",
+    "original_report_models_predictions_and_OS_receipts_retained": true
+  },
+  "recovery_issuer": {
+    "sha256": "c4d020e425b4cc10c776894d03c19e02a3a5beb2fd5d2949475d99c56e3f1326",
+    "review_sha256": "afe8d12d00caa567207683dad53c3436a7e7a7717c6b60efb74b7eaf099beb04",
+    "first_issuer_sha256": "bd4e5f440a223ce6eae66ad0fd05718982f1aa52d645bbe9f25274c4db7bbb3e",
+    "first_issuer_actual_failure": "KeyError(status): participant reports are not aggregate reports; no recovery output or finalizer call had occurred",
+    "first_issuer_and_its_actual_OS1_retained": true,
+    "repair": "remove redundant aggregate-status lookup; preserve original numeric ingress, cell statuses and complete denominators",
+    "caller_validation": "old caller RED to new caller GREEN with original participant shape; unfinished cells, missing requests and changed artifact bindings rejected",
+    "caller_validation_scope": "numeric ingress boundary spy; real numeric admission was separately completed for all eight participants"
+  },
+  "actual_recovery": {
+    "output": "/autodl-fs/data/n2p3-research-20261008/cloud_live_20261014_base_matrix_BNCI_binary_recovery01",
+    "science_exit_code": 0,
+    "owned_live_process_count_after_exit": 0,
+    "elapsed_seconds": 167.62295937538147,
+    "sample_interval_seconds": 5,
+    "sampled_peak_group_rss_bytes": 10318368768,
+    "sampled_peak_group_cpu_cores": 2.1966713039641004,
+    "original_participants_admitted": 8,
+    "requested_cells": 160,
+    "completed_cells": 128,
+    "protocol_unavailable_cells": 32,
+    "original_successful_physical_target_fits": 120,
+    "recovery_fits": 0,
+    "adapter_calls": 0,
+    "model_prediction_mirrors": "same original inode; original producer snapshots and SHA retained",
+    "result_sha256": "ed716321c4bacf51fad7a4bbc3bbafc37574c82747c0c8b4e23b2c1c9c032f56",
+    "result_bytes": 2343141609,
+    "provenance_sha256": "2a5d0230a1a0656c4d603f1e264bc399faa1d5a87d8033961824bb230b4e3b6b",
+    "actual_exit_receipt_sha256": "7767b3daeb73dce55fe024f4ed3f556d537dce38ce960105a3d0844e0d52e047",
+    "aggregate_writer_committed": true,
+    "aggregate_writer_baseline_bytes": 1470264510,
+    "aggregate_writer_charged_bytes": 2347258009,
+    "pending_nested_artifacts": 0,
+    "load_active": 0,
+    "accounting_scope": "main report and pool writer settled; embedded snapshot precedes provenance and terminal sidecar writes"
+  },
+  "evidence_local_directory": "D:/BCI/artifacts/base-matrix-20261014/finalizer-budget-repair/cloud-results/zero-fit-recovery",
+  "quality_supplement_sha256": "c26e04c7cd635a2a5c8effd07e8da70d7cbd452f97b605a1238d3a288c397728",
+  "remaining_matrix": "BNCI candidate; BI2014a binary/preparation/trial; BI2015a binary; Huebner binary; original scientific recipes and requested rosters retained"
+}

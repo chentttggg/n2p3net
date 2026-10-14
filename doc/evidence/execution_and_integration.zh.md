@@ -34,6 +34,8 @@ B07新多通道校准潜状态程序已形成真实连续记录的联合后验�
 
 BI2014a按库队列由云端推进，数据准备、模型、结果和终态各自持久化；一库完成后解锁下一库。科研日常seed为20260918，大版本使用三个完整独立程序。资源owner传递25 CPU总预算和至少4 GPU容量，真实ready work与阶段资源决定并发；本机合计CPU低于80%。
 
+BNCI binary的120个目标拟合和128个保存预测均已完成；原最终JSON实际2,343,141,609B，原39,241,128B预估失配，standalone parent未安装自己的input owner使写前增额断开，最终科学报告完成但writer与OS为1。两处writer窄修接入同一owner，保原公式和严格结算，云端真实caller三项RED→三项GREEN；科研树另接同字节production hunk。独立consumer仍使用原f3加两处writer的612成员包。外部恢复issuer首版误把participant当aggregate读取`status`，真实OS1发生在首人原数值准入之后、输出之前；删除该冗余检查，并以真实participant形状复现旧错、验证新caller及三个拒绝反例。修后完整八人原数值准入和一次finalize实际OS0、所属进程0、耗时167.62秒，保160请求/128完成/32协议不可用及原120fit，新增fit与adapter调用均0。原模型、原报告与两个失败终态保持，新旁证分别绑定旧fit/prediction producer和当前finalization consumer。主report/pool writer已结算、pending与load均0；旁证内的ledger快照早于两个sidecar写入。实回执、源码和质量范围见[汇总恢复绑定](../assets/research_resume_20261011/binary_finalizer_recovery_binding.json)。
+
 云端资源交付`c916de4`已逐函数审阅并合入科研树`e0832c5`：显式native+interop预算、FIFO延迟GPU准入、完整进程树退出后释放及nested artifact并发峰值登记。科研随后把candidate的compute phase集中到`ensemble_fit._fit_expert`真实神经拟合接点，覆盖新增prefix selector内部拟合，并避免K0/不可用分支提前取得GPU。原云49项验证保原源码；本地资源与prefix相关验证通过，新增两例分别穿过真实神经group-LOO和完整prefix selector，核实际12/8/8/8及196行。Linux后代退出与tmpfs两例由原云证据验证，本机按平台跳过；没有重复本地全套测试。
 
 逐库queue、BI独立episode准备/三trial专家持久化、BNCI C600/R10准备及共同trial programme已逐函数合入，科研prefix/OOF/条件白化/horizon和真实平稳compiler保持其当前owner。第二轴审阅核20个固定body、raw隔离、future隐藏标签、actualsource exclusion、scratch架构、独立arm恢复和完整进程资源；新增BI descriptor错映被真实零fit反例复现并在新consumer补齐。相关52项调用链与prefix回归、最终8项BI入口、Ruff/diff通过；Linux queue和原云全集各保其实际源码/平台范围。
