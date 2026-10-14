@@ -129,7 +129,7 @@ def _audit_score_row(row, node_records, graph):
     from transfer.ensemble import EnsembleProgram, EnsembleScorer
 
     programme = EnsembleProgram.from_record(record["ensemble_program"])
-    evidence = EnsembleScorer(programme).score({name: CandidateEvidence.from_record(value)
+    evidence = EnsembleScorer(programme, record["programs"][captured[0]["strategy"]].get("pool_calibration")).score({name: CandidateEvidence.from_record(value)
         for name, value in captured[0]["expert_evidence"].items()})
     _recursive_close(evidence.record(), row["evidence"])
     if (semantic_sha256(row.get("training_scope", row.get("refit_scope"))["input"]) !=
@@ -323,7 +323,7 @@ def _saved_replay_result(record, request):
     expected = {(strategy, row["record_id"]) for strategy in record["programs"] for row in request["views"]}
     if len(captured) != len(record["future_score_rows"]) or set(captured) != expected:
         raise ValueError("selection node result lost the original requested score roster")
-    scorer = EnsembleScorer(EnsembleProgram.from_record(record["ensemble_program"]))
+    program = EnsembleProgram.from_record(record["ensemble_program"])
     scores = []
     for view in request["views"]:
         row = {"decision_id": None, "strategies": {}}
@@ -332,6 +332,7 @@ def _saved_replay_result(record, request):
             if semantic_sha256(saved["input"]) != view["input_sha256"]:
                 raise ValueError("selection node result requested observations changed")
             row["decision_id"] = saved["input"]["view"]["decision_id"]
+            scorer = EnsembleScorer(program, record["programs"][strategy].get("pool_calibration"))
             row["strategies"][strategy] = scorer.score({name: CandidateEvidence.from_record(value)
                 for name, value in saved["expert_evidence"].items()}).record()
         scores.append(row)

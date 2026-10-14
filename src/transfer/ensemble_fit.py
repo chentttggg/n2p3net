@@ -43,11 +43,40 @@ from transfer.ensemble_views import (
 )
 from transfer.kernel_prior import KernelPriorSpec, resolve_kernel_prior
 from transfer.noise_model import array_digest, freeze_metadata
+from transfer.pool_calibration import POOL_OOF_SCHEMA, POOL_STRATEGY, uniform_contamination_from_oof
 from transfer.recipes import TargetRecipe
 from transfer.response_dictionary import ResponseDictionary, ResponseDictionarySpec
 
 FITTED_ENSEMBLE_SCHEMA = "n2p3_fitted_candidate_ensemble/2"
 GROUPED_PROBABILITY_OOF_SCHEMA = "n2p3_complete_group_probability_oof/1"
+
+
+def _validate_pool_oof(record, program):
+    """Replay the scalar meta learner from its bound complete ordered OOF rows."""
+    groups = record["calibration_groups"]
+    rows = record["rows"]
+    names = [group["view"]["record_id"] for group in groups]
+    if (record["schema"] != POOL_OOF_SCHEMA or tuple(record["captured_expert_ids"]) != program.expert_ids
+            or semantic_sha256(record["OOF_program"]) != program.digest()
+            or len(groups) < 2 or len(rows) != len(groups) or len(set(names)) != len(names)
+            or [row["held_record_id"] for row in rows] != names):
+        raise ValueError("pool OOF must preserve its complete original group and expert roster")
+    scores, targets = [], []
+    for index, (row, group) in enumerate(zip(rows, groups, strict=True)):
+        training = [item["view"]["record_id"] for j, item in enumerate(groups) if j != index]
+        if (list(row["training_record_ids"]) != training or row["risk_mass"] != 1.
+                or row["phase"] != "pool_probability_oof_inner"):
+            raise ValueError("pool OOF row changes its actual held/training risk authority")
+        evidence = {name: CandidateEvidence.from_record(value) for name, value in row["expert_evidence"].items()}
+        pooled = EnsembleScorer(program).score(evidence)
+        if not pooled.probability_available or semantic_sha256(pooled.record()) != semantic_sha256(row["pool_evidence"]):
+            raise ValueError("pool OOF differs from the original complete arithmetic expert probabilities")
+        scores.append(pooled.log_probability)
+        targets.append(pooled.candidate_vocabulary.index(group["target_candidate"]))
+    expected = {**uniform_contamination_from_oof(np.asarray(scores), np.asarray(targets, dtype=int)),
+        "program_sha256": program.digest(), "strategy": POOL_STRATEGY, "base_probability_strategy": "fixed"}
+    if semantic_sha256(expected) != semantic_sha256(record["pool_calibration"]):
+        raise ValueError("saved epsilon is not the actual captured complete-pool OOF learning result")
 
 
 @dataclass(frozen=True)
@@ -357,11 +386,29 @@ def _attach_oof_probability(fitted, temperature_record, oof_record):
                           target_contract=fitted._target_contract, oof_probability_record=oof_record)
 
 
+def _attach_pool_probability(fitted, oof_record, learned):
+    """Preserve temperature evidence; attach a separate complete-pool producer."""
+    digest = semantic_sha256(oof_record)
+    experts = []
+    for expert in fitted._experts:
+        if expert.predictor is None:
+            experts.append(expert)
+            continue
+        binding = {**_model_fit_binding(expert.predictor, expert.program.family),
+                   "pool_OOF_probability_sha256": digest, "pool_base_model_digest": expert.model_digest}
+        predictor = _with_model_fit_binding(expert.predictor, expert.program.family, binding)
+        experts.append(replace(expert, predictor=predictor, model_digest=predictor.digest()))
+    scorer = EnsembleScorer(fitted.scorer.program, {**learned, "pool_OOF_probability_sha256": digest})
+    return FittedEnsemble(scorer, tuple(experts), fitted._training_receipts, fitted.temperature_record,
+        target_contract=fitted._target_contract, oof_probability_record=fitted.oof_probability_record,
+        pool_oof_record=oof_record)
+
+
 class FittedEnsemble:
     """Own expert state, fit authority and one frozen mixture behind score(view)."""
 
     def __init__(self, scorer, experts, training_receipts, temperature_record=None, *, target_contract=None,
-                 oof_probability_record=None):
+                 oof_probability_record=None, pool_oof_record=None):
         self._scorer = scorer
         self._experts = tuple(experts)
         self._training_receipts = tuple(freeze_metadata(row) for row in training_receipts)
@@ -401,6 +448,11 @@ class FittedEnsemble:
                                         freeze_metadata(oof_probability_record))
         if self._oof_probability_record is not None:
             self._validate_oof_binding()
+        self._pool_oof_record = None if pool_oof_record is None else freeze_metadata(pool_oof_record)
+        if self.scorer.pool_calibration is not None and self._pool_oof_record is None:
+            raise ValueError("learned pool calibration requires its actual C-only pool OOF binding")
+        if self._pool_oof_record is not None:
+            self._validate_pool_binding()
 
     def _validate_oof_binding(self):
         record = self._oof_probability_record
@@ -433,14 +485,56 @@ class FittedEnsemble:
                         or binding.get("OOF_base_model_digest") != entry["model_digest"]):
                     raise ValueError("OOF probability evidence differs from its actual numerical model binding")
 
+    def _validate_pool_binding(self):
+        record, program = self._pool_oof_record, self.scorer.program
+        if (semantic_sha256(record["final_program"]) != program.digest()
+                or record["final_training_receipts_sha256"] != semantic_sha256(self._training_receipts)
+                or record["final_target_contract_sha256"] != semantic_sha256(self._target_contract)):
+            raise ValueError("pool OOF differs from its actual final fit authority")
+        native = self._training_receipts[0] if self._target_contract is None else self._target_contract
+        if (record["native_observation"] != _native_observation_contract_record(native)
+                or record["actual_K"] != (sum(len(row["onsets"]) for row in self._training_receipts)
+                    if self._target_contract is None else self._training_receipts[0]["label_use"]["raw"]["requested_labels"])):
+            raise ValueError("pool OOF differs from actual K or native observation")
+        digest = semantic_sha256(record)
+        expected = {row["program"]["expert_id"]: row for row in record["final_base_experts"]}
+        for expert in self._experts:
+            entry = expected[expert.program.expert_id]
+            if semantic_sha256({key: value for key, value in _expert_state_record(expert).items()
+                    if key != "model_digest"}) != semantic_sha256({key: value for key, value in entry.items()
+                    if key != "model_digest"}):
+                raise ValueError("pool OOF differs from its actual final expert programme")
+            if expert.predictor is not None:
+                binding = _model_fit_binding(expert.predictor, expert.program.family)
+                if (binding.get("pool_OOF_probability_sha256") != digest
+                        or binding.get("pool_base_model_digest") != entry["model_digest"]):
+                    raise ValueError("pool OOF differs from its original numerical model binding")
+        if self.scorer.pool_calibration is not None:
+            state = self.scorer.pool_calibration
+            if (state["pool_OOF_probability_sha256"] != digest
+                    or state["base_probability_strategy"] != self.temperature_record["strategy"]
+                    or semantic_sha256({key: value for key, value in state.items()
+                        if key != "pool_OOF_probability_sha256"}) != semantic_sha256(record["pool_calibration"])):
+                raise ValueError("pool calibration differs from the actual OOF or base temperature programme")
+        _validate_pool_oof(record, program)
+
     @property
     def oof_probability_record(self):
         """Complete C-only cross-fit evidence; it is not nested selection or efficacy."""
         return self._oof_probability_record
 
     @property
+    def pool_oof_record(self):
+        return self._pool_oof_record
+
+    @property
     def temperature_record(self):
         return self._temperature_record
+
+    @property
+    def probability_strategy(self):
+        return (self.scorer.pool_calibration["strategy"] if self.scorer.pool_calibration is not None
+                else self.temperature_record["strategy"])
 
     @property
     def scorer(self):
@@ -517,13 +611,13 @@ class FittedEnsemble:
         evidence lives only in this call; each probability program applies its
         original transform and keeps unavailable experts in the full roster.
         """
-        if not programs or set(programs) - {"fixed", "grouped_temperature"}:
+        if not programs or set(programs) - {"fixed", "grouped_temperature", POOL_STRATEGY}:
             raise ValueError("shared scoring requires declared probability programs")
         available = []
         for name, value in programs.items():
             if isinstance(value, ExpectedSubjectError):
                 continue
-            if not isinstance(value, cls) or value.temperature_record["strategy"] != name:
+            if not isinstance(value, cls) or value.probability_strategy != name:
                 raise ValueError("shared probability name differs from its actual program")
             available.append(value)
         if not available:
@@ -559,13 +653,18 @@ class FittedEnsemble:
                 "model_file_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                 "model_digest": expert.model_digest, "fit_digest": expert.fit_digest,
                 "source_digest": expert.source_digest, "logit_offset": expert.logit_offset})
-        record = {"schema": FITTED_ENSEMBLE_SCHEMA, "program": self.scorer.program.record(),
+        record = {"schema": (FITTED_ENSEMBLE_SCHEMA if self.pool_oof_record is None
+                             else "n2p3_fitted_candidate_ensemble/3"), "program": self.scorer.program.record(),
                   "experts": entries, "training_receipts": list(self._training_receipts),
                   "temperature_calibration": self.temperature_record}
         if self._target_contract is not None:
             record["target_contract"] = self._target_contract
         if self.oof_probability_record is not None:
             record["OOF_probability"] = self.oof_probability_record
+        if self.scorer.pool_calibration is not None:
+            record["pool_calibration"] = self.scorer.pool_calibration
+        if self.pool_oof_record is not None:
+            record["pool_OOF_probability"] = self.pool_oof_record
         atomic_write_json(directory / "ensemble.json", {"record": record, "record_sha256": semantic_sha256(record)})
         return directory
 
@@ -582,7 +681,7 @@ class FittedEnsemble:
             base_digest = hashlib.sha256((directory / "ensemble.json").read_bytes()).hexdigest()
         records = {}
         for name, value in programs.items():
-            if name not in {"fixed", "grouped_temperature"}:
+            if name not in {"fixed", "grouped_temperature", POOL_STRATEGY}:
                 raise ValueError("unknown declared ensemble calibration strategy")
             if isinstance(value, ExpectedSubjectError):
                 records[name] = {"status": "unavailable", "failure": value.record(subject=participant_key)}
@@ -591,10 +690,15 @@ class FittedEnsemble:
                     raise ValueError("temperature programs must share the actual all-C final expert states")
                 if semantic_sha256(value.oof_probability_record) != semantic_sha256(fitted.oof_probability_record):
                     raise ValueError("temperature programs must share the actual captured OOF probabilities")
-                if name != value.temperature_record["strategy"]:
+                if semantic_sha256(value.pool_oof_record) != semantic_sha256(fitted.pool_oof_record):
+                    raise ValueError("pool programmes must share their actual captured exact-pool OOF")
+                if name != value.probability_strategy:
                     raise ValueError("temperature program name differs from its actual strategy")
                 records[name] = {"status": "completed", "temperature_calibration": value.temperature_record}
-        record = {"schema": "n2p3_prefix_temperature_programs/1", "base_package_sha256": base_digest,
+                if value.scorer.pool_calibration is not None:
+                    records[name]["pool_calibration"] = value.scorer.pool_calibration
+        has_pool = POOL_STRATEGY in programs
+        record = {"schema": ("n2p3_prefix_probability_programs/2" if has_pool else "n2p3_prefix_temperature_programs/1"), "base_package_sha256": base_digest,
                   "participant_key": participant_key,
                   "programs": records}
         atomic_write_json(directory / "temperature_programs.json", {"record": record, "record_sha256": semantic_sha256(record)})
@@ -614,14 +718,18 @@ class FittedEnsemble:
             raise ValueError("prefix temperature_programs.json differs from captured package")
         payload = json.loads(temperature_content)
         record = payload["record"]
-        if record["schema"] != "n2p3_prefix_temperature_programs/1" or semantic_sha256(record) != payload["record_sha256"]:
+        if record["schema"] not in {"n2p3_prefix_temperature_programs/1", "n2p3_prefix_probability_programs/2"} or semantic_sha256(record) != payload["record_sha256"]:
             raise ValueError("frozen temperature program manifest changed")
-        if not record["programs"] or set(record["programs"]) - {"fixed", "grouped_temperature"}:
+        if not record["programs"] or set(record["programs"]) - {"fixed", "grouped_temperature", POOL_STRATEGY}:
             raise ValueError("unknown declared ensemble calibration strategy")
+        if (record["schema"] == "n2p3_prefix_probability_programs/2") != (POOL_STRATEGY in record["programs"]):
+            raise ValueError("pool probability strategies require their explicit package schema")
         for name, value in record["programs"].items():
             if value["status"] not in {"completed", "unavailable"}:
                 raise ValueError("temperature program requires an explicit completed or unavailable state")
-            if value["status"] == "completed" and name != value["temperature_calibration"]["strategy"]:
+            if value["status"] == "completed" and name != (
+                    value["pool_calibration"]["strategy"] if "pool_calibration" in value
+                    else value["temperature_calibration"]["strategy"]):
                 raise ValueError("temperature program name differs from its actual strategy")
         if record["base_package_sha256"] is None:
             if any(value["status"] != "unavailable" for value in record["programs"].values()):
@@ -639,9 +747,9 @@ class FittedEnsemble:
         fitted = cls._load_content(directory, ensemble_content)
         if record["participant_key"] != fitted.participant_key:
             raise ValueError("temperature program participant differs from actual final model package")
-        return record, {name: cls(fitted.scorer, fitted._experts, fitted._training_receipts,
+        return record, {name: cls(EnsembleScorer(fitted.scorer.program, value.get("pool_calibration")), fitted._experts, fitted._training_receipts,
             value["temperature_calibration"], target_contract=fitted._target_contract,
-            oof_probability_record=fitted.oof_probability_record)
+            oof_probability_record=fitted.oof_probability_record, pool_oof_record=fitted.pool_oof_record)
             for name, value in record["programs"].items() if value["status"] == "completed"}
 
     @classmethod
@@ -654,8 +762,10 @@ class FittedEnsemble:
         """Lower the same bytes whose outer package identity was admitted."""
         payload = json.loads(content)
         record = payload["record"]
-        if semantic_sha256(record) != payload["record_sha256"] or record["schema"] != FITTED_ENSEMBLE_SCHEMA:
+        if semantic_sha256(record) != payload["record_sha256"] or record["schema"] not in {FITTED_ENSEMBLE_SCHEMA, "n2p3_fitted_candidate_ensemble/3"}:
             raise ValueError("frozen ensemble manifest changed or has an unsupported schema")
+        if (record["schema"] == "n2p3_fitted_candidate_ensemble/3") != ("pool_OOF_probability" in record):
+            raise ValueError("pool probability state requires its explicit model schema")
         experts = []
         for entry in record["experts"]:
             program = CalibrationExpertProgram.from_record(entry["program"])
@@ -686,17 +796,28 @@ class FittedEnsemble:
                                         OOF_base_model_digest=base["model_digest"])
                 original = _with_model_fit_binding(predictor, program.family,
                     {key: value for key, value in binding.items()
-                     if key not in {"OOF_probability_sha256", "OOF_base_model_digest"}})
+                     if key not in {"OOF_probability_sha256", "OOF_base_model_digest",
+                                    "pool_OOF_probability_sha256", "pool_base_model_digest"}})
                 if original.digest() != base["model_digest"]:
                     raise ValueError("OOF probability evidence differs from the actual final numerical state")
+            if "pool_OOF_probability" in record:
+                pool = record["pool_OOF_probability"]
+                base = next(row for row in pool["final_base_experts"] if row["program"]["expert_id"] == program.expert_id)
+                expected_binding.update(pool_OOF_probability_sha256=semantic_sha256(pool),
+                                        pool_base_model_digest=base["model_digest"])
+                original = _with_model_fit_binding(predictor, program.family,
+                    {key: value for key, value in binding.items()
+                     if key not in {"pool_OOF_probability_sha256", "pool_base_model_digest"}})
+                if original.digest() != base["model_digest"]:
+                    raise ValueError("pool OOF differs from the actual final base numerical state")
             if semantic_sha256(binding) != semantic_sha256(expected_binding):
                 raise ValueError("frozen ensemble recipe and fit authority differ from the actual model")
             experts.append(_FittedExpert(program, predictor, entry["model_digest"], entry["fit_digest"],
                                          entry["source_digest"], entry["logit_offset"]))
-        return cls(EnsembleScorer(EnsembleProgram.from_record(record["program"])), experts,
+        return cls(EnsembleScorer(EnsembleProgram.from_record(record["program"]), record.get("pool_calibration")), experts,
                    record["training_receipts"], record["temperature_calibration"],
                    target_contract=record.get("target_contract"),
-                   oof_probability_record=record.get("OOF_probability"))
+                   oof_probability_record=record.get("OOF_probability"), pool_oof_record=record.get("pool_OOF_probability"))
 
 
 def validate_calibration_ensemble_groups(calibration, expert_programs):
@@ -753,8 +874,19 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
     calibration = tuple(calibration)
     expert_programs = tuple(expert_programs)
     preparation = _source_preparation or ScopedSourceCheckpointPreparation()
-    if calibration_strategy not in {"fixed", "grouped_temperature"}:
+    if calibration_strategy not in {"fixed", "grouped_temperature", POOL_STRATEGY}:
         raise ValueError("unknown declared ensemble calibration strategy")
+    if calibration_strategy == POOL_STRATEGY:
+        if len(calibration) < 2:
+            raise ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
+                stage="pool_probability", detail="fewer than two complete pool OOF groups")
+        fixed = fit_calibration_ensemble(calibration, expert_programs, program,
+            source_checkpoints=source_checkpoints, device=device, _fixed_fit_cache=_fixed_fit_cache,
+            _producer_recorder=_producer_recorder, _producer_context=_producer_context,
+            _record_self=False, _source_preparation=preparation)
+        return _grouped_pool_calibration(fixed, calibration, expert_programs, source_checkpoints, device,
+            _fixed_fit_cache=_fixed_fit_cache, _producer_recorder=_producer_recorder,
+            _producer_context=_producer_context, _source_preparation=preparation)
     if calibration_strategy == "grouped_temperature" and len(calibration) < 3:
         raise ValueError("grouped probability calibration needs at least three complete groups")
     if tuple(spec.expert_id for spec in expert_programs) != program.expert_ids:
@@ -901,8 +1033,12 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
     specs = tuple(expert_programs)
     if tuple(spec.expert_id for spec in specs) != program.expert_ids:
         raise ValueError("prefix fit programs must match the complete frozen expert roster")
-    if calibration_strategy not in {"fixed", "grouped_temperature"}:
+    if calibration_strategy not in {"fixed", "grouped_temperature", POOL_STRATEGY}:
         raise ValueError("unknown declared ensemble calibration strategy")
+    if calibration_strategy == POOL_STRATEGY:
+        return fit_calibration_prefix_programs(prefix, specs, program, strategies=(POOL_STRATEGY,),
+            source_checkpoints=source_checkpoints, device=device, inner_replay_recorder=inner_replay_recorder,
+            inner_replay_context=inner_replay_context, _source_preparation=preparation)[POOL_STRATEGY]
     if calibration_strategy == "grouped_temperature" and len(prefix.complete_groups) < 3:
         raise ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
             stage="temperature", detail="fewer than three complete C-only groups")
@@ -951,6 +1087,80 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
         inner_replay_recorder.record_prefix_programs({"grouped_temperature": grouped}, prefix=prefix,
             expert_programs=specs, program=program, source_checkpoints=sources, context=inner_replay_context)
     return grouped
+
+
+def _grouped_pool_calibration(fitted, calibration, expert_programs, source_checkpoints, device, *, prefix=None,
+                              _fixed_fit_cache=None, _producer_recorder=None, _producer_context=None,
+                              _source_preparation=None):
+    """Learn epsilon from the complete exact pool's actual C-minus-held fits."""
+    if len(calibration) < 2 or fitted.temperature_record["strategy"] != "fixed":
+        raise ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
+            stage="pool_probability", detail="fixed-base pool OOF requires at least two complete C groups")
+    sources = {} if source_checkpoints is None else {
+        name: value if isinstance(value, FrozenSourceCheckpoint) else FrozenSourceCheckpoint.from_path(value)
+        for name, value in source_checkpoints.items()}
+    cache = {} if _fixed_fit_cache is None else _fixed_fit_cache
+    program, rows, values, targets = fitted.scorer.program, [], [], []
+    for index, held in enumerate(calibration):
+        training = [group for j, group in enumerate(calibration) if j != index]
+        context = {**(_producer_context or {}), "phase": "pool_probability_oof_inner",
+                   "pool_held_record_id": held.view.record_id}
+        key = semantic_sha256({"authorized_calibration": [group.record() for group in training],
+            "expert_programs": [spec.record() for spec in expert_programs], "ensemble_program": program.record(),
+            "source_checkpoints": {name: source.digest for name, source in sources.items()},
+            "device": str(device), "calibration_strategy": "fixed"})
+        try:
+            inner = fit_calibration_ensemble(training, expert_programs, program, source_checkpoints=sources,
+                device=device, _fixed_fit_cache=cache, _producer_recorder=_producer_recorder,
+                _producer_context=context, _source_preparation=_source_preparation)
+        except (ExpectedSubjectError, UnidentifiableFitError, np.linalg.LinAlgError) as error:
+            failure = (error if isinstance(error, ExpectedSubjectError) else ExpectedSubjectError(
+                SubjectFailureCode.NUMERICAL_FAILURE, stage="pool_inner_fit", detail=str(error)))
+            if _producer_recorder is not None:
+                _producer_recorder.record_direct_fit(key, failure, expert_programs=expert_programs,
+                    program=program, training=training, context=context)
+            raise failure from error
+        try:
+            scores = inner.score_experts(held.view)
+        except (ExpectedSubjectError, UnidentifiableFitError, np.linalg.LinAlgError) as error:
+            failure = (error if isinstance(error, ExpectedSubjectError) else ExpectedSubjectError(
+                SubjectFailureCode.NUMERICAL_FAILURE, stage="pool_inner_score", detail=str(error)))
+            if _producer_recorder is not None:
+                _producer_recorder.record_oof_score_failure(key, held=held, training=training,
+                                                           error=failure, context=context)
+            raise failure from error
+        if _producer_recorder is not None:
+            _producer_recorder.record_oof_score(key, held=held, training=training, scores=scores, context=context)
+        pooled = inner.scorer.score(scores)
+        if not pooled.probability_available:
+            raise ExpectedSubjectError(SubjectFailureCode.NUMERICAL_FAILURE, stage="pool_probability",
+                detail="complete requested pool OOF is unavailable: " + pooled.failure_reason)
+        rows.append({"held_record_id": held.view.record_id,
+            "training_record_ids": [group.view.record_id for group in training],
+            "training_receipts_sha256": semantic_sha256(inner.fit_receipts),
+            "phase": "pool_probability_oof_inner", "risk_mass": 1.,
+            "expert_evidence": {name: item.record() for name, item in scores.items()}, "pool_evidence": pooled.record()})
+        values.append(pooled.log_probability)
+        targets.append(pooled.candidate_vocabulary.index(held.target_candidate))
+    learned = {**uniform_contamination_from_oof(np.asarray(values), np.asarray(targets, dtype=int)),
+        "program_sha256": program.digest(), "strategy": POOL_STRATEGY, "base_probability_strategy": "fixed"}
+    native = fitted._training_receipts[0] if fitted._target_contract is None else fitted._target_contract
+    oof = {"schema": POOL_OOF_SCHEMA, "evidence_scope": "calibration_development",
+        "captured_expert_ids": program.expert_ids, "OOF_program": program.record(),
+        "OOF_expert_programs": [spec.record() for spec in expert_programs],
+        "calibration_groups": [group.record() for group in calibration], "rows": rows,
+        "actual_K": sum(len(group.labels) for group in calibration) if prefix is None else prefix.budget,
+        "complete_group_labels": sum(len(group.labels) for group in calibration),
+        "fit_authority_sha256": semantic_sha256([group.record() for group in calibration]
+                                                 if prefix is None else prefix.record()),
+        "native_observation": _native_observation_contract_record(native),
+        "source_checkpoint_sha256": {name: source.digest for name, source in sources.items()},
+        "final_program": program.record(), "final_training_receipts_sha256": semantic_sha256(fitted.fit_receipts),
+        "final_target_contract_sha256": semantic_sha256(fitted._target_contract),
+        "final_base_experts": [_expert_state_record(expert) for expert in fitted._experts],
+        "pool_calibration": learned, "temperature_calibration": fitted.temperature_record,
+        "selection_performed": False, "meta_training_rows_are_out_of_meta": False}
+    return _attach_pool_probability(fitted, oof, learned)
 
 
 def _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids=None, *, prefix=None,
@@ -1046,14 +1256,16 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
                                     inner_replay_recorder=None, inner_replay_context=None, _source_preparation=None):
     """Declared temperature programs share one actual all-C final expert fit."""
     if (not strategies or len(set(strategies)) != len(strategies)
-            or set(strategies) - {"fixed", "grouped_temperature"}):
+            or set(strategies) - {"fixed", "grouped_temperature", POOL_STRATEGY}):
         raise ValueError("prefix temperature programs must be explicit and distinct")
+    if POOL_STRATEGY in strategies and "grouped_temperature" in strategies:
+        raise ValueError("fixed-pool and temperature OOF programmes require separate captured learning scopes")
     sources = {} if source_checkpoints is None else {name: value if isinstance(value, FrozenSourceCheckpoint)
         else FrozenSourceCheckpoint.from_path(value) for name, value in source_checkpoints.items()}
     result = {}
     preparation = _source_preparation or ScopedSourceCheckpointPreparation()
     replay_cache = {} if inner_replay_recorder is not None else None
-    eligible = len(prefix.complete_groups) >= 3
+    eligible = len(prefix.complete_groups) >= (2 if POOL_STRATEGY in strategies else 3)
     fixed = (fit_calibration_prefix(prefix, expert_programs, program, source_checkpoints=sources, device=device,
                                     inner_replay_recorder=inner_replay_recorder,
                                     inner_replay_context=inner_replay_context, _source_preparation=preparation)
@@ -1063,10 +1275,18 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
             result[strategy] = fixed
         elif not eligible:
             result[strategy] = ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
-                stage="temperature", detail="fewer than three complete C-only groups")
+                stage="pool_probability" if strategy == POOL_STRATEGY else "temperature",
+                detail="fewer than two complete pool OOF groups" if strategy == POOL_STRATEGY
+                    else "fewer than three complete C-only groups")
         else:
             try:
-                result[strategy] = _grouped_temperature(fixed, prefix.complete_groups, expert_programs, sources,
+                if strategy == POOL_STRATEGY:
+                    result[strategy] = _grouped_pool_calibration(fixed, prefix.complete_groups, expert_programs,
+                        sources, device, prefix=prefix, _fixed_fit_cache=replay_cache,
+                        _producer_recorder=inner_replay_recorder, _producer_context=inner_replay_context,
+                        _source_preparation=preparation)
+                else:
+                    result[strategy] = _grouped_temperature(fixed, prefix.complete_groups, expert_programs, sources,
                                                        device, temperature_expert_ids, prefix=prefix,
                                                        _fixed_fit_cache=replay_cache,
                                                        _producer_recorder=inner_replay_recorder,
@@ -1076,11 +1296,11 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
             except (UnidentifiableFitError, np.linalg.LinAlgError) as error:
                 result[strategy] = ExpectedSubjectError(SubjectFailureCode.NUMERICAL_FAILURE,
                     stage="temperature", detail=f"{type(error).__name__}: {error}")
-    grouped = result.get("grouped_temperature")
+    grouped = result.get(POOL_STRATEGY, result.get("grouped_temperature"))
     if "fixed" in result and isinstance(grouped, FittedEnsemble):
         result["fixed"] = FittedEnsemble(fixed.scorer, grouped._experts, fixed._training_receipts,
             fixed.temperature_record, target_contract=fixed._target_contract,
-            oof_probability_record=grouped.oof_probability_record)
+            oof_probability_record=grouped.oof_probability_record, pool_oof_record=grouped.pool_oof_record)
     if inner_replay_recorder is not None:
         record = getattr(inner_replay_recorder, "record_prefix_programs", None)
         if record is None:

@@ -180,6 +180,8 @@ class InnerReplayRecorder:
             "temperature_held_record_id": context.get("temperature_held_record_id"),
             "cache_hit": bool(cache_hit),
         }
+        if context.get("pool_held_record_id") is not None:
+            use["pool_held_record_id"] = context["pool_held_record_id"]
         rows = self.uses.setdefault(canonical, [])
         if use not in rows:
             rows.append(use)
@@ -204,6 +206,8 @@ class InnerReplayRecorder:
             "program": program.record(),
             "expert_programs": [spec.record() for spec in expert_programs],
         }
+        if context.get("pool_held_record_id") is not None:
+            use["pool_held_record_id"] = context["pool_held_record_id"]
         rows = self.uses.setdefault(canonical, [])
         if use not in rows:
             rows.append(use)
@@ -379,7 +383,7 @@ def _audit_boundaries(record, loaded):
         training_ids = set(producer["training_record_ids"])
         for use in producer["uses"]:
             forbidden = {use.get("outer_held_record_id"), use.get("selection_held_record_id"),
-                         use.get("temperature_held_record_id")} - {None}
+                         use.get("temperature_held_record_id"), use.get("pool_held_record_id")} - {None}
             overlap = sorted(forbidden & training_ids)
             if overlap:
                 violations.append({"fit_key": producer["fit_key"], "overlap": overlap})
@@ -390,7 +394,7 @@ def _audit_boundaries(record, loaded):
             held_and_training = set(row["training_record_ids"]) | {row["held_record_id"]}
             for use in producer["uses"]:
                 if (tuple(use["training_record_ids"]) != tuple(row["training_record_ids"])
-                        or use.get("temperature_held_record_id") != row["held_record_id"]):
+                        or (use.get("pool_held_record_id") or use.get("temperature_held_record_id")) != row["held_record_id"]):
                     continue
                 forbidden = {use.get("outer_held_record_id"), use.get("selection_held_record_id")} - {None}
                 if forbidden & held_and_training:
@@ -431,7 +435,7 @@ def replay_inner_replay(directory, *, calibration=None, candidates=None,
         if model is None:
             continue
         for use in producer["uses"]:
-            held_id = (use.get("temperature_held_record_id") or use.get("selection_held_record_id")
+            held_id = (use.get("pool_held_record_id") or use.get("temperature_held_record_id") or use.get("selection_held_record_id")
                        or use.get("outer_held_record_id"))
             if held_id is None:
                 continue

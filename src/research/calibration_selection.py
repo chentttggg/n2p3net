@@ -43,6 +43,7 @@ from transfer.ensemble_views import (
 )
 from transfer.noise_model import freeze_metadata
 from transfer.outcomes import CandidateCoverage, DecisionKey
+from transfer.pool_calibration import POOL_STRATEGY
 
 
 @dataclass(frozen=True)
@@ -59,7 +60,7 @@ class CalibrationProgramCandidate:
             raise ValueError("calibration candidate needs an exact name")
         if tuple(spec.expert_id for spec in self.expert_programs) != self.ensemble_program.expert_ids:
             raise ValueError("candidate specs must match its complete frozen ensemble roster")
-        if self.strategy not in {"fixed", "grouped_temperature"}:
+        if self.strategy not in {"fixed", "grouped_temperature", POOL_STRATEGY}:
             raise ValueError("nested selection supports declared fixed/grouped-temperature programs only")
         if self.temperature_expert_ids is not None:
             selected = tuple(self.temperature_expert_ids)
@@ -145,10 +146,15 @@ def _metrics(groups, evidence):
 
 
 def _final_identity(fitted):
-    return {"program": fitted.scorer.program.record(), "training_receipts": fitted.fit_receipts,
+    record = {"program": fitted.scorer.program.record(), "training_receipts": fitted.fit_receipts,
         "temperature_calibration": fitted.temperature_record,
         "experts": [_expert_state_record(expert) for expert in fitted._experts],
         "OOF_probability_sha256": semantic_sha256(fitted.oof_probability_record)}
+    if fitted.scorer.pool_calibration is not None:
+        record["pool_calibration"] = fitted.scorer.pool_calibration
+    if fitted.pool_oof_record is not None:
+        record["pool_OOF_probability_sha256"] = semantic_sha256(fitted.pool_oof_record)
+    return record
 
 
 def _failure_evidence(group, candidate, key, error):
@@ -188,9 +194,12 @@ class _SubsetFits:
             return fitted, key
         self.fit_calls += 1
         try:
-            if candidate.strategy == "grouped_temperature" and len(groups) < 3:
+            if candidate.strategy in {"grouped_temperature", POOL_STRATEGY} and len(groups) < (
+                    2 if candidate.strategy == POOL_STRATEGY else 3):
                 raise ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
-                    stage="nested_temperature", detail="fewer than three complete training groups")
+                    stage="nested_pool_probability" if candidate.strategy == POOL_STRATEGY else "nested_temperature",
+                    detail="fewer than two complete pool OOF groups" if candidate.strategy == POOL_STRATEGY
+                        else "fewer than three complete training groups")
             producer_context = {**self.producer_context, "candidate_name": candidate.name,
                                 "candidate_record": candidate.record()}
             fitted = fit_calibration_ensemble(groups, candidate.expert_programs, candidate.ensemble_program,
@@ -305,7 +314,7 @@ class FittedCalibrationSelection:
                 or semantic_sha256(_final_identity(final)) != self.record["final_producer_sha256"]):
             raise ValueError("nested selection differs from its actual final model/program/temperature")
         if (selected.ensemble_program != final.scorer.program
-                or selected.strategy != final.temperature_record["strategy"]
+                or selected.strategy != final.probability_strategy
                 or [spec.record() for spec in selected.expert_programs] != [expert.program.record() for expert in final._experts]):
             raise ValueError("selected declaration differs from the actual final fitted programme")
         if selected.strategy == "grouped_temperature" and tuple(final.temperature_record.get(
@@ -488,7 +497,9 @@ class _PrefixFits:
                 [spec.record() for spec in candidate.expert_programs], candidate.strategy,
                 scored.record(subject=view.participant_key), view)
         node["recorder"].record_prefix_future_score(candidate.strategy, view=view, evidence=scored)
-        evidence = EnsembleScorer(candidate.ensemble_program).score(scored)
+        value = node["programs"][candidate.strategy]
+        scorer = EnsembleScorer(candidate.ensemble_program) if isinstance(value, ExpectedSubjectError) else value.scorer
+        evidence = scorer.score(scored)
         cached[view.record_id] = {"view": view, "evidence": evidence}
         return evidence
 
@@ -501,7 +512,7 @@ def _prefix_selection_scope(prefix):
 
 def _prefix_common_training_groups(candidates):
     """Structural schedule from declared learners, never observed success."""
-    return max(3 if candidate.strategy == "grouped_temperature" else
+    return max(2 if candidate.strategy == POOL_STRATEGY else 3 if candidate.strategy == "grouped_temperature" else
         0 if all(spec.family == "trial" and spec.recipe.initialization == "source"
                  for spec in candidate.expert_programs) else 1 for candidate in candidates)
 
@@ -570,7 +581,7 @@ class FittedPrefixSelection:
             if final.record(subject=record["participant_key"]) != record["final_failure"]:
                 raise ValueError("nested prefix final failure changed")
         elif (record["final_failure"] is not None or final.scorer.program != selected.ensemble_program
-                or final.temperature_record["strategy"] != selected.strategy
+                or final.probability_strategy != selected.strategy
                 or semantic_sha256(_final_identity(final)) != record["final_producer_sha256"]):
             raise ValueError("nested prefix actual final numerical programme changed")
 

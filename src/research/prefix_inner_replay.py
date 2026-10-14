@@ -218,11 +218,13 @@ def _fit_record(value, *, participant_key):
         raise TypeError("prefix programme values must be FittedEnsemble or ExpectedSubjectError")
     return {
         "status": "completed",
-        "strategy": value.temperature_record["strategy"],
+        "strategy": value.probability_strategy,
         "temperature_calibration": value.temperature_record,
         "model_identity": _final_identity(value),
         "oof_probability_sha256": None if value.oof_probability_record is None else
             semantic_sha256(value.oof_probability_record),
+        **({"pool_calibration": value.scorer.pool_calibration} if value.scorer.pool_calibration is not None else {}),
+        **({"pool_OOF_probability_sha256": semantic_sha256(value.pool_oof_record)} if value.pool_oof_record is not None else {}),
     }
 
 
@@ -354,7 +356,7 @@ def _check_oof_temperature_learning(loaded):
     seen = set()
     for model in loaded.values():
         oof = model.oof_probability_record
-        if oof is None or semantic_sha256(oof) in seen:
+        if oof is None or oof["schema"] != "n2p3_complete_group_probability_oof/1" or semantic_sha256(oof) in seen:
             continue
         seen.add(semantic_sha256(oof))
         groups = {group["view"]["record_id"]: group for group in oof["calibration_groups"]}
@@ -420,7 +422,7 @@ def _load_inner_roster(directory, record, loaded, authority, *, calibration_grou
                     or producer["oof_rows"] or producer["model_identity"] is not None
                     or set(producer["training_record_ids"]) - set(groups)
                     or any(use["training_record_ids"] != producer["training_record_ids"]
-                        or use["temperature_held_record_id"] in producer["training_record_ids"] for use in producer["uses"])):
+                        or (use.get("pool_held_record_id") or use.get("temperature_held_record_id")) in producer["training_record_ids"] for use in producer["uses"])):
                 raise ValueError("prefix unavailable inner producer has an invalid scope or failure receipt")
             continue
         if producer["status"] != "completed":
@@ -478,8 +480,9 @@ def _load_inner_roster(directory, record, loaded, authority, *, calibration_grou
         if not producer["uses"] or not (producer["oof_rows"] or failures):
             raise ValueError("prefix inner producer is missing actual OOF uses or score rows")
         for use in producer["uses"]:
-            if (use.get("temperature_held_record_id") in training_ids
-                    or use.get("temperature_held_record_id") not in groups
+            held_id = use.get("pool_held_record_id") or use.get("temperature_held_record_id")
+            if (held_id in training_ids
+                    or held_id not in groups
                     or use["training_record_ids"] != training_ids
                     or semantic_sha256(use["program"]) != model.scorer.program.digest()
                     or semantic_sha256(use["expert_programs"]) != semantic_sha256(
@@ -488,12 +491,12 @@ def _load_inner_roster(directory, record, loaded, authority, *, calibration_grou
         for failure in failures:
             if (failure["held_record_id"] in training_ids or failure["held_record_id"] not in groups
                     or failure["training_record_ids"] != training_ids or not failure["failure"]
-                    or not any(use["temperature_held_record_id"] == failure["held_record_id"] for use in producer["uses"])):
+                    or not any((use.get("pool_held_record_id") or use.get("temperature_held_record_id")) == failure["held_record_id"] for use in producer["uses"])):
                 raise ValueError("prefix actual OOF raised-score failure scope changed")
         for row in producer["oof_rows"]:
             held_id = row["held_record_id"]
             if (held_id in training_ids or held_id not in groups or row["training_record_ids"] != training_ids
-                    or not any(use["temperature_held_record_id"] == held_id for use in producer["uses"])):
+                    or not any((use.get("pool_held_record_id") or use.get("temperature_held_record_id")) == held_id for use in producer["uses"])):
                 raise ValueError("prefix OOF held row or training authority changed")
             evidence = row["evidence"]
             if set(evidence) != set(model.scorer.program.expert_ids):
@@ -506,8 +509,8 @@ def _load_inner_roster(directory, record, loaded, authority, *, calibration_grou
                         identities[0]["fit_digest"] != expert.fit_digest or identities[0]["model_digest"] != expert.model_digest):
                     raise ValueError("prefix inner OOF score differs from actual numerical fit binding")
             captured_rows.append((producer["fit_key"], row, model))
-    actual_oof = next((model.oof_probability_record for model in loaded.values()
-                       if model.oof_probability_record is not None), None)
+    actual_oof = next((model.pool_oof_record or model.oof_probability_record for model in loaded.values()
+                       if model.pool_oof_record is not None or model.oof_probability_record is not None), None)
     if actual_oof is not None:
         if (actual_oof["fit_authority_sha256"] != semantic_sha256(authority)
                 or semantic_sha256(actual_oof["calibration_groups"]) != semantic_sha256(authority["temperature_group_records"])
@@ -748,6 +751,8 @@ def _check_program_declarations(record, loaded, actual_programs):
                 or actual_programs[name]["status"] != "completed"
                 or semantic_sha256(actual_programs[name]["temperature_calibration"]) !=
                     semantic_sha256(value["temperature_calibration"])
+                or semantic_sha256(actual_programs[name].get("pool_calibration")) !=
+                    semantic_sha256(value.get("pool_calibration"))
                 or semantic_sha256(_final_identity(loaded[name])) != semantic_sha256(value["model_identity"])):
             raise ValueError("prefix completed program numerical or temperature identity changed")
     if (record["source_seed"] != record["fit_context"].get("source_seed")
@@ -828,7 +833,8 @@ def _replay_admitted_prefix(admission, *, prefix=None, future_views=None,
                 _recursive_close({expert: item.record() for expert, item in evidence.items()},
                                  expected["expert_evidence"], atol=atol, rtol=rtol)
                 exact_checks += 1
-            row["strategies"][name] = EnsembleScorer(EnsembleProgram.from_record(record["ensemble_program"])).score(evidence).record()
+            row["strategies"][name] = EnsembleScorer(EnsembleProgram.from_record(record["ensemble_program"]),
+                programme.get("pool_calibration")).score(evidence).record()
         scores.append(row)
     return {"status": "replayed" if (prefix is not None or future_views) else "validated_package",
             "actual_K": record["actual_K"], "requested_Ks": record["requested_Ks"],

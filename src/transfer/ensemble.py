@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
@@ -13,6 +13,8 @@ from scipy.special import logsumexp
 from models.candidate_evidence import CandidateEvidence
 from research.contracts import semantic_sha256
 from research.execution import atomic_write_json
+from transfer.noise_model import freeze_metadata
+from transfer.pool_calibration import POOL_CALIBRATION_SCHEMA, uniform_contamination_log_probability
 
 ENSEMBLE_PROGRAM_SCHEMA = "n2p3_candidate_ensemble_program/1"
 
@@ -68,12 +70,22 @@ class EnsembleScorer:
     weights are declared directly over the same flat producer roster.
     """
 
-    def __init__(self, program: EnsembleProgram):
+    def __init__(self, program: EnsembleProgram, pool_calibration=None):
         self._program = program
+        self._pool_calibration = None if pool_calibration is None else freeze_metadata(pool_calibration)
+        if pool_calibration is not None:
+            if (pool_calibration["schema"] != POOL_CALIBRATION_SCHEMA
+                    or pool_calibration["program_sha256"] != program.digest()):
+                raise ValueError("pool calibration must belong to this exact expert roster and weights")
+            uniform_contamination_log_probability(np.full(2, -np.log(2.)), pool_calibration["epsilon"])
 
     @property
     def program(self):
         return self._program
+
+    @property
+    def pool_calibration(self):
+        return self._pool_calibration
 
     def score(self, expert_evidence: Mapping[str, CandidateEvidence]) -> CandidateEvidence:
         if set(expert_evidence) != set(self.program.expert_ids):
@@ -83,6 +95,8 @@ class EnsembleScorer:
             if len(item.expert_identities) != 1 or item.expert_identities[0].expert_id != name:
                 raise ValueError("expert evidence producer differs from its declared roster key")
         first = evidence[0]
+        if self.pool_calibration is not None and self.pool_calibration["candidate_count"] != len(first.candidate_vocabulary):
+            raise ValueError("pool calibration candidate count differs from the actual requested vocabulary")
         common = (first.participant_key, first.decision_id, first.physical_support_digest,
                   first.candidate_vocabulary, first.evidence_level, first.expected_event_counts)
         for item in evidence[1:]:
@@ -110,15 +124,28 @@ class EnsembleScorer:
                                      failure_reason=reason, **identity)
         log_probability = logsumexp(np.log(self.program.weights)[:, None]
                                     + np.stack([item.log_probability for item in evidence]), axis=0)
+        if self.pool_calibration is not None:
+            log_probability = uniform_contamination_log_probability(log_probability, self.pool_calibration["epsilon"])
+            calibration_digest = semantic_sha256(self.pool_calibration)
+            identity["expert_identities"] = tuple(replace(item, probability_calibrated=True,
+                fit_digest=semantic_sha256({"expert_fit": item.fit_digest, "pool_probability": calibration_digest}),
+                score_kind=item.score_kind + ":pool_uniform_contamination/1") for item in identities)
         return CandidateEvidence(log_probability=log_probability, **identity)
 
     def save(self, path: str | Path):
         record = self.program.record()
-        return atomic_write_json(path, {"program": record, "program_sha256": semantic_sha256(record)})
+        payload = {"program": record, "program_sha256": semantic_sha256(record)}
+        if self.pool_calibration is not None:
+            payload.update(pool_calibration=self.pool_calibration,
+                           pool_calibration_sha256=semantic_sha256(self.pool_calibration))
+        return atomic_write_json(path, payload)
 
     @classmethod
     def load(cls, path: str | Path):
         payload = json.loads(Path(path).read_bytes())
         if semantic_sha256(payload["program"]) != payload["program_sha256"]:
             raise ValueError("saved ensemble program changed")
-        return cls(EnsembleProgram.from_record(payload["program"]))
+        pool = payload.get("pool_calibration")
+        if pool is not None and semantic_sha256(pool) != payload["pool_calibration_sha256"]:
+            raise ValueError("saved pool probability calibration changed")
+        return cls(EnsembleProgram.from_record(payload["program"]), pool)
