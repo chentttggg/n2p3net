@@ -34,6 +34,7 @@ from transfer.noise_model import (
     freeze_metadata,
     frozen_array,
     metadata_digest,
+    require_sha256,
 )
 from transfer.response_dictionary import ResponseDictionary
 from transfer.spatial_signal_prior import (
@@ -241,8 +242,10 @@ class SpatialDecisionModel:
     posterior: SpatialSignalPosterior
     baseline_content: bytes = field(repr=False, compare=False)
     provenance: dict
+    producer_implementation_sha256: str = IMPLEMENTATION_SHA256
 
     def __post_init__(self):
+        require_sha256(self.producer_implementation_sha256, "original physical response programme implementation")
         if not isinstance(self.programme, SpatialSignalProgram) or not isinstance(self.baseline, ContinuousDecisionModel):
             raise TypeError("physical response model requires owned programme and original noise dependency")
         if (self.baseline.noise is None or self.baseline.noise.startup_mode == "conditional_prefix"
@@ -308,6 +311,10 @@ class SpatialDecisionModel:
                     or expected_kind == "measured_reference" and observed.declaration["reference_channel"] != self.programme.reference_channel):
                 raise ValueError("physical response observation differs from its declared signal programme")
         object.__setattr__(self, "provenance", freeze_metadata(self.provenance))
+
+    @property
+    def consumer_implementation_sha256(self):
+        return IMPLEMENTATION_SHA256
 
     @property
     def dictionary(self):
@@ -412,7 +419,7 @@ class SpatialDecisionModel:
             winner, "unique_maximum" if winner else "tie", len(view.samples), view.raw_input_digest, self.conditioning_samples)
 
     def record(self):
-        payload = {"schema": "n2p3_spatial_decision_programme/1", "implementation_sha256": IMPLEMENTATION_SHA256,
+        payload = {"schema": "n2p3_spatial_decision_programme/1", "implementation_sha256": self.producer_implementation_sha256,
             "signal_programme": self.programme.record(), "original_noise_dependency": base64.b64encode(self.baseline_content).decode("ascii"),
             "posterior": self.posterior.record(), "provenance": self.provenance}
         return {**payload, "artifact_sha256": metadata_digest(payload)}
@@ -428,13 +435,13 @@ class SpatialDecisionModel:
         content = path.read() if hasattr(path, "read") else Path(path).read_bytes()
         saved = json.loads(content)
         if (saved["schema"] != "n2p3_spatial_decision_programme/1"
-                or saved["implementation_sha256"] != IMPLEMENTATION_SHA256
                 or metadata_digest({key:value for key,value in saved.items() if key != "artifact_sha256"}) != saved["artifact_sha256"]):
             raise ValueError("physical response programme artifact differs from its original producer")
+        require_sha256(saved["implementation_sha256"], "original physical response programme implementation")
         dependency = base64.b64decode(saved["original_noise_dependency"], validate=True)
         model = cls(SpatialSignalProgram.from_record(saved["signal_programme"]),
             ContinuousDecisionModel.load(io.BytesIO(dependency)), SpatialSignalPosterior.from_record(saved["posterior"]),
-            dependency, saved["provenance"])
+            dependency, saved["provenance"], producer_implementation_sha256=saved["implementation_sha256"])
         if metadata_digest(model.record()) != metadata_digest(saved):
             raise ValueError("physical response programme replay differs from original state")
         return model

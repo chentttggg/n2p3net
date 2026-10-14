@@ -87,7 +87,9 @@ def source_bundle():
         dictionary=dictionary, common_effect=common, policy=policy, noise_order=0, ridge=1., conditioning_samples=32)
 
 
-def test_real_grouped_oof_physical_response_and_full_package_replay(tmp_path):
+def test_real_grouped_oof_physical_response_and_full_package_replay(tmp_path, monkeypatch):
+    import transfer.spatial_programme as spatial_programme
+
     groups = selections()
     spec = specification()
     mixture = EnsembleProgram.equal_weights("physical", (spec.expert_id,))
@@ -105,7 +107,16 @@ def test_real_grouped_oof_physical_response_and_full_package_replay(tmp_path):
     assert before.probability_available
     package = fitted.save(tmp_path/"physical-package")
     assert (package/"expert_000.json").is_file()
-    after = FittedEnsemble.load(package).score(groups[3].view)
+    original_state = actual.record()
+    assert actual.producer_implementation_sha256 == spatial_programme.IMPLEMENTATION_SHA256
+    monkeypatch.setattr(spatial_programme, "IMPLEMENTATION_SHA256", "f"*64)
+    restored = FittedEnsemble.load(package)
+    restored_model = restored._experts[0].predictor
+    assert restored_model.record() == original_state
+    assert restored_model.digest() == actual.digest()
+    assert restored_model.consumer_implementation_sha256 == "f"*64
+    assert replace(restored_model).producer_implementation_sha256 == original_state["implementation_sha256"]
+    after = restored.score(groups[3].view)
     assert before.record() == after.record()
 
 
@@ -146,6 +157,7 @@ def test_mirror_prior_declaration_cannot_relabel_another_fitted_physical_prior(t
     model = fit_calibration_ensemble(selections()[:2], (spec,), EnsembleProgram.equal_weights("fixed", (spec.expert_id,)))
     predictor = model._experts[0].predictor
     saved = json.loads(json.dumps(predictor.record()))
+    saved["implementation_sha256"] = "f"*64
     saved["signal_programme"]["native_signal_variance"] *= 2
     saved["provenance"]["signal_programme"] = copy.deepcopy(saved["signal_programme"])
     saved["artifact_sha256"] = metadata_digest({key:value for key,value in saved.items() if key!="artifact_sha256"})
