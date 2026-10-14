@@ -467,6 +467,49 @@ class SelectionEpochProfile:
                 "operator_family": "finite_segment_sos_closed_grid_fft_first_T_linear_baseline_float32/1"}
 
 
+def _source_sos_family_relation(actual_sos, recompiled_sos, preprocessing, *, source_rate_hz,
+                                actual_padding, recompiled_padding):
+    """Admit the declared source family with one named scalar-gain relation.
+
+    Saved source coefficients retain their exact identity. This policy concerns
+    source-recipe recompilation only; target execution and replay stay exact.
+    """
+    actual = np.asarray(actual_sos, dtype=np.float64)
+    compiled = np.asarray(recompiled_sos, dtype=np.float64)
+    if actual.shape != compiled.shape or actual_padding != recompiled_padding:
+        raise ValueError("source finite SOS programme differs from the compiled selection family")
+    receipt = {"schema": "n2p3_source_sos_family_relation/1", "source_rate_hz": source_rate_hz,
+        "source_sos_sha256": array_digest(actual), "recompiled_sos_sha256": array_digest(compiled),
+        "padding_limit_samples": actual_padding, "coefficient_replacement_performed": False}
+    if np.array_equal(actual, compiled):
+        return {**receipt, "policy": "exact_coefficients/1"}
+    gain_row = len(preprocessing.notch_freqs_hz)
+    supported = (preprocessing.filter_method == "iir" and preprocessing.filter_order == 4
+        and preprocessing.l_freq is not None and preprocessing.h_freq is not None
+        and 0 < preprocessing.l_freq < preprocessing.h_freq < source_rate_hz / 2
+        and actual.shape == (gain_row + 4, 6))
+    if not supported:
+        raise ValueError("source finite SOS programme differs from the compiled selection family")
+    old_gain, new_gain = actual[gain_row, 0], compiled[gain_row, 0]
+    tiny = np.finfo(np.float64).tiny
+    normal_gains = np.isfinite(old_gain) and np.isfinite(new_gain) and old_gain >= tiny and new_gain >= tiny
+    scalar_shape = (normal_gains and np.array_equal(actual[gain_row, :3], [old_gain, 2 * old_gain, old_gain])
+                    and np.array_equal(compiled[gain_row, :3], [new_gain, 2 * new_gain, new_gain]))
+    mask = np.ones(actual.shape, dtype=bool)
+    mask[gain_row, :3] = False
+    if not scalar_shape or not np.array_equal(actual[mask], compiled[mask]):
+        raise ValueError("source finite SOS programme differs from the compiled selection family")
+    # Positive normal IEEE-754 values have an ordered uint64 encoding. Count
+    # representable scalar-gain steps directly, including exponent boundaries.
+    ulps = abs(int(old_gain.view(np.uint64)) - int(new_gain.view(np.uint64)))
+    if ulps > 4:
+        raise ValueError("source finite SOS programme differs from the compiled selection family")
+    return {**receipt, "policy": "butterworth_bandpass_order4_scalar_gain_four_ulp/1",
+        "gain_section": gain_row, "source_gain": float(old_gain), "recompiled_gain": float(new_gain),
+        "scalar_gain_ulp_distance": ulps, "maximum_scalar_gain_ulp_distance": 4,
+        "all_other_coefficients_exact": True, "normalized_gain_shape": "positive_normal_binary64_k_2k_k"}
+
+
 def validate_selection_checkpoint_execution(dataset, source_execution, preprocessing):
     """Prove numerical-family compatibility without relabelling either ingress.
 
@@ -485,22 +528,26 @@ def validate_selection_checkpoint_execution(dataset, source_execution, preproces
     sources = validate_preprocessing_execution(source_execution, preprocessing)
     if not sources or any(receipt["filter"]["backend"] not in {"identity", "mne_reflect_limited"} for receipt in sources):
         raise ValueError("source execution family is not supported by the compiled selection transform")
-    operators = {}
+    operators, relations = {}, {}
     for receipt in sources:
         rate = receipt["source_context"]["sample_rate_hz"]
         if rate not in operators:
             operators[rate] = _profile_operator(preprocessing, rate)
         operator = operators[rate]
         actual_sos = np.asarray(receipt["filter"]["sos"])
-        if ((operator is None) != (not actual_sos.size) or operator is not None and (
-                not np.array_equal(actual_sos, operator.sos)
-                or receipt["filter"]["padding_limit_samples"] != operator.padding_limit)):
+        if (operator is None) != (not actual_sos.size):
             raise ValueError("source finite SOS programme differs from the compiled selection family")
+        if operator is not None:
+            relation = _source_sos_family_relation(actual_sos, operator.sos, preprocessing,
+                source_rate_hz=rate, actual_padding=receipt["filter"]["padding_limit_samples"],
+                recompiled_padding=operator.padding_limit)
+            relations[semantic_sha256(relation)] = relation
     if isinstance(dataset, TrialCheckpointTarget):
         # No calibration or preprocessing is claimed here. Every inference
         # transforms an actual PredictionDecisionView through this same profile.
         return {"source_ingress": "mne_raw", "target_ingress": "selection_future_capability",
-                "family": capability["operator_family"], "same_finite_support_claimed": False}
+                "family": capability["operator_family"], "same_finite_support_claimed": False,
+                "source_sos_family_relations": list(relations.values())}
     receipts = dataset.provenance.get("selection_epoch_execution")
     records = dataset.provenance.get("source_records")
     if not receipts or not records or len(receipts) != len(records):
@@ -541,7 +588,8 @@ def validate_selection_checkpoint_execution(dataset, source_execution, preproces
     if offset != dataset.n_epochs:
         raise ValueError("selection execution receipts do not cover the actual calibration rows")
     return {"source_ingress": "mne_raw", "target_ingress": "selection_executed_segments",
-            "family": capability["operator_family"], "same_finite_support_claimed": False}
+            "family": capability["operator_family"], "same_finite_support_claimed": False,
+            "source_sos_family_relations": list(relations.values())}
 
 
 @dataclass(frozen=True)
