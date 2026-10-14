@@ -107,6 +107,10 @@ def test_actual_source_chain_four_family_replay_keeps_original_source_and_comple
             xdawn_profile),
         CalibrationExpertProgram("waveform", "trial", waveform_lda_recipe(seed=21), profile))
     mixtures = [EnsembleProgram.equal_weights(expert.expert_id, (expert.expert_id,)).record() for expert in experts]
+    # The locked Linux environment measured 1,643,794,432 bytes of target-worker
+    # RSS (including its whole owned tree). Reserve 2 GiB for this software
+    # fixture and verify the same claim against the original 20 ms sampler.
+    software_worker_memory_gib = 2.0
     expected = {"pos_weight": 8., "val_groups_min": 2, "val_groups_max": 12}
     candidate_plan = {"schema": "n2p3_candidate_ensemble_study/1", "evaluation_design": "independent_prefix",
         "evidence_scope": "software_correctness", "records": [{"path": str(raw), "sha256": raw_sha}],
@@ -115,7 +119,7 @@ def test_actual_source_chain_four_family_replay_keeps_original_source_and_comple
         "mixtures": mixtures, "baseline_mixture": "NN", "authorization_preprocessing": preprocessing.record(),
         "observation_response_seconds": 308 / 256, "pre_roll_seconds": .2, "device": "cpu",
         "workers": 1, "cpu_threads_per_worker": 1, "calibration_strategies": ["fixed"],
-        "prefix_replay_graph_memory_gib": 1.25, "prefix_replay_worker_memory_gib": 1.25}
+        "prefix_replay_graph_memory_gib": 1.25, "prefix_replay_worker_memory_gib": software_worker_memory_gib}
     candidate_plan = transfer_scratch_prefix_plan(candidate_plan, source_expert_id="NN",
         scratch_expert_id="scratch", xdawn_expert_id="xdawn", baseline_name="scratch_nn_fixed",
         output_name="selected-family", minimum_selection_rows=1)
@@ -125,7 +129,8 @@ def test_actual_source_chain_four_family_replay_keeps_original_source_and_comple
     source_plan = independent_source_plan(cache, preprocessing, snapshot)
     source_plan.update(source_seeds=[11], target_seeds=[21], seed_pairs=[[11, 21]],
         cpu_budget=2, source_workers=1, target_workers=1,
-        source_worker_memory_gib=1.25, target_worker_memory_gib=1.25, shared_staging_memory_gib=.125,
+        source_worker_memory_gib=software_worker_memory_gib, target_worker_memory_gib=software_worker_memory_gib,
+        shared_staging_memory_gib=.125,
         ready_consumers=[{"kind": "candidate", "name": "fixed-family", "outer": "leave_BNCI",
             "plan": str(candidate_path), "output": str(tmp_path / "candidate")}])
     source_path = tmp_path / "source-plan.json"
@@ -254,6 +259,7 @@ def test_actual_source_chain_four_family_replay_keeps_original_source_and_comple
     measurement["source_freeze"] = _json(snapshot)
     (tmp_path / "whole_owned_tree_measurement.json").write_text(json.dumps(measurement), encoding="utf-8")
     assert not measurement["task_sampling_misses"], "20ms sampling missed actual task identities; peaks are unmeasured"
-    assert all(row["whole_owned_tree_peak_bytes"] <= int(1.25 * 2**30) for row in task_peaks.values())
+    assert all(row["whole_owned_tree_peak_bytes"] <= int(software_worker_memory_gib * 2**30)
+               for row in task_peaks.values())
     assert all(point["reserved_cpu_threads"] <= 2 and point["free_worker_memory_bytes"] >= 0
         for point in report["resource_observations"])
