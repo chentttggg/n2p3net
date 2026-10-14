@@ -103,6 +103,7 @@ class CandidateDatasetAdapter:
     candidate_task_contract: dict
     endpoint: str
     original_factory_source_sha256: str
+    requested_future_record_ids: tuple[str, ...] | None = None
 
     def __post_init__(self):
         from transfer.noise_model import freeze_metadata
@@ -114,6 +115,11 @@ class CandidateDatasetAdapter:
         object.__setattr__(self, "recordings", tuple(self.recordings))
         object.__setattr__(self, "source_artifacts", freeze_metadata(self.source_artifacts))
         object.__setattr__(self, "candidate_task_contract", freeze_metadata(self.candidate_task_contract))
+        if self.requested_future_record_ids is not None:
+            names = tuple(self.requested_future_record_ids)
+            if not names or len(set(names)) != len(names) or not set(names) <= {r.record_id for r in self.recordings}:
+                raise ValueError("future record roster must explicitly retain unique original acquisition identities")
+            object.__setattr__(self, "requested_future_record_ids", names)
 
     def record(self):
         return {"schema": "n2p3_original_candidate_dataset_adapter/1", "dataset_id": self.dataset_id,
@@ -121,7 +127,8 @@ class CandidateDatasetAdapter:
             "source_format": self.source_format, "recordings": [r.public_record() for r in self.recordings],
             "source_artifacts": json.loads(json.dumps(self.source_artifacts, allow_nan=False)),
             "candidate_task_contract": json.loads(json.dumps(self.candidate_task_contract, allow_nan=False)),
-            "endpoint": self.endpoint, "original_factory_source_sha256": self.original_factory_source_sha256}
+            "endpoint": self.endpoint, "original_factory_source_sha256": self.original_factory_source_sha256,
+            "requested_future_record_ids": None if self.requested_future_record_ids is None else list(self.requested_future_record_ids)}
 
     @property
     def digest(self):
@@ -133,7 +140,7 @@ def resolve_candidate_dataset_adapter(declaration):
     if declaration["dataset_id"] == "Huebner2017" and declaration["source_format"] == "original_vmrk_plus_NEMAR_BDF":
         from data.huebner2017_candidate import huebner_dataset_adapter
 
-        return huebner_dataset_adapter(declaration["record_sources"])
+        return huebner_dataset_adapter(declaration["record_sources"], evaluation_session_ids=declaration.get("evaluation_session_ids"))
     if declaration["dataset_id"] == "BI2014a" and declaration["source_format"] in {
             "original_mat", "original_csv", "original_mat_zip", "original_csv_zip"}:
         from data.bi2014a_recording import bi2014a_dataset_adapter

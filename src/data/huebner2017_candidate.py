@@ -356,7 +356,7 @@ def load_huebner_native_source(declaration):
         _admitted_file_identity=admitted_file_identity)
 
 
-def huebner_dataset_adapter(declarations):
+def huebner_dataset_adapter(declarations, *, evaluation_session_ids=None):
     from data.candidate_input import (
         CandidateDatasetAdapter,
         OriginalCandidateRecording,
@@ -386,6 +386,13 @@ def huebner_dataset_adapter(declarations):
             selections, source.readout, source.read_native,
             np.asarray([f.software_sample-(source.readout.get("clock_join", {}).get("clock_offset_samples", 0))
                         for f in source.marker.flashes], dtype=np.int64)))
+    future_ids = None
+    if evaluation_session_ids is not None:
+        sessions = tuple(evaluation_session_ids)
+        if (not sessions or len(set(sessions)) != len(sessions)
+                or any(s not in {"0", "1", "2"} for s in sessions)):
+            raise ValueError("Huebner evaluation sessions require explicit original acquisition session identities")
+        future_ids = tuple(source.record_id for source in sources if source.session_id in sessions)
     return CandidateDatasetAdapter(DATASET_ID, available.participant_key, available.subject_id,
         "original_vmrk_plus_NEMAR_BDF", tuple(recordings), declarations, CANDIDATE_TASK.record(),
-        "one_original_68_frame_selection_R1", _sha(Path(__file__).read_bytes()))
+        "one_original_68_frame_selection_R1", _sha(Path(__file__).read_bytes()), future_ids)

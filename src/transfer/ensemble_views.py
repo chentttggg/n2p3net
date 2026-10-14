@@ -1150,6 +1150,84 @@ class CalibrationPrefixCompiler:
 
         return _issue_c_latent_history_scope(self, view, prefix=prefix, model=model, scoring_law=scoring_law)
 
+    def record_read_scope(self, view, *, prefix, conditioning_stop, available_stop=None,
+                          program="record_prequential_public_history/1"):
+        """Issue one original MAT acquisition's C/P/T history without changing legacy C IDs."""
+        prefix = self.assert_original_prefix(prefix)
+        record = self._record
+        stop = view.available_sample if available_stop is None else available_stop
+        if (program != "record_prequential_public_history/1" or type(conditioning_stop) is not int
+                or type(stop) is not int or not 0 < conditioning_stop < stop == view.available_sample
+                or stop > len(record.eeg_uv) or view.source_sha256 != record.source_sha256
+                or view.source_relative_path != record.source_relative_path
+                or view.participant_key != self._arguments["target"]["participant_key"]
+                or prefix.target_contract["raw_scope"][1] > conditioning_stop):
+            raise ValueError("original MAT C/P/T request differs from its record and label authority")
+        rows = np.flatnonzero(record.selection_id == view.decision_id)
+        if not len(rows):
+            raise ValueError("history current selection is absent from original MAT physical schedule")
+        expected = _bnci_prediction_view(record, rows, *view.raw_scope,
+            available_sample=stop, reason="physical_geometry_only_no_signal_read")
+        original_decision, actual_decision = expected.decision.record(), view.decision.record()
+        original_decision.pop("evidence_indices")
+        actual_decision.pop("evidence_indices")
+        if (original_decision != actual_decision or not np.array_equal(expected.onsets, view.onsets)
+                or expected.channel_names != view.channel_names or expected.reference != view.reference
+                or expected.sample_rate_hz != view.sample_rate_hz):
+            raise ValueError("original MAT public schedule/native coordinates differ from current history view")
+        if (hashlib.sha256(self._history_source_payload).hexdigest() != record.source_sha256
+                or self._history_source_identity != array_digest(record.eeg_uv, record.flash_sample,
+                    record.candidate_id, record.selection_index, record.repetition_index)):
+            raise ValueError("original MAT history decoder operands changed after byte admission")
+        samples = np.asarray(record.eeg_uv[:stop], dtype=np.float64)*1e-6
+        if view.samples is not None and not np.array_equal(samples[slice(*view.raw_scope)], view.samples):
+            raise ValueError("current history samples differ from the original MAT acquisition")
+        physical_id = f"{view.participant_key}:original_record:{record.source_sha256}"
+        scopes = {}
+        mapping = {}
+        for raw in prefix.calibration_records:
+            scope = CalibrationRecordScope(raw.record_id, record.source_sha256, record.source_relative_path,
+                BNCI2014_008_DATASET_ID, record.subject_id, (0, len(raw.samples)), (0, len(raw.onsets)),
+                len(raw.samples), tuple(map(int, raw.onsets)))
+            scopes[raw.record_id] = scope.record()
+            mapping[raw.record_id] = physical_id
+        public = []
+        for selected in np.unique(record.selection_index):
+            rows = np.flatnonzero(record.selection_index == selected)
+            occurred = record.flash_sample[rows] < stop
+            if not occurred.any():
+                continue
+            decision = _bnci_prediction_view(record, rows, 0, stop,
+                available_sample=stop, reason="physical_geometry_only_no_signal_read").decision
+            public.append({"selection_id": str(record.selection_id[rows[0]]),
+                "candidate_vocabulary": list(decision.candidate_vocabulary),
+                "event_ids": list(np.asarray(decision.event_ids)[occurred]),
+                "onsets": record.flash_sample[rows[occurred]].tolist(), "membership": decision.membership[occurred].tolist(),
+                "complete_requested_current": str(record.selection_id[rows[0]]) == view.decision_id})
+        binding = {"schema": "n2p3_authorized_record_public_history/1", "program": program,
+            "record_id": physical_id, "source_sha256": record.source_sha256,
+            "native_clock": "actual_record_native_sample", "participant_key": view.participant_key,
+            "prefix_identity": calibration_prefix_identity(prefix), "C_record_scopes": scopes,
+            "C_record_to_original_record": mapping, "C_record_input_sha256": {
+                raw.record_id: array_digest(raw.samples, raw.onsets, raw.target_mask) for raw in prefix.calibration_records},
+            "read_sample_support": [0, stop], "conditioning_sample_support": [0, conditioning_stop],
+            "score_sample_support": [conditioning_stop, stop], "available_sample": stop,
+            "current_decision_id": view.decision_id, "public_selections": public,
+            "channel_names": list(view.channel_names), "sample_rate_hz": view.sample_rate_hz,
+            "reference": view.reference, "signal_unit": "V", "samples_sha256": array_digest(samples),
+            "current_view": view.record(), "source_owner_sha256": _SELECTION_EXECUTION_SOURCE_SHA256,
+            "original_decoder_receipt": record.source_provenance, "future_truth_consumed": False}
+        return _register_record_history(self, samples, prefix, binding)
+
+    def calibration_record_physical_map(self, prefix):
+        prefix = self.assert_original_prefix(prefix)
+        physical = f"{prefix.target_contract['participant_key']}:original_record:{self._record.source_sha256}"
+        return freeze_metadata({"schema": "n2p3_calibration_physical_record_map/1",
+            "prefix_identity": calibration_prefix_identity(prefix), "source_owner_sha256": _SELECTION_EXECUTION_SOURCE_SHA256,
+            "records": {raw.record_id: {"physical_record_id": physical, "source_sha256": self._record.source_sha256,
+                "source_relative_path": self._record.source_relative_path,
+                "input_sha256": array_digest(raw.samples, raw.onsets, raw.target_mask)} for raw in prefix.calibration_records}})
+
 
 class _PreparedCalibrationPrefixCompiler(CalibrationPrefixCompiler):
     """Only the actual K admitted by the external original-producer capsule."""
@@ -1166,6 +1244,16 @@ class _PreparedCalibrationPrefixCompiler(CalibrationPrefixCompiler):
             raise ValueError("requested actual K was not compiled by the admitted original producer")
         self._prefix_ownership[budget].assert_unchanged(self._prefixes[budget])
         return self._prefixes[budget]
+
+    def record_read_scope(self, view, **arguments):
+        return _prepared_record_read_scope(self, view, **arguments)
+
+    def calibration_record_physical_map(self, prefix):
+        prefix = self.assert_original_prefix(prefix)
+        maps = getattr(self, "_physical_record_maps", {})
+        if prefix.budget not in maps:
+            raise ValueError("physical record map was not issued by the admitted original compiler")
+        return maps[prefix.budget]
 
 
 def prepare_bnci_independent_prefixes(path, *, source_sha256, budgets, profiles,
@@ -1491,6 +1579,10 @@ class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
         self._splits, self._adjustments = resolve_calibration_splits(self.budgets, split,
             minimum_test_trials=1, available_trials=total)
         self.actual_budgets, self.maximum = tuple(sorted(self._splits)), max(self._splits)
+        if adapter.requested_future_record_ids is not None:
+            for source, base in zip(self.sources, self._offsets[:-1], strict=True):
+                if source.record_id in adapter.requested_future_record_ids and int(base) < self.maximum:
+                    raise ValueError("declared evaluation acquisition record overlaps global maximum C-label permission")
         self._read_cache = {}
         self.target = {"participant_key": adapter.participant_key, "source_dataset_id": adapter.dataset_id,
             "source_subject_id": adapter.source_subject_id, "source_sha256": adapter.digest,
@@ -1499,6 +1591,7 @@ class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
             "channel_types": ["EEG"]*len(first.channel_names), "reference": self.reference,
             "signal_unit": "V", "candidate_vocabulary": list(first.selections[0].decision.candidate_vocabulary),
             "candidate_task_contract": adapter.candidate_task_contract, "endpoint": adapter.endpoint,
+            "requested_future_record_ids": None if adapter.requested_future_record_ids is None else list(adapter.requested_future_record_ids),
             "authority_kind": "record_aware_calibration_prefix/1", "raw_scope": None,
             "source_record_roster": {s.record_id: {"record_id": s.record_id, "source_sha256": s.source_sha256,
                 "source_relative_path": s.source_relative_path, "native_sample_count": s.native_sample_count,
@@ -1727,6 +1820,9 @@ class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
             "record_id": source.record_id, "source_sha256": source.source_sha256,
             "native_clock": "actual_record_native_sample", "participant_key": source.participant_key,
             "prefix_identity": calibration_prefix_identity(prefix), "C_record_scopes": prefix.target_contract["record_scopes"],
+            "C_record_to_original_record": {raw.record_id: raw.record_id for raw in prefix.calibration_records},
+            "C_record_input_sha256": {raw.record_id: array_digest(raw.samples, raw.onsets, raw.target_mask)
+                for raw in prefix.calibration_records},
             "read_sample_support": [0, stop], "conditioning_sample_support": [0, conditioning_stop],
             "score_sample_support": [conditioning_stop, stop], "available_sample": stop,
             "current_decision_id": view.decision_id, "public_selections": public,
@@ -1735,15 +1831,24 @@ class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
             "current_view": view.record(), "original_decoder_receipt": source.source_receipt,
             "original_factory_source_sha256": self.adapter.original_factory_source_sha256,
             "source_owner_sha256": _SELECTION_EXECUTION_SOURCE_SHA256, "future_truth_consumed": False}
-        result = object.__new__(AuthorizedRecordPublicHistory)
-        for name, value in {"record_id": source.record_id, "samples": _immutable_array(samples, np.float64),
-            "calibration_records": prefix.calibration_records, "binding": freeze_metadata(binding)}.items():
-            object.__setattr__(result, name, value)
-        return result
+        return _register_record_history(self, samples, prefix, binding)
+
+    def calibration_record_physical_map(self, prefix):
+        prefix = self.assert_original_prefix(prefix)
+        scopes = prefix.target_contract["record_scopes"]
+        return freeze_metadata({"schema": "n2p3_calibration_physical_record_map/1",
+            "prefix_identity": calibration_prefix_identity(prefix), "source_owner_sha256": _SELECTION_EXECUTION_SOURCE_SHA256,
+            "records": {raw.record_id: {"physical_record_id": raw.record_id,
+                "source_sha256": scopes[raw.record_id]["source_sha256"],
+                "source_relative_path": scopes[raw.record_id]["source_relative_path"],
+                "input_sha256": array_digest(raw.samples, raw.onsets, raw.target_mask)} for raw in prefix.calibration_records}})
 
     def independent_views(self):
         decisions, truths, test_scopes = [], {}, {}
         for source, base in zip(self.sources, self._offsets[:-1], strict=True):
+            if (self.adapter.requested_future_record_ids is not None
+                    and source.record_id not in self.adapter.requested_future_record_ids):
+                continue
             count = min(len(source.native_onsets), max(0, self.maximum-int(base)))
             c_scope = self.compile(self.maximum).target_contract["record_scopes"].get(source.record_id)
             earlier = source.native_onsets[:count]
@@ -1824,6 +1929,45 @@ class AuthorizedRecordPublicHistory:
     calibration_records: tuple[CalibrationRecord, ...]
     binding: dict
 
+
+def _record_history_key(binding):
+    return semantic_sha256({key: binding[key] for key in ("source_sha256", "record_id", "current_decision_id",
+        "prefix_identity", "conditioning_sample_support", "score_sample_support")})
+
+
+def _register_record_history(compiler, samples, prefix, binding):
+    result = object.__new__(AuthorizedRecordPublicHistory)
+    for name, value in {"record_id": binding["record_id"], "samples": _immutable_array(samples, np.float64),
+        "calibration_records": prefix.calibration_records, "binding": freeze_metadata(binding)}.items():
+        object.__setattr__(result, name, value)
+    if not hasattr(compiler, "_record_history_scopes"):
+        compiler._record_history_scopes = {}
+    compiler._record_history_scopes[_record_history_key(binding)] = result
+    return result
+
+
+def _prepared_record_read_scope(compiler, view, *, prefix, conditioning_stop, available_stop=None,
+                                program="record_prequential_public_history/1"):
+    prefix = compiler.assert_original_prefix(prefix)
+    stop = view.available_sample if available_stop is None else available_stop
+    scopes = getattr(compiler, "_record_history_scopes", {})
+    matches = [cap for cap in scopes.values() if cap.binding["source_sha256"] == view.source_sha256
+        and cap.binding["current_decision_id"] == view.decision_id
+        and cap.binding["prefix_identity"] == calibration_prefix_identity(prefix)
+        and tuple(cap.binding["conditioning_sample_support"]) == (0, conditioning_stop)
+        and tuple(cap.binding["score_sample_support"]) == (conditioning_stop, stop)]
+    if len(matches) != 1 or program != "record_prequential_public_history/1" or stop != view.available_sample:
+        raise ValueError("prepared history was not issued by the admitted original decoder for these exact C/P/T inputs")
+    cap = matches[0]
+    original_view = dict(cap.binding["current_view"])
+    actual_view = view.record()
+    if (semantic_sha256(original_view) != semantic_sha256(actual_view)
+            or cap.binding["C_record_input_sha256"] != {raw.record_id:
+                array_digest(raw.samples, raw.onsets, raw.target_mask) for raw in prefix.calibration_records}
+            or cap.binding["samples_sha256"] != array_digest(cap.samples)):
+        raise ValueError("prepared original history cap changed its native samples, C authority or current physical view")
+    return cap
+
     @property
     def digest(self):
         return semantic_sha256(self.binding)
@@ -1852,6 +1996,8 @@ class _PreparedRecordCalibrationPrefixCompiler(_PreparedCalibrationPrefixCompile
         if scope is not None and scope["read_sample_support"][1] > held.view.raw_scope[0]:
             raise ValueError("prepared earlier prefix overlaps actual held raw observations")
         return earlier
+
+    record_read_scope = _prepared_record_read_scope
 
 
 def prepare_dataset_independent_prefixes(declaration, *, budgets, profiles, authorization_preprocessing,

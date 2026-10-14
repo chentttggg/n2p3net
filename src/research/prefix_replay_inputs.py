@@ -216,7 +216,7 @@ def _pack_view(view, writer, *, calibration=False):
                          raw_key=(view.source_sha256, view.source_relative_path))}
 
 
-def export_prepared_views(views, profiles, directory, request):
+def export_prepared_views(views, profiles, directory, request, *, record_history_scopes=()):
     """Export actual old-compiler prefixes, including all recursively earlier K.
 
     Run this function in the frozen producer process. The request pins its real
@@ -224,11 +224,22 @@ def export_prepared_views(views, profiles, directory, request):
     relabelled with an old implementation hash.
     """
     from transfer.ensemble_views import calibration_prefix_identity
+    from transfer.noise_model import array_digest
+
+    record_history_scopes = tuple(record_history_scopes)
 
     requested_profiles = _validate_request(request)
     compiler = views.prefix_compiler
     if compiler is None:
         raise ValueError("prepared prefix inputs require the original verified MAT compiler")
+    from transfer.ensemble_views import AuthorizedRecordPublicHistory, _record_history_key
+
+    for cap in record_history_scopes:
+        if (not isinstance(cap, AuthorizedRecordPublicHistory)
+                or getattr(compiler, "_record_history_scopes", {}).get(_record_history_key(cap.binding)) is not cap
+                or cap.binding["source_owner_sha256"] != request["producer_source_sha256"]
+                or cap.binding["samples_sha256"] != array_digest(cap.samples)):
+            raise ValueError("history capsule export requires the actual original issuer-owned native history cap")
     producer_module = sys.modules[type(compiler).__module__]
     actual_sha = hashlib.sha256(Path(inspect.getfile(type(compiler))).read_bytes()).hexdigest()
     if (actual_sha != request["producer_source_sha256"]
@@ -268,14 +279,22 @@ def export_prepared_views(views, profiles, directory, request):
     blob_path = directory / "arrays.bin"
     with blob_path.open("xb") as stream:
         writer = _ArrayWriter(stream)
+        for cap in sorted(record_history_scopes, key=lambda c: len(c.samples), reverse=True):
+            current = cap.binding["current_view"]
+            key = current["source_sha256"], current["source_relative_path"]
+            if key not in writer.record_masters:
+                master = writer.array(cap.samples)
+                writer.record_masters[key] = cap.samples, master["array"]
         largest = prefixes[max(prefixes)]
         if largest.raw is not None:
             master = writer.array(largest.raw.samples)
             writer.raw_master, writer.raw_master_entry = largest.raw.samples, master["array"]
         for native in largest.native_records:
             scope = largest.target_contract["record_scopes"][native.record_id]
-            master = writer.array(native.samples)
-            writer.record_masters[(scope["source_sha256"], scope["source_relative_path"])] = native.samples, master["array"]
+            key = scope["source_sha256"], scope["source_relative_path"]
+            if key not in writer.record_masters:
+                master = writer.array(native.samples)
+                writer.record_masters[key] = native.samples, master["array"]
         records = {}
         for budget, prefix in sorted(prefixes.items()):
             raw = prefix.raw
@@ -293,6 +312,8 @@ def export_prepared_views(views, profiles, directory, request):
                 "complete_groups": [{"view": _pack_view(group.view, writer, calibration=True),
                                      "labels": writer.array(group.labels), "target_candidate": group.target_candidate}
                                     for group in prefix.complete_groups]}
+            if hasattr(compiler, "calibration_record_physical_map"):
+                records[str(budget)]["physical_record_bindings"] = compiler.calibration_record_physical_map(prefix)
             if prefix.native_records:
                 records[str(budget)]["native_records"] = []
                 for raw in prefix.native_records:
@@ -303,6 +324,11 @@ def export_prepared_views(views, profiles, directory, request):
                         "onsets": writer.array(raw.onsets), "target_mask": writer.array(raw.target_mask),
                         "right_censored": raw.right_censored})
         decisions = [_pack_view(view, writer) for view in views.decisions]
+        histories = []
+        for cap in record_history_scopes:
+            current = cap.binding["current_view"]
+            histories.append({"binding": cap.binding, "samples": writer.array(cap.samples,
+                raw_scope=(0, len(cap.samples)), raw_key=(current["source_sha256"], current["source_relative_path"]))})
     blob_digest = hashlib.sha256()
     with blob_path.open("rb") as stream:
         for block in iter(lambda: stream.read(_CHUNK_BYTES), b""):
@@ -312,6 +338,8 @@ def export_prepared_views(views, profiles, directory, request):
                                                        "bytes": blob_path.stat().st_size},
         "arrays": writer.arrays, "prefixes": records,
         "calibration_Ks": list(views.calibration), "decisions": decisions, "ledger": views.ledger}
+    if histories:
+        document["record_history_scopes"] = histories
     capsule_path = directory / "capsule.json"
     capsule_path.write_bytes(_json_bytes(document))
     # Future truth belongs only to the parent scoring owner, never reader capsules.
@@ -641,7 +669,7 @@ def _restore_views(document, reader):
         _PreparedCalibrationPrefixCompiler,
         calibration_prefix_identity,
     )
-    from transfer.noise_model import freeze_metadata
+    from transfer.noise_model import array_digest, freeze_metadata
 
     prefixes, identities = {}, {}
     for key, record in document["prefixes"].items():
@@ -672,6 +700,41 @@ def _restore_views(document, reader):
     compiler = factory(prefixes, identities=identities,
         producer_source_sha256=document["producer_source_sha256"],
         consumer_source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
+    compiler._physical_record_maps = {}
+    for key, original in document["prefixes"].items():
+        if "physical_record_bindings" not in original:
+            continue
+        mapping = original["physical_record_bindings"]
+        prefix = prefixes[int(key)]
+        if (mapping["prefix_identity"] != calibration_prefix_identity(prefix)
+                or mapping["source_owner_sha256"] != document["producer_source_sha256"]
+                or set(mapping["records"]) != {raw.record_id for raw in prefix.calibration_records}
+                or any(mapping["records"][raw.record_id]["input_sha256"] != array_digest(raw.samples, raw.onsets, raw.target_mask)
+                       for raw in prefix.calibration_records)):
+            raise ValueError("prepared physical acquisition map differs from its original C inputs/issuer")
+        compiler._physical_record_maps[int(key)] = freeze_metadata(mapping)
+    from transfer.ensemble_views import AuthorizedRecordPublicHistory, _record_history_key
+
+    for original in document.get("record_history_scopes", ()):
+        binding = original["binding"]
+        matching = [prefix for prefix in prefixes.values()
+                    if calibration_prefix_identity(prefix) == binding["prefix_identity"]]
+        if len(matching) != 1 or binding["source_owner_sha256"] != document["producer_source_sha256"]:
+            raise ValueError("prepared history cap differs from its original producer/prefix identity")
+        cap = object.__new__(AuthorizedRecordPublicHistory)
+        for name, value in {"record_id": binding["record_id"], "samples": reader.array(original["samples"]),
+            "calibration_records": matching[0].calibration_records, "binding": freeze_metadata(binding)}.items():
+            object.__setattr__(cap, name, value)
+        if (binding["samples_sha256"] != array_digest(cap.samples)
+                or binding["C_record_input_sha256"] != {raw.record_id: array_digest(raw.samples, raw.onsets, raw.target_mask)
+                                                       for raw in cap.calibration_records}):
+            raise ValueError("prepared history numerical bytes differ from its original C/P/T input authority")
+        if not hasattr(compiler, "_record_history_scopes"):
+            compiler._record_history_scopes = {}
+        key = _record_history_key(binding)
+        if key in compiler._record_history_scopes:
+            raise ValueError("prepared input capsule repeats an original history request")
+        compiler._record_history_scopes[key] = cap
     # Re-run the unchanged original structural authority, never synthesize missing K.
     for prefix in prefixes.values():
         for group in prefix.complete_groups:
