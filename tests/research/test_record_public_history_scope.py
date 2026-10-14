@@ -73,6 +73,8 @@ def test_explicit_future_record_roster_preserves_all_selections_and_refuses_c_ov
     future = replace(adapter, requested_future_record_ids=(adapter.recordings[1].record_id,))
     views = _issuer(future).independent_views()
     assert len(views.decisions) == 2
+    assert views.ledger["test_budget"]["actual_test_trials"] == 4
+    assert views.ledger["test_budget"]["separate_test_recordings"] is True
     assert all(v.source_sha256 == adapter.recordings[1].source_sha256 for v in views.decisions)
     assert views.calibration[3].calibration_records[0].record_id == adapter.recordings[0].record_id
     with pytest.raises(ValueError, match="overlaps global maximum C"):

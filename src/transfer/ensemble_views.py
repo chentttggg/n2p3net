@@ -1563,6 +1563,9 @@ class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
                 raise ValueError("requested global C labels would consume the original later event pool")
             test, purged = [], []
             for source, base in zip(self.sources, self._offsets[:-1], strict=True):
+                if (adapter.requested_future_record_ids is not None
+                        and source.record_id not in adapter.requested_future_record_ids):
+                    continue
                 count = min(len(source.native_onsets), max(0, maximum-int(base)))
                 last = source.native_onsets[:count]
                 last = last[last >= 0]
@@ -1577,7 +1580,8 @@ class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
             return BinaryTimeSplit(np.arange(k, dtype=np.int64), np.asarray(test, dtype=np.int64),
                                    np.asarray(purged, dtype=np.int64))
         self._splits, self._adjustments = resolve_calibration_splits(self.budgets, split,
-            minimum_test_trials=1, available_trials=total)
+            minimum_test_trials=1, available_trials=total,
+            separate_test_recordings=adapter.requested_future_record_ids is not None)
         self.actual_budgets, self.maximum = tuple(sorted(self._splits)), max(self._splits)
         if adapter.requested_future_record_ids is not None:
             for source, base in zip(self.sources, self._offsets[:-1], strict=True):
