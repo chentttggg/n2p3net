@@ -66,6 +66,36 @@ def test_undeclared_cpu_and_software_source_paths_keep_original_thread_policy(de
     assert phase.cpu_threads == phase.native_threads == 6 and phase.interop_threads is None
 
 
+def test_actual_e2_caller_keeps_general_native_threads_and_releases_nested_admission(tmp_path, monkeypatch):
+    from experiments import run_source_training_chain as runner
+
+    result = resources(public_plan(source_native_threads_per_worker=5))
+    admission = owner.HostMemoryAdmission(SimpleNamespace(HostMemoryState=owner._HostMemoryState), result)
+    original = admission.record()
+    scored, released = [], []
+
+    def score(checkpoint, dataset, cohort, **options):
+        scored.append((checkpoint, dataset, cohort, options))
+        assert admission.record()["reserved_cpu_threads"] == 7
+        return [{"participant_key": "software-person", "actual_K": 0, "status": "completed"}]
+
+    monkeypatch.setattr(runner, "_score_checkpoint", score)
+    monkeypatch.setattr(owner, "release_source_worker", released.append)
+    dataset = object()
+    cohort = [{"participant_key": "software-person"}]
+    with admission.source_group():
+        outcomes = runner._score_e2_candidates(dataset, tmp_path, cohort, (3,), workers=1,
+            progress_path=tmp_path / "unused-progress.json", memory_admission=admission, device="cpu")
+        assert admission.native_threads == result["native_threads_per_worker"] == 6
+        assert admission.source_cpu_threads == 6
+    assert outcomes == [{"participant_key": "software-person", "actual_K": 0,
+                         "status": "completed", "updates": 3}]
+    assert scored == [(tmp_path / "source.u3.pt", dataset, cohort, {"device": "cpu"})]
+    assert released == ["cpu"]
+    assert admission.record() == original
+    assert not (tmp_path / "source.u3.pt").exists()
+
+
 def test_actual_source_worker_reapplies_declared_interop_before_first_tensor(tmp_path):
     script = '''
 import json, pathlib, sys, torch
