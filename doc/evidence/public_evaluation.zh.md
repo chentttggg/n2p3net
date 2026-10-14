@@ -1,6 +1,6 @@
 # 公共数据评估与配对分析
 
-当前新base矩阵使用source/target seed20261014及冻结f3f32f8。原source attempt已终态：三fold完成并经原checkpoint/SourceSeedCatalog准入，共6次成功拟合；Huebner refit staging超18GiB原门，原queue实际exit1、各worker owned进程0、transient leases0。root已核原catalog SHA、三个同seed唯一键、checkpoint SHA与整库排除关系。云owner已报告Huebner按remaining1/30GiB恢复，原代码、数据、seed及科学配方保持；新launch和第四checkpoint另按真实凭证验收。完整四键准入后按BNCI→BI2014a→BI2015a→Huebner推进约定目标矩阵，下文原20260918读数保持。
+本轮seed20261014完整source程序已完成，原f3f32f8、四fold最终模型和八次成功fit经原SourceSeedCatalog逐项准入。原三个成功模型保持，Huebner selected14的fresh refit作为补集完成；原失败attempt的38,820steps/19,875,840draws及未知refit曝光单列。源闭包为独立programme状态，原queue exit1和新tail exit0/owned0各保来源，目标训练结果沿自身receipt验收。完整SHA、原producer合同和root审阅见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)；下文原20260918读数保持。
 
 ## 已完成云端程序：当前读数
 

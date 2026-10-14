@@ -6,6 +6,8 @@
 
 ### 当前工作成果（2026-10-14）
 
+完整source四fold现已闭合：原三个成功模型加Huebner补集，经原f3 SourceSeedCatalog/validate_source_procedure四键通过（68.562秒），成功最终程序4/fit8。root只核原文件SHA、catalog与embedded producer、配置/seed/排除、tail真实exit/退役及原失败曝光，未重复大模型load。闭包SHA `59e1d817…`、root审阅及原事故说明已绑定。原source queue保持exit1，新tail exit0/owned0/leases0，独立科学programme闭包不伪造aggregate OS0。原审核曾重写queue terminal元文件，保已核payload关系与事故；模型、report、catalog未改写，后续审核采用纯比较。目标完整矩阵另按实际producer/退出/请求验收。
+
 完整T+ε及ordinary各pool校准已集成`937cbae`，空间source/OOF/ensemble消费者与原producer重放已集成`ff131b8/138e2bf`，同record Gamma/flat程序已集成`dd63d32`。各自独立审阅、合成输入的真实生产调用链及原包零fit重放保持原来源；下一公共opt-in比较由各自冻结版本执行。
 
 新base源矩阵已按完整seed20261014、原冻结`f3f32f8`实际启动四路选轮/refit。短窗口GPU利用率中位99%、均值83.6%，实际CPU3.83–4.06核；每选轮epoch19.6–25.0秒。Huebner选轮20epoch早停后，refit staging实测23.01GiB超过原18GiB单路门，原failure保留；另外三折继续原任务。云端持久小凭证位于`D:/BCI/artifacts/base-matrix-20261014/source-run`，总监恢复审阅为该目录的`SOURCE_RESUME_ROOT_REVIEW.md`。成功产物与原队列最终退出仍按真实凭证验收。

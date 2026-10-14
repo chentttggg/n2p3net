@@ -10,7 +10,7 @@
 - B09 exact compact rowspace及真实source/OOF/ensemble已集成`b15bdaf/ff131b8`，immutable原producer修复为`138e2bf`。root实际组合旧包零fit/QR重放通过，原record/digest/file/baseline保持；原数值QR/noise/BLUE复用。完整审阅`tmp/SPATIAL_ROWSPACE_INDEPENDENT_REVIEW.md`。
 - B11同record一个Gammaλ、properβ一次、原flat测度、source/C issuer与direct augmented QR持久包已集成`dd63d32`。最终7case与root原16draw零fit/白化/QR回放接受。下一typed ensemble同record OOF/fullhistory/candidate/capsule已交作者`D:/BCI/worktrees/joint-flat-ensemble`及独审，先补真实law和权限，不套旧nonchronological独立组程序。
 - B12真实新数据候选adapter由独立审阅者核BI2014a label-K、BI2015a/Huebner原stimulus、membership、clock与identity。来源于binary metadata的猜测不发布为原candidate；root依据真实字段证据给代码owner。
-- 新base source使用seed20261014及原冻结f3f32f8，完整master四fold/eight logical fits。Huebner refit staging触发18GiB原门，其余三fold继续。云owner验原terminal/leases与成功checkpoint，再以remaining1/实测预算补失败折，最终catalog原3+新1保完整四键。紧凑交接`D:/BCI/artifacts/base-matrix-20261014/source-run/SOURCE_RESUME_ROOT_REVIEW.md`。
+- 新base source四fold闭包完成：seed20261014、原f3f32f8、原3成功+Huebner补集共8成功fit，SourceSeedCatalog四键准入。原queue OS1/失败曝光和新tail OS0/owned0各保持。root审阅`D:/BCI/artifacts/base-matrix-20261014/source-run/SOURCE_CLOSURE_ROOT_REVIEW.json`，closure原SHA59e1d817…；原terminal audit改写元文件事件保留，模型/report/catalog未写。云owner继续完整目标队列。
 - 原BI/BNCI、entry005/P1载荷与模型producer保原SHA，恢复位置`D:/BCI/artifacts/cloud-completed-originals-20261014`；科研原dirty main保持。C-latent/空间/B11旧作者树已回收证据并删除；概率树长路径残留已归档，原递归删除自动拒绝后保留。大交付归档`D:/BCI/artifacts/research-deliveries`，逐成员manifest已核验。
 - memory精简按允许机制写入`C:/Users/chent/.codex/memories/extensions/ad_hoc/notes/20261013-215044-research-memory-simplification.md`，保全局推导、实际模块/调用链审阅、定向验证、科研质量、D盘代码树及主题文档。
 
@@ -68,7 +68,7 @@ src/research/source_execution.py af464538c1525dd71b95c952e90d64a3ee930b399d574b4
 ## 续接的决策与实施顺序
 
 1. 核实际branch/HEAD/dirty与进程，读活动六指南和本handoff；历史checkpoint用于定位，已有绿色case仅因新变更或问题复验。
-2. 云owner完成原三fold终态及成功checkpoint准入，保原failed Huebner；完整master4/remaining1恢复后逐catalog核同seed source合同，再推进完整target队列。
+2. source四fold已完成准入；云owner沿同f3完整目标矩阵执行，root接收实际launch、utilization、requested终态和新结果。原source失败/退役、补集闭包与各target退出独立绑定，不重复已闭合源训练。
 3. B11作者与独审先补同record OOF、完整可用历史/未知早期q及finite Gamma正规预测关系，再接typed expert/context/capture/replay/parent，root逐hunk审阅后集成。
 4. B12先从实际raw record核真实candidate物理字段，再沿shared contract和compiler实施完整适配。B03/B09新公共opt-in与B07参数/history能力按新freeze继续。
 5. B10完整输入增量、B13成人新采集与确认及其余B00–B14依赖继续；整个123项目标保持开放。

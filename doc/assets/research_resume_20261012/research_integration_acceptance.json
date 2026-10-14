@@ -709,5 +709,63 @@
     "target_training_not_launched_at_original_partial_closure": true,
     "new_fits_by_root": 0,
     "original_attempt_resigned": false
+  },
+  "base_source_complete": {
+    "status": "accepted_complete_source_programme_scoped_original_runtime_gate_and_root_artifact_joins",
+    "closure": {
+      "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\source-run\\SOURCE_PROGRAMME_CLOSURE.json",
+      "sha256": "59e1d8178af57cd5149534cdf64e7c6c4206c3f6d22b684db3721d2ee2fc8565"
+    },
+    "root_review": {
+      "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\source-run\\SOURCE_CLOSURE_ROOT_REVIEW.json",
+      "sha256": "48105591e89f3bf2829cbeb4beb04bc40f79aedd4efdb3e890169c1dab37e09f"
+    },
+    "source_seed": 20261014,
+    "successful_final_programmes": 4,
+    "successful_final_source_fits": 8,
+    "root_model_reload_calls": 0,
+    "original_attempt_OS_exit": 1,
+    "tail_actual_OS_exit": 0,
+    "tail_owned_after_exit": 0,
+    "source_keys": [
+      {
+        "outer_target_study": "BI2014a",
+        "source_seed": 20261014,
+        "sha256": "669306ebd08b95c0ff9acea1bd4737c2802615122d98ea244396d4cd7fb45bae",
+        "selected_epochs": 16,
+        "actual_inner_updates": 46024,
+        "actual_refit_updates": 42928
+      },
+      {
+        "outer_target_study": "BI2015a",
+        "source_seed": 20261014,
+        "sha256": "cae2873fded1a96eac1d9a8ec09398e93314d735291d594df79a861bbc8dcb37",
+        "selected_epochs": 6,
+        "actual_inner_updates": 24984,
+        "actual_refit_updates": 16026
+      },
+      {
+        "outer_target_study": "BNCI2014-008",
+        "source_seed": 20261014,
+        "sha256": "b52c8d170a4d967006f2bdfb2de488fd91be36a66c774a68f390705e83478007",
+        "selected_epochs": 15,
+        "actual_inner_updates": 44835,
+        "actual_refit_updates": 40935
+      },
+      {
+        "outer_target_study": "Huebner2017",
+        "source_seed": 20261014,
+        "sha256": "134a5bc1beef8a64870bae7f2ca3a29da33ddad689ccc90b5419170f9c467236",
+        "selected_epochs": 14,
+        "actual_inner_updates": 38820,
+        "actual_refit_updates": 34678
+      }
+    ],
+    "original_terminal_incident": {
+      "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\source-run\\READ_ONLY_TERMINAL_INCIDENT.json",
+      "sha256": "c282db8ed6c90c2a50876890db980d6c9a17d5748c61be6cc54badd31da800e3",
+      "scope": "original terminal metadata rewritten during audit; parsed payload equality checked; original before-byte hash and mtime not recorded; models/report/catalog not written"
+    },
+    "next": "full_requested_target_matrix_under_cloud_owner"
   }
 }
