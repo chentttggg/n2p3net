@@ -6,6 +6,7 @@ supplies it to CalibrationPrefixCompiler, which grants only the requested C.
 """
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -70,6 +71,9 @@ class OriginalCandidateRecording:
         for key, value in (("native_onsets", onsets), ("authorized_binary_labels", labels)):
             copy = np.ascontiguousarray(value)
             object.__setattr__(self, key, np.frombuffer(copy.tobytes(), dtype=copy.dtype).reshape(copy.shape))
+        from transfer.noise_model import freeze_metadata
+
+        object.__setattr__(self, "source_receipt", freeze_metadata(self.source_receipt))
         if self.unavailable_public_onsets is not None:
             public = np.asarray(self.unavailable_public_onsets, dtype=np.int64)
             if public.shape != onsets.shape or np.any(public < 0) or np.any(np.diff(public) <= 0):
@@ -84,7 +88,8 @@ class OriginalCandidateRecording:
             "reference": self.reference, "native_sample_count": self.native_sample_count,
             "native_onsets": self.native_onsets.tolist(),
             "unavailable_public_onsets": None if self.unavailable_public_onsets is None else self.unavailable_public_onsets.tolist(),
-            "selections": [s.public_record() for s in self.selections], "source_receipt": self.source_receipt}
+            "selections": [s.public_record() for s in self.selections],
+            "source_receipt": json.loads(json.dumps(self.source_receipt, allow_nan=False))}
 
 
 @dataclass(frozen=True)
@@ -100,16 +105,22 @@ class CandidateDatasetAdapter:
     original_factory_source_sha256: str
 
     def __post_init__(self):
+        from transfer.noise_model import freeze_metadata
+
         if (not self.recordings or len({r.record_id for r in self.recordings}) != len(self.recordings)
                 or any(r.participant_key != self.participant_key or r.source_subject_id != self.source_subject_id
                        for r in self.recordings)):
             raise ValueError("candidate dataset adapter requires its original unique participant recording roster")
+        object.__setattr__(self, "recordings", tuple(self.recordings))
+        object.__setattr__(self, "source_artifacts", freeze_metadata(self.source_artifacts))
+        object.__setattr__(self, "candidate_task_contract", freeze_metadata(self.candidate_task_contract))
 
     def record(self):
         return {"schema": "n2p3_original_candidate_dataset_adapter/1", "dataset_id": self.dataset_id,
             "participant_key": self.participant_key, "source_subject_id": self.source_subject_id,
             "source_format": self.source_format, "recordings": [r.public_record() for r in self.recordings],
-            "source_artifacts": list(self.source_artifacts), "candidate_task_contract": self.candidate_task_contract,
+            "source_artifacts": json.loads(json.dumps(self.source_artifacts, allow_nan=False)),
+            "candidate_task_contract": json.loads(json.dumps(self.candidate_task_contract, allow_nan=False)),
             "endpoint": self.endpoint, "original_factory_source_sha256": self.original_factory_source_sha256}
 
     @property

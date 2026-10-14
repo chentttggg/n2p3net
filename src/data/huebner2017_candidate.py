@@ -11,10 +11,11 @@ import csv
 import hashlib
 import io
 import json
+import os
 import re
 import struct
 import zlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
@@ -41,6 +42,13 @@ CANDIDATE_TASK = CandidateTaskContract(DATASET_ID, "llp_42_visual_positions_32_c
 
 def _sha(content):
     return hashlib.sha256(content).hexdigest()
+
+
+def _file_identity(stat):
+    # Windows path stat exposes creation time as ctime while fstat exposes
+    # change time. Their explicit birth time is the same physical-file field.
+    stamp = stat.st_birthtime_ns if os.name == "nt" else stat.st_ctime_ns
+    return stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stamp
 
 
 def read_local_marker_member(path, receipt):
@@ -209,6 +217,7 @@ class HuebnerNativeSource:
     marker: HuebnerMarkerRecord
     native_onsets: np.ndarray
     readout: dict
+    _admitted_file_identity: tuple[int, ...] | None = field(default=None, repr=False, compare=False)
 
     @property
     def source_sha256(self):
@@ -224,6 +233,8 @@ class HuebnerNativeSource:
 
         if self.bdf_path is None:
             raise ValueError("original acquisition payload is unavailable")
+        if _file_identity(self.bdf_path.stat()) != self._admitted_file_identity:
+            raise ValueError("original BDF file identity changed after byte admission")
         raw = mne.io.read_raw_bdf(self.bdf_path, preload=False, verbose=False)
         try:
             if tuple(raw.ch_names) != self.channels or raw.info["sfreq"] != SOURCE_SAMPLE_RATE_HZ:
@@ -233,6 +244,8 @@ class HuebnerNativeSource:
             values = raw.get_data(start=start, stop=stop).T
         finally:
             raw.close()
+        if _file_identity(self.bdf_path.stat()) != self._admitted_file_identity:
+            raise ValueError("original BDF file identity changed during native range read")
         return values
 
 
@@ -241,15 +254,46 @@ def load_huebner_native_source(declaration):
     from data.identity import origin_subject_key
     from transfer.noise_model import require_sha256
 
-    subject, block, run = (str(declaration[k]) for k in ("subject", "block", "run"))
+    subject = str(declaration["subject"])
+    block_number, run_number = declaration["block"], declaration["run"]
+    if (re.fullmatch(r"[1-9]|1[0-3]", subject) is None
+            or type(block_number) is not int or not 0 <= block_number < 3
+            or type(run_number) is not int or not 0 <= run_number < 9):
+        raise ValueError("original Huebner source requires its exact thirteen-subject/session/run identities")
+    block, run = str(block_number), str(run_number)
     record_id = f"{DATASET_ID}:{subject}:session:{block}:run:{run}"
     authority = declaration["marker"]
     if "archive_path" in authority:
         marker_bytes = read_local_marker_member(authority["archive_path"], authority["member"])
+        original_member = authority["member"]["name"]
     else:
         marker_bytes = Path(authority["path"]).read_bytes()
         if _sha(marker_bytes) != authority["sha256"]:
             raise ValueError("original external marker bytes differ from declared source admission")
+        original_member = authority["original_member"]
+        member_receipt = authority["original_member_receipt"]
+        receipt_bytes = Path(member_receipt["path"]).read_bytes()
+        if _sha(receipt_bytes) != member_receipt["sha256"]:
+            raise ValueError("original external marker member receipt differs from its frozen authority")
+        receipt = json.loads(receipt_bytes)
+        if (receipt["member"] != original_member or receipt["sha256"] != _sha(marker_bytes)
+                or receipt["subject"] != int(subject) or receipt["block"] != block_number+1
+                or receipt["run"] != run_number+1 or receipt["kind"] != "vmrk" or not receipt["crc_pass"]
+                or receipt["raw_bytes"] != len(marker_bytes)
+                or zlib.crc32(marker_bytes) & 0xffffffff != int(receipt["crc32"], 16)):
+            raise ValueError("original external marker is not the admitted physical member/run")
+    basename = f"matrixSpeller_Block{block_number+1}_Run{run_number+1}"
+    member_match = re.fullmatch(r"subject(\d{2})/(?:block_without_optical/)?(matrixSpeller_Block\d+_Run\d+)\.vmrk", original_member)
+    if (member_match is None or int(member_match[1]) != int(subject) or member_match[2] != basename
+            or re.search(r"^DataFile="+re.escape(basename)+r"\.eeg\s*$", marker_bytes.decode("utf-8-sig"), re.MULTILINE) is None):
+        raise ValueError("original marker subject/session/run/member identity differs from the declared acquisition")
+    if "source_header" in authority:
+        header = authority["source_header"]
+        content = Path(header["path"]).read_bytes()
+        if (_sha(content) != header["sha256"]
+                or re.search(r"^DataFile="+re.escape(basename)+r"\.eeg\s*$", content.decode("utf-8-sig"), re.MULTILINE) is None
+                or re.search(r"^MarkerFile="+re.escape(basename)+r"\.vmrk\s*$", content.decode("utf-8-sig"), re.MULTILINE) is None):
+            raise ValueError("original BrainVision header does not link this exact physical marker/run")
     marker = decode_original_markers(marker_bytes, source_authority=authority)
     bdf = declaration.get("bdf")
     if bdf is None:
@@ -260,15 +304,30 @@ def load_huebner_native_source(declaration):
     import mne
 
     path = Path(bdf["path"])
+    nemar_basename = f"sub-{subject}_ses-{block}_task-p300_run-{run}"
+    if path.name != nemar_basename+"_eeg.bdf":
+        raise ValueError("original NEMAR BDF subject/session/run differs from the physical marker acquisition")
+    companion_paths = {}
+    for kind in ("channels", "events", "eeg"):
+        companion_path = Path(declaration[kind]["path"])
+        suffix = "_eeg.json" if kind == "eeg" else f"_{kind}.tsv"
+        if companion_path.name != nemar_basename+suffix or companion_path.parent.resolve() != path.parent.resolve():
+            raise ValueError("NEMAR sidecar identity differs from its exact physical EEG acquisition")
+        companion_paths[kind] = companion_path
     require_sha256(bdf["sha256"], "original NEMAR EEG")
     with path.open("rb") as stream:
+        admitted_file_identity = _file_identity(os.fstat(stream.fileno()))
         actual = hashlib.file_digest(stream, "sha256").hexdigest()
+        if _file_identity(os.fstat(stream.fileno())) != admitted_file_identity:
+            raise ValueError("original BDF file changed during one byte-hash admission")
+    if _file_identity(path.stat()) != admitted_file_identity:
+        raise ValueError("original BDF path no longer resolves to its admitted file identity")
     if actual != bdf["sha256"]:
         raise ValueError("NEMAR EEG differs from actual frozen acquisition bytes")
     companion = {}
     for kind in ("channels", "events", "eeg"):
         row = declaration[kind]
-        payload = Path(row["path"]).read_bytes()
+        payload = companion_paths[kind].read_bytes()
         if _sha(payload) != row["sha256"]:
             raise ValueError("NEMAR companion differs from its actual declared bytes")
         companion[kind] = payload
@@ -284,6 +343,8 @@ def load_huebner_native_source(declaration):
             raise ValueError("raw BDF disagrees with actual channel/clock sidecars")
     finally:
         raw.close()
+    if _file_identity(path.stat()) != admitted_file_identity:
+        raise ValueError("original BDF file identity changed during header admission")
     onsets, join = join_nemar_events(marker, companion["events"], sample_rate_hz=SOURCE_SAMPLE_RATE_HZ)
     if np.any(onsets >= samples):
         raise ValueError("actual joined marker lies beyond original EEG observations")
@@ -291,7 +352,8 @@ def load_huebner_native_source(declaration):
         path, actual, names, marker, onsets, freeze_metadata({"status": "original_clock_joined",
         "native_sample_count": samples, "clock_join": join, "original_inputs": declaration,
         "native_clock": "record_local_NEMAR_sample", "source_reference": SOURCE_REFERENCE,
-        "native_signal_unit": "V", "acquisition_boundary": "independent_original_BDF_record"}))
+        "native_signal_unit": "V", "acquisition_boundary": "independent_original_BDF_record"}),
+        _admitted_file_identity=admitted_file_identity)
 
 
 def huebner_dataset_adapter(declarations):

@@ -704,6 +704,10 @@ class CalibrationPrefix:
         target = self.target_contract
         if target.get("authority_kind") == "record_aware_calibration_prefix/1":
             return self._validate_record_authority()
+        if (target.get("authority_kind") is not None or self.native_records
+                or {"record_scopes", "source_record_roster"}.intersection(target)
+                or {"record_scopes", "unavailable_records"}.intersection(self.label_use["raw"])):
+            raise ValueError("legacy prefix cannot authorize record-only numerical inputs or scopes")
         start, cutoff = target["raw_scope"]
         if type(self.budget) is not int or self.budget < 0 or start != 0:
             raise ValueError("prefix authorization requires a chronological nonnegative K")
@@ -1503,6 +1507,9 @@ class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
         for source in self.sources:
             if (source.channel_names,source.reference,source.sample_rate_hz) != (first.channel_names,self.reference,self.rate):
                 raise ValueError("original participant records have incompatible measured native layouts/reference/clock")
+            geometry = self._current_view(source, 0, read_samples=False)
+            for profile in self.profiles.values():
+                profile.validate_observation(geometry)
         self._history_ingress = {"dataset_id": adapter.dataset_id, "source_format": adapter.source_format,
             "record_sources": list(adapter.source_artifacts), "budgets": list(self.budgets),
             "profiles": [p.record() for p in self.profiles.values()],
