@@ -1,6 +1,7 @@
 """Original-record C/P/T permissions and prepared lookup; no fits or FFT."""
 import hashlib
 from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -106,3 +107,30 @@ def test_original_mat_history_uses_explicit_physical_mapping_and_preserves_legac
     physical = issuer.calibration_record_physical_map(prefix)
     assert physical["records"][original_c_id]["physical_record_id"] == cap.record_id
     assert physical["records"][original_c_id]["input_sha256"] == cap.binding["C_record_input_sha256"][original_c_id]
+
+
+def test_input_export_borrows_longest_real_record_master_for_short_history_and_long_c(tmp_path):
+    import json
+
+    import transfer.ensemble_views as owner
+    from research.prefix_replay_inputs import export_prepared_views
+
+    adapter, _ = _adapter()
+    processing = preprocessing_spec_from_contract(BRAIN_SYNC_BIDIRECTIONAL_DATA_CONTRACT)
+    issuer = RecordCalibrationPrefixCompiler(adapter, budgets=(0, 6), profiles=(),
+        authorization_preprocessing=processing, response_seconds=.2, pre_roll_seconds=.2)
+    views = issuer.independent_views()
+    short = issuer._current_view(adapter.recordings[0], 0)
+    cap = issuer.record_read_scope(short, prefix=views.calibration[0], conditioning_stop=1200)
+    assert len(cap.samples) == 1450 < len(views.calibration[6].calibration_records[0].samples)
+    request = {"schema": "n2p3_prefix_replay_input_request/1", "preparation_task_id": "actual-original-records",
+        "original_source_sha256": views.ledger["source_sha256"],
+        "producer_source_sha256": hashlib.sha256(Path(owner.__file__).read_bytes()).hexdigest(),
+        "participant_key": adapter.participant_key, "source_relative_path": "ordered_original_candidate_acquisitions",
+        "requested_Ks": [0, 6], "actual_Ks": [0, 6], "profiles": [],
+        "authorization_preprocessing": processing.record(), "observation_response_seconds": .2, "pre_roll_seconds": .2}
+    descriptor = export_prepared_views(views, (), tmp_path/"capsule", request, record_history_scopes=(cap,))
+    document = json.loads(Path(descriptor["path"]).read_bytes())
+    long_entry = document["arrays"][document["prefixes"]["6"]["native_records"][0]["samples"]["array"]]
+    short_entry = document["arrays"][document["record_history_scopes"][0]["samples"]["array"]]
+    assert long_entry["offset"] == short_entry["offset"] and long_entry["shape"][0] == 5450

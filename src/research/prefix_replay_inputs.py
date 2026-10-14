@@ -232,8 +232,8 @@ def export_prepared_views(views, profiles, directory, request, *, record_history
     compiler = views.prefix_compiler
     if compiler is None:
         raise ValueError("prepared prefix inputs require the original verified MAT compiler")
-    from transfer.ensemble_views import AuthorizedRecordPublicHistory, _record_history_key
-
+    if record_history_scopes:
+        from transfer.ensemble_views import AuthorizedRecordPublicHistory, _record_history_key
     for cap in record_history_scopes:
         if (not isinstance(cap, AuthorizedRecordPublicHistory)
                 or getattr(compiler, "_record_history_scopes", {}).get(_record_history_key(cap.binding)) is not cap
@@ -279,22 +279,24 @@ def export_prepared_views(views, profiles, directory, request, *, record_history
     blob_path = directory / "arrays.bin"
     with blob_path.open("xb") as stream:
         writer = _ArrayWriter(stream)
-        for cap in sorted(record_history_scopes, key=lambda c: len(c.samples), reverse=True):
+        candidates = {}
+        for cap in record_history_scopes:
             current = cap.binding["current_view"]
             key = current["source_sha256"], current["source_relative_path"]
-            if key not in writer.record_masters:
-                master = writer.array(cap.samples)
-                writer.record_masters[key] = cap.samples, master["array"]
+            if key not in candidates or len(cap.samples) > len(candidates[key]):
+                candidates[key] = cap.samples
         largest = prefixes[max(prefixes)]
         if largest.raw is not None:
             master = writer.array(largest.raw.samples)
             writer.raw_master, writer.raw_master_entry = largest.raw.samples, master["array"]
-        for native in largest.native_records:
+        for native in (largest.native_records if largest.target_contract.get("authority_kind") == "record_aware_calibration_prefix/1" else ()):
             scope = largest.target_contract["record_scopes"][native.record_id]
             key = scope["source_sha256"], scope["source_relative_path"]
-            if key not in writer.record_masters:
-                master = writer.array(native.samples)
-                writer.record_masters[key] = native.samples, master["array"]
+            if key not in candidates or len(native.samples) > len(candidates[key]):
+                candidates[key] = native.samples
+        for key, values in candidates.items():
+            master = writer.array(values)
+            writer.record_masters[key] = values, master["array"]
         records = {}
         for budget, prefix in sorted(prefixes.items()):
             raw = prefix.raw
@@ -314,7 +316,7 @@ def export_prepared_views(views, profiles, directory, request, *, record_history
                                     for group in prefix.complete_groups]}
             if hasattr(compiler, "calibration_record_physical_map"):
                 records[str(budget)]["physical_record_bindings"] = compiler.calibration_record_physical_map(prefix)
-            if prefix.native_records:
+            if prefix.target_contract.get("authority_kind") == "record_aware_calibration_prefix/1" and prefix.native_records:
                 records[str(budget)]["native_records"] = []
                 for raw in prefix.native_records:
                     scope = prefix.target_contract["record_scopes"][raw.record_id]
@@ -713,8 +715,8 @@ def _restore_views(document, reader):
                        for raw in prefix.calibration_records)):
             raise ValueError("prepared physical acquisition map differs from its original C inputs/issuer")
         compiler._physical_record_maps[int(key)] = freeze_metadata(mapping)
-    from transfer.ensemble_views import AuthorizedRecordPublicHistory, _record_history_key
-
+    if document.get("record_history_scopes"):
+        from transfer.ensemble_views import AuthorizedRecordPublicHistory, _record_history_key
     for original in document.get("record_history_scopes", ()):
         binding = original["binding"]
         matching = [prefix for prefix in prefixes.values()

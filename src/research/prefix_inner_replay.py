@@ -114,9 +114,11 @@ def actual_expert_fit_inputs(spec, data, raw_records, target, *, source_only=Fal
 
 
 def prefix_native_fit_inputs(prefix, expert_programs):
+    records = (prefix.native_records if prefix.target_contract.get("authority_kind") == "record_aware_calibration_prefix/1"
+               else (() if prefix.raw is None else (prefix.raw,)))
     return {spec.expert_id: actual_expert_fit_inputs(spec,
         prefix.trial_datasets.get(spec.profile.digest) if spec.family == "trial" else None,
-        prefix.calibration_records, prefix.target_contract, source_only=prefix.budget == 0)
+        records, prefix.target_contract, source_only=prefix.budget == 0)
         for spec in expert_programs}
 
 

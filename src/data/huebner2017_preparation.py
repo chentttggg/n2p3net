@@ -25,6 +25,7 @@ def huebner_candidate_plan(records, source_entry, *, budgets=(0, 200, 800, 2000)
     from data.contract import BRAIN_SYNC_BIDIRECTIONAL_DATA_CONTRACT
     from data.epochs import preprocessing_spec_from_contract
     from research.calibration_selection import transfer_scratch_prefix_plan
+    from transfer.calibration_candidates import waveform_lda_recipe
     from transfer.ensemble import EnsembleProgram
     from transfer.ensemble_fit import CalibrationExpertProgram
     from transfer.ensemble_views import SelectionEpochProfile
@@ -41,11 +42,13 @@ def huebner_candidate_plan(records, source_entry, *, budgets=(0, 200, 800, 2000)
         CalibrationExpertProgram("scratch", "trial", replace(source, name="scratch", initialization="scratch",
             input_statistics="target_prefix"), profile),
         CalibrationExpertProgram("xdawn", "trial", erp_target_recipe("xdawn_erp", bin_width=16, seed=seed),
-            replace(profile, preprocessing=replace(preprocessing, baseline_mode="mean_only"))))
+            replace(profile, preprocessing=replace(preprocessing, baseline_mode="mean_only"))),
+        CalibrationExpertProgram("waveform", "trial", waveform_lda_recipe(seed=seed), profile))
     mixtures = (EnsembleProgram.equal_weights("source_nn_fixed", ("NN",)),
         EnsembleProgram.equal_weights("scratch_nn_fixed", ("scratch",)),
         EnsembleProgram.equal_weights("source_nn_xdawn_fixed", ("NN", "xdawn")),
-        EnsembleProgram.equal_weights("scratch_nn_xdawn_fixed", ("scratch", "xdawn")))
+        EnsembleProgram.equal_weights("scratch_nn_xdawn_fixed", ("scratch", "xdawn")),
+        EnsembleProgram.equal_weights("waveform_control", ("waveform",)))
     plan = {"schema": "n2p3_candidate_ensemble_study/1", "dataset_id": "Huebner2017",
         "evaluation_design": "independent_prefix", "evidence_scope": evidence_scope,
         "records": list(records), "budgets": list(budgets), "seed_pairs": [[source_entry["source_seed"], seed]],
@@ -125,7 +128,8 @@ def write_huebner_original_manifest_declarations(manifest_path, output, *, evalu
     from data.huebner2017_candidate import _file_identity
 
     manifest_path = Path(manifest_path)
-    manifest = json.loads(manifest_path.read_bytes())
+    manifest_payload = manifest_path.read_bytes()
+    manifest = json.loads(manifest_payload)
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     participants, records = [], []
@@ -157,7 +161,7 @@ def write_huebner_original_manifest_declarations(manifest_path, output, *, evalu
             "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "subject": declaration["source_subject_id"]})
     roster = {"schema": "n2p3_Huebner_candidate_input_roster/2", "dataset_id": "Huebner2017",
         "original_metadata_manifest": {"path": str(manifest_path.resolve()),
-            "sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest()},
+            "sha256": hashlib.sha256(manifest_payload).hexdigest()},
         "evaluation_session_ids": list(evaluation_session_ids), "participant_declarations": participants,
         "record_statuses": records, "requested_last_session_characters": 13*9*7,
         "EEG_payload_hashes": sum(r["status"] == "original_marker_and_NEMAR_EEG_available" for r in records),
