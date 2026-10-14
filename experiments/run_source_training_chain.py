@@ -565,7 +565,11 @@ def _source_group_worker(arguments):
         from train.runtime import configure_spawned_worker_threads, cpu_thread_budget
 
         native_threads = plan.get("_native_threads_per_worker", 1)
-        configure_spawned_worker_threads(native_threads)
+        interop_threads = plan.get("_source_interop_threads_per_worker")
+        if interop_threads is None:
+            configure_spawned_worker_threads(native_threads)
+        else:
+            configure_spawned_worker_threads(native_threads, interop_threads=interop_threads)
         for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
             os.environ[name] = str(native_threads)
         os.environ["TORCHINDUCTOR_COMPILE_THREADS"] = "1"
@@ -815,6 +819,7 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
         HostMemoryAdmission,
         SourceInputAdmission,
         resolve_source_resources,
+        source_phase_resources,
         with_cloud_resource_floor,
     )
     from research.source_selection import resolve_source_program
@@ -910,7 +915,8 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
             phases = {phase: PhaseResources(phase, resources["native_threads_per_worker"],
                 resources["source_worker_memory_bytes"] if phase in {"source", "preparation"} else resources["target_worker_memory_bytes"],
                 resources["native_threads_per_worker"], device if phase != "preparation" else "cpu")
-                for phase in ("source", "preparation", "calibration")}
+                for phase in ("preparation", "calibration")}
+            phases["source"] = source_phase_resources(resources, device)
             consumers, consumer_tasks = {}, {}
             for declaration in declared_consumers:
                 index = group_by_outer[declaration["outer"]]
@@ -981,7 +987,8 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                     child = {**plan, "outer_folds": [outer], "source_layouts": [layout],
                         "_source_group": True, "_defer_outer_plans": True, "_phase_reserved": True,
                         "_memory_admission": memory_admission,
-                        "_native_threads_per_worker": resources["native_threads_per_worker"],
+                        "_native_threads_per_worker": phases["source"].native_threads,
+                        "_source_interop_threads_per_worker": phases["source"].interop_threads,
                         "_source_worker_memory_bytes": resources["source_worker_memory_bytes"],
                         "_source_input_admission": input_admission,
                         "_runtime_input_staging_gate": input_admission if input_admission.capacity else None,
@@ -997,6 +1004,7 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                     entry = report["groups"][index]
                     source_plans[group_ids[index]] = child
                     entry["resource_reservation"] = {"phase": "source", "cpu_threads": phases["source"].cpu_threads,
+                        "native_threads": phases["source"].native_threads, "interop_threads": phases["source"].interop_threads,
                         "memory_bytes": phases["source"].memory_bytes, "gpu_workers": int(str(device).startswith("cuda"))}
                     additions.append(CloudTask(group_ids[index], "experiments.run_source_training_chain:_source_group_worker",
                         (child, entry["directory"], device, stages), entry["directory"], phases["source"], dependencies))

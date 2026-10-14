@@ -951,7 +951,7 @@ class HostMemoryAdmission:
         self.target_limit = resources["target_workers"]
         self.cpu_budget = resources["cpu_budget"]
         self.gpu_worker_limit = resources["gpu_slots"]
-        self.native_threads = resources["native_threads_per_worker"]
+        self.source_cpu_threads = resources.get("source_cpu_threads_per_worker", resources["native_threads_per_worker"])
         self.source_limit = resources["source_workers"]
         self.gpu_backed = resources.get("gpu_backed_workers", True)
         self._ledger = manager.HostMemoryState(resources)
@@ -980,7 +980,7 @@ class HostMemoryAdmission:
     def source_group(self):
         reservation = None
         while reservation is None:
-            reservation = self.reserve_phase("source", cpu_threads=self.native_threads, memory_bytes=self.group_bytes,
+            reservation = self.reserve_phase("source", cpu_threads=self.source_cpu_threads, memory_bytes=self.group_bytes,
                 task_id=os.environ.get("N2P3_CLOUD_TASK_ID"))
             if reservation is None:
                 time.sleep(.05)
@@ -1062,6 +1062,17 @@ def with_cloud_resource_floor(plan, device):
     return {**plan, "cloud_resource_floor": floor}
 
 
+def source_phase_resources(resources, device):
+    """Bind the source worker's actual native/inter-op widths to its CPU claim."""
+    from research.cloud_execution import PhaseResources
+
+    native = resources.get("source_native_threads_per_worker", resources["native_threads_per_worker"])
+    interop = resources.get("source_interop_threads_per_worker")
+    cpu = resources.get("source_cpu_threads_per_worker", native)
+    return PhaseResources("source", cpu, resources["source_worker_memory_bytes"], native, str(device),
+                          interop_threads=interop)
+
+
 def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_device_bytes=None, free_host_bytes=None):
     import torch
 
@@ -1138,6 +1149,17 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
                 or target < floor["gpu_workers"] or groups < min(group_count, floor["gpu_workers"])):
             raise ValueError("resources cannot meet declared cloud CPU/GPU worker floor; do not silently serialize")
     native_threads = max(1, worker_cpu_budget // max(groups, target))
+    source_native = plan.get("source_native_threads_per_worker")
+    source_concurrency = min(groups, slots) if torch.device(device).type == "cuda" else groups
+    legacy_scope = (plan.get("resource_scope") in {"local_development", "software_correctness"}
+                    or plan.get("evidence_scope") == "software_correctness")
+    if source_native is None and torch.device(device).type == "cuda" and not legacy_scope:
+        source_native = worker_cpu_budget // source_concurrency - 1
+    if source_native is not None:
+        if type(source_native) is not int or source_native < 1:
+            raise ValueError("source native threads must be a positive integer with room for one inter-op thread")
+        if (source_native + 1) * source_concurrency > worker_cpu_budget:
+            raise ValueError("source native/inter-op claims cannot meet the declared source worker capacity")
     target_native = plan.get("target_native_threads_per_worker")
     if target_native is not None:
         if type(target_native) is not int or target_native < 1:
@@ -1163,4 +1185,6 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
             "host_memory_fraction": host_fraction, "shared_staging_memory_bytes": staging_bytes,
             "shared_staging_policy": staging_policy,
             "source_worker_memory_bytes": group_bytes, "target_worker_memory_bytes": target_bytes,
+            **({"source_native_threads_per_worker": source_native, "source_interop_threads_per_worker": 1,
+                "source_cpu_threads_per_worker": source_native + 1} if source_native is not None else {}),
             **({"target_native_threads_per_worker": target_native} if target_native is not None else {})}
