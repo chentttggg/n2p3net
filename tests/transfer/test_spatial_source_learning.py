@@ -519,22 +519,22 @@ def test_exact_structural_null_budget_fails_closed():
         _exact_structural_null((np.zeros((1000, 300)),), 10)
 
 
-def test_saved_structural_operator_and_null_certificate_cannot_be_resigned(tmp_path):
+def test_saved_structural_factor_and_null_certificate_cannot_be_resigned(tmp_path):
     posterior, _, _, _, _ = make_source()
     saved = posterior.record()
-    saved["structural_null_basis"] = [[[1, 1]]]
+    saved["structural_rowspace"] = [[[1, 1]]]
     saved["artifact_sha256"] = metadata_digest({key: item for key, item in saved.items()
                                                  if key != "artifact_sha256"})
     path = tmp_path / "bad-null.json"
     path.write_text(json.dumps(saved), encoding="utf-8")
-    with pytest.raises(ValueError, match="structural C null basis"):
+    with pytest.raises(ValueError, match="structural C row space"):
         SpatialSignalPosterior.from_record(saved)
     saved = posterior.record()
-    saved["structural_operators"][0][0][0] += 1.
+    saved["structural_factors"][0]["spatial_map"][0][0] = "2"
     saved["artifact_sha256"] = metadata_digest({key: item for key, item in saved.items()
                                                  if key != "artifact_sha256"})
     path.write_text(json.dumps(saved), encoding="utf-8")
-    with pytest.raises(ValueError, match="structural C identifiability binding"):
+    with pytest.raises(ValueError, match="physical C factors"):
         SpatialSignalPosterior.from_record(saved)
 
 

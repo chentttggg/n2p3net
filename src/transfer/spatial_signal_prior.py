@@ -12,11 +12,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from dataclasses import InitVar, dataclass, field, replace
 from fractions import Fraction
 from pathlib import Path
 
 import numpy as np
+import psutil
 from scipy.linalg import solve_triangular
 from scipy.optimize import nnls
 from scipy.special import logsumexp
@@ -35,7 +37,7 @@ from transfer.temporal_noise import TemporalNoise
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _PRIOR_SCHEMA = "n2p3_spatial_signal_prior/2"
-_POSTERIOR_SCHEMA = "n2p3_spatial_signal_posterior/5"
+_POSTERIOR_SCHEMA = "n2p3_spatial_signal_posterior/6"
 _OBSERVATION_SCHEMA = "n2p3_spatial_observation/3"
 _IDENTITY_RESOLUTION = float(np.sqrt(np.finfo(float).eps))
 _STRUCTURAL_MAX_SCALARS = 250_000
@@ -80,15 +82,15 @@ def _exact_structural_null(operators, width):
     """
     operators = tuple(operators)
     factorized = bool(operators) and all(isinstance(value, _SpatialStructuralFactors) for value in operators)
-    if not factorized:
-        operators = tuple(_matrix(value, "actual structural C operator") for value in operators)
+    if factorized:
+        return _factor_structural_null(operators, width)
+    operators = tuple(_matrix(value, "actual structural C operator") for value in operators)
     rows, columns, nuisance_width = _structural_dimensions(operators, width)
     matrix = []
     offset = width
     for operator in operators:
         local = operator.shape[1] - width
-        exact_rows = (operator.exact_rows() if factorized else
-                      (tuple(Fraction.from_float(float(value)) for value in row) for row in operator))
+        exact_rows = (tuple(Fraction.from_float(float(value)) for value in row) for row in operator)
         for row in exact_rows:
             values = list(row[:width])
             values.extend(Fraction(0) for _ in range(nuisance_width))
@@ -125,13 +127,139 @@ def _exact_structural_null(operators, width):
             basis.append(beta)
     return tuple(tuple(value for value in beta) for beta in basis), {
         "rows": rows, "columns": columns, "rank": rank, "nullity": len(free),
-        "beta_nullity": len(basis), "arithmetic": (
-            "exact_binary64_physical_factor_fraction_rref" if factorized else "exact_binary64_fraction_rref"),
+        "beta_nullity": len(basis), "arithmetic": "exact_binary64_fraction_rref",
     }
 
 
-def _structural_operator_digest(operators):
-    return array_digest(*(np.asarray(operator, dtype=np.float64) for operator in operators))
+class _ExactRowSpace:
+    """Streaming canonical rational row space, with actual host storage admission."""
+
+    def __init__(self, width):
+        self.width = width
+        self.rows = []
+        self.pivots = []
+        self.storage_budget = max(1, int(psutil.virtual_memory().available) // 4)
+        self.maximum_storage = 0
+
+    def _admit_storage(self, storage):
+        self.maximum_storage = max(self.maximum_storage, storage)
+        if storage > self.storage_budget:
+            raise SpatialPriorIdentificationError("structural_rowspace_host_memory_unresolved",
+                coefficient_columns=self.width, exact_basis_storage_bytes=storage,
+                available_host_storage_budget_bytes=self.storage_budget)
+
+    def add(self, values):
+        row = list(values)
+        if len(row) != self.width:
+            raise ValueError("exact row-space operands differ from their shared coefficient frame")
+        for pivot, existing in zip(self.pivots, self.rows, strict=True):
+            if row[pivot]:
+                scale = row[pivot]
+                row = [left - scale * right for left, right in zip(row, existing, strict=True)]
+        pivot = next((index for index, value in enumerate(row) if value), None)
+        if pivot is None:
+            return False
+        divisor = row[pivot]
+        row = [value / divisor for value in row]
+        position = sum(column < pivot for column in self.pivots)
+        for index, existing in enumerate(self.rows):
+            if existing[pivot]:
+                scale = existing[pivot]
+                self.rows[index] = [left - scale * right for left, right in zip(existing, row, strict=True)]
+        self.rows.insert(position, row)
+        self.pivots.insert(position, pivot)
+        storage = sum(sys.getsizeof(values) + sum(sys.getsizeof(value) + sys.getsizeof(value.numerator)
+            + sys.getsizeof(value.denominator) for value in values) for values in self.rows)
+        self._admit_storage(storage)
+        return True
+
+    def null(self):
+        result = []
+        free_columns = [index for index in range(self.width) if index not in self.pivots]
+        # Include the output certificate, including an all-zero row-space whose
+        # row storage was empty. Python list/tuple pointer size is host-specific.
+        pointer_size = sys.getsizeof([None]) - sys.getsizeof([])
+        minimum_output = len(free_columns) * (sys.getsizeof(()) + pointer_size * self.width)
+        self._admit_storage(self.maximum_storage + minimum_output)
+        row_storage, output_storage = self.maximum_storage - minimum_output, 0
+        for free in free_columns:
+            vector = [Fraction(0)] * self.width
+            vector[free] = Fraction(1)
+            for pivot, row in zip(self.pivots, self.rows, strict=True):
+                vector[pivot] = -row[free]
+            frozen = tuple(vector)
+            output_storage += sys.getsizeof(frozen) + sum(sys.getsizeof(value) + sys.getsizeof(value.numerator)
+                + sys.getsizeof(value.denominator) for value in frozen)
+            self._admit_storage(row_storage + output_storage)
+            result.append(frozen)
+        return tuple(result)
+
+
+def _temporal_structural_rowspace(design, nuisance):
+    """Joint [Z D] row-space, then exact elimination of this record's U only."""
+    nuisance_width = 0 if nuisance is None else nuisance.shape[1]
+    width = design.shape[1] + nuisance_width
+    space = _ExactRowSpace(width)
+    selected = []
+    processed = 0
+    for index, temporal in enumerate(design):
+        values = ([] if nuisance is None else list(nuisance[index])) + list(temporal)
+        row = tuple(Fraction.from_float(float(value)) for value in values)
+        processed += 1
+        if space.add(row):
+            selected.append(index)
+        if len(space.pivots) == width:
+            # An exact full-width basis spans EVERY other finite original row.
+            break
+    quotient = tuple(tuple(row[nuisance_width:]) for row in space.rows
+                     if not any(row[:nuisance_width]))
+    certificate = {"schema": "n2p3_spatial_temporal_rowspace/1", "original_rows": len(design),
+        "joint_columns": width, "joint_rank": len(space.pivots), "nuisance_rank": len(space.rows) - len(quotient),
+        "response_quotient_rank": len(quotient), "selected_original_rows": selected,
+        "rows_examined": processed, "full_column_span": len(space.pivots) == width,
+        "column_order": "record_local_nuisance_then_shared_temporal_response",
+        "joint_rref": [[str(value) for value in row] for row in space.rows],
+        "response_quotient": [[str(value) for value in row] for row in quotient]}
+    return quotient, freeze_metadata(certificate)
+
+
+def _factor_structural_rowspace(factors, width):
+    """Intersection of per-record beta kernels after exact independent-U elimination."""
+    space = _ExactRowSpace(width)
+    original_rows = compressed_rows = local_columns = 0
+    for factor in factors:
+        if factor.design.shape[1] * len(factor.observation.layout.channels) != width:
+            raise ValueError("physical C row spaces differ from shared response coefficient dimensions")
+        rank = len(factor.spatial_map)
+        original_rows += rank * len(factor.design)
+        compressed_rows += rank * len(factor.response_quotient)
+        local_columns += rank * (0 if factor.nuisance is None else factor.nuisance.shape[1])
+        # Full global span permits skipping only redundant structural arithmetic;
+        # every factor/source/QR has already been admitted by its immutable owner.
+        if len(space.pivots) == width:
+            continue
+        for spatial in factor.spatial_map:
+            for temporal in factor.response_quotient:
+                space.add(tuple(a * value for a in spatial for value in temporal))
+                if len(space.pivots) == width:
+                    break
+            if len(space.pivots) == width:
+                break
+    nullity = width - len(space.pivots)
+    return tuple(tuple(row) for row in space.rows), {"rows": original_rows, "compressed_beta_rows": compressed_rows,
+        "columns": width, "independent_local_nuisance_columns_eliminated": local_columns,
+        "rank": len(space.pivots), "pivot_columns": space.pivots,
+        "nullity": nullity, "beta_nullity": nullity,
+        "arithmetic": "exact_binary64_joint_temporal_rowspace_record_local_quotient_beta_fraction_rref"}
+
+
+def _factor_structural_null(factors, width):
+    """Explicit diagnostic null output; fitted owners retain the compact rows."""
+    rows, resolution = _factor_structural_rowspace(factors, width)
+    space = _ExactRowSpace(width)
+    for row in rows:
+        space.add(row)
+    return space.null(), resolution
 
 
 def _validate_source_learning_semantics(source):
@@ -1053,9 +1181,9 @@ class _SpatialCompression:
 class _SpatialStructuralFactors:
     """Original physical observation/D/Z factors for one actual C record.
 
-    The floating operator is a saved numerical-generation receipt. Structural
-    rank belongs to exact products of the original factors, not to that rounded
-    operator. Declared CAR uses its invertible exact EEG-difference chart.
+    Joint original [Z D] row-space eliminates each record's own nuisance.
+    Only the resulting exact temporal covectors enter the shared beta kernel;
+    numeric QR/noise generation still consumes the complete original operands.
     """
 
     observation: SpatialObservation
@@ -1063,6 +1191,8 @@ class _SpatialStructuralFactors:
     nuisance: np.ndarray | None = field(default=None, repr=False, compare=False)
     compression: _SpatialCompression | None = field(default=None, repr=False, compare=False)
     spatial_map: tuple[tuple[Fraction, ...], ...] = field(init=False, repr=False, compare=False)
+    response_quotient: tuple[tuple[Fraction, ...], ...] = field(init=False, repr=False, compare=False)
+    temporal_rowspace: dict = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
         if not isinstance(self.observation, SpatialObservation):
@@ -1081,6 +1211,9 @@ class _SpatialStructuralFactors:
         object.__setattr__(self, "design", _immutable_array(design))
         object.__setattr__(self, "nuisance", nuisance)
         object.__setattr__(self, "spatial_map", exact)
+        quotient, certificate = _temporal_structural_rowspace(design, nuisance)
+        object.__setattr__(self, "response_quotient", quotient)
+        object.__setattr__(self, "temporal_rowspace", certificate)
 
     @property
     def observation_coordinates(self):
@@ -1095,33 +1228,15 @@ class _SpatialStructuralFactors:
         return (rank * len(self.design),
                 self.design.shape[1] * len(self.observation.layout.channels) + rank * nuisance_width)
 
-    def exact_rows(self):
-        design = tuple(tuple(Fraction.from_float(float(value)) for value in row) for row in self.design)
-        nuisance = (() if self.nuisance is None else
-                    tuple(tuple(Fraction.from_float(float(value)) for value in row) for row in self.nuisance))
-        nuisance_width = 0 if self.nuisance is None else self.nuisance.shape[1]
-        for output, spatial_row in enumerate(self.spatial_map):
-            for time, temporal_row in enumerate(design):
-                beta = tuple(a * value for a in spatial_row for value in temporal_row)
-                local = [Fraction(0)] * (len(self.spatial_map) * nuisance_width)
-                if nuisance_width:
-                    local[output * nuisance_width:(output + 1) * nuisance_width] = nuisance[time]
-                yield (*beta, *local)
-
-    def numerical_operator(self):
-        mapping = self.observation._structural_matrix()
-        operator = np.kron(mapping, self.design)
-        return (np.column_stack((operator, np.kron(np.eye(len(mapping)), self.nuisance)))
-                if self.nuisance is not None else operator)
-
     def record(self):
-        payload = {"schema": "n2p3_spatial_physical_C_factors/1",
+        payload = {"schema": "n2p3_spatial_physical_C_factors/2",
             "observation_sha256": metadata_digest(self.observation.record()),
             "observation_coordinates": self.observation_coordinates,
             "spatial_map": [[str(value) for value in row] for row in self.spatial_map],
             "design": self.design.tolist(),
             "nuisance": None if self.nuisance is None else self.nuisance.tolist(),
             "source_compression": None if self.compression is None else self.compression.record(),
+            "temporal_rowspace": json.loads(json.dumps(self.temporal_rowspace)),
             "coefficient_order": "column_major_response_by_native_EEG",
             "nuisance_order": "record_local_column_major_response_by_observed_coordinate"}
         return {**payload, "artifact_sha256": metadata_digest(payload)}
@@ -1208,8 +1323,7 @@ class SpatialSignalPosterior:
     responses: tuple[np.ndarray, ...] = field(repr=False, compare=False)
     fit_records: tuple[dict, ...]
     noise_binding: dict
-    structural_operators: tuple[np.ndarray, ...] = field(repr=False, compare=False, default=())
-    structural_null_basis: tuple[tuple[Fraction, ...], ...] = field(repr=False, compare=False, default=())
+    structural_rowspace: tuple[tuple[Fraction, ...], ...] = field(repr=False, compare=False, default=())
     structural_binding: dict = field(default_factory=dict)
     structural_factors: tuple[_SpatialStructuralFactors, ...] = field(repr=False, compare=False, default=())
     restore_state: InitVar[dict | None] = None
@@ -1266,14 +1380,10 @@ class SpatialSignalPosterior:
             by_source.setdefault(source, []).append(tuple(support))
         if not isinstance(self.noise_binding, dict):
             raise ValueError("posterior needs actual fitted noise provenance")
-        operators = tuple(_matrix(operator, "saved structural C operator") for operator in self.structural_operators)
-        if len(operators) != len(roots):
-            raise ValueError("posterior needs one structural C numerical receipt per actual fit record")
         factors = tuple(self.structural_factors)
         if len(factors) != len(roots) or any(not isinstance(factor, _SpatialStructuralFactors) for factor in factors):
             raise ValueError("posterior needs original physical C factors for every actual fit record")
-        _structural_dimensions(factors, width)
-        for factor, operator, record, root in zip(factors, operators, self.fit_records, roots, strict=True):
+        for factor, record, root in zip(factors, self.fit_records, roots, strict=True):
             observed = factor.observation
             nuisance_width = 0 if factor.nuisance is None else factor.nuisance.shape[1]
             if (metadata_digest(observed.record()) != metadata_digest(record["observation"])
@@ -1281,18 +1391,16 @@ class SpatialSignalPosterior:
                     or factor.design.shape[1] != self.prior.mean.shape[0]
                     or nuisance_width != record["nuisance_dimensions"]
                     or root.shape != (len(factor.spatial_map) * min(factor.design.shape), width)
-                    or record["compression"]["physical_structural_factors_sha256"] != factor.record()["artifact_sha256"]
-                    or not np.array_equal(operator, factor.numerical_operator())):
+                    or record["compression"]["physical_structural_factors_sha256"] != factor.record()["artifact_sha256"]):
                 raise ValueError("saved structural C identifiability binding differs from its physical factor generation")
-        null_basis, structural_resolution = _exact_structural_null(factors, width)
-        saved_basis = tuple(tuple(Fraction(value) for value in vector) for vector in self.structural_null_basis)
-        if saved_basis != null_basis:
-            raise ValueError("saved structural C null basis differs from its exact actual design relation")
+        rowspace, structural_resolution = _factor_structural_rowspace(factors, width)
+        saved_space = tuple(tuple(Fraction(value) for value in vector) for vector in self.structural_rowspace)
+        if saved_space != rowspace:
+            raise ValueError("saved structural C row space differs from its exact actual design relation")
         if (not isinstance(self.structural_binding, dict)
-                or self.structural_binding.get("operator_sha256") != _structural_operator_digest(operators)
                 or self.structural_binding.get("factors_sha256") != metadata_digest([factor.record() for factor in factors])
-                or self.structural_binding.get("arithmetic") != "exact_binary64_physical_factor_fraction_rref"
-                or self.structural_binding.get("resolution") != structural_resolution
+                or self.structural_binding.get("arithmetic") != "exact_binary64_joint_temporal_rowspace_record_local_quotient_beta_fraction_rref"
+                or metadata_digest(self.structural_binding.get("resolution")) != metadata_digest(structural_resolution)
                 or tuple(self.structural_binding.get("observation_coordinates", ())) != tuple(
                     factor.observation_coordinates for factor in factors)):
             raise ValueError("saved structural C identifiability binding differs from actual operators")
@@ -1331,8 +1439,7 @@ class SpatialSignalPosterior:
             object.__setattr__(self, name, frozen_array(value))
         object.__setattr__(self, "information_roots", tuple(roots))
         object.__setattr__(self, "responses", tuple(responses))
-        object.__setattr__(self, "structural_operators", tuple(frozen_array(operator) for operator in operators))
-        object.__setattr__(self, "structural_null_basis", null_basis)
+        object.__setattr__(self, "structural_rowspace", rowspace)
         object.__setattr__(self, "structural_binding", freeze_metadata(self.structural_binding))
         object.__setattr__(self, "structural_factors", factors)
         object.__setattr__(self, "fit_records", tuple(freeze_metadata(r) for r in self.fit_records))
@@ -1342,7 +1449,6 @@ class SpatialSignalPosterior:
     def fit(cls, prior, blocks, *, native_noise_covariance, noise_binding):
         noise, native_root = _spd(native_noise_covariance, "native residual noise")
         blocks = tuple(blocks)
-        prepared_factors = []
         for block in blocks:
             if (not isinstance(block, SpatialResponseBlock)
                     or block.authorization["fit_scope"] not in {"target_calibration", "source_training"}
@@ -1350,16 +1456,12 @@ class SpatialSignalPosterior:
                     or block.design.shape[1] != prior.mean.shape[0]
                     or block.authorization["dictionary_sha256"] != prior.design_binding["dictionary_sha256"]):
                 raise ValueError("C actual input differs from the bound spatial signal prior")
-            prepared_factors.append(_SpatialStructuralFactors(block.observation, block.design, block.nuisance))
-        # Admit the actual shared/local dimensions before constructing any dense
-        # structural Kronecker matrix or the original compression QR witnesses.
-        _structural_dimensions(prepared_factors, prior.mean.size)
-        roots, responses, records, structural_operators, structural_factors = [], [], [], [], []
-        for block, prepared in zip(blocks, prepared_factors, strict=True):
+        roots, responses, records, structural_factors = [], [], [], []
+        for block in blocks:
             root, response, *_, compression = block._compressed(noise, native_root, return_factors=True)
             roots.append(root)
             responses.append(response)
-            factors = replace(prepared, compression=compression)
+            factors = _SpatialStructuralFactors(block.observation, block.design, block.nuisance, compression)
             structural_factors.append(factors)
             record = block.record()
             record["compression"] = {"native_noise_sha256": array_digest(noise),
@@ -1368,14 +1470,21 @@ class SpatialSignalPosterior:
                                      "physical_structural_factors_sha256": factors.record()["artifact_sha256"],
                                      "likelihood_sha256": array_digest(root, response)}
             records.append(record)
-            structural_operators.append(factors.numerical_operator())
-        null_basis, structural_resolution = _exact_structural_null(structural_factors, prior.mean.size)
-        structural_binding = {"operator_sha256": _structural_operator_digest(structural_operators),
-            "factors_sha256": metadata_digest([factor.record() for factor in structural_factors]),
-            "arithmetic": "exact_binary64_physical_factor_fraction_rref", "resolution": structural_resolution,
+        rowspace, structural_resolution = _factor_structural_rowspace(structural_factors, prior.mean.size)
+        structural_binding = {"factors_sha256": metadata_digest([factor.record() for factor in structural_factors]),
+            "arithmetic": "exact_binary64_joint_temporal_rowspace_record_local_quotient_beta_fraction_rref",
+            "resolution": structural_resolution,
             "observation_coordinates": [factor.observation_coordinates for factor in structural_factors]}
         return cls(prior, noise, tuple(roots), tuple(responses), tuple(records), noise_binding,
-                   tuple(structural_operators), null_basis, structural_binding, tuple(structural_factors))
+                   rowspace, structural_binding, tuple(structural_factors))
+
+    @property
+    def structural_null_basis(self):
+        """Explicit diagnostics only; scoring and persistence use compact rows."""
+        space = _ExactRowSpace(self.prior.mean.size)
+        for row in self.structural_rowspace:
+            space.add(row)
+        return space.null()
 
     def log_density(self, block):
         """Exact predictive likelihood on actual spatial range.
@@ -1435,10 +1544,9 @@ class SpatialSignalPosterior:
                  "information_roots": [root.tolist() for root in self.information_roots],
                  "responses": [response.tolist() for response in self.responses],
                  "fit_records": json.loads(json.dumps(self.fit_records)),
-                 "structural_operators": [operator.tolist() for operator in self.structural_operators],
                  "structural_factors": [factor.record() for factor in self.structural_factors],
-                 "structural_null_basis": [[[value.numerator, value.denominator] for value in vector]
-                                            for vector in self.structural_null_basis],
+                 "structural_rowspace": [[[value.numerator, value.denominator] for value in vector]
+                                           for vector in self.structural_rowspace],
                  "structural_binding": json.loads(json.dumps(self.structural_binding)),
                  "mean": self.mean.tolist(), "covariance": self.covariance.tolist(),
                  "precision_root": self.precision_root.tolist(), "response": self.response.tolist(),
@@ -1471,14 +1579,14 @@ class SpatialSignalPosterior:
                        "native_noise_root")
         state = {name: payload[name] for name in state_names}
         structural_basis = tuple(tuple(Fraction(numerator, denominator) for numerator, denominator in vector)
-                                 for vector in payload["structural_null_basis"])
+                                 for vector in payload["structural_rowspace"])
         structural_factors = tuple(_SpatialStructuralFactors.from_record(factor,
             observation=SpatialObservation.from_record(record["observation"]))
             for factor, record in zip(payload["structural_factors"], payload["fit_records"], strict=True))
         model = cls(SpatialSignalPrior.from_record(payload["prior"]), payload["native_noise_covariance"],
                     tuple(payload["information_roots"]), tuple(payload["responses"]),
                     tuple(payload["fit_records"]), payload["noise_binding"],
-                    tuple(payload["structural_operators"]), structural_basis,
+                    structural_basis,
                     payload["structural_binding"], structural_factors, restore_state=state)
         if payload["numeric_sha256"] != array_digest(model.mean, model.covariance, model.native_noise_covariance,
             model.precision_root, model.response, model.orthogonal_factor, model.qr_column_scales, model.native_noise_root):
@@ -1758,20 +1866,19 @@ def _effect_measurement(posterior, effect, dependence, *, physical_transport=Non
                 or metadata_digest(physical_transport.local_effect.record()) != metadata_digest(effect.record())):
             raise ValueError("effect structural transport differs from its owned local functional")
         structural_functional = physical_transport.local_structural_functional
-    structural_witness = []
-    for basis in posterior.structural_null_basis:
-        witness = []
-        for row in structural_functional:
-            value = sum((coefficient * coefficient_null
-                         for coefficient, coefficient_null in zip(row, basis, strict=True)), Fraction(0))
-            witness.append(value)
-        structural_witness.append(witness)
-    nonzero = [(index, row_index, value) for index, witness in enumerate(structural_witness)
-               for row_index, value in enumerate(witness) if value]
+    nonzero = []
+    pivots = posterior.structural_binding["resolution"]["pivot_columns"]
+    for row_index, functional_row in enumerate(structural_functional):
+        remainder = list(functional_row)
+        for pivot, basis in zip(pivots, posterior.structural_rowspace, strict=True):
+            if remainder[pivot]:
+                scale = remainder[pivot]
+                remainder = [left - scale * right for left, right in zip(remainder, basis, strict=True)]
+        nonzero.extend((row_index, column, value) for column, value in enumerate(remainder) if value)
     if nonzero:
         raise SpatialPriorIdentificationError("physical_effect_not_identified_by_structural_C",
-            structural_null_witness=[{ "basis_index": index, "effect_row": row, "exact_value": str(value)}
-                                     for index, row, value in nonzero],
+            structural_rowspace_remainder=[{"effect_row": row, "coefficient_column": column, "exact_value": str(value)}
+                                          for row, column, value in nonzero],
             structural_resolution=posterior.structural_binding["resolution"])
     x = np.vstack(posterior.information_roots)
     y = np.concatenate(posterior.responses)
@@ -1834,7 +1941,7 @@ def _effect_measurement(posterior, effect, dependence, *, physical_transport=Non
     return mean, factor, {"joint_rank": rank, "coefficient_dimensions": x.shape[1],
         "functional_relative_null": relative_outside.tolist(), "singular_values": singular.tolist(),
         "functional_relative_error_bound": relative_bound.tolist(),
-        "structural_null_basis_count": len(posterior.structural_null_basis),
+        "structural_null_basis_count": posterior.structural_binding["resolution"]["beta_nullity"],
         "resolution_threshold": float(threshold), "prior_information_used": False,
         "method": "joint_owned_likelihood_thin_QR_componentwise_physical_F_equals_WX"}
 

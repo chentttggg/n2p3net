@@ -20,6 +20,7 @@ from transfer.spatial_signal_prior import (
     SpatialSignalPosterior,
     SpatialSignalPrior,
     _exact_structural_null,
+    _factor_structural_rowspace,
     _SpatialCompression,
     _SpatialStructuralFactors,
 )
@@ -91,14 +92,19 @@ def test_original_factor_kernel_and_generic_blue_match_physical_oracle(tmp_path)
     # One observed covector on four EEG: three lost spatial directions for
     # each of the four response coordinates, despite rounded-kron remnants.
     assert len(posterior.structural_null_basis) == 12
-    assert posterior.structural_binding["arithmetic"] == "exact_binary64_physical_factor_fraction_rref"
-    rounded_basis, _ = _exact_structural_null(posterior.structural_operators, posterior.prior.mean.size)
+    assert posterior.structural_binding["arithmetic"] == "exact_binary64_joint_temporal_rowspace_record_local_quotient_beta_fraction_rref"
+    rounded_operators = []
+    for block in inputs[5]:
+        mapping = block.observation._structural_matrix()
+        rounded_operators.append(np.column_stack((np.kron(mapping, block.design),
+                                                  np.kron(np.eye(len(mapping)), block.nuisance))))
+    rounded_basis, _ = _exact_structural_null(rounded_operators, posterior.prior.mean.size)
     assert len(rounded_basis) == 0
     null = np.zeros(16)
     null[:4], null[4:8] = 3., -1.
     assert any(sum((Fraction.from_float(float(a)) * Fraction.from_float(float(b))
                     for a, b in zip(row, null, strict=True)), Fraction(0))
-               for row in posterior.structural_operators[0][:, :16])
+               for row in rounded_operators[0][:, :16])
     measured = direct(inputs)
     # Independent oracle from the original observed records, not saved QR.
     designs, samples = [], []
@@ -181,21 +187,19 @@ def test_resigned_original_factor_cannot_use_another_compressed_likelihood(field
     saved = copy.deepcopy(posterior.record())
     factors = saved["structural_factors"]
     factors[0][field][0][0] += .25
-    factors[0]["artifact_sha256"] = metadata_digest({key: value for key, value in factors[0].items()
-                                                    if key != "artifact_sha256"})
     observation = SpatialObservation.from_record(saved["fit_records"][0]["observation"])
-    updated = _SpatialStructuralFactors.from_record(factors[0], observation=observation)
-    saved["structural_operators"][0] = updated.numerical_operator().tolist()
+    changed = _SpatialStructuralFactors(observation, factors[0]["design"], factors[0]["nuisance"],
+        _SpatialCompression.from_record(factors[0]["source_compression"]))
+    factors[0] = changed.record()
     saved["fit_records"][0]["compression"]["physical_structural_factors_sha256"] = factors[0]["artifact_sha256"]
-    saved["structural_binding"]["operator_sha256"] = array_digest(*(np.asarray(value) for value in saved["structural_operators"]))
     saved["structural_binding"]["factors_sha256"] = metadata_digest(factors)
     # Keep the original producer's likelihood/QR state. Recompute the exact
     # factor certificate so the failure reaches the missing source-law join.
     all_factors = tuple(_SpatialStructuralFactors.from_record(factor,
         observation=SpatialObservation.from_record(record["observation"]))
         for factor, record in zip(factors, saved["fit_records"], strict=True))
-    basis, resolution = _exact_structural_null(all_factors, posterior.prior.mean.size)
-    saved["structural_null_basis"] = [[[value.numerator, value.denominator] for value in vector] for vector in basis]
+    basis, resolution = _factor_structural_rowspace(all_factors, posterior.prior.mean.size)
+    saved["structural_rowspace"] = [[[value.numerator, value.denominator] for value in vector] for vector in basis]
     saved["structural_binding"]["resolution"] = resolution
     saved["fit_sha256"] = metadata_digest(saved["fit_records"])
     saved["artifact_sha256"] = metadata_digest({key: value for key, value in saved.items() if key != "artifact_sha256"})
