@@ -152,6 +152,8 @@ class _SourceMetadataAdmission:
             source._storage_scope = scope
             self._sources[key] = source
             self.source_admissions += 1
+        if len(source.content) != reference["checkpoint_bytes"]:
+            raise ValueError("original source authority bytes or size changed")
         if (source._storage_scope != scope
                 or source.metadata["training_contract_digest"] != reference["training_contract_digest"]):
             raise ValueError("source reference changed its original contract or consumer scope")
@@ -234,13 +236,15 @@ def compact_source_semantics(record):
     return record
 
 
-def expand_source_semantics(record, admission):
+def expand_source_semantics(record, admission, *, require_references=False):
     if isinstance(record, dict):
-        result = {name: expand_source_semantics(value, admission) for name, value in record.items()}
+        result = {name: expand_source_semantics(value, admission, require_references=require_references)
+                  for name, value in record.items()}
         if "probability_semantics" in record:
             wrapper = {"class_calibration": record["probability_semantics"]}
             reference = source_contract_reference_in(wrapper)
-            if "source_contract_reference" in record and reference is None:
+            if ("source_contract_reference" in record or require_references
+                    and record["probability_semantics"].get("origin") == "source_mixture") and reference is None:
                 raise ValueError("source probability origin lost its explicit storage dependency")
             if reference is not None:
                 if record.get("source_contract_reference") != reference:
@@ -248,5 +252,5 @@ def expand_source_semantics(record, admission):
                 result["probability_semantics"] = expand_source_record(wrapper, admission)["class_calibration"]
         return result
     if isinstance(record, list):
-        return [expand_source_semantics(value, admission) for value in record]
+        return [expand_source_semantics(value, admission, require_references=require_references) for value in record]
     return record

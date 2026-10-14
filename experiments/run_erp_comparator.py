@@ -100,7 +100,8 @@ def _load_binary_report(path, admission):
     report = json.loads(Path(path).read_bytes())
     if report["schema"] not in {"n2p3_erp_comparator_result/2", "n2p3_erp_comparator_result/3"}:
         raise ValueError("unsupported binary scientific report schema")
-    return expand_source_semantics(report, admission)
+    return expand_source_semantics(report, admission,
+        require_references=report["schema"] == "n2p3_erp_comparator_result/3")
 
 
 def _resolve(plan_path, value):

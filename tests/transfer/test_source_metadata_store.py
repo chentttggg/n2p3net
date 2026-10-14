@@ -159,6 +159,44 @@ def test_source_reference_cannot_relabel_original_participant_or_drop_dependency
     assert hashlib.sha256(next(store.directory.glob("*.pt")).read_bytes()).hexdigest() == predictor.source_contract_reference["checkpoint_sha256"]
 
 
+def test_same_transaction_sibling_source_reference_requires_original_byte_size(tmp_path):
+    _, content, _, prepared = _source(tmp_path)
+    predictor = FrozenTrialPredictor.from_source(prepared, "p1")
+    store = SourceMetadataStore(tmp_path / "shared")
+    store.publish(content)
+    original = plain_metadata(predictor.source_contract_reference)
+    ingress = _SourceMetadataAdmission(store=store)
+    ingress.resolve(original)
+    changed = copy.deepcopy(original)
+    changed["checkpoint_bytes"] += 1
+    with pytest.raises(ValueError, match="bytes or size"):
+        ingress.resolve(changed)
+    assert ingress.source_admissions == 1
+
+
+def test_public_report_source_schema_requires_reference_and_keeps_legacy_full_values(tmp_path):
+    from experiments.run_erp_comparator import load_binary_report
+
+    _, content, _, prepared = _source(tmp_path)
+    predictor = FrozenTrialPredictor.from_source(prepared, "p1")
+    store = SourceMetadataStore(tmp_path / "shared")
+    store.publish(content)
+    legacy = {"schema": "n2p3_erp_comparator_result/2", "cells": [{
+        "probability_semantics": plain_metadata(predictor.record["class_calibration"])}]}
+    path = tmp_path / "report.json"
+    path.write_text(json.dumps(legacy), encoding="utf-8")
+    assert load_binary_report(path) == legacy
+    changed = {**legacy, "schema": "n2p3_erp_comparator_result/3"}
+    path.write_text(json.dumps(changed), encoding="utf-8")
+    with pytest.raises(ValueError, match="explicit storage dependency"):
+        load_binary_report(path, metadata_store=store)
+    legal = {"schema": changed["schema"], "cells": [{
+        "probability_semantics": predictor.record["class_calibration"],
+        "source_contract_reference": predictor.source_contract_reference}]}
+    path.write_text(json.dumps(compact_source_semantics(legal)), encoding="utf-8")
+    assert semantic_sha256(load_binary_report(path, metadata_store=store)) == semantic_sha256(legal)
+
+
 def test_binary_actual_serial_save_replay_parent_and_pool_share_source(tmp_path):
     from data.epochs import load_epoch_dataset
     from data.source_records import prepare_source_record_prefixes
