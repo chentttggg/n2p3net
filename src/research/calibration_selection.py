@@ -43,7 +43,7 @@ from transfer.ensemble_views import (
 )
 from transfer.noise_model import freeze_metadata
 from transfer.outcomes import CandidateCoverage, DecisionKey
-from transfer.pool_calibration import POOL_STRATEGY
+from transfer.pool_calibration import POOL_STRATEGIES, POOL_STRATEGY, TEMPERATURE_POOL_STRATEGY
 
 
 @dataclass(frozen=True)
@@ -60,11 +60,11 @@ class CalibrationProgramCandidate:
             raise ValueError("calibration candidate needs an exact name")
         if tuple(spec.expert_id for spec in self.expert_programs) != self.ensemble_program.expert_ids:
             raise ValueError("candidate specs must match its complete frozen ensemble roster")
-        if self.strategy not in {"fixed", "grouped_temperature", POOL_STRATEGY}:
+        if self.strategy not in {"fixed", "grouped_temperature"} | POOL_STRATEGIES:
             raise ValueError("nested selection supports declared fixed/grouped-temperature programs only")
         if self.temperature_expert_ids is not None:
             selected = tuple(self.temperature_expert_ids)
-            if (self.strategy != "grouped_temperature" or not selected or len(set(selected)) != len(selected)
+            if (self.strategy not in {"grouped_temperature", TEMPERATURE_POOL_STRATEGY} or not selected or len(set(selected)) != len(selected)
                     or not set(selected) <= set(self.ensemble_program.expert_ids)):
                 raise ValueError("temperature subset must be explicit within the grouped candidate roster")
             object.__setattr__(self, "temperature_expert_ids", selected)
@@ -124,6 +124,16 @@ def transfer_scratch_prefix_plan(plan, *, source_expert_id, scratch_expert_id, x
         "baseline_name": baseline_name, "minimum_selection_rows": minimum_selection_rows,
         "candidates": [candidate.record() for candidate in candidates]}
     return derived
+
+
+def _check_candidate_temperature_subset(candidate, temperature_record):
+    """Join the declared learner subset to the actual saved temperature state."""
+    if candidate.strategy in {"grouped_temperature", TEMPERATURE_POOL_STRATEGY}:
+        actual = tuple(temperature_record.get("temperature_expert_ids", candidate.ensemble_program.expert_ids))
+        declared = (candidate.ensemble_program.expert_ids if candidate.temperature_expert_ids is None
+                    else candidate.temperature_expert_ids)
+        if actual != declared:
+            raise ValueError("selected temperature subset differs from the actual fitted programme")
 
 
 def _scope(groups):
@@ -194,12 +204,12 @@ class _SubsetFits:
             return fitted, key
         self.fit_calls += 1
         try:
-            if candidate.strategy in {"grouped_temperature", POOL_STRATEGY} and len(groups) < (
-                    2 if candidate.strategy == POOL_STRATEGY else 3):
+            required = (4 if candidate.strategy == TEMPERATURE_POOL_STRATEGY else
+                        2 if candidate.strategy == POOL_STRATEGY else 3)
+            if candidate.strategy in ({"grouped_temperature"} | POOL_STRATEGIES) and len(groups) < required:
                 raise ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
-                    stage="nested_pool_probability" if candidate.strategy == POOL_STRATEGY else "nested_temperature",
-                    detail="fewer than two complete pool OOF groups" if candidate.strategy == POOL_STRATEGY
-                        else "fewer than three complete training groups")
+                    stage="nested_pool_probability" if candidate.strategy in POOL_STRATEGIES else "nested_temperature",
+                    detail=f"fewer than {required} complete training groups")
             producer_context = {**self.producer_context, "candidate_name": candidate.name,
                                 "candidate_record": candidate.record()}
             fitted = fit_calibration_ensemble(groups, candidate.expert_programs, candidate.ensemble_program,
@@ -317,11 +327,7 @@ class FittedCalibrationSelection:
                 or selected.strategy != final.probability_strategy
                 or [spec.record() for spec in selected.expert_programs] != [expert.program.record() for expert in final._experts]):
             raise ValueError("selected declaration differs from the actual final fitted programme")
-        if selected.strategy == "grouped_temperature" and tuple(final.temperature_record.get(
-            "temperature_expert_ids", final.scorer.program.expert_ids)) != (
-                selected.ensemble_program.expert_ids if selected.temperature_expert_ids is None
-                else selected.temperature_expert_ids):
-            raise ValueError("selected temperature subset differs from the actual final programme")
+        _check_candidate_temperature_subset(selected, final.temperature_record)
         fit_inputs = scope["group_records"]
         if (final.participant_key != self.record["participant_key"]
                 or semantic_sha256(final.fit_receipts) != semantic_sha256([group["view"] for group in fit_inputs])
@@ -512,7 +518,8 @@ def _prefix_selection_scope(prefix):
 
 def _prefix_common_training_groups(candidates):
     """Structural schedule from declared learners, never observed success."""
-    return max(2 if candidate.strategy == POOL_STRATEGY else 3 if candidate.strategy == "grouped_temperature" else
+    return max(4 if candidate.strategy == TEMPERATURE_POOL_STRATEGY else
+        2 if candidate.strategy == POOL_STRATEGY else 3 if candidate.strategy == "grouped_temperature" else
         0 if all(spec.family == "trial" and spec.recipe.initialization == "source"
                  for spec in candidate.expert_programs) else 1 for candidate in candidates)
 
@@ -584,6 +591,8 @@ class FittedPrefixSelection:
                 or final.probability_strategy != selected.strategy
                 or semantic_sha256(_final_identity(final)) != record["final_producer_sha256"]):
             raise ValueError("nested prefix actual final numerical programme changed")
+        if isinstance(final, FittedEnsemble):
+            _check_candidate_temperature_subset(selected, final.temperature_record)
 
     @property
     def record(self):

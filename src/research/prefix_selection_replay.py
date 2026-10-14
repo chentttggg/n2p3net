@@ -10,6 +10,7 @@ from models.candidate_evidence import CandidateEvidence
 from research.calibration_selection import (
     CalibrationProgramCandidate,
     FittedPrefixSelection,
+    _check_candidate_temperature_subset,
     _metrics,
     _prefix_common_training_groups,
     select_calibration_candidate,
@@ -91,6 +92,9 @@ def _audit_graph(graph, node_records):
                 or semantic_sha256(record["ensemble_program"]) != candidate.ensemble_program.digest()
                 or set(record["programs"]) != {candidate.strategy}):
             raise ValueError("nested prefix actual node differs from declared programme/scope")
+        programme = record["programs"][candidate.strategy]
+        if programme["status"] == "completed":
+            _check_candidate_temperature_subset(candidate, programme["temperature_calibration"])
         for use in node["uses"]:
             for key in ("outer_held_record_id", "selection_held_record_id"):
                 if use.get(key) is not None:
@@ -376,6 +380,9 @@ def _replay_selection_node(envelope, *, directory, parent_prefix, prefix_compile
             or set(record["programs"]) != {candidate.strategy}
             or record["fit_context"].get("requested_decision_ids") != [view.record_id for view in views]):
         raise ValueError("selection node request differs from its original producer declaration")
+    programme = record["programs"][candidate.strategy]
+    if programme["status"] == "completed":
+        _check_candidate_temperature_subset(candidate, programme["temperature_calibration"])
     # Captured device remains a fit identity. Loaded predictors replay on CPU;
     # passing device='cpu' would incorrectly rebind a historical CUDA fit.
     result = package.replay(prefix=current, future_views=views, source_checkpoints=sources,

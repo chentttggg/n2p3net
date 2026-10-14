@@ -16,6 +16,8 @@ from scipy.special import logsumexp
 POOL_CALIBRATION_SCHEMA = "n2p3_pool_uniform_contamination/1"
 POOL_OOF_SCHEMA = "n2p3_complete_pool_probability_oof/1"
 POOL_STRATEGY = "grouped_uniform_contamination"
+TEMPERATURE_POOL_STRATEGY = "grouped_temperature_uniform_contamination"
+POOL_STRATEGIES = frozenset({POOL_STRATEGY, TEMPERATURE_POOL_STRATEGY})
 POOL_RISK = "equal_requested_complete_selection/1"
 
 

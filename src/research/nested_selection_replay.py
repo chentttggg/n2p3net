@@ -23,6 +23,15 @@ from transfer.noise_model import array_digest
 SCHEMA = "n2p3_inner_model_replay/1"
 
 
+def _oof_held_record_id(use):
+    """Use the row's own held group while retaining ancestor scope fields."""
+    if use["phase"] == "temperature_oof_inner":
+        return use.get("temperature_held_record_id")
+    if use["phase"] == "pool_probability_oof_inner":
+        return use.get("pool_held_record_id")
+    return use.get("temperature_held_record_id") or use.get("pool_held_record_id")
+
+
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -215,12 +224,15 @@ class InnerReplayRecorder:
     def record_oof_score(self, fit_key, *, held, training, scores, context=None):
         context = self.context if context is None else context
         canonical = self.object_keys.get(id(self.producers.get(fit_key)), fit_key)
-        self.oof_rows.setdefault(canonical, []).append({
+        row = {
             "held_record_id": held.view.record_id,
             "training_record_ids": [group.view.record_id for group in training],
             "phase": context.get("phase", "temperature_oof_inner"),
             "evidence": {name: score.record() for name, score in scores.items()},
-        })
+        }
+        rows = self.oof_rows.setdefault(canonical, [])
+        if not any(semantic_sha256(existing) == semantic_sha256(row) for existing in rows):
+            rows.append(row)
 
     def record_oof_score_failure(self, fit_key, *, held, training, error, context=None):
         """Capture an actual raised score failure without inventing evidence."""
@@ -394,9 +406,11 @@ def _audit_boundaries(record, loaded):
             held_and_training = set(row["training_record_ids"]) | {row["held_record_id"]}
             for use in producer["uses"]:
                 if (tuple(use["training_record_ids"]) != tuple(row["training_record_ids"])
-                        or (use.get("pool_held_record_id") or use.get("temperature_held_record_id")) != row["held_record_id"]):
+                        or _oof_held_record_id(use) != row["held_record_id"]
+                        or use["phase"] != row["phase"]):
                     continue
-                forbidden = {use.get("outer_held_record_id"), use.get("selection_held_record_id")} - {None}
+                forbidden = {use.get("outer_held_record_id"), use.get("selection_held_record_id"),
+                             use.get("pool_held_record_id"), use.get("temperature_held_record_id")} - {None, row["held_record_id"]}
                 if forbidden & held_and_training:
                     violations.append({"fit_key": producer["fit_key"], "reason": "temperature_oof_scope"})
     return violations
@@ -435,7 +449,7 @@ def replay_inner_replay(directory, *, calibration=None, candidates=None,
         if model is None:
             continue
         for use in producer["uses"]:
-            held_id = (use.get("pool_held_record_id") or use.get("temperature_held_record_id") or use.get("selection_held_record_id")
+            held_id = (_oof_held_record_id(use) or use.get("selection_held_record_id")
                        or use.get("outer_held_record_id"))
             if held_id is None:
                 continue

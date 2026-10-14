@@ -64,6 +64,11 @@ from transfer.ensemble_views import (  # noqa: E402
 from transfer.kernel_prior import KernelPriorRankError  # noqa: E402
 from transfer.noise_model import freeze_metadata  # noqa: E402
 from transfer.outcomes import CandidateCoverage, DecisionKey  # noqa: E402
+from transfer.pool_calibration import (  # noqa: E402
+    POOL_STRATEGIES,
+    POOL_STRATEGY,
+    TEMPERATURE_POOL_STRATEGY,
+)
 
 SCHEMA = "n2p3_candidate_ensemble_study/1"
 _WORKER_ABORT = None
@@ -114,7 +119,7 @@ def _pipeline_requests(plan, record_index):
     applicable = plan.get("mixture_calibration_strategies", {})
     if plan.get("temperature_expert_ids") is not None:
         ids = set(plan["temperature_expert_ids"])
-        applicable = {value.name: [strategy for strategy in strategies if strategy == "fixed"
+        applicable = {value.name: [strategy for strategy in strategies if strategy in {"fixed", POOL_STRATEGY}
             or set(value.expert_ids) & ids] for value in mixtures}
     row = plan["records"][record_index]
     requests = [{"record_index": record_index, "record_sha256": row["sha256"],
@@ -153,6 +158,8 @@ def _prefix_selection_requests(plan, scopes):
     options = plan["prefix_selection"]
     requests = {}
     for base in _expected_fit_roster(plan, scopes).values():
+        if "pool_probability_strategy" in base:
+            continue
         candidates = _prefix_selection_candidates(plan, base["target_seed"])
         names = {spec.expert_id for candidate in candidates for spec in candidate.expert_programs}
         package = base["package"] + "_selection"
@@ -208,6 +215,19 @@ def _expected_fit_roster(plan, scopes):
                     "ensemble_program": EnsembleProgram.equal_weights("prefix_fit", tuple(spec.expert_id for spec in specs)).record(),
                     "training_digest": semantic_sha256(prefix), "target_contract": prefix["target_contract"],
                     "source_checkpoint_sha256": sources}
+                for mixture in plan["mixtures"]:
+                    programme = EnsembleProgram.from_record(mixture)
+                    selected = tuple(spec for name in programme.expert_ids for spec in specs if spec.expert_id == name)
+                    for strategy in _ordinary_pool_strategies(plan, programme.name):
+                        pool_package = _ordinary_pool_package(package, programme, strategy)
+                        if pool_package in expected:
+                            raise ValueError("distinct ordinary probability programmes share a package identity")
+                        expected[pool_package] = {"package": pool_package, "source_seed": source_seed,
+                            "target_seed": seed, "K": int(budget), "expert_programs": [spec.record() for spec in selected],
+                            "ensemble_program": programme.record(), "training_digest": semantic_sha256(prefix),
+                            "target_contract": prefix["target_contract"],
+                            "source_checkpoint_sha256": {name: digest for name, digest in sources.items() if name in programme.expert_ids},
+                            "pool_probability_strategy": strategy, "mixture_name": programme.name, "strategies": [strategy]}
         else:
             for fold in range(scopes["actual_group_count"]):
                 for expert_index, spec in enumerate(specs):
@@ -217,6 +237,19 @@ def _expected_fit_roster(plan, scopes):
                         "ensemble_program": EnsembleProgram.equal_weights(spec.expert_id, (spec.expert_id,)).record(),
                         "source_checkpoint_sha256": {spec.expert_id: sources[spec.expert_id]} if spec.expert_id in sources else {}}
     return expected
+
+
+def _ordinary_pool_strategies(plan, mixture_name):
+    requested = plan.get("mixture_calibration_strategies", {}).get(mixture_name, plan["calibration_strategies"])
+    return tuple(strategy for strategy in requested if strategy in POOL_STRATEGIES)
+
+
+def _ordinary_pool_package(base, programme, strategy):
+    return base + "_pool_" + semantic_sha256({"program": programme.record(), "strategy": strategy})[:20]
+
+
+def _request_strategies(plan, request):
+    return request.get("strategies", [strategy for strategy in plan["calibration_strategies"] if strategy not in POOL_STRATEGIES])
 
 
 def _write_candidate_json(path, payload, input_admission=None):
@@ -690,6 +723,74 @@ def _run_prefix_selection_outputs(plan, directory, expected_source, views, paire
     return predictions, fits
 
 
+def _run_ordinary_pool_outputs(plan, directory, expected_source, views, requests, sources,
+        source_seed, seed, prefix, controls, source_preparation, context):
+    """Each declared mixture learns and saves its own exact-pool programme."""
+    predictions, fits = [], []
+    for request in requests.values():
+        if ("pool_probability_strategy" not in request or request["source_seed"] != source_seed
+                or request["target_seed"] != seed or request["K"] != prefix.budget):
+            continue
+        _abort_checkpoint()
+        strategy = request["pool_probability_strategy"]
+        specs = tuple(CalibrationExpertProgram.from_record(row) for row in request["expert_programs"])
+        programme = EnsembleProgram.from_record(request["ensemble_program"])
+        selected = plan.get("temperature_expert_ids")
+        selected = None if selected is None else tuple(name for name in selected if name in programme.expert_ids)
+        bound_sources = {name: sources[name] for name in request["source_checkpoint_sha256"]}
+        package = directory / request["package"]
+        _fit_started(directory, request)
+        recorder = InnerReplayRecorder()
+        programs = fit_calibration_prefix_programs(prefix, specs, programme, strategies=(strategy,),
+            source_checkpoints=bound_sources, device=plan["device"], temperature_expert_ids=selected,
+            inner_replay_recorder=recorder, inner_replay_context=context, _source_preparation=source_preparation)
+        value = programs[strategy]
+        fitted = None if isinstance(value, ExpectedSubjectError) else value
+        calibration = (fitted.temperature_record if fitted is not None else
+            {"strategy": strategy, "status": "unavailable", "failure": value.record(subject=prefix.target_contract["participant_key"])})
+        pool = fitted.scorer.pool_calibration if fitted is not None else None
+        for spec in specs:
+            use = prefix.label_use["raw"] if spec.family == "continuous_ar" else prefix.label_use["trial"][spec.profile.digest]
+            fits.append({"source_seed": source_seed, "target_seed": seed, "K": prefix.budget,
+                "requested_Ks": context["requested_Ks"], "calibration_strategy": strategy, "expert_id": spec.expert_id,
+                "package": package.name, "label_use": use, "matched_source_controls": controls,
+                "temperature_calibration": calibration, "pool_calibration": pool,
+                "fit_available": fitted is not None and fitted.expert_fit_available[spec.expert_id],
+                "source_only": False, "temperature_calibrated": strategy == TEMPERATURE_POOL_STRATEGY
+                    and spec.expert_id in (selected or programme.expert_ids)})
+        for view in views.decisions:
+            evidence = FittedEnsemble.score_programs(programs, view)[strategy]
+            if isinstance(evidence, ExpectedSubjectError):
+                evidence = unavailable_prefix_expert_scores(prefix.record(), [spec.record() for spec in specs],
+                    strategy, value.record(subject=prefix.target_contract["participant_key"]), view)
+            recorder.record_prefix_future_score(strategy, view=view, evidence=evidence)
+            score = (fitted.scorer if fitted is not None else EnsembleScorer(programme)).score(evidence)
+            predictions.append({"source_seed": source_seed, "target_seed": seed, "seed": seed,
+                "K": prefix.budget, "calibration_strategy": strategy, "mixture": programme.name,
+                "evidence": score.record(), "truth": views.scoring_truth[view.decision_id],
+                "actual_authorized_labels": prefix.budget, "requested_Ks": context["requested_Ks"],
+                "saved_replay_exact": fitted is not None, "temperature_calibration": calibration,
+                "pool_calibration": pool, "probability_package": package.name,
+                "prediction_read_support": {spec.expert_id: {"raw_scope": list(view.raw_scope) if view.samples is not None else None,
+                    "available_sample": view.available_sample, "profile": None if spec.profile is None else spec.profile.record(),
+                    "filtering_scope": "independent_test_decision" if spec.family == "trial" else "native_unfiltered_decision"} for spec in specs},
+                "score_source_digest": semantic_sha256(expected_source)})
+        persist_prefix_inner_replay(prefix, programs, package, recorder=recorder,
+            source_checkpoints=bound_sources, context=context, device=plan["device"])
+        _fit_saved(directory, request)
+        replay = replay_prefix_inner_replay(package, prefix=prefix, future_views=views.decisions,
+            source_checkpoints=bound_sources, context=context, device=plan["device"],
+            expected_record_sha256=recorder.prefix_receipt_sha256)
+        if len(replay["scores"]) != len(views.decisions):
+            raise ValueError("ordinary probability pool lost its complete requested future replay")
+        _fits_saved(directory, package.name, [row for row in fits if row["package"] == package.name])
+        for prediction in predictions:
+            if prediction["probability_package"] == package.name:
+                prediction["prefix_replay_receipt_sha256"] = recorder.prefix_receipt_sha256
+                _prediction_saved(directory, prediction)
+    return predictions, fits
+
+
 def _independent_subject_impl(row, plan, directory, expected_source, source_snapshots):
     """Fit C once per expert/seed/K; score the same future queue for every pool."""
     declared = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
@@ -707,17 +808,12 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
             if spec.family == "trial" and spec.recipe.initialization == "source"}
         paired_specs[source_seed] = specs
         paired_sources[source_seed], paired_controls[source_seed] = _matched_source_controls(specs, sources)
-    fit_requests = [{"package": f"source{source_seed}_target{seed}_K{budget}",
-        "source_seed": source_seed, "target_seed": seed, "K": budget,
-        "expert_programs": [spec.record() for spec in paired_specs[source_seed]],
-        "ensemble_program": EnsembleProgram.equal_weights("prefix_fit", tuple(spec.expert_id for spec in declared)).record(),
-        "training_digest": semantic_sha256(prefix.record()), "target_contract": prefix.target_contract,
-        "source_checkpoint_sha256": {name: checkpoint.digest for name, checkpoint in paired_sources[source_seed].items()}}
-        for source_seed, seed in plan["seed_pairs"] for budget, prefix in views.calibration.items()]
+    fit_requests = list(_expected_fit_roster(plan, views.ledger).values())
     ledger = _participant_ledger(row, plan, directory, expected_source, views.decisions,
                                 views.scoring_truth, views.ledger, fit_requests)
     fit_requests = {request["package"]: request for request in fit_requests}
     predictions, fits = [], []
+    base_strategies = [strategy for strategy in plan["calibration_strategies"] if strategy not in POOL_STRATEGIES]
     with cpu_thread_budget(plan["cpu_threads_per_worker"]):
         for source_seed, seed in plan["seed_pairs"]:
             source_preparation = ScopedSourceCheckpointPreparation()
@@ -740,12 +836,12 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                     "phase": "independent_prefix",
                 }
                 programs = fit_calibration_prefix_programs(prefix, specs, roster,
-                    strategies=plan["calibration_strategies"], source_checkpoints=sources, device=plan["device"],
+                    strategies=base_strategies, source_checkpoints=sources, device=plan["device"],
                     temperature_expert_ids=plan.get("temperature_expert_ids"),
                     inner_replay_recorder=recorder, inner_replay_context=prefix_context,
                     _source_preparation=source_preparation)
                 FittedEnsemble.save_programs(package, programs, participant_key=prefix.target_contract["participant_key"])
-                for strategy in plan["calibration_strategies"]:
+                for strategy in base_strategies:
                     _abort_checkpoint()
                     fitted = None
                     result = programs[strategy]
@@ -767,11 +863,11 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                                 and spec.recipe.initialization == "source",
                             "temperature_calibrated": strategy == "grouped_temperature" and spec.expert_id in
                                 plan.get("temperature_expert_ids", roster.expert_ids)})
-                predictions_by_strategy = {strategy: [] for strategy in plan["calibration_strategies"]}
+                predictions_by_strategy = {strategy: [] for strategy in base_strategies}
                 for view in views.decisions:
                     _abort_checkpoint()
                     shared = FittedEnsemble.score_programs(programs, view)
-                    for strategy in plan["calibration_strategies"]:
+                    for strategy in base_strategies:
                         result = programs[strategy]
                         fitted = None if isinstance(result, ExpectedSubjectError) else result
                         calibration = (fitted.temperature_record if fitted is not None else
@@ -802,7 +898,7 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                                 "score_source_digest": semantic_sha256(expected_source)})
                 # Preserve the established strategy-major terminal and seal
                 # order while sharing raw expert scores only in this view.
-                for strategy in plan["calibration_strategies"]:
+                for strategy in base_strategies:
                     predictions.extend(predictions_by_strategy[strategy])
                 persist_prefix_inner_replay(prefix, programs, package, recorder=recorder,
                     source_checkpoints=sources, context=prefix_context, device=plan["device"])
@@ -819,6 +915,10 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                     _prediction_saved(directory, prediction)
                 atomic_write_json(directory / "progress.json", {"completed_prediction_cells": len(predictions),
                     "source_seed": source_seed, "target_seed": seed, "K": budget, "status": "running"})
+                extra_predictions, extra_fits = _run_ordinary_pool_outputs(plan, directory, expected_source,
+                    views, fit_requests, sources, source_seed, seed, prefix, controls, source_preparation, prefix_context)
+                predictions.extend(extra_predictions)
+                fits.extend(extra_fits)
     selection_fits = []
     if plan.get("prefix_selection") is not None:
         with cpu_thread_budget(plan["cpu_threads_per_worker"]):
@@ -1222,8 +1322,16 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
             record = payload["record"]
             if (semantic_sha256(record) != payload["record_sha256"] or record["participant_key"] != ledger["participant_key"]
                     or record["base_package_sha256"] != file_receipts.get(f"{package_name}/ensemble.json", {}).get("sha256")
-                    or set(record["programs"]) != set(plan["calibration_strategies"])):
+                    or set(record["programs"]) != set(_request_strategies(plan, request))):
                 raise ValueError("candidate temperature programmes differ from their saved numerical package")
+            for strategy, programme in record["programs"].items():
+                if strategy in {"grouped_temperature", TEMPERATURE_POOL_STRATEGY} and programme["status"] == "completed":
+                    roster = tuple(request["ensemble_program"]["expert_ids"])
+                    subset = plan.get("temperature_expert_ids")
+                    declared = roster if subset is None else tuple(name for name in subset if name in roster)
+                    actual = tuple(programme["temperature_calibration"].get("temperature_expert_ids", roster))
+                    if actual != declared:
+                        raise ValueError("candidate temperature subset differs from its actual requested programme")
         if "K" in request:
             prefix_receipt = package / "prefix_inner_replay.json"
             sealed_prefix = file_receipts.get(f"{package_name}/prefix_inner_replay.json")
@@ -1253,6 +1361,8 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
                 raise ValueError("candidate private prefix admission changed captured future probabilities")
             prefix_receipts[package_name] = {
                 "record_sha256": prefix_digest,
+                "pool_calibration": {strategy: value.get("pool_calibration")
+                                     for strategy, value in prefix_record["programs"].items()},
                 "future_rows": {(row["strategy"], row["input"]["view"]["decision_id"]): freeze_metadata(row)
                                 for row in prefix_record["future_score_rows"]},
             }
@@ -1289,7 +1399,8 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
                         or value["label_use"] != label_use or value["requested_Ks"] != [int(key) for key, actual in
                             scopes["requested_to_actual_K"].items() if actual == request["K"]]
                         or value["fit_available"] != (program["status"] == "completed" and actual_experts[value["expert_id"]]["model"] is not None)
-                        or value["temperature_calibration"] != calibration):
+                        or value["temperature_calibration"] != calibration
+                        or value.get("pool_calibration") != program.get("pool_calibration")):
                     raise ValueError("candidate fit replay ledger differs from its saved programme or actual C authority")
                 fit_keys.add(key)
         fits.extend(record["fits"])
@@ -1344,21 +1455,28 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
             continue
         if "K" in prediction:
             package = f"source{prediction['source_seed']}_target{prediction['seed']}_K{prediction['K']}"
+            mixture = next(value for value in plan["mixtures"] if value["name"] == prediction["mixture"])
+            programme = EnsembleProgram.from_record(mixture)
+            if strategy in POOL_STRATEGIES:
+                package = _ordinary_pool_package(package, programme, strategy)
             prefix_receipt = prefix_receipts.get(package)
             if prefix_receipt is None or prediction.get("prefix_replay_receipt_sha256") != prefix_receipt["record_sha256"]:
                 raise ValueError("candidate prediction lacks its admitted prefix replay receipt")
             captured = prefix_receipt["future_rows"].get((strategy, evidence.decision_id))
             if captured is None:
                 raise ValueError("candidate prediction lacks its captured requested future row")
-            mixture = next(value for value in plan["mixtures"] if value["name"] == prediction["mixture"])
-            original = EnsembleScorer(EnsembleProgram.from_record(mixture)).score({
+            pool = prefix_receipt["pool_calibration"].get(strategy)
+            if strategy in POOL_STRATEGIES and (prediction.get("probability_package") != package
+                    or semantic_sha256(prediction.get("pool_calibration")) != semantic_sha256(pool)):
+                raise ValueError("candidate probability pool differs from its own admitted mixture programme")
+            original = EnsembleScorer(programme, pool_calibration=pool).score({
                 name: CandidateEvidence.from_record(captured["expert_evidence"][name]) for name in mixture["expert_ids"]})
             if semantic_sha256(original.record()) != semantic_sha256(evidence.record()):
                 raise ValueError("candidate prediction probability/failure differs from its captured experts and mixture")
         identities.add(identity)
         prediction_by_identity[identity] = prediction
         if "K" in prediction:
-            packages = [f"source{prediction['source_seed']}_target{prediction['seed']}_K{prediction['K']}"]
+            packages = [package]
         else:
             expert_indexes = {value["expert_id"]: index for index, value in enumerate(plan["experts"])}
             packages = [f"seed{prediction['seed']}_fold{prediction['fold']}_expert{expert_indexes[value.expert_id]}"
@@ -1383,7 +1501,11 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
             request_packages = {f"source{request['source_seed']}_target{request['target_seed']}_K{request['actual_K']}_selection"}
             request_started = selection_started
         elif "requested_to_actual_K" in ledger:
-            request_packages = {f"source{request['source_seed']}_target{request['target_seed']}_K{request['actual_K']}"}
+            package = f"source{request['source_seed']}_target{request['target_seed']}_K{request['actual_K']}"
+            if request["calibration_strategy"] in POOL_STRATEGIES:
+                programme = EnsembleProgram.from_record(next(value for value in plan["mixtures"] if value["name"] == request["mixture"]))
+                package = _ordinary_pool_package(package, programme, request["calibration_strategy"])
+            request_packages = {package}
             request_started = started
         else:
             fold = next(fold for fold, group in enumerate(scopes["groups"]) if group["decision_id"] == request["requested"]["decision_id"])
@@ -1408,7 +1530,7 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
         if "requested_to_actual_K" in ledger:
             actual_fit_keys = {(value["package"], value["calibration_strategy"], value["expert_id"]) for value in fits}
             expected_fit_keys = {(request["package"], strategy, expert["expert_id"]) for request in requests.values()
-                for strategy in plan["calibration_strategies"] for expert in request["expert_programs"]}
+                for strategy in _request_strategies(plan, request) for expert in request["expert_programs"]}
             fit_complete = fit_complete and actual_fit_keys == expected_fit_keys and len(actual_fit_keys) == len(fits)
             fit_complete = fit_complete and set(selection_packages) == set(_prefix_selection_requests(plan, scopes))
         if (persisted["status"] != "completed" or any(persisted[key] != value for key, value in metadata.items())
@@ -2007,9 +2129,10 @@ def _prepare_candidate_plan(plan_path, *, native_threads=None, load_sources=True
     independent = plan.get("evaluation_design") == "independent_prefix"
     pairs = paired_pipeline_seeds(plan["seed_pairs"]) if independent else None
     strategies = plan["calibration_strategies"] if independent else [plan["calibration_strategy"]]
+    supported = {"fixed", "grouped_temperature"} | (POOL_STRATEGIES if independent else set())
     if (not isinstance(strategies, list) or not strategies or len(set(strategies)) != len(strategies)
-            or set(strategies) - {"fixed", "grouped_temperature"}):
-        raise ValueError("calibration programs must be explicit distinct fixed/grouped_temperature declarations")
+            or set(strategies) - supported or not set(strategies) & {"fixed", "grouped_temperature"}):
+        raise ValueError("calibration programmes need distinct supported strategies and a declared base programme")
     seeds = [pair[1] for pair in pairs] if independent else plan["seeds"]
     if not seeds or len(set(seeds)) != len(seeds) or any(type(seed) is not int or seed < 0 for seed in seeds):
         raise ValueError("target-only seeds must be explicit unique nonnegative integers")
@@ -2038,7 +2161,7 @@ def _prepare_candidate_plan(plan_path, *, native_threads=None, load_sources=True
         if not ids or len(set(ids)) != len(ids) or not set(ids) <= names:
             raise ValueError("temperature experts must be an explicit nonempty subset of the actual roster")
         plan["mixture_calibration_strategies"] = {mixture.name: [strategy for strategy in strategies
-            if strategy == "fixed" or set(mixture.expert_ids) & set(ids)] for mixture in mixtures}
+            if strategy in {"fixed", POOL_STRATEGY} or set(mixture.expert_ids) & set(ids)] for mixture in mixtures}
     if plan.get("prefix_selection") is not None:
         from research.calibration_selection import CalibrationProgramCandidate
 
