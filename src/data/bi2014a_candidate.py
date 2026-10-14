@@ -150,10 +150,20 @@ def _recover_candidate_table(subject_dir: Path, table: pd.DataFrame) -> BI2014AC
         raise ValueError(f"{csv_path} lacks the BI2014a event columns.")
     raw_flash_code = table[_FLASH_COLUMN].to_numpy(dtype=np.float64)
     raw_target_label = table[_LABEL_COLUMN].to_numpy(dtype=np.float64)
+    return recover_bi2014a_schedule(subject_dir.name, raw_flash_code, raw_target_label,
+                                   stage="raw_csv_before_preprocessing")
+
+
+def recover_bi2014a_schedule(subject_name: str, raw_flash_code, raw_target_label, *, stage: str):
+    """Recover the original schedule from either original table representation."""
+    raw_flash_code = np.asarray(raw_flash_code, dtype=np.float64)
+    raw_target_label = np.asarray(raw_target_label, dtype=np.float64)
+    if raw_flash_code.ndim != 1 or raw_target_label.shape != raw_flash_code.shape:
+        raise ValueError("BI original marker and label fields must share one native sample axis")
     possible_flash = np.isfinite(raw_flash_code) & (raw_flash_code >= 20) & (raw_flash_code <= 85)
     flash_samples = np.flatnonzero(possible_flash)
     if np.any(raw_flash_code[flash_samples] != np.floor(raw_flash_code[flash_samples])):
-        raise ValueError(f"{subject_dir.name}: non-integer BI flash code.")
+        raise ValueError(f"{subject_name}: non-integer BI flash code.")
     flash_code = np.zeros(len(raw_flash_code), dtype=np.int64)
     integer_event_codes = np.isfinite(raw_flash_code) & (raw_flash_code == np.floor(raw_flash_code))
     flash_code[integer_event_codes] = raw_flash_code[integer_event_codes].astype(np.int64)
@@ -164,7 +174,7 @@ def _recover_candidate_table(subject_dir: Path, table: pd.DataFrame) -> BI2014AC
         all_codes,
         all_labels,
         flash_samples=flash_samples,
-        stage="raw_csv_before_preprocessing",
+        stage=stage,
     )
 
     # Some public BI2014a files end with one or two trailing flashes that do
@@ -172,7 +182,7 @@ def _recover_candidate_table(subject_dir: Path, table: pd.DataFrame) -> BI2014AC
     # and report the dropped tail in the audit.
     n_repetitions = len(flash_samples) // 12
     if n_repetitions < 1:
-        raise ValueError(f"{subject_dir.name}: fewer than one complete flash repetition.")
+        raise ValueError(f"{subject_name}: fewer than one complete flash repetition.")
     complete_count = n_repetitions * 12
     dropped_tail = len(flash_samples) - complete_count
     flash_samples = flash_samples[:complete_count]
@@ -183,12 +193,12 @@ def _recover_candidate_table(subject_dir: Path, table: pd.DataFrame) -> BI2014AC
     expected_nontargets = 10 * n_repetitions
     if np.count_nonzero(is_target) != expected_targets:
         raise ValueError(
-            f"{subject_dir.name}: expected {expected_targets} target flashes, "
+            f"{subject_name}: expected {expected_targets} target flashes, "
             f"got {np.count_nonzero(is_target)}."
         )
     if np.count_nonzero(~is_target) != expected_nontargets:
         raise ValueError(
-            f"{subject_dir.name}: expected {expected_nontargets} non-target flashes, "
+            f"{subject_name}: expected {expected_nontargets} non-target flashes, "
             f"got {np.count_nonzero(~is_target)}."
         )
 
@@ -221,7 +231,7 @@ def _recover_candidate_table(subject_dir: Path, table: pd.DataFrame) -> BI2014AC
             or tuple(sorted(event.candidate_index for event in row_events)) != valid_candidates
             or tuple(sorted(event.candidate_index for event in col_events)) != valid_candidates
         ):
-            raise ValueError(f"{subject_dir.name}: repetition {rep} has invalid flash structure.")
+            raise ValueError(f"{subject_name}: repetition {rep} has invalid flash structure.")
 
         pair = (
             target_row_events[0].candidate_index,
@@ -234,7 +244,7 @@ def _recover_candidate_table(subject_dir: Path, table: pd.DataFrame) -> BI2014AC
         )
         if internal_markers:
             raise ValueError(
-                f"{subject_dir.name}: repetition {rep} contains selection-boundary "
+                f"{subject_name}: repetition {rep} contains selection-boundary "
                 f"markers {sorted(internal_markers)} inside its 12-flash block."
             )
 
@@ -277,7 +287,7 @@ def _recover_candidate_table(subject_dir: Path, table: pd.DataFrame) -> BI2014AC
                 row_code[global_idx] = decoded.candidate_index
             else:
                 col_code[global_idx] = decoded.candidate_index
-            selection_id[global_idx] = f"{subject_dir.name}:selection{active_selection}"
+            selection_id[global_idx] = f"{subject_name}:selection{active_selection}"
             repetition_index[global_idx] = active_repetition
             selection_boundary_reason[global_idx] = boundary_reason
 
@@ -291,7 +301,7 @@ def _recover_candidate_table(subject_dir: Path, table: pd.DataFrame) -> BI2014AC
         changed = any(event.is_target and event.candidate_index != previous_pair[0 if event.axis == "row" else 1]
                       for event in partial_targets)
         if markers or changed:
-            tail_selection = f"{subject_dir.name}:selection{active_selection + 1}"
+            tail_selection = f"{subject_name}:selection{active_selection + 1}"
             tail_repetition = 0
     return BI2014ACandidateRecord(
         flash_sample=flash_samples,
