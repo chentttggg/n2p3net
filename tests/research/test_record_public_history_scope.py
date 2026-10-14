@@ -29,6 +29,9 @@ def test_record_public_history_keeps_actual_clock_c_mapping_and_partial_same_sel
     view = issuer.independent_views().decisions[0]
     assert view.samples is None and view.unavailable_reason == "response_overlaps_common_C_test_embargo"
     cap = issuer.record_read_scope(view, prefix=prefix, conditioning_stop=5300)
+    from research.contracts import semantic_sha256
+
+    assert cap.digest == semantic_sha256(cap.binding)
     assert cap.samples.shape == (5450, 2)
     assert reads[-1] == (adapter.recordings[0].record_id, 0, 5450)
     assert cap.binding["score_sample_support"] == (5300, 5450)

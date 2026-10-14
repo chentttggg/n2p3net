@@ -1929,6 +1929,10 @@ class AuthorizedRecordPublicHistory:
     calibration_records: tuple[CalibrationRecord, ...]
     binding: dict
 
+    @property
+    def digest(self):
+        return semantic_sha256(self.binding)
+
 
 def _record_history_key(binding):
     return semantic_sha256({key: binding[key] for key in ("source_sha256", "record_id", "current_decision_id",
@@ -1967,11 +1971,6 @@ def _prepared_record_read_scope(compiler, view, *, prefix, conditioning_stop, av
             or cap.binding["samples_sha256"] != array_digest(cap.samples)):
         raise ValueError("prepared original history cap changed its native samples, C authority or current physical view")
     return cap
-
-    @property
-    def digest(self):
-        return semantic_sha256(self.binding)
-
 
 class _PreparedRecordCalibrationPrefixCompiler(_PreparedCalibrationPrefixCompiler):
     """The same original record-aware before-group join from admitted bytes."""
