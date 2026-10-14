@@ -1,5 +1,7 @@
 # 当前执行计划
 
+下一base完整矩阵按用户云端2026-10-14直接授权使用source/target seed20261014，原20260918完成结果保持；新源四fold各选择与fresh refit形成八fits，原prepared输入按权限复用。
+
 当前优先推进迁移异质性和高置信错误校准：四个完整fixed程序（source NN、matched scratch NN及各自NN+xDAWN）已由opt-in factory接入真正forward-prefix选择，同run拟合、保存重放与parent链软件验收完成。新公共计划预声明baseline、tie规则和选择行数，接在云回放入口最终集成之后。fixed-only至少需一个先前完整训练组，K200单组继续走预声明baseline；K0依该baseline的实际源能力保输出及requested账本。
 
 另外两条科学主线可独立前进：B07建立多通道C-latent的新拟合后验及其权限、历史预测和持久包；B11建立固定noise shape K₀的真实来源与flat nuisance长记录的共同体积测度。现有native多通道frozen-C history和proper/no-flat联合尺度是可复用底座，新增C潜变量和flat能力分别形成自己的producer与纵向验收。B09先交共同物理效应/reference输运，B00先闭合固定requested风险；各块继续按真实依赖推进。
@@ -66,7 +68,7 @@ M1使用[冻结计划](assets/continuous_fixed_prefix_20261005/m1_plan.json)：8
 1. B00评价/选择、B01信号/支持先固定；B02专家Interface、B03C内概率校准、B04神经/matched scratch构成主线。
 2. B05AR、B06边界、B07字典、B08先验、B09空间、B10输入算子在B00/B01后并行；B11动态/稳健模型按识别前置进入。
 3. B14源绑定/工程精简/共享缓存/吞吐贯穿主线；B12基础四专家复核只依赖B04/B14，不等待所有机制或EA。
-4. B12按四库binary与真实membership候选两个面板、K0/200/800/2000请求和20260918完整source→target seed执行；variant追加自己的验收依赖，大版本另验三个seed。
+4. B12按四库binary与真实membership候选两个面板、K0/200/800/2000请求和当前预声明的一个完整source→target seed执行；variant追加自己的验收依赖，大版本另验三个seed。
 5. B13成人确认用冻结程序后的新数据与单独协议；历史0.771/1.069只作开发定位，新准入采用同批配对差值、coverage及概率风险。
 
 机器可读[计划](assets/deep_research_plan_20261005/research_plan.json)、[逐愿望覆盖](assets/deep_research_plan_20261005/coverage.zh.md)

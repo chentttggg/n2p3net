@@ -70,4 +70,4 @@ src/research/source_execution.py af464538c1525dd71b95c952e90d64a3ee930b399d574b4
 4. B03pool尾部校准及B09长record/实际source消费者各沿理论、反例、深owner接口、纵向caller/save/load/replay审阅与集成；没有future阈值授权或prior completion伪测量。
 5. B11固定noise shape K0来源和原flat measure长record程序、B10完整输入增量、B12新数据泛化与B13成人确认按各自依赖继续推进。整个123项计划仍开放。
 
-日常科研一个完整source→target seed20260918，大版本才三个完整程序。科研子代理没有我方人工时限/额度，主代理最终仔细审阅和整合；针对实际变更验证、主题页维护结论，已完成代码树及时清理。
+日常科研一个完整source→target seed；下一base矩阵按用户云端直接授权使用20261014，四source选择+四freshrefit均为新seed。旧20260918结果保原来源，大版本才三个完整程序。科研子代理没有我方人工时限/额度，主代理最终仔细审阅和整合；针对实际变更验证、主题页维护结论，已完成代码树及时清理。

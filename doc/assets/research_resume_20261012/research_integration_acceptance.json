@@ -416,7 +416,6 @@
     "binding_SHA": "9bda23a1ba737eacf42bd8f900646e43b4899bb12816250c9785cb17ed29d6be",
     "source_folds": 4,
     "source_logical_fits": 8,
-    "source_seed": 20260918,
     "binary_requested_participants": 123,
     "binary_arm_requests": 2460,
     "binary_fixed_pool_requests": 1968,
@@ -427,6 +426,21 @@
     "tie": "original_factory_order",
     "BI_new_cohort_gate": "exact_original01..61_then_original_source_SHA_join",
     "scientific_findings": 0,
-    "public_fits_this_review": 0
+    "public_fits_this_review": 0,
+    "reviewed_seed_original": 20260918,
+    "current_user_authorized_seed_override": {
+      "source_seed": 20261014,
+      "target_seed": 20261014,
+      "source_chat": "01a10b0f-c672-7e73-8449-4ebdaf6fc5eb",
+      "human_user_message": "01a1394b-c1f8-7d41-bd02-a737e338ddfc",
+      "text": "好的继续，可以换seed进行",
+      "direct_human_message_verified_in_app": true,
+      "new_complete_programmes": 1,
+      "fresh_source_selection_fits": 4,
+      "fresh_source_refit_fits": 4,
+      "historical_producers_resigned": false,
+      "prepared_input_reuse": "original_attested_input_authority_only",
+      "reviewed_hyperparameters_scope_controls_unchanged": true
+    }
   }
 }
