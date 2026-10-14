@@ -76,7 +76,7 @@
   },
   "next": {
     "four_fixed_family": "accepted software; public evaluation awaits actual inputs/resources and final cloud caller",
-    "spatial_exact_factors": "in_progress independent codex/spatial-exact-factors; /5 distinct producer",
+    "spatial_exact_factors": "accepted /5 source factor, original observer numeric state and extreme-unit QR; long-record builder separate",
     "cloud_replay_full_entry": "await final cloud owner delivery",
     "payload_recovery": "cloud owner"
   },
@@ -127,5 +127,74 @@
     "public_fit": 0,
     "public_score": 0,
     "next": "new frozen public plan under cloud-owned complete caller"
+  },
+  "spatial_exact_factors": {
+    "status": "accepted",
+    "author_commit": "b59c2e4583c0f631f7623826e19f78c023e0b3b5",
+    "integrated_commit": "acaf796",
+    "production_sha256": "23eb13760114cb7cd0284c9a382918e3a4672a05fc7aab14e689bb3f7b297f1f",
+    "posterior_schema": "n2p3_spatial_signal_posterior/5",
+    "observation_schema": "n2p3_spatial_observation/3",
+    "review": "root actual factor/sourceQR/observationstate/BLUE/save/caller read plus independent Spec/Standards",
+    "runs": {
+      "SPATIAL_EXACT_CORE": {
+        "cases": 3,
+        "failures": 0,
+        "errors": 0,
+        "junit_sha256": "3191b642aea95ceec62f476ec4f0885dea058ebaa8c5a5a55f83760a98a12484",
+        "runtime_sha256": "e4124f595e20fa86cd0da7dde9463708a64888548f4412a0dc6acc7d53df2c58",
+        "source_unchanged": true
+      },
+      "SPATIAL_EXACT_RELATIONS": {
+        "cases": 7,
+        "failures": 0,
+        "errors": 0,
+        "junit_sha256": "966e64b7be644611d525af04cf307c514e3d60f9f892c0576cb1fcafa87ddc8f",
+        "runtime_sha256": "e4124f595e20fa86cd0da7dde9463708a64888548f4412a0dc6acc7d53df2c58",
+        "source_unchanged": true
+      },
+      "SPATIAL_EXACT_CONSUMERS": {
+        "cases": 8,
+        "failures": 0,
+        "errors": 0,
+        "junit_sha256": "a6f8d5f471ca847f3409d5f5e4d6db04f51491bc3d15380560e43341b69d5490",
+        "runtime_sha256": "e4124f595e20fa86cd0da7dde9463708a64888548f4412a0dc6acc7d53df2c58",
+        "source_unchanged": true
+      },
+      "SPATIAL_EXACT_INTERFACES": {
+        "cases": 12,
+        "failures": 0,
+        "errors": 0,
+        "junit_sha256": "6baf24106c79eb7104fc2c902280a43053d098e280e22b2b7ead6c43f8985a2e",
+        "runtime_sha256": "e4124f595e20fa86cd0da7dde9463708a64888548f4412a0dc6acc7d53df2c58",
+        "source_unchanged": true
+      },
+      "SPATIAL_EXACT_STATE_DELTA": {
+        "cases": 14,
+        "failures": 0,
+        "errors": 0,
+        "junit_sha256": "b9c505f6283108f2b976f61da41cccfe8ed77bc99dfd7ef88d3db64941198512",
+        "runtime_sha256": "23eb13760114cb7cd0284c9a382918e3a4672a05fc7aab14e689bb3f7b297f1f",
+        "source_unchanged": true
+      },
+      "SPATIAL_EXACT_FINAL_CALLERS": {
+        "cases": 6,
+        "failures": 0,
+        "errors": 0,
+        "junit_sha256": "80dac28980bbd4117719014dc38fdd64f9499583f98b697dcc2c6de560d23b9a",
+        "runtime_sha256": "23eb13760114cb7cd0284c9a382918e3a4672a05fc7aab14e689bb3f7b297f1f",
+        "source_unchanged": true
+      }
+    },
+    "final_actual_prototype": {
+      "path": "tmp/spatial_exact_delivery/SPATIAL_EXACT_FINAL_ACTUAL/actual_results.json",
+      "sha256": "6d9e986c009819eedc0b99637fd63228006cfe3c64b3a9880a98d1d6f1054ab3"
+    },
+    "source_identity_sha256": "329c8da0fef06c048d7c6dce0b0e3010898fb3d4a8726edb2ece0b4ba8d48baa",
+    "public_fit": 0,
+    "public_score": 0,
+    "full_suite": "not rerun",
+    "runtime_policy": "existing 250000 scalar /512 column admission; not a theoretical limit",
+    "next": "real long-record source builder/factor compression and new public/ensemble consumer; full same-source crosshost acceptance"
   }
 }

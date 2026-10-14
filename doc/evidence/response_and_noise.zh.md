@@ -81,7 +81,9 @@ B05数值中枢与history adapter已接通：`native_history_marginal_program`�
 
 跨reference的共同物理效应输运已接通：直接在source真实joint likelihood中测目标reference-free泛函，保存BLUE均值、完整measurement covariance和native noise归一化，再进入群体forecast与目标prior。共同电极和参考关系来自共享authority；declared CAR的结构零与生成舍入一起核对。三种已声明source路径及source→群体→target→B05有独立逻辑和实际调用证据。最终入口修复冻结tuple/list的等价序列关系后，5项delta验证通过，见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
 
-独立审阅确认一般full-row source的下一修复：结构可识别性应由物理空间map、时间design及record-local nuisance的精确因子乘积计算。四导单行`[1,3,5,−9]`的真实beta-nullity为12，现浮点归一化再Kronecker的逐项舍入却能给出0；微小但真实未观测泛函随后可能获准。下一切片保存并重建factorized physical law，数值likelihood/BLUE继续用原程序及逐项witness核对。当前输运先闭合已有生成authority的native、实测参考和CAR三条source路径。
+一般full-row source的结构识别已修为精确物理因子乘积：保存原空间map、时间design与record-local nuisance，并连接同次拟合的QR/噪声压缩关系。四导单行`[1,3,5,−9]`的真实beta-nullity为12，旧浮点归一化再Kronecker的舍入会误报0；新程序恢复12，微小真实未观测方向在直接BLUE和输运两入口均正确拒绝。general、native、实测参考和CAR共消费一次准入的后验，过渡白名单与重复输运入口核已删除。
+
+新posterior `/5`、observation `/3`保存原支持坐标、归一map、尺度、体积和诊断；载入核原数学关系后恢复生产者数值，host SVD只做分辨率准入。1ulp诊断漂移保原记录，极端尺度D/Z先共同去单位再核QR关系。原数值拟合和BLUE方法复用，独审及新state14/实际consumer6/独立prototype分别绑定实际源码，见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。真实长记录source builder可进一步利用因子row-space压缩，再接公共/ensemble消费者。
 
 `ERPPhysicalEffect`绑定basis/window/grid/fs/operator/dictionary、真实reference与空间观测map。`ERPChannelEstimate`只从实际joint likelihood提取可识别BLUE，不把已有收缩posterior当独立measurement；measurement noise/dependence由其owner明确绑定。若压缩观测为`y=X beta+e`，物理泛函F必须存在witness`F=W X`，则效应mean为`W y`、covariance为`W W.T`。新关系检查逐entry使用原物理坐标，零观测列不从其它强列借容差；允许界来自浮点算法与运算尺度，不是全输入区间证明。
 
