@@ -1000,6 +1000,19 @@ class CalibrationPrefixCompiler:
             raise ValueError("earlier prefix retains held selection labels")
         return earlier
 
+    def c_latent_fit_scope(self, prefix, *, dictionary, prior, noise, plan, innovation_covariance):
+        """Original native C labels/samples for a new finite joint producer."""
+        from research.multichannel_c_latent import _issue_c_latent_fit_scope
+
+        return _issue_c_latent_fit_scope(self, prefix, dictionary=dictionary, prior=prior,
+            noise=noise, plan=plan, innovation_covariance=innovation_covariance)
+
+    def c_latent_history_scope(self, view, *, prefix, model, scoring_law=None):
+        """Already observed unlabelled context, with score in original held scope."""
+        from research.multichannel_c_latent import _issue_c_latent_history_scope
+
+        return _issue_c_latent_history_scope(self, view, prefix=prefix, model=model, scoring_law=scoring_law)
+
 
 class _PreparedCalibrationPrefixCompiler(CalibrationPrefixCompiler):
     """Only the actual K admitted by the external original-producer capsule."""

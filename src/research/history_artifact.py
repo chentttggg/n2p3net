@@ -196,3 +196,112 @@ def replay_history_capsule(directory, *, capsule_sha256, source_sha256,
     if semantic_sha256(actual) != semantic_sha256(record["result"]):
         raise ValueError("history replay differs from actual original-source permission or numerical result")
     return actual
+
+
+def predict_finite_c_history(model, compiler, prefix, view, *, scoring_law=None):
+    """New actual C-latent caller, separate from frozen-nominal parent route."""
+    from research.execution import UnidentifiableFitError
+    from research.multichannel_c_latent import score_finite_c_history
+
+    requested = {"participant_key": view.participant_key, "decision_id": view.decision_id,
+        "candidate_vocabulary": list(view.decision.candidate_vocabulary),
+        "physical_support_digest": view.physical_support_digest}
+    selected = model.protocol.record["default_scoring_law"] if scoring_law is None else scoring_law
+    if selected not in model.protocol.record["scoring_laws"]:
+        raise ValueError("finite prediction scoring law was not declared by its original protocol")
+    capability = None
+    try:
+        capability = compiler.c_latent_history_scope(view, prefix=prefix, model=model, scoring_law=scoring_law)
+        evidence, prediction = score_finite_c_history(model, capability)
+    except HistoryUnavailableError as error:
+        return {"schema": "n2p3_finite_c_prediction_outcome/1", "requested": requested,
+            "status": error.failure_kind, "failure": error.record(), "model_digest": model.digest(),
+            "scoring_law": selected, "probability": None, "C_refits": 0, "noise_fits": 0}
+    except (UnidentifiableFitError, HistoryNuisanceResolutionError,
+            NumericalResolutionError, np.linalg.LinAlgError) as error:
+        return {"schema": "n2p3_finite_c_prediction_outcome/1", "requested": requested,
+            "status": "not_available", "model_digest": model.digest(), "probability": None,
+            "scoring_law": selected, "capability": None if capability is None else capability.binding,
+            "failure": {"kind": "finite_C_numerical_unavailable", "reason": str(error)},
+            "C_refits": 0, "noise_fits": 0}
+    return {"schema": "n2p3_finite_c_prediction_outcome/1", "requested": requested,
+        "status": "complete", "model_digest": model.digest(), "probability": evidence.probabilities.tolist(),
+        "scoring_law": selected, "capability": capability.binding, "prediction": prediction, "C_refits": 0, "noise_fits": 0}
+
+
+def finite_c_candidate_evidence(model, compiler, prefix, view, *, expert_id="finite_C_latent", scoring_law=None):
+    from models.candidate_evidence import CandidateEvidence, CandidateExpertIdentity
+
+    outcome = predict_finite_c_history(model, compiler, prefix, view, scoring_law=scoring_law)
+    selected = model.protocol.record["default_scoring_law"] if scoring_law is None else scoring_law
+    identity = CandidateExpertIdentity(expert_id, semantic_sha256(outcome), model.digest(), None,
+        semantic_sha256(model.binding), "finite_C_latent_"+selected+"/1", False)
+    member = view.decision.membership
+    arguments = {"candidate_vocabulary": view.decision.candidate_vocabulary, "participant_key": view.participant_key,
+        "decision_id": view.decision_id, "physical_support_digest": view.physical_support_digest,
+        "expert_identities": (identity,), "evidence_level": view.decision.repetitions,
+        "expected_event_counts": tuple(map(int, member.sum(axis=0))),
+        "observed_event_counts": tuple(map(int, member[view.decision.evidence_indices >= 0].sum(axis=0)))}
+    if outcome["status"] != "complete":
+        return CandidateEvidence(log_probability=None, failure_kind=outcome["status"],
+            failure_reason=json.dumps(outcome["failure"], sort_keys=True), **arguments)
+    return CandidateEvidence(log_probability=np.asarray(outcome["prediction"]["log_probability"]), **arguments)
+
+
+def save_finite_c_history_capsule(directory, *, model_path, model_sha256, compiler, prefix, view, scoring_law=None):
+    """Copy one actual new producer; original C is never fitted by a capsule."""
+    from research.multichannel_c_latent import FiniteCHistoryModel
+
+    model_path, directory = Path(model_path), Path(directory)
+    model = FiniteCHistoryModel.load(model_path, expected_sha256=model_sha256)
+    selected = model.protocol.record["default_scoring_law"] if scoring_law is None else scoring_law
+    result = predict_finite_c_history(model, compiler, prefix, view, scoring_law=selected)
+    directory.mkdir(parents=True, exist_ok=False)
+    original = compiler._history_source_payload
+    (directory/"finite_c_model.npz").write_bytes(model_path.read_bytes())
+    (directory/"original_source.mat").write_bytes(original)
+    (directory/"protocol_plan.json").write_bytes(model.protocol.plan_bytes)
+    record = {"schema": "n2p3_finite_c_history_capsule/1", "source_sha256": _raw_sha(original),
+        "model_sha256": model_sha256, "protocol_plan_sha256": _raw_sha(model.protocol.plan_bytes),
+        "original_ingress": compiler._history_ingress, "calibration_budget": prefix.budget,
+        "current_view": view.record(), "scoring_law": selected, "result": result, "original_model_copied": True}
+    payload = _json_bytes(record)
+    (directory/"capsule.json").write_bytes(payload)
+    return {"capsule_sha256": _raw_sha(payload), "source_sha256": record["source_sha256"],
+        "model_sha256": model_sha256, "protocol_plan_sha256": record["protocol_plan_sha256"]}
+
+
+def replay_finite_c_history_capsule(directory, *, capsule_sha256, source_sha256,
+                                   model_sha256, protocol_plan_sha256):
+    """Reissue original permissions and consume only saved posterior/noise state."""
+    from research.multichannel_c_latent import FiniteCHistoryModel
+
+    directory = Path(directory)
+    payload = (directory/"capsule.json").read_bytes()
+    if _raw_sha(payload) != capsule_sha256:
+        raise ValueError("finite C capsule differs from externally admitted consumer bytes")
+    record = json.loads(payload)
+    original = (directory/"original_source.mat").read_bytes()
+    plan = (directory/"protocol_plan.json").read_bytes()
+    if (record["schema"] != "n2p3_finite_c_history_capsule/1"
+            or _raw_sha(original) != source_sha256 or record["source_sha256"] != source_sha256
+            or _raw_sha(plan) != protocol_plan_sha256 or record["protocol_plan_sha256"] != protocol_plan_sha256
+            or record["model_sha256"] != model_sha256):
+        raise ValueError("finite C source/model/plan differ from original external admission")
+    model = FiniteCHistoryModel.load(directory/"finite_c_model.npz", expected_sha256=model_sha256)
+    if model.protocol.plan_bytes != plan:
+        raise ValueError("finite C producer plan and replay protocol bytes differ")
+    arguments = dict(record["original_ingress"])
+    arguments["budgets"] = tuple(arguments["budgets"])
+    arguments["profiles"] = tuple(SelectionEpochProfile.from_record(p) for p in arguments["profiles"])
+    arguments["authorization_preprocessing"] = parse_preprocessing_spec(arguments["authorization_preprocessing"])
+    compiler = CalibrationPrefixCompiler(original, **arguments)
+    prefix = compiler.compile(record["calibration_budget"])
+    physical = record["current_view"]
+    start, stop = physical["raw_scope"]
+    samples = None if physical.get("unavailable_reason") else np.asarray(compiler._record.eeg_uv[start:stop], dtype=float)*1e-6
+    view = PredictionDecisionView.from_record(physical, samples=samples)
+    result = predict_finite_c_history(model, compiler, prefix, view, scoring_law=record["scoring_law"])
+    if semantic_sha256(result) != semantic_sha256(record["result"]):
+        raise ValueError("finite C replay differs from actual original permissions or saved posterior")
+    return result
