@@ -603,5 +603,84 @@
     },
     "root_verified_original_references": 3,
     "new_fits_or_sampler_calls": 0
+  },
+  "future1_capture_intrinsic": {
+    "status": "accepted_saved_capture_intrinsic_pending_original_effective_model_and_emitted_probability",
+    "ordinal": 1,
+    "actual_K": 500,
+    "receipts": [
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FUTURE_001_CAPTURE_AUDIT.py",
+        "sha256": "cd5f811157147b9d5988fc1f8c5dd7aa96a8e4d64ae648dba60ae8857223ba94",
+        "bytes": 12317
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FUTURE_001_CAPTURE_AUDIT.json",
+        "sha256": "e491001f3b656858bd34524858a36a7b804687bcfd04f34214a133860de13858",
+        "bytes": 4938
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FUTURE1_INTRINSIC_INDEPENDENT_REVIEW_20261016.md",
+        "sha256": "975dd1fdc5f03cef0ecfa8f4c9091899e1a5bc2216b39c48db5efc1b82b7b6a3",
+        "bytes": 4325
+      }
+    ],
+    "capture_digest": "1731098af7b6156b8f4f86506a2d916696da0bad28d36182ab44fbeffaada327",
+    "sample_arrays_sha256": "752cca9fc040ac1cbf2306e384d02596eb99fe47ed0c8f3a31a84d1d48c0fcf4",
+    "component_arrays_sha256": "73125741a579ef09130ecba7a76ea9fb090fd2a7e06bbfe8216a532c5819cff3",
+    "raw_record_scalar_rows": [
+      5318639,
+      840751
+    ],
+    "one_global_beta_width": 496,
+    "true_record_precision_count": 2,
+    "coefficient_width": 620,
+    "target_axis_count": 2,
+    "current_true_q_support": 32,
+    "coordinate_count": 622,
+    "coordinate_max_rhat_min_bulk_min_tail": [
+      1.0499306497812737,
+      50.42316942664404,
+      71.6516931582584
+    ],
+    "functional_max_rhat_min_bulk_min_tail": [
+      1.0034156400030485,
+      256.0,
+      223.9627861571325
+    ],
+    "maximum_batch_mcse": 4.388804778624757e-07,
+    "contribution_summary_max_error": 9.193579231236981e-10,
+    "A_contribution_ESS_min_max": [
+      1.0000446045326035,
+      1.0000452055654445
+    ],
+    "A_max_contribution_fraction_min_max": [
+      0.9999773977281404,
+      0.9999776982310671
+    ],
+    "normalization_roundoff": {
+      "per_state_log_mass_min_max": [
+        "-2.302543145899532975950933858154321246791988682327031225458520474846367838856907353986593006897162025033071472398155375882908367769877844443539881461558110284474477195989886429196828710048900568770770180515448319123489142084910767861643499638028980367E-10",
+        "2.315306861640223342018186827836525177171554631908241497671027221399750283896975104878700578696417628199399875084864458617289381428580892594650746971636991309647900048216303978888193872017011433368750268816403971721032919887524880288824744094805020115E-10"
+      ],
+      "normalized_log_probability_perturbation_bound": "4.617850007539756317969120685990846423963543314235272723129547696246118122753882458865293585593579653232471347483019834500197749198458737038190628433195101594122377244206190408085022582065912002139520449331852290844522061972435648150468243732834000482E-10",
+      "measured_normalized_log_probability_perturbation": "9.63838092592925602300691774708641245798184198083682790886430755206142077714487261637491452372149218374417222471352558999272414725220846889162782012663079696428906198269925407170075635122779800719766084472785445399441656821676513110369538E-17"
+    },
+    "model_binding": {
+      "status": "PENDING_EFFECTIVE_MODEL_METADATA_RELATION",
+      "capture_effective_model_digest": "d3a9a0d762a847d765a0d674cc18e03c5d62752ba81dd838896bf8e50b3eb29f",
+      "C500_fixed_saved_model_digest": "076a6af657f9262f863a00af3c991de07008479b46ba0a73b2db309f2e37a7ac",
+      "numeric_producers_identical": false,
+      "actual_C_prefix_source_programme_equal": true
+    },
+    "root_verified_original_references": 4,
+    "coordinate_and_functional_policy": "original_predeclared_policy",
+    "source_fits": 0,
+    "sampler_calls": 0,
+    "lambda_integrals": 0,
+    "future_truth_reads": 0,
+    "next_binding": "join_exact_seven_OOF_attached_model_and_emitted_probability_after_original_final_package",
+    "original_future0": "C24_embargo_unavailable_preserved",
+    "original_future2": "running_original_frozen_producer"
   }
 }

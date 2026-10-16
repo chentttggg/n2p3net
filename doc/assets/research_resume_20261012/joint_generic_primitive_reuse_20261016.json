@@ -166,5 +166,43 @@
       "action": "cmd.exe rmdir /s /q against an old transition software fixture",
       "no_alternative_shell_or_bypass": true
     }
+  },
+  "original_forward_locator_V4": {
+    "status": "accepted_metadata_closure_all_seven_original_forward_groups",
+    "artifacts": {
+      "REUSE_V4_VERIFICATION.json": {
+        "path": "D:/BCI/artifacts/joint-source-catalog-revision/forward-beta-integration/REUSE_V4_VERIFICATION.json",
+        "sha256": "45c87e3ee6f01b95b1d6a7221ccf74337f96cd9ddca57bd3ed078dd173895d85",
+        "bytes": 18025
+      },
+      "COMPLETED_PRIMITIVES_V4.json": {
+        "path": "D:/BCI/artifacts/joint-source-catalog-revision/forward-beta-integration/COMPLETED_PRIMITIVES_V4.json",
+        "sha256": "95c707f0db75405499b09a0fcd8a6c14690bcfc1ef7e3230bc2a03e022ea9f6a",
+        "bytes": 66644
+      },
+      "PLAN_REUSE_V4.json": {
+        "path": "D:/BCI/artifacts/joint-source-catalog-revision/forward-beta-integration/PLAN_REUSE_V4.json",
+        "sha256": "653a21c5afbcb4e1d1d5158b9b8b52ba62b8ab5eaa8f3ea7be19e0309c625ac9",
+        "bytes": 22836
+      }
+    },
+    "root_verified_previous_v2_v3_artifacts": 6,
+    "all_previous_locators_exact_subset": true,
+    "only_plan_field_changed": "joint_completed_primitives",
+    "independently_accepted_forward_ordinals": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "source_fits": 0,
+    "sampler_calls": 0,
+    "mathematical_array_loads": 0,
+    "runtime_reuse_admission": "separate_not_executed_by_this_refresh",
+    "full_public_DAG": "pending_final_runtime_source_and_remaining_original_measures",
+    "original_future_actor": "continues_unmodified"
   }
 }
