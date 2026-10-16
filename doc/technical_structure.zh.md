@@ -48,6 +48,8 @@ paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账
 
 `stationary_noise_artifact`以原stored PARCOR的精确实数step-up和pairwise mixed Yule--Walker持有完整平稳cross-channel law，Decimal96编译一次jointroot；constructor/load以实际root的law pullback证书准入，saved root不重编。`FittedChannelNoise/3`和原`/2`compiled-W模型分别绑定；已完成的16格续评分仍属于原冻结law。作者8e1f和Git CRLF工作树621bad的compiler源码SHA分别记录，后续新模型绑定实际执行字节。
 
+`FittedChannelNoise.from_shared_stationary_factors`是显式新producer入口：完全相同stored PARCOR的shared law由`shared_stationary_factor`编译两个小root及其实际rounded Kronecker乘积，逐小因子exact rational residual/inverse-defect与乘积舍入界共同准入。新`/4`保存原两小因子、完整actual root、证书及producer源码身份；load只核原witness，不重编root。默认constructor/fit与原`/3`仍消费原joint owner，private law保持原pairwise路径。原startup/tail白化和Jacobian直接消费各自实际root；[推导及验证](evidence/response_and_noise.zh.md#shared-parcor平稳启动因子的显式入口)。
+
 `export_frozen_p1_state.py`在原capsule独立进程导出实际response/noise，两个manifest caller显式由JSON字符串转Path。`stationary_panel`持有冻结16格的输入核验、new root/模型/score receipt与同支持reduce；`local_program_control`持有PID/birth、heartbeat、descendant RSS/CPU及退出清理。科学fitter禁止重新拟合；完整cell成功须模型/score/receipt闭合。本地资源终态保partial，新host执行重新绑定路径与资源，见[执行状态](evidence/response_and_noise.zh.md#当前模型与数值任务)。
 
 P1云科学接线已由[修后复签](assets/research_resume_20261011/stationary_cloud_scientific_acceptance_binding.json)接受：新score plan显式消费原Windows export plan056，完整held descriptor/view/array keys及实际解码样本/设计由原authority核验。`run_stationary_cloud_panel`复用共享file lock持整个attempt，PID/birth lease在写入前独占；共享历史树接口成功返回None，live/unknown/接口缺失明确阻止派发。`actual_alive`统一排除PID复用和zombie，仍保实际live后代门。8 subject各顺序两arm，4个native5+interop1 actor与coordinator1共同使用CPU25；main串行准入两arm，全部ACK后归约。实际factory、统一controller和Linux平台门由各自owner另行验收。

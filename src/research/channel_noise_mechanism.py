@@ -22,6 +22,10 @@ from scipy.special import logsumexp
 from sklearn.covariance import LedoitWolf
 
 from research.execution import UnidentifiableFitError
+from research.shared_stationary_factor import (
+    admit_shared_stationary_root,
+    compile_shared_stationary_root,
+)
 from research.stationary_noise_artifact import compiler_record, stationary_root
 from transfer.noise_model import (
     array_digest,
@@ -37,6 +41,7 @@ from transfer.temporal_noise import TemporalNoise
 _IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _FIT_SCOPES = {"source_training", "target_calibration"}
 _SCHEMA = "n2p3_channel_noise_mechanism/3"
+_SHARED_FACTOR_SCHEMA = "n2p3_channel_noise_mechanism/4"
 
 
 def _array(value, name, ndim):
@@ -389,6 +394,7 @@ class FittedChannelNoise:
     family: str
     provenance: dict
     compiled_prefix_root: np.ndarray | None = field(default=None, repr=False)
+    shared_factor_state: dict | None = field(default=None, repr=False, kw_only=True)
 
     def __post_init__(self):
         temporal = tuple(self.temporal)
@@ -436,13 +442,22 @@ class FittedChannelNoise:
         prefix = self.conditioning_samples
         root = self.compiled_prefix_root
         supplied_root = root is not None
+        factor_state = self.shared_factor_state
+        if factor_state is not None and (self.family != "shared" or not supplied_root):
+            raise ValueError("shared factor state requires its original root and shared stored PARCOR")
         if root is None:
             root = _prefix_root(temporal, covariance, prefix, self.family)
         root = _array(root, "compiled stationary prefix root", 2)
         if (root.shape != (prefix * channels, prefix * channels)
                 or np.any(np.diag(root) <= 0) or np.any(np.triu(root, 1) != 0)):
             raise ValueError("compiled prefix root requires a positive lower-triangular factor")
-        if supplied_root:
+        if factor_state is not None:
+            admit_shared_stationary_root(temporal[0].reflection_coefficients, covariance, prefix, root, factor_state)
+            prefix_compiler = factor_state
+        else:
+            prefix_compiler = compiler_record(
+                [noise.reflection_coefficients for noise in temporal], covariance, prefix, root)
+        if supplied_root and factor_state is None:
             # Verify exact pairwise law directly. Loading consumes the saved
             # root; it does not regenerate a root and call itself the oracle.
             stationary_root([noise.reflection_coefficients for noise in temporal], covariance, prefix,
@@ -451,8 +466,8 @@ class FittedChannelNoise:
         object.__setattr__(self, "innovation_covariance", frozen_array(covariance))
         object.__setattr__(self, "compiled_prefix_root", frozen_array(root))
         object.__setattr__(self, "_spatial_root", frozen_array(spatial))
-        object.__setattr__(self, "_prefix_compiler", freeze_metadata(compiler_record(
-            [noise.reflection_coefficients for noise in temporal], covariance, prefix, root)))
+        object.__setattr__(self, "shared_factor_state", freeze_metadata(factor_state))
+        object.__setattr__(self, "_prefix_compiler", freeze_metadata(prefix_compiler))
         object.__setattr__(self, "provenance", freeze_metadata(provenance))
         object.__setattr__(self, "_integrity", metadata_digest(self.record()))
         object.__setattr__(self, "_runtime_guard", self._runtime_state_digest())
@@ -460,6 +475,26 @@ class FittedChannelNoise:
     @property
     def order(self):
         return self.temporal[0].order
+
+    @classmethod
+    def from_shared_stationary_factors(cls, temporal, covariance, *, geometry,
+                                       conditioning_samples, provenance):
+        """Explicit new root producer for an existing shared temporal law.
+
+        This factory fits no AR, covariance, response or prior. It compiles a
+        new stationary root from the supplied parameters and records the /4
+        factor codec. Existing saved roots retain their original codec.
+        """
+        temporal = tuple(temporal)
+        if not temporal or any(not np.array_equal(temporal[0].reflection_coefficients,
+                item.reflection_coefficients) for item in temporal[1:]):
+            raise ValueError("shared factor compiler requires identical stored PARCOR across channels")
+        for item in temporal:
+            item.assert_integrity()
+        root, state = compile_shared_stationary_root(
+            temporal[0].reflection_coefficients, covariance, conditioning_samples)
+        return cls(temporal, covariance, geometry, conditioning_samples, "shared", provenance,
+                   root, shared_factor_state=state)
 
     @classmethod
     def fit(cls, records, *, family, order, conditioning_samples=32,
@@ -588,7 +623,9 @@ class FittedChannelNoise:
     def _runtime_state_digest(self):
         # Hash compiled numeric bytes directly instead of serializing a C*h
         # prefix factor to JSON at every matrix map in a candidate loop.
-        return metadata_digest({"family": self.family, "geometry": self.geometry.record(),
+        factor_binding = ({"shared_factor_state_sha256": metadata_digest(self.shared_factor_state)}
+                          if self.shared_factor_state is not None else {})
+        return metadata_digest({"family": self.family, "geometry": self.geometry.record(), **factor_binding,
             "prefix": self.conditioning_samples, "provenance": self.provenance,
             "prefix_compiler": self._prefix_compiler,
             "numeric_state_sha256": array_digest(self.innovation_covariance, self.compiled_prefix_root,
@@ -597,7 +634,8 @@ class FittedChannelNoise:
 
     def record(self):
         channels = len(self.geometry.channels)
-        return {"schema": _SCHEMA, "geometry": self.geometry.record(), "family": self.family,
+        return {"schema": _SCHEMA if self.shared_factor_state is None else _SHARED_FACTOR_SCHEMA,
+                "geometry": self.geometry.record(), "family": self.family,
                 "prefix_compiler": self._prefix_compiler,
                 "conditioning_samples": self.conditioning_samples,
                 "coefficients": [noise.coefficients.tolist() for noise in self.temporal],
@@ -627,8 +665,11 @@ class FittedChannelNoise:
         if set(payload) != {"state", "state_sha256"} or metadata_digest(payload["state"]) != payload["state_sha256"]:
             raise ValueError("channel noise artifact digest differs from its actual payload")
         state = payload["state"]
-        if state.get("schema") != _SCHEMA:
+        if state.get("schema") not in {_SCHEMA, _SHARED_FACTOR_SCHEMA}:
             raise ValueError("unsupported channel noise artifact schema; old compiled-W states require their original frozen owner")
+        factor_state = state["prefix_compiler"] if state["schema"] == _SHARED_FACTOR_SCHEMA else None
+        if state["schema"] == _SHARED_FACTOR_SCHEMA and (state["family"] != "shared" or factor_state is None):
+            raise ValueError("factor codec requires the saved shared root compiler state")
         temporal_records = state["compiled_temporal_records"]
         expected_count = 1 if state["family"] == "shared" else len(state["geometry"]["channels"])
         if len(temporal_records) != expected_count:
@@ -640,8 +681,10 @@ class FittedChannelNoise:
             raise ValueError("noise arrays disagree with their frozen compiled temporal records")
         fitted = cls(temporal, state["innovation_covariance"], NoiseGeometry(**state["geometry"]),
                      state["conditioning_samples"], state["family"], state["provenance"],
-                     state["compiled_prefix_root"])
-        if fitted._prefix_compiler != state.get("prefix_compiler"):
+                     state["compiled_prefix_root"], shared_factor_state=factor_state)
+        compiler_matches = (fitted._prefix_compiler == state.get("prefix_compiler") if factor_state is None
+                            else metadata_digest(fitted._prefix_compiler) == metadata_digest(state["prefix_compiler"]))
+        if not compiler_matches:
             raise ValueError("stationary prefix compiler or exact law identity differs from its saved state")
         if fitted._integrity != payload["state_sha256"]:
             raise ValueError("noise artifact contains unrecognized or inconsistent fields")

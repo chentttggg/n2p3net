@@ -2,6 +2,32 @@
 
 本文按主题维护已复核的结论、代码接点和下一步。运行日期与源码身份留在各证据及绑定中；使用方式和工程规则由原六指南维护。
 
+## Shared PARCOR平稳启动因子的显式入口
+
+`shared_stationary_factor`只适用于各实测通道持有完全相同stored binary64 PARCOR的law。exact-real step-up给出同一AR多项式，unit-innovation平稳时间协方差为Γ；以`t*C+c`的time-major/channel-fast布局，完整启动law恰为`K=Γ⊗Σ`。其正对角下三角平方根在精确算术下为`chol(Γ)⊗chol(Σ)`。private unequal AR仍由原mixed Yule–Walker owner持有，不能套此分离。
+
+小root的binary64值A/B分别来自原Decimal96 Cholesky，协方差与保存root均作为精确有理数准入。令小root的近似逆witness为W，`D=I-WA`、`η≥||D||F<1`，则`A⁻¹=(I-D)⁻¹W`；exact rational计算`W(Γ-AAᵀ)Wᵀ`，再乘`(1-η)⁻²`得到`a≥||A⁻¹ΓA⁻ᵀ-I||F`，空间同得b。witness的生成精度不作为前提，其缺陷由独立exact乘法核验。
+
+设`R₀=A⊗B`为保存两小root的精确乘积，则
+
+`e₀≥||R₀⁻¹ K R₀⁻ᵀ-I||F = ||Eₜ⊗I + I⊗Eₛ + Eₜ⊗Eₛ||F`
+
+可取`e₀=√C*a+√P*b+a*b`。实际存储root为逐entry integer-nearest-ties-even的`R=R₀+Δ`，并非假定Kronecker乘法零误差。以可逆精确2幂缩放的两小root坐标，逐entry有`|Δ|≤eps*|A|⊗|B|+u`，其中eps为`2⁻⁵²`、u为最小binary64 subnormal。于是
+
+`r = eps * || |A⁻¹||A| ||F * || |B⁻¹||B| ||F + PC*u*||A⁻¹||F*||B⁻¹||F`
+
+上界`||R₀⁻¹Δ||F`。各逆范数由`||W||F/(1-η)`上界；乘积范数由`|| |W||A| ||F + η*||W||F*||A||F/(1-η)`上界。所有矩阵乘、残差和缺陷均用Fraction exact算术；各平方根的binary64上界用exact平方比较验证。两小因子的归一与最终physical rescale均须精确往返，不增加单位变换误差。
+
+令`F=R₀⁻¹Δ`，`R=R₀(I+F)`，则实际law误差满足
+
+`||R⁻¹ K R⁻ᵀ-I||F ≤ (e₀+2*r+r²)/(1-r)²`。
+
+此式要求`r<1`，并继续使用原`1e-8*sqrt(P*C)`准入政策。无PSD修补、噪声参数重估、降通道或缩prefix。数学根计算为`P³+C³`主阶，完整actual root物化/核对仍有必要的`P²C²`项，small rational数的位长也影响时间。
+
+`FittedChannelNoise.from_shared_stationary_factors`显式发布新`/4`包；原factory/fit/default constructor保持原`/3`。新包保存原A/B、actual R、证书及三项原producer源码SHA；consumer核固定语义、精确law和witness，保原源码身份。load不调用任何root compiler。完整startup/tail whitening、leading prefix、log determinant、physical prior和flat da测度沿原函数消费actual root。
+
+独立小维测试从AR0/1/2闭式YW组装raw K，用有理Gauss–Jordan直接计算完整`R⁻¹ K R⁻ᵀ-I`，覆盖原单位与极小/极大协方差尺度；另有private拒绝、改签/损坏state、逆缺陷方向及normalization反例。新noise通过B11实际`compile_owned_flat_decision → save_joint_flat_state → load_joint_flat_state → predict_flat_tail`，保存重放时禁止任何fit/whiten/root compiler，预测的component logs和prefix weights逐数组相等。本地软件检查不代表公共分类效能。
+
 ## P1完整16格读数
 
 完整16格已完成并独审：8人各一个held selection05、R10、36选1，两噪声臂共576个候选分数，seed20260918，新增fit及response-fit均0。科学exit0、所属树0；[完成绑定](../assets/research_resume_20261011/p1_cloud_completion_binding.json)保原producer、新consumer、结果和两路独立复算。此处覆盖下文“A01已恢复、余14格待评”的阶段状态，原失败面板继续保原身份。

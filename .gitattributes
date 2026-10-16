@@ -134,3 +134,6 @@ experiments/compact_cold_caches.py text eol=lf
 tests/train/test_external_file_reclaim.py text eol=lf
 tests/train/test_cold_cache_compaction.py text eol=lf
 tests/transfer/test_requested_calibration_scoring.py text eol=lf
+src/research/shared_stationary_factor.py text eol=lf
+tests/research/test_shared_stationary_factor.py text eol=lf
+scripts/benchmark_shared_stationary_factor.py text eol=lf

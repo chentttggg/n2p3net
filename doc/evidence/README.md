@@ -11,6 +11,8 @@
 
 四页按主题持续更新；运行身份由原紧凑binding记录，六指南继续维护活动规范。原日期页已经物理归档并逐member校验，见[恢复清单](../../frozen/research_topic_documents_history.manifest.json)。
 
+[Shared PARCOR因子编译](response_and_noise.zh.md#shared-parcor平稳启动因子的显式入口)记录新`/4`显式入口的数学误差组合、原态保存重放及局部数值验证；原`/3`与既有生产载荷保原身份。
+
 原云端四个完成程序的载荷已按原SHA恢复，原分数复算及临时清理的来源集中见[恢复与复算绑定](../assets/research_resume_20261011/cloud_payload_recovery_binding.json)；指标、选择行为、P1关系和磁盘账本分别维护在上列四页。
 
 ## 历史与来源
