@@ -1,0 +1,150 @@
+{
+  "schema": "n2p3_joint_history_verified_components_cache_delivery/1",
+  "root_base": "267a50e",
+  "role": "source-preserving performance change and narrow software replay acceptance",
+  "source": {
+    "src/research/joint_flat_collapsed_predictive.py": {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\joint_flat_collapsed_predictive.py",
+      "sha256": "93a958dc4b59bd6723302e6ad099014a21e7129a5bbb93a5ab4a3fae606d0528",
+      "bytes": 14947
+    },
+    "src/transfer/joint_flat_model.py": {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\joint_flat_model.py",
+      "sha256": "83eaf6c523b6eafd93ce57df9079632204066d21123c51b4ac44ab664f569912",
+      "bytes": 30224
+    },
+    "tests/research/test_joint_flat_history_score_cache.py": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\research\\test_joint_flat_history_score_cache.py",
+      "sha256": "d75bfb007ff4a6847542c329f8ed5602029808dacaa2dcafefcc63c21d5d5a99",
+      "bytes": 12380
+    }
+  },
+  "production_patch": {
+    "path": "D:\\BCI\\worktrees\\research-director\\tmp\\joint-score-cache-20261016\\final-production.patch",
+    "sha256": "8aa9a72787b8db8f1f605eb1b6eb3913ff2babab88b956381844967bb8e9a22c",
+    "bytes": 13565
+  },
+  "handoff": {
+    "path": "D:\\BCI\\worktrees\\research-director\\tmp\\JOINT_HISTORY_SCORE_CACHE_HANDOFF_20261016.md",
+    "sha256": "9a50818502068a2470ec25be96f70522244c9c786614378748a8885bcc3eef1d",
+    "bytes": 8969
+  },
+  "physical_executed_source": {
+    "path": "D:\\BCI\\worktrees\\research-director\\tmp\\joint-score-cache-20261016\\verified-consumer-source.zip",
+    "sha256": "671f279df20c853377a6d4edf2f5b3c58eb8bb1999de22380c93e68485625d14",
+    "bytes": 30431
+  },
+  "pure_QR_memo": {
+    "frozen_author_archive": {
+      "path": "D:/BCI/worktrees/joint-flat-ensemble/tmp/joint_flat_actual31/attempt_004_source.code-only.tar.gz",
+      "sha256": "4fce37e4bf6a402b7077ba687bcd47effc81c485969edf1b5d785277a42680d1"
+    },
+    "verified_member": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\joint-score-cache-20261016\\joint_flat_collapsed_predictive.executed187.py",
+      "sha256": "93a958dc4b59bd6723302e6ad099014a21e7129a5bbb93a5ab4a3fae606d0528",
+      "bytes": 14947
+    },
+    "reviewed_delta": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\joint-score-cache-20261016\\pure-qr-memo.diff",
+      "sha256": "488a07ddc4d3994f44446955d704b176fd90f79f626eddc5f60513d3604b306a",
+      "bytes": 6445
+    },
+    "author_stage_comparison_scope": "contains a skipped earlier sampler; no whole stage gain is attributed only to QR memo"
+  },
+  "private_model_memo": {
+    "capacity_payload_bytes": 8388608,
+    "max_entries": 16,
+    "only_verified_captured_path": true,
+    "uncaptured_sampling_stores_entries": false,
+    "fresh_loaded_or_replaced_model_cache": "empty",
+    "serialized_cache_or_lock": false,
+    "key": [
+      "actual model and source",
+      "full current view and original complete history/C/input binding",
+      "full original capture digest",
+      "actual P/T operands and normalizer",
+      "current consumer source identity",
+      "effective native pool and Torch context"
+    ],
+    "memo_admission": "original mathematical components run and byte-match captured arrays after policy passes; source/native contexts stay equal",
+    "hit_programme": "recheck complete current input authority, rebuild actual operands, reuse immutable components, regenerate summary/diagnostics/capture"
+  },
+  "checks": {
+    "Ruff_two_sources_plus_new_test": "passed",
+    "scoped_git_diff_check": "passed",
+    "contracts": {
+      "receipt": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\joint-score-cache-20261016\\contracts\\receipt.json",
+        "sha256": "70614d9b961842964c37096631e83778d0b08ec95030a323ddc4e3bd3b3b9d21",
+        "bytes": 1052
+      },
+      "junit": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\joint-score-cache-20261016\\contracts\\junit.xml",
+        "sha256": "dda6faa512e7c2ce608162fccc9ee094e78fe474604bfbaa92574361c338c3a2",
+        "bytes": 923
+      },
+      "log": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\joint-score-cache-20261016\\contracts\\pytest.log",
+        "sha256": "f78cde70cde012c400f5cf807c622776c3b9e14292b6f3a9b3900e133147ebd8",
+        "bytes": 728
+      },
+      "actual_exit_code": 0,
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "scope": "one actual small source/P fixture; captured-only replays forbid sampler/RNG; no public fit",
+      "software_source_fits": 1,
+      "software_P_sampler_calls": 1,
+      "software_target_C_sampler_calls": 0
+    },
+    "timing": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\joint-score-cache-20261016\\contracts\\cases\\actual-small-history0\\reuse-timing.json",
+      "sha256": "0b187055e417db171d6f873c9589e7720e52f7cc10e3db6b3019a7ca23848caf",
+      "bytes": 392
+    },
+    "saved_old_producer_consumer": {
+      "receipt": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\joint-score-cache-20261016\\saved-baseline-consumer-fixed-path\\receipt.json",
+        "sha256": "72ad523406ba410358ce1c223f486095e5f7138b5c4da210af7b375b5c8b019f",
+        "bytes": 8023
+      },
+      "actual_tool_exit_code": 0,
+      "new_source_fits": 0,
+      "new_target_fits": 0,
+      "new_sampler_calls": 0,
+      "first_verified_replay_seconds": 0.4250017000013031,
+      "cache_hit_replay_seconds": 0.09658369999669958,
+      "component_calls": 1,
+      "returned_original_capture_digest": "c70a87e17cb04295762d352eed2a49a71b511435346fa71e4285e6aaf5ff58c7",
+      "payload_bytes": 512
+    }
+  },
+  "multiprocessing_scope": "existing typed caller constructs inside worker, explicit NPZ save/load crosses the boundary; tasks/results contain plans/artifacts/JSON receipts, never JointFlatModel",
+  "cleanup": {
+    "owner_namespace": "D:\\BCI\\worktrees\\research-director\\tmp\\joint-score-cache-20261016",
+    "empty_failed_fixture_directories_removed_with_cmd": [
+      "baseline",
+      "baseline-valid-timing",
+      "saved-baseline-consumer"
+    ],
+    "initial_quoted_cmd_exit_codes": [
+      123,
+      123,
+      123
+    ],
+    "individual_literal_cmd_retry_exit_codes": [
+      0,
+      0,
+      0
+    ],
+    "absence_verified": true
+  },
+  "not_claimed": [
+    "actual31/C500 speedup",
+    "changed posterior accuracy or law",
+    "full public source/DAG acceptance"
+  ],
+  "author_running_source_or_driver_changed": false,
+  "staged_or_committed_by_this_owner": false
+}

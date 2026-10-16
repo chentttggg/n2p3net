@@ -1,12 +1,17 @@
 """Typed C posterior and captured P-only prediction for the joint-flat expert."""
 from __future__ import annotations
 
+import hashlib
 import io
 import json
-from dataclasses import dataclass
+import sys
+from collections import OrderedDict
+from dataclasses import dataclass, field
 from pathlib import Path
+from threading import RLock
 
 import numpy as np
+from threadpoolctl import threadpool_info
 
 from research.channel_noise_mechanism import UnidentifiableFitError
 from research.joint_flat_chain import JointHistorySamples, summarize_joint_tail
@@ -32,6 +37,65 @@ from transfer.joint_flat_programme import (
     joint_flat_numeric_producer_identity,
 )
 from transfer.noise_model import array_digest, freeze_metadata, frozen_array, metadata_digest
+
+_EXECUTED_MODEL_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+
+
+def _history_consumer_context():
+    """Keep the current consumer separate from the captured numerical producer."""
+    return {'executed_model_sha256': _EXECUTED_MODEL_SHA256,
+            'current_modules': joint_flat_numeric_producer_identity()}
+
+
+def _history_native_context():
+    pools = [{name: row.get(name) for name in ('filepath', 'version', 'user_api', 'internal_api',
+        'prefix', 'num_threads', 'threading_layer', 'architecture')} for row in threadpool_info()]
+    pools.sort(key=lambda row: (str(row['filepath']), str(row['internal_api']), str(row['prefix'])))
+    torch = sys.modules.get('torch')
+    return {'native_pools': pools, 'torch': None if torch is None else {
+        'intraop_threads': torch.get_num_threads(), 'interop_threads': torch.get_num_interop_threads()}}
+
+
+class _VerifiedHistoryComponents:
+    """One model's bounded, nonserialized memo of byte-verified components.
+
+    The byte bound counts array payloads. The separate entry bound also limits
+    key/container overhead. Entries never hold a caller's mutable return value.
+    """
+
+    def __init__(self, capacity_bytes=8 * 2**20, max_entries=16):
+        if (type(capacity_bytes) is not int or capacity_bytes < 0
+                or type(max_entries) is not int or max_entries < 0):
+            raise ValueError('history component cache requires nonnegative byte and entry capacities')
+        self.capacity_bytes, self.max_entries = capacity_bytes, max_entries
+        self.used_bytes, self.hits, self.misses = 0, 0, 0
+        self._entries, self._lock = OrderedDict(), RLock()
+
+    def get(self, key):
+        with self._lock:
+            entry = self._entries.get(key)
+            if entry is None:
+                self.misses += 1
+                return None
+            self.hits += 1
+            self._entries.move_to_end(key)
+            return entry
+
+    def put(self, key, logweights, logdensity):
+        nbytes = logweights.nbytes + logdensity.nbytes
+        if not self.max_entries or not self.capacity_bytes or nbytes > self.capacity_bytes:
+            return
+        entry = frozen_array(logweights), frozen_array(logdensity)
+        with self._lock:
+            previous = self._entries.pop(key, None)
+            if previous is not None:
+                self.used_bytes -= sum(value.nbytes for value in previous)
+            while self._entries and (len(self._entries) >= self.max_entries
+                    or self.used_bytes + nbytes > self.capacity_bytes):
+                _, previous = self._entries.popitem(last=False)
+                self.used_bytes -= sum(value.nbytes for value in previous)
+            self._entries[key] = entry
+            self.used_bytes += nbytes
 
 
 def _sampling_record(samples):
@@ -157,6 +221,8 @@ class JointFlatModel:
     calibration_record_ids: tuple[str, ...]
     calibration_inputs: tuple[dict, ...]
     provenance: dict
+    _verified_history_components: _VerifiedHistoryComponents = field(
+        default_factory=_VerifiedHistoryComponents, init=False, repr=False, compare=False)
 
     @classmethod
     def fit_prefix(cls, source, programme, *, compiler, prefix):
@@ -219,6 +285,7 @@ class JointFlatModel:
         binding = capability.binding
         if (binding['current_decision_id'] != view.decision_id or binding['participant_key'] != view.participant_key
                 or binding['source_sha256'] != view.source_sha256
+                or metadata_digest(binding['current_view']) != metadata_digest(view.record())
                 or binding['samples_sha256'] != array_digest(capability.samples)
                 or binding['prefix_identity'] != self.provenance['original_C_prefix_identity']
                 or binding['future_truth_consumed'] is not False):
@@ -347,7 +414,18 @@ class JointFlatModel:
                                             self.source.parameters.hyperparameters.relative_noise_shape)
         common = {'current_axis': current_axis, 'tail_native_start': p_stop,
             'tail_noise_logdet': tail_logdet, 'tail_noise_logdet_error': normalizer_error}
-        if self.programme.sampler.predictive_integration == 'collapsed_beta_all_drift_current_q':
+        cache_key, contexts = None, None
+        components = None
+        if captured is not None:
+            contexts = _history_consumer_context(), _history_native_context()
+            cache_key = metadata_digest({'model_sha256': self.digest(), 'source_sha256': self.source.digest,
+                'input_sha256': input_digest, 'current_view': view.record(), 'complete_history': binding,
+                'capture_sha256': captured.digest, 'T_record_operands': full_binding,
+                'tail_normalizer': common, 'consumer': contexts[0], 'native': contexts[1]})
+            components = self._verified_history_components.get(cache_key)
+        if components is not None:
+            logweights, logdensity = components
+        elif self.programme.sampler.predictive_integration == 'collapsed_beta_all_drift_current_q':
             logweights, logdensity = collapsed_tail_components(records, tail_rows, tail_errors, axes, samples,
                 **common, leaf_rows=self.programme.sampler.leaf_rows,
                 cache_bytes=self.programme.sampler.qr_cache_bytes,
@@ -363,6 +441,10 @@ class JointFlatModel:
         if captured is not None and (not np.array_equal(logweights, captured.logweights)
                                      or not np.array_equal(logdensity, captured.logdensity)):
             raise ValueError('original captured posterior components changed during model-only replay')
+        if (captured is not None and components is None
+                and array_digest(logweights, logdensity) == array_digest(captured.logweights, captured.logdensity)
+                and contexts == (_history_consumer_context(), _history_native_context())):
+            self._verified_history_components.put(cache_key, logweights, logdensity)
         return JointFlatPrediction(summary['log_evidence'], summary['log_probability'], input_digest, capture, summary)
 
     def save(self, path):

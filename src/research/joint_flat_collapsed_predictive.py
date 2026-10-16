@@ -6,6 +6,9 @@ joint startup stays in the flat block; no Kronecker startup replacement.
 """
 from __future__ import annotations
 
+import hashlib
+from collections import OrderedDict
+
 import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.special import logsumexp
@@ -21,7 +24,42 @@ from research.joint_response_scale import _augmented_qr
 from transfer.noise_model import frozen_array
 
 
-def _marginal(trees, precision, *, extra=None, prior_covariance_error=0.):
+class _UnweightedQRCache:
+    """One component call's bounded cache of deterministic, unweighted QR operands."""
+
+    def __init__(self, capacity_bytes):
+        if type(capacity_bytes) is not int or capacity_bytes < 0:
+            raise ValueError('unweighted QR cache requires a nonnegative byte capacity')
+        self.capacity_bytes, self.used_bytes = capacity_bytes, 0
+        self.entries = OrderedDict()
+        self.hits = self.misses = 0
+
+    def __call__(self, rows, chunk_rows, *, with_error):
+        if not self.capacity_bytes:
+            self.misses += 1
+            return _augmented_qr(rows, chunk_rows, with_error=with_error)
+        content = hashlib.sha256(memoryview(np.ascontiguousarray(rows)).cast('B')).hexdigest()
+        key = (rows.shape, rows.dtype.str, content, chunk_rows, with_error)
+        if key in self.entries:
+            self.hits += 1
+            self.entries.move_to_end(key)
+            return self.entries[key]
+        self.misses += 1
+        result = _augmented_qr(rows, chunk_rows, with_error=with_error)
+        arrays = result if with_error else (result,)
+        used = sum(value.nbytes for value in arrays)
+        if used <= self.capacity_bytes:
+            for value in arrays:
+                value.setflags(write=False)
+            while self.used_bytes+used > self.capacity_bytes:
+                _, old = self.entries.popitem(last=False)
+                self.used_bytes -= sum(value.nbytes for value in (old if isinstance(old, tuple) else (old,)))
+            self.entries[key] = result
+            self.used_bytes += used
+        return result
+
+
+def _marginal(trees, precision, *, extra=None, prior_covariance_error=0., unweighted_qr=None):
     k, c = trees[0].record.response_width, trees[0].record.channels
     flat_width = sum(tree.record.drift_width for tree in trees)
     prior = np.column_stack((np.eye(k), np.zeros((k, flat_width+c))))
@@ -31,8 +69,9 @@ def _marginal(trees, precision, *, extra=None, prior_covariance_error=0.):
         r, root, errors = tree.record.drift_width, tree.root, tree.errors[1]
         if extra is not None and index == extra[0]:
             values, bounds = extra[1:]
-            tail, tail_errors = _augmented_qr(values, max(1, len(values)), with_error=True)
-            root, qr_errors = _augmented_qr(np.vstack((root, tail)), max(len(root), len(tail)), with_error=True)
+            compress = _augmented_qr if unweighted_qr is None else unweighted_qr
+            tail, tail_errors = compress(values, max(1, len(values)), with_error=True)
+            root, qr_errors = compress(np.vstack((root, tail)), max(len(root), len(tail)), with_error=True)
             errors = errors+_column_norms(bounds)+tail_errors+qr_errors
         rows = np.zeros((len(root), k+flat_width+c))
         rows[:, :k], rows[:, k+flat_start:k+flat_start+r], rows[:, k+flat_width:] = root[:, r:r+k], root[:, :r], root[:, r+k:]
@@ -137,9 +176,10 @@ def _marginal(trees, precision, *, extra=None, prior_covariance_error=0.):
 
 def collapsed_tail_components(records, tail_rows, tail_errors, axes, samples, *, current_axis,
         tail_native_start, tail_noise_logdet, tail_noise_logdet_error, leaf_rows, cache_bytes,
-        prior_covariance_error=0.):
+        prior_covariance_error=0., cache_report=None):
     """P-only marginal lambda/other-q measure; all current q have actual mass."""
     local_axes = [tuple(axis for axis in axes if axis.record_index == index) for index in range(len(records))]
+    unweighted_qr = _UnweightedQRCache(cache_bytes)
     trees = [FactoredQRTree(record, local, leaf_rows=leaf_rows, cache_bytes=cache_bytes)
              for record, local in zip(records, local_axes, strict=True)]
     local = {index: sum(axis.record_index == axes[index].record_index for axis in axes[:index]) for index in range(len(axes))}
@@ -173,7 +213,8 @@ def collapsed_tail_components(records, tail_rows, tail_errors, axes, samples, *,
                     actual_tail[:, r:r+k] += value[:, :k]
                     actual_tail[:, r+k:] -= value[:, k:]
                 value_f, error_f = _marginal(trees, precision,
-                    extra=(current.record_index, actual_tail, actual_errors), prior_covariance_error=prior_covariance_error)
+                    extra=(current.record_index, actual_tail, actual_errors), prior_covariance_error=prior_covariance_error,
+                    unweighted_qr=unweighted_qr)
                 normalizer = len(actual_tail)*c*(np.log(2*np.pi)-np.log(lambda_current))+tail_noise_logdet
                 normalizer_error = tail_noise_logdet_error+_roundoff_gamma(4)*(
                     len(actual_tail)*c*(abs(np.log(2*np.pi))+abs(np.log(lambda_current)))+abs(tail_noise_logdet))
@@ -190,4 +231,9 @@ def collapsed_tail_components(records, tail_rows, tail_errors, axes, samples, *,
             budget = np.sqrt(np.finfo(float).eps)*sum(record.scalar_rows for record in records)
             if not np.isfinite(weight_error) or weight_error > budget:
                 raise DiffuseProjectionResolutionError('complete normalized collapsed current-q weights are unresolved in nats')
+    if cache_report is not None:
+        cache_report.update({'scope': 'unweighted_tail_and_merge_QR_only_this_component_call',
+            'hits': unweighted_qr.hits, 'misses': unweighted_qr.misses,
+            'entries': len(unweighted_qr.entries), 'payload_bytes': unweighted_qr.used_bytes,
+            'capacity_bytes': unweighted_qr.capacity_bytes})
     return frozen_array(weights), frozen_array(densities)
