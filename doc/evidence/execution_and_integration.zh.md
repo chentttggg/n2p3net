@@ -12,9 +12,11 @@ NN完整source metadata共享存储已集成binary软件链。原H67,247,311B ch
 
 ### 当前集成（2026-10-16）
 
-Source串行共享与candidate完整依赖闭包、并发产物记账修复及显式shared AR因子已合入科研树。总监逐读实际模块、writer、save/load和parent接点；source/owner新组合用真实Manager进程完成共享source发布、prefix保存和精确重放，最终预算等于存活字节。预算独审关闭祖先范围ABA与旧任务结算新lease两P1，独立目录保持并行；修后Linux Manager/链接/同FUSE测量继续单列。准确提交、源码SHA和receipt见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)的`resume_20261016`。
+Source共享闭包、并发产物预算、显式shared AR因子和原保存root快速严格准入已合入。root审实际模块、writer、save/load与parent接点，真实Manager组合检查完成共享source发布、prefix保存和精确重放。Linux同FUSE真实Manager四写者三组配对中，进程耗时中位11.9632→2.15515秒，写入阶段10.19675→1.45603秒；输入与输出SHA相同，实际目录扫描重叠数1→4。它直接量到了写入路径的改善。S5交付613成员逐SHA核验，171运行时文件只更换已接受的资源owner；Linux native4完整DAG组合退出0。准确来源见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)的`resume_20261016`。
 
-BI旧保存子集的A10+B2已按原12请求闭合，新增6次必要目标primitive fit、0source fit，原101/103文件及180源码保持；原MAT01/57正在独立执行完整新公共程序。云端原八个candidate fit已完成，24项ordinary replay精确差定位到score线程上下文；按原ordinary4/selection1和实际fit/退役authority做零fit恢复，后五阶段继续由唯一云owner推进。B11实际C500诊断将下一工作集中到prior/分块数值误差见证；原模型、阈值和唯一source fit保持。
+BI原MAT01的108格已完成：74次目标primitive fit、204次AdamW更新、0source fit，三个graph内部精确重放及独立parent正验通过。proper child、真实resident账本和最后概率篡改负例各退出0，111681500B完整申请并归还，最终关系由正常parent与focused consumer共用。原reader15和observer1保原身份。graph-store/2两切片已接受：真实prepare→chunk/ordinary4→reducer→parent链闭合，原2056864994B图转成47161151B，90节点/24scope/原logical SHA保持，转换峰RSS797597696B、wall214.87秒，0新fit/数值replay。独审异常lease修复通过两个真实Manager反例；cmd逐项退休340545788B可重建token cache，原图/模型保留。来源见[图存储接受](../assets/research_resume_20261012/graph_storage_delivery_20261016.json)。
+
+B11实际31导C500用原128 burnin/128 draws×2 chains完成，622坐标由独立直接自协方差重算，最大Rhat1.0413、最小bulk/tail ESS52.14/98.97，满足原1.2/5/5政策。完整新程序已消费与原C500逐字节相同的模型，继续OOF、future和whole nested graph。云owner已实际观察S4完整恢复退出0、6080请求、8原fit复用、0新fit和CPU峰24.89核；连接中断前已读原exit，最终304任务/8parent逐项绑定待恢复连接后落地。S5只供尚未开始的后五阶段。
 
 
 ### 当前工作成果（2026-10-14）

@@ -2,6 +2,16 @@
 
 本文按主题维护已复核的结论、代码接点和下一步。运行日期与源码身份留在各证据及绑定中；使用方式和工程规则由原六指南维护。
 
+## 实际31导联合校准与保存root准入
+
+B11联合模型已在原Huebner记录的500个授权标签上完成采样。直观上，它让各记录共享一套响应系数，同时分别估计噪声尺度。原128次预热、128次保存、两条链保持；独立重算全部622坐标的最大Rhat为1.0413，最小bulk ESS为52.14、tail ESS为98.97。Rhat衡量两条链是否走到相近分布，接近1较好；ESS把相关样本折算为有效独立样本数。三项均满足预声明1.2/5/5政策，原C500模型和样本已按完整fit绑定复用于后续OOF与future程序。source仍是唯一原C68拟合，participant2供source、participant1作target，属于同研究内排除目标参与者的设计。
+
+这次收紧的是数值误差证书：用实际存储的Kronecker坐标、小正交见证、分块误差的向上hypot及漂移残差，计入真正进入公式的误差。点数组、先验、噪声、初始化及采样政策保持原定义。独立高精度oracle、实际采样与原包逐字节复用分别留证；完整预测效果由后续独立future读数给出。
+
+首个OOF的P采样和完整预测capture也已完成并保留原字节。进一步检查发现，32个候选的分子积分都主要由同一个保留样本贡献，分母则约有256个有效贡献；候选比值共用这一主导样本，使配对MCSE很小。下一步直接用已保存组件检查移除主导样本、分链和半样本的概率敏感性，并研究共同尾部因子的解析抵消或更稳定的积分方法。这样可把数值正确、有限样本概率与连续积分的稳定性逐项量化。
+
+原shared `/3`保存root也已实现快速严格准入：用小因子见证核验原992维矩阵，误差界9.386e-12低于原3.150e-7政策，保留原root与producer。实际完整source codec加载4.254秒，其中root部分1.130秒；较早同输入加载的457.8秒中，452.3秒集中在该验证。新见证是consumer准入元数据，原模型的概率计算仍消费原矩阵。来源见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
+
 ## Shared PARCOR平稳启动因子的显式入口
 
 `shared_stationary_factor`只适用于各实测通道持有完全相同stored binary64 PARCOR的law。exact-real step-up给出同一AR多项式，unit-innovation平稳时间协方差为Γ；以`t*C+c`的time-major/channel-fast布局，完整启动law恰为`K=Γ⊗Σ`。其正对角下三角平方根在精确算术下为`chol(Γ)⊗chol(Σ)`。private unequal AR仍由原mixed Yule–Walker owner持有，不能套此分离。

@@ -2167,9 +2167,52 @@
         "seconds": 15.59,
         "scope": "actual SyncManager process; shared source publish, prefix package save and exact independent replay; final pool equals surviving bytes"
       },
-      "linux_manager_links_fuse": "delivery in preparation; no repaired-code timing ratio claimed",
+      "linux_manager_links_fuse": {
+        "status": "passed_root_reviewed",
+        "summary": {
+          "path": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux-cloud-actual/fuse/SUMMARY.json",
+          "sha256": "bd6b98be0612330cfa14d13c0f8c223ba29a2963df2de2b2d5aea7cbb192cb98",
+          "bytes": 4219
+        },
+        "actual_exit": {
+          "path": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux-cloud-actual/control/actual_exit.json",
+          "sha256": "fcc5f65a7288dd45cc54bb96701abc28c10a6209dd89ab1d8c735f29acd0cd11",
+          "bytes": 747
+        },
+        "paired_rounds": 3,
+        "child_wall_medians_seconds": [
+          11.963184697553515,
+          2.155150432139635
+        ],
+        "child_wall_speedup": 5.550974316756374,
+        "write_phase_medians_seconds": [
+          10.196748804301023,
+          1.4560346230864525
+        ],
+        "scope": "writer_path"
+      },
       "old_f6_candidate": "rejected; historical writer timing remains attached to old source",
-      "linux_delivery": "artifact_owner_linux_delivery_20261016.json"
+      "linux_delivery": "artifact_owner_linux_delivery_20261016.json",
+      "s5_target_delivery": {
+        "status": "accepted_for_new_target_producers",
+        "root_acceptance": {
+          "path": "D:/BCI/artifacts/base-matrix-20261014/prefix-native-recovery/source-target-writer/ROOT_ACCEPTANCE.json",
+          "sha256": "27a63ae2e1adc84bddf36d154fa58d050a96fed0a2ff18cb31c6cee2a9a520db",
+          "bytes": 2645
+        },
+        "transition": {
+          "path": "D:/BCI/artifacts/base-matrix-20261014/prefix-native-recovery/source-target-writer/SOURCE_TRANSITION.review.json",
+          "sha256": "baec69285f8219ad75f1629216eac3a0db02d79e67b3f41bb88909c337306964",
+          "bytes": 585
+        },
+        "manifest": {
+          "path": "D:/BCI/artifacts/base-matrix-20261014/prefix-native-recovery/source-target-writer/source.manifest.json",
+          "sha256": "70b89c2d61eca85db4f91d351259dfbd9c54a79a3267367d9e4c4510f54de448",
+          "bytes": 69862
+        },
+        "runtime171_digest": "f26b61af87a3a3d6e2306ecbf5031f80d76c990403856c85eeb00548047fbf06",
+        "source4_runtime_unchanged": true
+      }
     },
     "shared_stationary_factor": {
       "author_commits": [
@@ -2234,13 +2277,44 @@
       },
       "finding": "original raw_native8 saved state unchanged; score native4 reproduces original bits, score native1 differs by1.1641532182693481e-10 in one log probability",
       "recovery_contract": "zero fit; ordinary replay and numeric parent native4; original selection/node/chunk/reducer native1; actual original fit_execution and OS retirement joins; separate consumer transition and complete original requested ledger",
-      "status": "concrete recovery consumer and issuer under cloud-owner implementation; full recovery not yet accepted"
+      "status": "user_cloud_off_observed_OS0_saved_final_join_pending_reopen",
+      "accepted_consumer_commit": "b734b7b370c51c2f8025742af581dc630879aa63",
+      "recovery_task_total_including_parent": 304,
+      "recovery_parent_tasks": 8,
+      "observed": {
+        "authority": "cloud_owner_live_read_before_connection_loss",
+        "scientific_pid": 12458,
+        "birth": 1792131100.09,
+        "actual_OS_exit": 0,
+        "owned_after_exit": 0,
+        "wall_seconds": 2124.0819,
+        "result_status": "completed",
+        "requested": 6080,
+        "reused_fits": 8,
+        "new_fits": 0,
+        "original_package_metadata_changes": [],
+        "peak_cpu_cores": 24.8924,
+        "peak_tree_rss_bytes": 31398354944
+      },
+      "final_join_local_receipt": null,
+      "observation": {
+        "path": "D:/BCI/artifacts/base-matrix-20261014/prefix-native-recovery/full-replay-pool01/LAST_VERIFIED_OBSERVATION.json",
+        "sha256": "fd5792cbb16e37b8f8866c71efde9811403826e22715a21479d14cd715e71488",
+        "bytes": 2071
+      },
+      "cloud_now": "user_confirmed_not_running; no SSH attempts",
+      "local_resume_checkpoint": {
+        "path": "D:/BCI/artifacts/base-matrix-20261014/prefix-native-recovery/LOCAL_RESUME_CHECKPOINT.json",
+        "sha256": "4bf1814c72cb9686fa1bb17f23a238bae60b9f94a64701996911ccae8b741ae0",
+        "bytes": 6059
+      }
     },
     "ongoing": [
-      "B11 actual C500 numerical error certificate and full history/OOF/future/capsule/parent graph",
-      "BI original MAT01/57 full four-fixed/selector/control routes",
-      "H original-input NN programme after shared-source integration",
-      "full remaining cloud target matrix and B00-B14 programme"
+      "BI57 full compact-runtime programme from fixed9407235 freeze",
+      "B11 exact QR memo and concentration/sensitivity of saved OOF components",
+      "typed B11 numeric/ensemble/replay and joint catalog integration, then generic public original-data source admission",
+      "cloud reopening: fetch existing S4 full304/8parent final join, then remaining five stages",
+      "B00-B14 programme"
     ],
     "completed_tree_cleanup": {
       "method": "cmd.exe git worktree remove",
@@ -2249,6 +2323,120 @@
       "removed_worktrees": 3,
       "source_commits_and_necessary_payloads_preserved": true,
       "artifact_budget": "artifact_budget_worktree_retirement_20261016.json"
+    },
+    "source_sha256_role": "Original accepted 46732ee snapshot; later independent slices retain their own commits and artifact bindings below.",
+    "additional_integrated_commits": [
+      "def8182",
+      "d612f6e",
+      "113be63",
+      "cf9f590",
+      "3beed9e",
+      "f1a36a6",
+      "be35c57",
+      "9407235"
+    ],
+    "saved_root_admission": {
+      "integrated_commit": "def8182",
+      "status": "accepted_original_shared_3_root",
+      "actual992_receipt": {
+        "path": "D:/BCI/artifacts/base-matrix-20261014/shared-saved-root-admission/actual02/receipt.json",
+        "sha256": "80af53f31d2fdeb091b2bd6897f8bdd5dec428a0b9847e0c7fce513b1bafa65d",
+        "bytes": 4649
+      },
+      "bound": 9.38574336e-12,
+      "policy": 3.14960315e-07,
+      "source_codec_seconds": 4.254,
+      "root_part_seconds": 1.13,
+      "original_root_and_producer_retained": true
+    },
+    "bi_original_mat01": {
+      "status": "accepted_completed_phase_composition",
+      "delivery": {
+        "path": "D:/BCI/worktrees/bi2014a-label-prefix/tmp/BI2014A_LABEL_PREFIX/ORIGINAL_MAT01_CAPSULE_DELIVERY_20261016.json",
+        "sha256": "7e0825e20fe7944e754d6bc935cc620455eb3a2ac8d9c77a55672e8932ff95c9",
+        "bytes": 6527
+      },
+      "requested_cells": 108,
+      "actual_target_primitive_fits": 74,
+      "actual_adamw_steps": 204,
+      "new_source_fits": 0,
+      "resident_before_held_closed": [
+        0,
+        111681500,
+        0
+      ],
+      "original_reader_exit": 15,
+      "original_observer_exit": 1,
+      "proper_capsule_child_exit": 0,
+      "real_resident_consumer_exit": 0,
+      "new_whole_parent_replays": 0,
+      "new_node_replays": 0,
+      "production_commits": [
+        "3beed9e",
+        "f1a36a6",
+        "be35c57"
+      ],
+      "decoder_integration_check": {
+        "path": "D:/BCI/worktrees/research-director/tmp/bi-public-boundary-integration.xml",
+        "sha256": "f9577c730be4dad5d4cb3572e52ad7917c6c3e394f80dcb1c47afd4b469e0b31",
+        "bytes": 1523
+      },
+      "root_delivery": {
+        "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/bi_original_mat01_delivery_20261016.json",
+        "sha256": "767b4eaff986bd9ad1b6af102258e0fa5e9490c51ab50b322d3954fe48d09703",
+        "bytes": 7627
+      },
+      "final_closure": {
+        "path": "D:/BCI/artifacts/research-deliveries/bi2014a/original-mat01/ORIGINAL_MAT01_CLOSURE.json",
+        "sha256": "18ef40db2fa9705adcd28e44c12f8dc973f49ed2a03d1d4d0cd36253be3f6acc",
+        "bytes": 11328
+      },
+      "focused_consumer_exit": 0
+    },
+    "b11_actual_c500": {
+      "status": "accepted_C500_original_policy_full_programme_continues",
+      "diagnostic_audit": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-flat/c500-accepted/JOINT_FLAT_C500_DRAW_AUDIT.json",
+        "sha256": "4af14d2febae3c7f2dd1a15f642321b5087b5b04688edd946d23d82e18a53d2a",
+        "bytes": 1654
+      },
+      "reuse_audit": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-flat/c500-accepted/JOINT_FLAT_C500_REUSE_AUDIT.json",
+        "sha256": "9a7391b80d7d95a09117e9895cb24891033a0511c7572a87cbd54c3365dee749",
+        "bytes": 1055
+      },
+      "chains": 2,
+      "burnin_per_chain": 128,
+      "draws_per_chain": 128,
+      "coordinates": 622,
+      "max_rhat": 1.0413272938339773,
+      "min_bulk_ess": 52.13508130011158,
+      "min_tail_ess": 98.96512177099564,
+      "source_scope": "same_study_target_participant_excluded_source_participant2_C68",
+      "target_scope": "Huebner2017_participant1_C500",
+      "full_oof_future_wholegraph": "ongoing"
+    },
+    "graph_storage": {
+      "status": "accepted",
+      "commits": [
+        "cf9f590",
+        "9407235"
+      ],
+      "root_delivery": {
+        "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/graph_storage_delivery_20261016.json",
+        "sha256": "0288b77732496fbc7941665c18825f9a9af75f4605bec3c709fc01d28c32c3a4",
+        "bytes": 12069
+      },
+      "original_K950_bytes": 2056864994,
+      "compact_K950_bytes": 47161151,
+      "scope_count": 24,
+      "node_count": 90,
+      "peak_tree_rss_bytes": 797597696,
+      "wall_seconds": 214.86880564689636,
+      "original_logical_graph_sha256": "97c8ea2a4da65b8506aeb59ac66c6011c8477bc65c1bc5fd8ccdbfda1eda2895",
+      "new_fits": 0,
+      "numeric_replays": 0,
+      "cleanup_bytes": 340545788
     }
   }
 }

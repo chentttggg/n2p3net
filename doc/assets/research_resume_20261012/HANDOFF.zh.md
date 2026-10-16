@@ -9,16 +9,20 @@
 | Source共享存储 | serial ingress只共享原source prototype，各target独立状态；candidate模型、prefix、graph、chunk、parent持完整依赖，支持独立导出；replay pool退役后复核原blob | `25c3497/2e47e2a`，[作者交付](source_storage_candidate_delivery_20261016.json) |
 | 并发产物预算 | 固定路径范围覆盖整个扫描与记账窗口；相互覆盖路径协调，独立目录并发；旧任务只结算原lease代次 | `987e3f2`，两轴及root源码审阅；19项原定向合同与`46732ee`真实Manager组合检查 |
 | Shared AR启动因子 | 显式`/4`工厂按时间因子⊗通道因子生成新root并核严格误差证书；旧`/3`和原保存root保持各自producer | `45a9edf/36f2929/69eb1ab/69c1eb9`，[交付](../shared_stationary_factor_20261016/binding.json)与root独审 |
+| 原保存root快速准入 | 用小因子见证严格核原`/3`大root，原矩阵与producer保持 | `def8182`，actual992维bound9.386e-12；完整source codec4.254秒 |
+| 图存储 | compiler共享完整不可变scope；graph-store/2分列logical/physical SHA并持完整source闭包，prepared/reducer接通 | `cf9f590/9407235`，两切片与独审已接受；[实际与清理](graph_storage_delivery_20261016.json) |
+| BI label-K入口 | 公开marker持决策边界；四fixed/selector共用原输入与source owner | `3beed9e/be35c57`；8项decoder合同通过，大caller由实际01/57分别验收 |
 | BI旧保存子集续接 | A10与B2不重叠并集覆盖原12请求；6概率、6协议不可用；只补未启动的两格，新增6次目标primitive fit、0source fit | [实际交付与独审](bi_continuation_delivery_20261016.json) |
 
 Shared AR实际31导×32点工厂3.814秒、峰值322MiB，误差证书1.6504e-12低于原3.1496e-7政策。独立AR3有理数oracle及真实保存包读取通过；旧689秒观察和小维配对计时分别保来源。load保原prefix/temporal启动因子，tail空间Cholesky仍由原owner构造。
 
-预算修复相对旧被拒`f6e3`关闭ancestor ABA与retire token复用两P1。Linux真实Manager、链接及同FUSE写入验证正在准备独立代码包；旧7倍writer计时保旧版本身份。root组合检查已实际穿过Manager子进程、shared source publish、前缀保存和精确重放，最后pool等于实际存活字节。
+预算修复已在Linux真实Manager与同FUSE四写者三组配对通过：child wall中位11.9632→2.15515秒，约5.551倍；write phase10.19675→1.45603秒，约7.003倍。原输入/输出SHA相同，扫描重叠1→4。S5交付613成员与171 runtime逐SHA核回，只有已接受的source_execution资源owner变更；native4真实完整Pool DAG组合退出0。root接受文件在`D:/BCI/artifacts/base-matrix-20261014/prefix-native-recovery/source-target-writer/ROOT_ACCEPTANCE.json`，SHA27a63ae2…；transition已accepted，SHAbaec6928…。
 
 ## 正在推进
 
-- **B11同record完整链：**复用唯一真实source NPZ和29MB原codec，source fit仍只有最初一次。实际C0已走真实`_fit_expert/save`；C500保存了原114×16增广设计及数值失败分解。独立90位oracle核均值posterior metric误差3.65e-12，QR精度关系1.59e-15；当前收紧prior转换与分块累计误差见证，保持原law、参数、初始化和阈值。之后完成forward OOF、完整历史、六独立future、capsule、parent与record-aware graph。
-- **BI原MAT01/57：**已审固定driver和原ZIP/source-excluded catalog，按K0/48/2000、四fixed+selector及独立waveform control串行执行。各自保存真实primitive/AdamW、requested、parent正反准入、capsule与OS/owned终态；旧toy-MAT续接单列。
+- **B11同record完整链：**唯一原source NPZ/29MB codec保持。实际31导C500按原128预热/128draw×2链完成，622坐标独立重算满足原1.2/5/5政策。attempt003消费原C500逐字节模型，首个K0 OOF完整capture在退休前自然完成；原OS15和随后owned0复核分列，187源码与observer保完整小归档。该OOF候选赢家在移除主导样本/分链/半样本时相同，最大任意pair logodds变化4.6725，绝对density贡献集中；正在核原law的一维logλ独立积分对照与等价QR缓存。原capture保持；其余7个OOF/7个future、capsule/parent/wholegraph沿各自真实结果继续。typed数值/ensemble与六个replay接点由两个owner在root合并，generic runner由root持有；原history refusal也要完整保存重放。
+- **BI原MAT01/57：**01的108格（90fixed+18selector）、74目标fit、204AdamW更新、0sourcefit、三个原graph内部精确重放、完整parent正验均保原producer；最后focused负例已实际OS0完成，13份小凭证由root逐SHA核回。正常parent与独立consumer共用原样提取的最终predicate（`f1a36a6`），0重放node/0新wholeparent。properchild/真实resident也各exit0/owned0，111681500B完整申请归还；原reader15/observer1分列。[最终接受](bi_original_mat01_delivery_20261016.json)已落地。57从9407235+8个固定helper独立D盘代码freeze启动，预算0/48/1163、5个future、90格；四fixed/selector/control完整执行中。
+- **大图元数据：**01 K950原2056864994B图已自然转换并fresh load为47161151B，保90节点/24scope及原logical SHA；真实峰RSS797597696B，wall214.87秒。实际Manager预留1378000596B并完整归还，0 EEG/PT/模型打开、fit或数字replay。独审P2发布后receipt读取异常释放已以最小修复及两个真实Manager反例关闭，实际a904执行源码与最终b28修后源码分别保存。四个可重建token cache已按cmd逐项删除，释放340545788B；原大图/模型保原址。
 - **H原输入NN链：**原13人metadata与最后session819请求、record-aware C/P/T、history/clock/variable-R等接口已集成；完整NN四fixed/selector沿原source和共享依赖继续。原数据、source、失败及requested保持。
 - **其余研究块：**B03温度/ε/整程序选择、B07 C-latent、B09紧凑物理效应与source/OOF/ensemble、B11 flat/Gamma各已有独立软件接受范围；新公共opt-in、完整面板和B13真人采集按各自原计划推进。
 
@@ -26,9 +30,9 @@ Shared AR实际31导×32点工厂3.814秒、峰值322MiB，误差证书1.6504e-1
 
 云owner chat为 `01a10b0f-c672-7e73-8449-4ebdaf6fc5eb`。seed20261014四个最终source、八次成功fit已完成；BNCI binary保160请求、128评分、32个K0协议不可用，原120次目标fit经零新fit恢复。
 
-原candidate八个fit actor均completed；304项replay为248completed、24failed、32blocked，首阶段science/driver退出1，后五阶段尚未启动。原6080请求保完整失败占位。真实单格诊断保持原state，在score native4下逐位相同；native1下一项log概率差1.1641532182693481e-10，差从三角求解开始。
+原candidate八个fit actor均completed；原304项replay为248completed、24failed、32blocked，原退出1和6080失败占位保持。恢复S4使用`b734b7b`，ordinary/parent native4、selection/prep native1且interop1计入CPU；包括8个parent的总任务数仍是304。云owner已实际读到PID12458/birth1792131100.09最终exit0、owned0、2124.0819秒、result completed、6080请求、8fit复用、0新fit、原package metadata无变化，CPU峰24.8924核/RSS31398354944B。
 
-云owner已从原e1/b961 archive重建独立D盘恢复树，正实现可审阅zero-fit consumer/issuer：ordinary worker和numeric parent用原native4；selection/node/chunk/reducer保原native1。原fit_execution、实际OS0/退役及资源ledger必须逐项关联，新consumer单列source transition；保原8次fit、原成功/失败和6080分母。root审具体diff后直接衔接已授权完整恢复与其余五阶段。每次云launch/resume按性能与资源skills核实际CPU25/GPU容量4和ready work，依赖尾单列。
+用户已确认云端暂未开启，所有SSH尝试停止。上述实际exit观测副本在`prefix-native-recovery/full-replay-pool01/LAST_VERIFIED_OBSERVATION.json`，SHAfd5792cb…；原issuer退出文件和完整304任务/8parent逐项gate待重新开云后先下载验收，不重跑304。云端本地交接为同父目录`LOCAL_RESUME_CHECKPOINT.json`与`LOCAL_RESUME_HANDOFF.zh.md`。S5已部署并核f26b61af…，后五阶段未开始；最终controller pin从`continuation_control/CONTROL_BUNDLE.binding.json`读取。失败派生载荷尚未完成下载验证，因此无retire。运行过的S4保原身份，下一launch/resume继续按性能/资源skills及CPU25/GPU容量4验实际工作。
 
 ## 工作身份与恢复
 
@@ -41,8 +45,8 @@ Shared AR实际31导×32点工厂3.814秒、峰值322MiB，误差证书1.6504e-1
 
 ## 下一步集成顺序
 
-1. 审云端具体zero-fit补丁/issuer和actual fit authority join，执行完整恢复和后五阶段。
-2. 收B11严格误差见证及原worker后续完整实际链，逐源码审完整role/保存/重放/graph，不重复已通过宽套件。
-3. 收BI原MAT01/57真实终态，核source/raw/primitive及完整请求；继续H原NN链。
-4. 完成Linux owner验证和修后独立写入测量；完成代码树恢复核验后清理旧树。
+1. 连接恢复后由云owner落地S4完整304/8parent final gate及原exit，然后直接继续已授权后五阶段；S5代码已接受。
+2. 收57固定runtime完整90格、actual fits/steps、保存重放/parent/capsule及终态；01和紧凑图已接受。
+3. B11保原C500/完整OOF0，审等价QR缓存与一维logλ积分对照，逐项报告实际概率/logodds及原连续law。
+4. root审typed数值/ensemble、graph与refusal闭包，接joint catalog/generic caller及真实H原数组准入；每个实际source/consumer保持独立身份。
 5. 按roadmap推进余下B00–B14，集成前核数学、调用链与针对性反例，更新本交接和四主题页。

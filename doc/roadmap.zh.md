@@ -4,7 +4,7 @@ base完整source矩阵已以seed20261014和原f3f32f8闭合：四fold各选轮�
 
 BNCI binary首个完整目标面板已完成：160请求、128评分、32个K0协议不可用、120原目标fit，最终writer窄修后零新fit恢复。源NN相对matched scratch的AUC差为K200/800/2000的+0.039162/+0.010828/+0.007023；低剂量固定NN+xDAWN池的概率退化进入C-only校准/整程序选择研究。新candidate已由唯一云窗口推进，其余既定阶段保持完整requested。Huebner/BI原输入与共享C compiler、inner/capsule/parent接口已集成`527e1c1/5e2e32f/8e1d8ca`；13人metadata原成员已核，H最后session819请求固定。当前可执行集合为H/BI四fixed NN/selector软件纵向、B11同record typed/fullhistory完整链，以及source metadata共享存储与独立load准入；各任务按单owner接口集成。
 
-当前优先推进迁移异质性和高置信错误校准：四个完整fixed程序（source NN、matched scratch NN及各自NN+xDAWN）已由opt-in factory接入真正forward-prefix选择，同run拟合、保存重放与parent链软件验收完成。新公共计划预声明baseline、tie规则和选择行数，接在云回放入口最终集成之后。fixed-only至少需一个先前完整训练组，K200单组继续走预声明baseline；K0依该baseline的实际源能力保输出及requested账本。
+当前优先推进迁移异质性和高置信错误校准。原candidate完整6080请求零fit恢复已由云owner读到退出0；最终逐项绑定和后五阶段待云连接恢复。科研侧BI01已完成108格与完整parent正验、真实capsule/ledger，正封focused负例；57等待紧凑图冻结。B11实际31导C500已满足原采样政策，原模型与完成的P draws沿独立consumer继续完整OOF/future/wholegraph。四fixed程序仍按预声明baseline、tie与选择行数执行，低剂量只用合法更早组，K0保持原源能力和全部requested。
 
 B07多通道C-latent新posterior/真实权限/连续history/持久包及B11同record Gamma/flat共同测度、原source参数和零fit回放均已完成科研软件集成。B09共同物理效应、长record精确rowspace、真实source/OOF/ensemble消费者已接受。下一纵向接B11 typed ensemble与公共候选，B12先审计BI2014a label-K、BI2015a/Huebner原stimulus/member/clock authority，再实现真实数据adapter；基础云矩阵独立前进。
 

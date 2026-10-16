@@ -13,9 +13,9 @@
 
 ## 当前研究
 
-2026-10-16用户已恢复科研，沿[10月14日暂停检查点](assets/research_resume_20261012/pause_checkpoint_20261014.json)核验原代码与产物后续接，当前入口见[交接](assets/research_resume_20261012/HANDOFF.zh.md)。本窗口临时并发上限为6（含总监）。云端原八人candidate拟合已完成；ordinary重放的单格差已定位到评分线程上下文，正按原ordinary4/selection1准备零fit恢复，保全部原requested与失败记录，后五阶段由唯一云owner继续。
+2026-10-16科研继续，当前入口见[交接](assets/research_resume_20261012/HANDOFF.zh.md)。本窗口临时并发上限为6（含总监）。云owner已观察到完整candidate零fit恢复退出0：6080请求、8份原fit复用、0新fit，CPU峰值24.89核，观测副本已落地。用户当前关闭云端，304任务及8个parent的最终逐项绑定在重新开云后先落地，再继续已接受S5的后五阶段。
 
-科研集成树位于`D:/BCI/worktrees/research-director`，实际接受范围见[整合绑定](assets/research_resume_20261012/research_integration_acceptance.json)。本轮已合入source串行共享与candidate完整依赖闭包、并发产物预算修复及显式shared AR启动因子；真实Manager组合检查完成共享source发布、prefix保存与精确重放。BI旧保存子集的12请求已闭合，原MAT01/57正独立执行四fixed/selector完整链。B11 typed ensemble/fullhistory沿实际C500数值误差见证继续；H完整13人metadata、最后session819请求及record-aware输入接口已集成，完整NN链按原owner推进。
+科研集成树位于`D:/BCI/worktrees/research-director`，实际接受范围见[整合绑定](assets/research_resume_20261012/research_integration_acceptance.json)。已合入source共享闭包、并发产物预算、显式shared AR启动因子及原保存root快速严格准入；Linux同FUSE四写者三组配对的进程耗时中位数改善5.55倍。BI原MAT01已完成108格、完整parent正验、最终概率篡改负例及真实capsule/内存归还。紧凑图两切片已接受，原K950图2.06GB变47.16MB，原逻辑与90节点保持，MAT57按固定代码继续。B11实际31导C500及首OOF完整capture已通过原政策，后续研究积分贡献浓度并继续完整OOF/future程序。H13人metadata、最后session819请求及record-aware输入接口已集成。
 
 当前按[愿望清单进展](evidence/wishlist_progress_20261010.zh.md)推进123项。B03真正prefix整程序选择及保存重放/public parent准入已集成；修后entry005完成八人152请求，选择收益随K变化。P1新stationary law两臂16/16完成、0新fit，winner与旧law一致。source cache/shared score、conditional公共白化及逐decision horizon已接入。BI61人与BNCI8人的episode三臂队列已完成并独立复算；BNCI微调的NLL改善集中A04，scratch命中/Brier较好。当前科研独立树从保留的`f1d0ec0`恢复，源码和Git证据已恢复；原BI/BNCI报告、entry005/P1结果及P1原score/receipt已按原SHA恢复到D盘持久目录，逐预测复算和恢复清理来源见[原载荷绑定](assets/research_resume_20261011/cloud_payload_recovery_binding.json)。结论集中维护在[校准与选择](evidence/calibration_and_selection.zh.md)、[响应与噪声](evidence/response_and_noise.zh.md)、[公共评估](evidence/public_evaluation.zh.md)和[执行与集成](evidence/execution_and_integration.zh.md)；六指南持有活动规范，各产物保持自己的来源与分母。
 

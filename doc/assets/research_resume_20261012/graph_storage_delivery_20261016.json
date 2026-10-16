@@ -1,0 +1,245 @@
+{
+  "schema": "n2p3_graph_storage_root_acceptance/1",
+  "status": "accepted",
+  "commits": [
+    "cf9f590",
+    "9407235"
+  ],
+  "delivery": {
+    "path": "D:\\BCI\\worktrees\\research-director\\tmp\\GRAPH_STORAGE_SECOND_SLICE_DELIVERY_20261016.json",
+    "sha256": "1e15e77a64dd952152f128d97d7b1148e850f936f9ac194a840ec6e05c08c188"
+  },
+  "independent_review": {
+    "path": "D:\\BCI\\worktrees\\research-director\\tmp\\GRAPH_STORAGE_INDEPENDENT_REVIEW.md",
+    "sha256": "89589946641903df3939082f38d97557d0b6eb4a8aca856bc2185123821abe0c"
+  },
+  "actual_metadata": {
+    "closure": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI_GRAPH_COMPACT_CONSUMER_20261016_ADMITTED\\METADATA_CLOSURE.json",
+      "sha256": "0963759c7577a3063262c662efd0efd3d90cc4656b967b586b9cd6efa31428cd",
+      "bytes": 147969
+    },
+    "physical_executed_source": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI_GRAPH_COMPACT_CONSUMER_20261016_ADMITTED\\executed-source-a904.zip",
+      "sha256": "a0feebb51a8274d6b3c2504214301cf843901751b9962c45deda98129b94ef3e",
+      "bytes": 35208
+    },
+    "physical_source_recovery": "reverse only the later P2 try-boundary indentation and require exact original actor SHA; four other modules and driver unchanged",
+    "terminal": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI_GRAPH_COMPACT_CONSUMER_20261016_ADMITTED\\terminal.json",
+      "sha256": "1208b014015abe3b63d7874c4c1c4c6f351a95ededbabdd2b0320839d0b3080e",
+      "bytes": 636
+    },
+    "launch": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI_GRAPH_COMPACT_CONSUMER_20261016_ADMITTED\\launch.json",
+      "sha256": "d0074696c6885297311c43ded5fed8e07397b371999b070a3eb4334caf7ee27f",
+      "bytes": 271
+    },
+    "resource_samples": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI_GRAPH_COMPACT_CONSUMER_20261016_ADMITTED\\resource.jsonl",
+      "sha256": "c01c998330289e7f8c1bc287a73809aaaeac3331135bf683cd3acb9a9cae5ec2",
+      "bytes": 185274
+    },
+    "actual_exit_code": 0,
+    "active_owned_processes_after_exit": 0,
+    "peak_owned_rss_bytes": 797597696,
+    "peak_owned_private_bytes": 776015872,
+    "wall_seconds": 214.86880564689636,
+    "new_fits": 0,
+    "numeric_replays": 0,
+    "new_EEG_PT_decodes": 0,
+    "original_reader_exit_code_retained": 15,
+    "original_observer_exit_code_retained": 1,
+    "graphs": [
+      {
+        "actual_K": 0,
+        "original_raw": {
+          "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\source20261014_target20261014_K0_selection\\prefix_selection.json",
+          "sha256": "49ad1018287f9b1afd3eeb3393ffecec583f1df121221dadeb111a989a0237c4",
+          "bytes": 85751
+        },
+        "consumer_store": {
+          "path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI_GRAPH_COMPACT_CONSUMER_20261016_ADMITTED\\K0\\prefix_selection.json",
+          "sha256": "9a64faba158f208a11a58bf42ceeb8b45e8c3003ae00408e4b8be9f09f530ac2",
+          "bytes": 45816
+        },
+        "logical": {
+          "graph_sha256": "292f030af3ab083df32cfa8c949dbaa449a3ce8356ee6fad1409d33e4b3280e2",
+          "selection_sha256": "5d305d5f9cde09e84aa881593daed8e07d863a4c87a22a9e95b9cc40df565070",
+          "producer_nodes": 1,
+          "scope_count": 1
+        },
+        "compact_header_bytes": 45816,
+        "scope_pool_bytes": 8843,
+        "total_required_store_bytes": 54659,
+        "resident_input_bytes_during": 16940964,
+        "resident_input_bytes_after_close": 0,
+        "wall_seconds": 0.10647910000261618
+      },
+      {
+        "actual_K": 48,
+        "original_raw": {
+          "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\source20261014_target20261014_K48_selection\\prefix_selection.json",
+          "sha256": "91ba21203a54f4f745fff7c1a7ed9da8023f1ded4526faf878d7b46c0abc87e4",
+          "bytes": 446366
+        },
+        "consumer_store": {
+          "path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI_GRAPH_COMPACT_CONSUMER_20261016_ADMITTED\\K48\\prefix_selection.json",
+          "sha256": "76368a727ceb140e5aa9e96bf0df69b81f63dc8330947768f944624a85080350",
+          "bytes": 103153
+        },
+        "logical": {
+          "graph_sha256": "850fbdf0224a5dad08f4aea5fdc41b9d4af473e7523924279ab04d4323dc70e5",
+          "selection_sha256": "f5b2b16a82d1897a0a4b166f104c68814101e12b990e5336f7f634cda1b613fa",
+          "producer_nodes": 2,
+          "scope_count": 2
+        },
+        "compact_header_bytes": 103153,
+        "scope_pool_bytes": 69763,
+        "total_required_store_bytes": 172916,
+        "resident_input_bytes_during": 17409492,
+        "resident_input_bytes_after_close": 0,
+        "wall_seconds": 0.216858299998421
+      },
+      {
+        "actual_K": 950,
+        "original_raw": {
+          "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\source20261014_target20261014_K950_selection\\prefix_selection.json",
+          "sha256": "97741786ca74cae3bbbd2183231c3700625967bfca0e7796822083d1142a71f1",
+          "bytes": 2056864994
+        },
+        "consumer_store": {
+          "path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI_GRAPH_COMPACT_CONSUMER_20261016_ADMITTED\\K950\\prefix_selection.json",
+          "sha256": "db55d88768690ef2f7920375536ebfa2c1966dc7e5c092378c0a6299861ebaca",
+          "bytes": 17380279
+        },
+        "logical": {
+          "graph_sha256": "97c8ea2a4da65b8506aeb59ac66c6011c8477bc65c1bc5fd8ccdbfda1eda2895",
+          "selection_sha256": "89862e2f8e03d79d894e810df7027ae4042fd53a30d0c68c6364f78010711e82",
+          "producer_nodes": 90,
+          "scope_count": 24
+        },
+        "compact_header_bytes": 17380279,
+        "scope_pool_bytes": 29780872,
+        "total_required_store_bytes": 47161151,
+        "resident_input_bytes_during": 1378000596,
+        "resident_input_bytes_after_close": 0,
+        "wall_seconds": 212.35877230000187
+      }
+    ]
+  },
+  "full_small_DAG": {
+    "historical_compiler_commit": "8e1d8ca",
+    "ordinary_native_threads": 4,
+    "selection_native_threads": 1,
+    "interop_threads": 1,
+    "actual_original_graph_unavailable_to_readers": true,
+    "program": "prepare -> independently owned compact scopes -> chunks and ordinary4 -> reversed ordered reducers -> CompletedParticipantReplay",
+    "proper_child_budget_scope": "outer PhaseResources plus directory artifact claim; child decoder uses effective host memory, not a Manager proxy"
+  },
+  "checks": {
+    "Ruff_five_files": "passed",
+    "git_diff_check": "passed",
+    "JUnit": {
+      "graph-store-complete-dag-native4-fixed.xml": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\graph-store-complete-dag-native4-fixed.xml",
+        "sha256": "c858e184e3a5827e57dbb9ef53c48c09c116df840e265b12cf95a8c5160e2b0a",
+        "bytes": 424
+      },
+      "graph-store-transport-final.xml": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\graph-store-transport-final.xml",
+        "sha256": "4ce0fa31313937bbb88527d757227c195fde3ca4df457d59df1f486d36effa4c",
+        "bytes": 2942
+      },
+      "graph-store-receipt-error-red.xml": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\graph-store-receipt-error-red.xml",
+        "sha256": "cca7ff98cbd7a138d5a9ce7ab69b05e936220ef69b900242384d870c44c18ef2",
+        "bytes": 5336
+      },
+      "graph-store-receipt-error-green.xml": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\graph-store-receipt-error-green.xml",
+        "sha256": "bc7f65d469bebcecd87cd7fa0500aeab34bddfbc0acd2f99a228ce577f36496d",
+        "bytes": 583
+      }
+    }
+  },
+  "changed_files": {
+    "src/research/prefix_inner_replay.py": {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\prefix_inner_replay.py",
+      "sha256": "8438162e26a53928fcb9c0b77fbf36e7ddada46c6ad20aa360ef6a86eaf5c96f",
+      "bytes": 66022
+    },
+    "src/research/prefix_replay_execution.py": {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\prefix_replay_execution.py",
+      "sha256": "f518e9919823a2413515801eea49e5d8f900ca0c995e0f2c975614009303ba0e",
+      "bytes": 38343
+    },
+    "src/research/selection_graph_store.py": {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\selection_graph_store.py",
+      "sha256": "b28cd16377cd08aee9798f8a71b862eb61d07024fccba16ff35063bbb23f905f",
+      "bytes": 17646
+    },
+    "tests/research/test_prefix_replay_execution.py": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\research\\test_prefix_replay_execution.py",
+      "sha256": "bb80368351dd2d7eded3041f8ebb68769186665c498ee43e26f4ab81dce50f63",
+      "bytes": 22768
+    },
+    "tests/research/test_selection_graph_store.py": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\research\\test_selection_graph_store.py",
+      "sha256": "5e32dc016fd9244d62148c009503eff2ed26888dc555ba61c84e12aead581cb2",
+      "bytes": 11824
+    }
+  },
+  "executed_source_archive": {
+    "path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI_GRAPH_COMPACT_CONSUMER_20261016_ADMITTED\\executed-source-a904.zip",
+    "sha256": "a0feebb51a8274d6b3c2504214301cf843901751b9962c45deda98129b94ef3e"
+  },
+  "cleanup": {
+    "method": "cmd.exe del /q exact files after source and fresh compact loads verified",
+    "first_batch_exit": 1,
+    "first_batch_reason": "cmd shell command syntax rejected; no paths deleted",
+    "fallback": "four separate cmd.exe /d /c del calls, each exit0",
+    "deleted": [
+      {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI_GRAPH_COMPACT_CONSUMER_20261016_ADMITTED\\K0\\prefix_selection.legacy-minified.json",
+        "sha256": "d350fb00a580733fda260754843670b54b2502c8dc06331b6fd49b124e1e429c",
+        "bytes": 40937,
+        "role": "reproducible whitespace-only intermediate",
+        "referenced_by_final_readers": false,
+        "regeneration": "two raw-SHA-verified bounded token passes from preserved original graph"
+      },
+      {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI_GRAPH_COMPACT_CONSUMER_20261016_ADMITTED\\K48\\prefix_selection.legacy-minified.json",
+        "sha256": "1de5b66927647072e6bb3f095af9fed8608189afe7eda2905b7420bffef11961",
+        "bytes": 158069,
+        "role": "reproducible whitespace-only intermediate",
+        "referenced_by_final_readers": false,
+        "regeneration": "two raw-SHA-verified bounded token passes from preserved original graph"
+      },
+      {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI_GRAPH_COMPACT_CONSUMER_20261016_ADMITTED\\K950\\prefix_selection.legacy-minified.json",
+        "sha256": "913aed1de9fe6bff7caefbc2530cdf17590cb65b3f931775943e79b0e3af7a0a",
+        "bytes": 340305845,
+        "role": "reproducible whitespace-only intermediate",
+        "referenced_by_final_readers": false,
+        "regeneration": "two raw-SHA-verified bounded token passes from preserved original graph"
+      },
+      {
+        "path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI_GRAPH_COMPACT_CONSUMER_20261016\\K0\\prefix_selection.legacy-minified.json",
+        "sha256": "d350fb00a580733fda260754843670b54b2502c8dc06331b6fd49b124e1e429c",
+        "bytes": 40937,
+        "role": "first host-memory-rejected invocation token cache",
+        "referenced_by_final_readers": false
+      }
+    ],
+    "deleted_bytes": 340545788,
+    "retained": [
+      "all original MAT01 raw/source/model/graph/replay and parent-positive artifacts",
+      "new compact graph headers, complete graph_scopes directories and import manifests",
+      "new actual metadata actor closure, launch, terminal and resource samples",
+      "exact physical executed-source-a904.zip and its per-member manifest",
+      "test JUnit, final source patch and independent review"
+    ],
+    "all_deleted_paths_absent": true
+  }
+}

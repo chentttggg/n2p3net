@@ -2,6 +2,12 @@
 
 本轮seed20261014完整source程序已完成，原f3f32f8、四fold最终模型和八次成功fit经原SourceSeedCatalog逐项准入。原三个成功模型保持，Huebner selected14的fresh refit作为补集完成；原失败attempt的38,820steps/19,875,840draws及未知refit曝光单列。源闭包为独立programme状态，原queue exit1和新tail exit0/owned0各保来源，目标训练结果沿自身receipt验收。完整SHA、原producer合同和root审阅见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)；下文原20260918读数保持。
 
+## BI原MAT label-K的首个完整开发样例
+
+原第01号记录完成K0/48/2000请求，实际可用预算为0/48/950；六个独立future决策按各自R1/2/3/4/8和完整36候选计分。90个fixed格加18个selector格共108格，70格有概率、38格协议不可用，实际74次目标拟合与204次AdamW更新，源拟合为0。三个选择图的内部精确重放、完整独立parent正验、同一生产最终关系的概率篡改负例及真实capsule/内存账本已闭合，见[分阶段交付](../assets/research_resume_20261012/bi_original_mat01_delivery_20261016.json)。
+
+本轮每个K的四fixed程序和selector各命中0/6，selector选择source NN；独立waveform控制在K950命中4/6，5/6有概率，NLL1.0602、Brier0.4039。直观上，原数据里的事件响应已能被简单波形模型利用，本次一epoch网络程序的正确选择仍需改善。此开发样例用来闭合真实原输入、标签预算和保存重放；默认60epoch的完整公共比较继续沿原独立队列执行。第57号记录使用同一预声明科学计划和新的紧凑图代码完成下一纵向样例。
+
 ## 本轮BNCI二分类与个人校准量
 
 seed20261014的八人完整binary结果已由原128份预测逐SHA/行/标签复算。160请求分为128完成与32个K0协议不可用，原目标fit120次；writer修复后原产物零新fit恢复，科学退出0。源预训练NN与同结构scratch在同人、同K、同输入下的24个AUC差值与正式statistics逐项精确一致。AUC表示随机一条目标反应排在非目标反应前面的能力；K是授权校准trial数。本表为八人等权平均，概率质量的NLL/Brier越小越好。

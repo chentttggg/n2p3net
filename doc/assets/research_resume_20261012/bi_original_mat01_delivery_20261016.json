@@ -1,0 +1,133 @@
+{
+  "schema": "n2p3_BI_original_MAT01_root_acceptance/1",
+  "status": "accepted_completed_phase_composition",
+  "closure": {
+    "path": "D:/BCI/artifacts/research-deliveries/bi2014a/original-mat01/ORIGINAL_MAT01_CLOSURE.json",
+    "sha256": "18ef40db2fa9705adcd28e44c12f8dc973f49ed2a03d1d4d0cd36253be3f6acc",
+    "bytes": 11328
+  },
+  "focused_negative": {
+    "path": "D:/BCI/artifacts/research-deliveries/bi2014a/original-mat01/FOCUSED_NEGATIVE_COMPLETE.json",
+    "sha256": "0f27b8c5c6f67f63cd00eb74831027b5ae9cf31f603ad1daee143b11e86752dc",
+    "bytes": 40726
+  },
+  "scope": "completed-positive plus focused final-probability negative",
+  "requested_cells": 108,
+  "true_original_target_fits": 74,
+  "original_optimizer_steps": 204,
+  "new_source_fits": 0,
+  "new_target_fits_in_consumers": 0,
+  "original_reader_exit": 15,
+  "original_observer_exit": 1,
+  "proper_child_exit": 0,
+  "resident_consumer_exit": 0,
+  "focused_consumer_exit": 0,
+  "resident_input_bytes": [
+    0,
+    111681500,
+    0
+  ],
+  "new_whole_parent_invocations": 0,
+  "new_node_replays": 0,
+  "review": "Root read exact predicate extraction, original positive/source/requested bindings, preattack sealed expectation, resealed single probability attack and actual rejection; independently verified 13 small artifact receipts plus three capsule/ledger actual exits. Original raw/models/graphs/182 executed files retain original bytes.",
+  "implemented_commits": [
+    "3beed9e",
+    "f1a36a6",
+    "be35c57"
+  ],
+  "original_capsule_delivery": {
+    "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\ORIGINAL_MAT01_CAPSULE_DELIVERY_20261016.json",
+    "sha256": "7e0825e20fe7944e754d6bc935cc620455eb3a2ac8d9c77a55672e8932ff95c9",
+    "bytes": 6527
+  },
+  "actual_programme_result": {
+    "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\result.json",
+    "sha256": "013b800554d5b8b83e00934fc37a4f1651ffb742a110c4b71b35812f0a8616c2",
+    "bytes": 5709106
+  },
+  "actual_source": {
+    "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\executed_source.json",
+    "sha256": "acfd3830e89c1d08fec1071538fa3fb8ce24ec0ae4b9fc61c5c498856bee32c5",
+    "bytes": 18241
+  },
+  "original_internal_graphs": [
+    {
+      "actual_K": 0,
+      "package": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\source20261014_target20261014_K0_selection",
+      "saved_seal": {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\selection_fit_receipts\\source20261014_target20261014_K0_selection.saved.json",
+        "sha256": "c4a48cd64ac9b8a89cff87cf079e6e9c88faee2131cd08faf05e33f76dbae0df",
+        "bytes": 38191
+      },
+      "internal_exact_replay": {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\selection_fit_receipts\\source20261014_target20261014_K0_selection.replayed.json",
+        "sha256": "4d91432b4cca9ee66568b97d56f34d15a3c387cbec4832adb7379fcc02183297",
+        "bytes": 14739
+      },
+      "logical_graph_sha256": "292f030af3ab083df32cfa8c949dbaa449a3ce8356ee6fad1409d33e4b3280e2",
+      "logical_selection_sha256": "5d305d5f9cde09e84aa881593daed8e07d863a4c87a22a9e95b9cc40df565070",
+      "graph_artifact": {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\source20261014_target20261014_K0_selection\\prefix_selection.json",
+        "bytes": 85751,
+        "inode": 281474977955673,
+        "device": 30477261547689940,
+        "mtime_ns": 1792123513893081300,
+        "sha256": "49ad1018287f9b1afd3eeb3393ffecec583f1df121221dadeb111a989a0237c4"
+      },
+      "producer_count": 1,
+      "exact_score_checks": 6
+    },
+    {
+      "actual_K": 48,
+      "package": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\source20261014_target20261014_K48_selection",
+      "saved_seal": {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\selection_fit_receipts\\source20261014_target20261014_K48_selection.saved.json",
+        "sha256": "80d9a657c41d44ac884b152d1302b56d28d80cacc83e639aab1f560940fd9b83",
+        "bytes": 41077
+      },
+      "internal_exact_replay": {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\selection_fit_receipts\\source20261014_target20261014_K48_selection.replayed.json",
+        "sha256": "e6b8a5ae1de05661359bcb804be7d8deb2d0a7d01bc4f5206d8aa6834c599f63",
+        "bytes": 70748
+      },
+      "logical_graph_sha256": "850fbdf0224a5dad08f4aea5fdc41b9d4af473e7523924279ab04d4323dc70e5",
+      "logical_selection_sha256": "f5b2b16a82d1897a0a4b166f104c68814101e12b990e5336f7f634cda1b613fa",
+      "graph_artifact": {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\source20261014_target20261014_K48_selection\\prefix_selection.json",
+        "bytes": 446366,
+        "inode": 281474977955745,
+        "device": 30477261547689940,
+        "mtime_ns": 1792123568036828800,
+        "sha256": "91ba21203a54f4f745fff7c1a7ed9da8023f1ded4526faf878d7b46c0abc87e4"
+      },
+      "producer_count": 2,
+      "exact_score_checks": 7
+    },
+    {
+      "actual_K": 950,
+      "package": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\source20261014_target20261014_K950_selection",
+      "saved_seal": {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\selection_fit_receipts\\source20261014_target20261014_K950_selection.saved.json",
+        "sha256": "b4aa66989d990ac8613af7a20036517ee7f3fb335e69186062bbbdcfa19be9d9",
+        "bytes": 172001
+      },
+      "internal_exact_replay": {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\selection_fit_receipts\\source20261014_target20261014_K950_selection.replayed.json",
+        "sha256": "b23504586a54014ad6d8c021dee323778437ef59a79066c05407f2abf251dd95",
+        "bytes": 2661692
+      },
+      "logical_graph_sha256": "97c8ea2a4da65b8506aeb59ac66c6011c8477bc65c1bc5fd8ccdbfda1eda2895",
+      "logical_selection_sha256": "89862e2f8e03d79d894e810df7027ae4042fd53a30d0c68c6364f78010711e82",
+      "graph_artifact": {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\original-MAT01-57-20261016\\subject_01_vertical\\run\\participant_000\\source20261014_target20261014_K950_selection\\prefix_selection.json",
+        "bytes": 2056864994,
+        "inode": 1407374884727398,
+        "device": 30477261547689940,
+        "mtime_ns": 1792127973991109400,
+        "sha256": "97741786ca74cae3bbbd2183231c3700625967bfca0e7796822083d1142a71f1"
+      },
+      "producer_count": 90,
+      "exact_score_checks": 95
+    }
+  ]
+}
