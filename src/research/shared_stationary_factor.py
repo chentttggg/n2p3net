@@ -248,3 +248,88 @@ def admit_shared_stationary_root(reflections, covariance, prefix, root, state):
     if metadata_digest(state["certificate"]) != metadata_digest(actual):
         raise ValueError("saved shared stationary factor certificate differs from its exact input/root witnesses")
     return root
+
+
+def _difference_norm_upper(left, right):
+    """Bound the exact Frobenius distance between two binary64 arrays.
+
+    For RN subtraction, |x-y| <= (|fl(x-y)|+u)/(1-eps). A product and
+    nonnegative reduction have at most m+1 relative rounding factors along
+    any path, and at most 2m absolute gradual-underflow errors. No accuracy
+    of BLAS or a floating-point norm is assumed.
+    """
+    count = left.size
+    epsilon = Fraction.from_float(float(np.finfo(float).eps))
+    underflow = Fraction.from_float(float(np.nextafter(0., 1.)))
+    relative = (count+1)*epsilon
+    if relative >= Fraction(1, 2):
+        raise UnidentifiableFitError("saved stationary root distance is unresolved")
+    gamma = relative/(1-relative)
+    with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+        difference = left-right
+        squared_sum = float(np.sum(difference*difference))
+    if not math.isfinite(squared_sum):
+        raise UnidentifiableFitError("saved stationary root distance is not finitely representable")
+    squared_upper = (Fraction.from_float(squared_sum)+2*count*underflow)/(1-gamma)
+    norm = Fraction.from_float(_sqrt_upper(squared_upper))
+    return (norm+Fraction.from_float(_sqrt_upper(Fraction(count)))*underflow)/(1-epsilon)
+
+
+def admit_saved_shared_stationary_root(reflections, covariance, prefix, root):
+    """Certify an unchanged saved /3 root using only small law witnesses.
+
+    A and B are newly computed numerical witnesses, not replacement state.
+    With R0=A tensor B, W=round(R0), S=the saved root, certify
+    rho >= ||R0^-1(S-R0)||F from the rounding of W and ||S-W||F.
+    The returned consumer certificate never enters the original /3 record.
+    An unresolved conservative bound leaves canonical admission available.
+    """
+    values, sigma, temporal_law, spatial_law = _law(reflections, covariance, prefix)
+    saved = finite_real_array(root, name="original saved shared stationary root")
+    size = prefix*len(sigma)
+    if (saved.shape != (size, size) or np.any(np.diag(saved) <= 0)
+            or np.any(np.triu(saved, 1) != 0)):
+        raise ValueError("original saved stationary root requires its positive lower observed support")
+    try:
+        with localcontext(_CONTEXT):
+            temporal_root, spatial_root = _cholesky(temporal_law), _cholesky(spatial_law)
+        witness, left, right, time_exponent, spatial_exponent = _rounded_product(temporal_root, spatial_root)
+        exponent = time_exponent+spatial_exponent
+        with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+            normalized_saved = np.ldexp(saved, -exponent)
+            restored = np.ldexp(normalized_saved, exponent)
+            normalized_witness = np.ldexp(witness, -exponent)
+        if not np.isfinite(normalized_saved).all() or not np.array_equal(restored, saved):
+            raise UnidentifiableFitError("saved stationary root witness coordinates are unresolved")
+        temporal_law = [[v*Fraction(2)**(-2*time_exponent) for v in row] for row in temporal_law]
+        spatial_law = [[v*Fraction(2)**(-2*spatial_exponent) for v in row] for row in spatial_law]
+        time_error, time_inverse, time_condition, _ = _factor_certificate(left, temporal_law)
+        spatial_error, spatial_inverse, spatial_condition, _ = _factor_certificate(right, spatial_law)
+        epsilon = Fraction.from_float(float(np.finfo(float).eps))
+        underflow = Fraction.from_float(float(np.nextafter(0., 1.)))
+        inverse_product = time_inverse*spatial_inverse
+        product_rounding = epsilon*time_condition*spatial_condition+size*underflow*inverse_product
+        distance = _difference_norm_upper(normalized_saved, normalized_witness)
+        perturbation = product_rounding+inverse_product*distance
+        if perturbation >= 1:
+            raise UnidentifiableFitError("saved stationary root relative perturbation is unresolved")
+        factor_error = (Fraction.from_float(_sqrt_upper(Fraction(len(sigma))))*time_error
+            +Fraction.from_float(_sqrt_upper(Fraction(prefix)))*spatial_error+time_error*spatial_error)
+        bound = _upper((factor_error+2*perturbation+perturbation**2)/(1-perturbation)**2)
+    except (DecimalException, OverflowError, DictionaryArtifactError) as error:
+        raise UnidentifiableFitError("saved shared stationary root witness is not representable") from error
+    policy = float(1e-8*np.sqrt(size))
+    if bound > policy:
+        raise UnidentifiableFitError("saved stationary root witness does not resolve the original law policy")
+    return {"program": "shared_PARCOR_saved_root_perturbation_admission/1",
+        "consumer_source_sha256": SOURCE_SHA256, "law_source_sha256": LAW_SOURCE_SHA256,
+        "input_law_sha256": metadata_digest({"PARCOR": [values.tolist()]*len(sigma),
+            "innovation_covariance": sigma.tolist(), "prefix_samples": prefix}),
+        "saved_root_sha256": array_digest(saved), "witness_root_sha256": array_digest(witness),
+        "normalized_root_distance_F_bound": _upper(distance),
+        "factor_law_pullback_F_bound": _upper(factor_error),
+        "small_inverse_F_product_bound": _upper(inverse_product),
+        "witness_product_rounding_F_bound": _upper(product_rounding),
+        "saved_root_relative_perturbation_F_bound": _upper(perturbation),
+        "saved_root_law_pullback_F_bound": bound, "original_joint_policy_F_bound": policy,
+        "state_role": "consumer_witness_only_original_saved_root_and_codec_unchanged"}

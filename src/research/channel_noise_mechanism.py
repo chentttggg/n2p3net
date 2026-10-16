@@ -23,6 +23,7 @@ from sklearn.covariance import LedoitWolf
 
 from research.execution import UnidentifiableFitError
 from research.shared_stationary_factor import (
+    admit_saved_shared_stationary_root,
     admit_shared_stationary_root,
     compile_shared_stationary_root,
 )
@@ -443,6 +444,7 @@ class FittedChannelNoise:
         root = self.compiled_prefix_root
         supplied_root = root is not None
         factor_state = self.shared_factor_state
+        saved_root_admission = None
         if factor_state is not None and (self.family != "shared" or not supplied_root):
             raise ValueError("shared factor state requires its original root and shared stored PARCOR")
         if root is None:
@@ -458,16 +460,28 @@ class FittedChannelNoise:
             prefix_compiler = compiler_record(
                 [noise.reflection_coefficients for noise in temporal], covariance, prefix, root)
         if supplied_root and factor_state is None:
-            # Verify exact pairwise law directly. Loading consumes the saved
-            # root; it does not regenerate a root and call itself the oracle.
-            stationary_root([noise.reflection_coefficients for noise in temporal], covariance, prefix,
-                            supplied_root=root)
+            # A shared law admits a fast small-factor witness for the original
+            # saved root. The witness is consumer metadata, never a /3 rewrite.
+            if self.family == "shared":
+                try:
+                    saved_root_admission = admit_saved_shared_stationary_root(
+                        temporal[0].reflection_coefficients, covariance, prefix, root)
+                except UnidentifiableFitError as error:
+                    stationary_root([noise.reflection_coefficients for noise in temporal], covariance, prefix,
+                                    supplied_root=root)
+                    saved_root_admission = {"program": "canonical_pairwise_saved_root_admission/1",
+                        "consumer_source_sha256": _IMPLEMENTATION_SHA256,
+                        "saved_root_sha256": array_digest(root), "small_witness_unavailable": str(error)}
+            else:
+                stationary_root([noise.reflection_coefficients for noise in temporal], covariance, prefix,
+                                supplied_root=root)
         object.__setattr__(self, "temporal", temporal)
         object.__setattr__(self, "innovation_covariance", frozen_array(covariance))
         object.__setattr__(self, "compiled_prefix_root", frozen_array(root))
         object.__setattr__(self, "_spatial_root", frozen_array(spatial))
         object.__setattr__(self, "shared_factor_state", freeze_metadata(factor_state))
         object.__setattr__(self, "_prefix_compiler", freeze_metadata(prefix_compiler))
+        object.__setattr__(self, "_saved_root_admission", freeze_metadata(saved_root_admission))
         object.__setattr__(self, "provenance", freeze_metadata(provenance))
         object.__setattr__(self, "_integrity", metadata_digest(self.record()))
         object.__setattr__(self, "_runtime_guard", self._runtime_state_digest())
@@ -475,6 +489,11 @@ class FittedChannelNoise:
     @property
     def order(self):
         return self.temporal[0].order
+
+    @property
+    def saved_root_admission(self):
+        """Consumer-only evidence; the saved producer record stays unchanged."""
+        return self._saved_root_admission
 
     @classmethod
     def from_shared_stationary_factors(cls, temporal, covariance, *, geometry,
@@ -627,6 +646,7 @@ class FittedChannelNoise:
                           if self.shared_factor_state is not None else {})
         return metadata_digest({"family": self.family, "geometry": self.geometry.record(), **factor_binding,
             "prefix": self.conditioning_samples, "provenance": self.provenance,
+            "consumer_saved_root_admission": self._saved_root_admission,
             "prefix_compiler": self._prefix_compiler,
             "numeric_state_sha256": array_digest(self.innovation_covariance, self.compiled_prefix_root,
                 np.asarray([item.coefficients for item in self.temporal]),
