@@ -1148,7 +1148,7 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, 
         summary = _read_sealed_record(replay_seal)
         if (summary["graph_sha256"] != seal["graph_sha256"]
                 or summary["selection_sha256"] != selection_digest
-                or summary["selected_candidate"] != selection["selected_candidate"]):
+                or semantic_sha256(summary["selected_candidate"]) != semantic_sha256(selection["selected_candidate"])):
             raise ValueError("nested prefix saved replay summary changed its actual selected programme")
         if delivered is None:
             sources = {expert: snapshots[request["source_seed"]] for expert in request["source_checkpoint_sha256"]}
