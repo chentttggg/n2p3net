@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import shutil
+from multiprocessing.managers import SyncManager
 
 import pytest
 import torch
@@ -11,6 +12,11 @@ import torch
 from research.contracts import semantic_sha256
 from research.nested_selection_replay import InnerReplayRecorder
 from research.prefix_inner_replay import _PrefixPackageAdmission, persist_prefix_inner_replay
+from research.source_execution import (
+    SourceInputAdmission,
+    current_input_admission,
+    install_input_admission,
+)
 from research.source_metadata_store import (
     SourceMetadataStore,
     _SourceMetadataAdmission,
@@ -186,3 +192,44 @@ def test_candidate_finalization_requires_original_admitted_source_blob(tmp_path)
     blob.unlink()
     with pytest.raises(FileNotFoundError):
         programme.finalize({})
+
+
+def test_manager_budget_owns_shared_source_prefix_and_exact_replay(tmp_path):
+    """Shared-source publication and prefix saves use the same real Manager owner."""
+    with cpu_thread_budget(1):
+        views, path, spec, programme = _case(tmp_path)
+        original_source = path.read_bytes()
+        recorder = InnerReplayRecorder()
+        context = {"source_seed": 0, "target_seed": 0, "requested_Ks": [0],
+            "requested_to_actual_K": {"0": 0}, "test_scope": views.ledger["test_scope"],
+            "requested_decision_ids": [view.record_id for view in views.decisions]}
+        programs = fit_calibration_prefix_programs(views.calibration[0], (spec,), programme,
+            strategies=("fixed",), source_checkpoints={"source": path}, inner_replay_recorder=recorder,
+            inner_replay_context=context)
+        for view in views.decisions:
+            recorder.record_prefix_future_score("fixed", view=view,
+                                                evidence=programs["fixed"].score_experts(view))
+        delivery = tmp_path / "delivery"
+        store = SourceMetadataStore(delivery / "shared")
+        package = delivery / "prefix"
+        previous = current_input_admission()
+        with SyncManager() as manager:
+            owner = SourceInputAdmission(manager, capacity_bytes=0, load_workers=4)
+            install_input_admission(owner)
+            try:
+                with owner.artifact_directory(delivery, 8 * 2**20), source_metadata_scope(store):
+                    persist_prefix_inner_replay(views.calibration[0], programs, package,
+                                                recorder=recorder)
+                _PrefixPackageAdmission(package).replay(future_views=views.decisions)
+                record = owner.record()
+            finally:
+                install_input_admission(previous)
+        assert not record["pending_nested_artifacts"]
+        rows = record["active_leases"]
+        assert len(rows) == 1 and rows[0]["committed"]
+        actual = sum(item.stat().st_size for item in delivery.rglob("*") if item.is_file())
+        assert rows[0]["disk_bytes"] == actual
+        assert sum(pool["reserved_bytes"] for pool in record["filesystem_pools"].values()) == actual
+        assert record["free_staging_bytes"] == 0
+        assert next(store.directory.glob("*.pt")).read_bytes() == original_source
+        assert path.read_bytes() == original_source
