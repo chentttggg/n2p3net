@@ -2,6 +2,8 @@
 
 用户已于2026-10-16恢复科研。当前科研树为 `D:/BCI/worktrees/research-director`，分支 `codex/research-director-resume-20261013`。本窗口临时最多6并发，含总监；云端由另一窗口独占执行。整个123项愿望/B00–B14计划继续，日常采用一个完整source→target seed，大版本采用三个。
 
+最新优先级：最终成人九选一，主科研采用一般J/actual membership与真实时间/观测合同的统一数学；避免围绕BNCI36、toy shape数或局部数值门优化。当前whole generic已启动，按原计划自然收齐170输出与五stage；conditional保prepared暂不启动。通用frontier草案在D外部code-only目录，主验收补真实九候选membership/重标号及跨J/校准量/噪声/历史的同公式关系。产品输入issuer、七EEG/独立EOG与只读个人包接点同步审阅，活动src在whole终态前冻结。
+
 ## 当前已集成
 
 | 切片 | 当前行为 | 来源 |
