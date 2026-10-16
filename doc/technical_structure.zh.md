@@ -30,6 +30,8 @@ B07 `research.multichannel_c_latent`新增明确外部固定参数的finite C pr
 
 Generic joint participant持有一份run内原fit缓存与history capture表，贯穿final、forward OOF、future recorder和selector。可选`joint_completed_primitives`通过原ensemble/capture/forward-row的SHA定位原producer；loader直接解码已核payload，重编实际prefix并核source/target/原C及current history，首次评分仍走原数学bit核。CLI、bound plan和recovery共用相对路径normalizer；非joint入口继续传None。此接口复用原数值状态，完整新公共DAG按独立实际producer验收。
 
+`research.joint_flat_lambda_kernel`提供独立single-record/fixed-q数值入口：完整白化压缩根先消去原flat漂移，再对proper响应作一次SVD，保全部零/弱奇异方向及原startup；每个λ点计算标量有理项。残差log平方范数为唯一状态，逐点source/算术估计、raw N、logλ Jacobian、Gamma/物理测度常数与解析外尾各有显式接口。多q归一/record权限由caller持有，旧捕获组件逐bit重放ABI保持。该模块及15个区分性合同已独审接受，完整新32候选消费者在自己的冻结代码中验收。
+
 `ResponseDictionarySpec("bspline", duration, k, endpoint)`编译固定cubic/open-clamped/uniform字典，free或hard-value消费同ambient与interior selector。原`dictionary_artifact`唯一owner的 `/3`核exact rational表达，Gaussian/cosine仍 `/2`；同五数组进入已有prior/geometry/continuous/ensemble/OOF与保存链。cubic非零shift/width及off-grid导数尚unsupported，零状态直接消费保存native矩阵。
 
 `FittedEnsemble.oof_probability_record`持有原grouped温度循环实际返回的完整C-only概率、inner producer identities及final program关联；原ensemble包保存该immutable记录，模型既有fit-binding锚定OOF digest与OOF前base数值身份。fixed/grouped共享同一final专家tuple；actual K与完整OOF标签剂量分开。完整组nested研究入口可显式使用`InnerReplayRecorder`保存同一次run的实际inner模型和评分并零拟合重放；不从final模型回推原inner评分，不将全C OOF改称nested选择。

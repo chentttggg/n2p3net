@@ -29,7 +29,7 @@ B11联合模型已在原Huebner记录的500个授权标签上完成采样。直�
 
 计算保持一个不随λ缩放的proper响应先验β和原physical flat漂移测度。令`m_H,q(λ)`为已积分β/漂移的原QR对数核，`x=logλ`，则`I_H,q=∫exp(((N_H+ν)/2)x−νexp(x)/2+m_H,q(exp(x)))dx`；`N_H`用原scalar Gaussian行数，flat行列式已包含在`m`中。whole law按`π_q I_PT,q`归一，绝对T密度还恢复原P积分与Gaussian/noise常数。该实际输入的64个积分已用保存小根的误差界证明logλ全域严格凹，各有唯一峰；三档容差的log积分逐位相同，最大source误差估计跨度为5.87e−5 nats，两端有解析Gamma质量上界。独立80位聚合与原数组身份均已核回。
 
-下一实现预先消去漂移并分解响应矩阵，让每个λ点只计算标量有理项。多record扩展继续保持ONE global β，并按正确P边缘分布平均其余record的λ及未定候选；完整公共预测链沿各自新producer验收。
+快速模块已实现预先消去漂移并分解响应矩阵，让每个λ点只计算标量有理项。single-record/fixed-q数值API经root及独审接受，15个区分性合同覆盖原矩阵/测度、弱/零方向、双峰、能量与source乘积下溢及typed溢出；旧失败与新成功消费者分别绑定，见[模块接受](../assets/research_resume_20261012/joint_fast_lambda_20261016.json)。完整新32候选/64积分消费者继续核实际调用与吞吐，原QR结果只作保存对照。多record扩展继续保持ONE global β，并按正确P边缘分布平均其余record的λ及未定候选；完整公共预测链沿各自新producer验收。
 
 实际第三条OOF/K136已保存并独立接受：559坐标、32个配对概率函数通过原政策，分子贡献ESS仍为1。总监仅解析三份已完成capture的metadata，确认OOF0/1/2各有一个真实record，q先验支持数分别为`[32]`、`[1,32]`、`[1,1,32]`；过去q已由原C标签固定。因此快速单record积分可在具名核验后扩展到这些非零K前向组，原采样/结果保持各自producer。后续行逐份核该条件，未来多record/未定过去q继续走完整条件设计。
 

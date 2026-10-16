@@ -1,0 +1,41 @@
+{
+  "schema": "n2p3_single_record_fast_lambda_root_acceptance/1",
+  "status": "accepted_single_record_fixed_q_numerical_API",
+  "receipts": {
+    "RUNTIME_BINDING.json": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/fast-kernel/RUNTIME_BINDING.json",
+      "sha256": "c8faab62dc9c7ae36a27d65938b9c772ddef4696b483b7963804a75fc28cd724",
+      "bytes": 3280
+    },
+    "FAST_LAMBDA_INDEPENDENT_REVIEW_20261016.md": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/fast-kernel/FAST_LAMBDA_INDEPENDENT_REVIEW_20261016.md",
+      "sha256": "bd00ba6c068478bbe53c38d4d0eb9ebdd9a414eaedbae9e351155958dad0b10b",
+      "bytes": 16730
+    },
+    "joint_flat_lambda_kernel.py": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/fast-kernel/joint_flat_lambda_kernel.py",
+      "sha256": "4b2bb5e640d877657a19ace6802c47d20f6d0fce2e09ef32a388a97bb2e0c332",
+      "bytes": 30468
+    },
+    "test_joint_flat_lambda_kernel.py": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/fast-kernel/test_joint_flat_lambda_kernel.py",
+      "sha256": "79a8abb1013ee6c8a669ac55dbc07f1e8a825393f38ef3d2a2b2f82d519c5c7e",
+      "bytes": 8337
+    }
+  },
+  "original_runtime_binding": {
+    "path": "D:/BCI/worktrees/research-director/tmp/JOINT_FLAT_FAST_LAMBDA/RUNTIME_BINDING.json",
+    "sha256": "c8faab62dc9c7ae36a27d65938b9c772ddef4696b483b7963804a75fc28cd724",
+    "bytes": 3280
+  },
+  "root_review": "Read complete kernel/integrator, ONE unscaled proper prior, physical flat determinant, raw-row/Jacobian/Gamma constants, direct residual with one log state, retained weak/zero singular directions, log-domain energy/source products, source perturbation/error scope, immutable operands, full integration endpoints and typed unresolved arithmetic. Final delta and independent source/terminal/test correspondence verified; no open required fixes.",
+  "software_unique_cases": 15,
+  "prototype_and_production_terminal_roles": 4,
+  "prior_actual_F_requires_review_retained": true,
+  "old_bitexact_capture_ABI_changed": false,
+  "record_or_label_authority_granted": false,
+  "multi_record_joint_integration": "separate_conditional_design",
+  "actual_new_full_32_candidate_consumer": "ongoing_in_separate_frozen_namespace",
+  "root_numeric_replays_or_fits": 0,
+  "point_error_scope": "source_backward_estimates_and_scalar_numerical_estimates_with_analytic_outer_tails"
+}

@@ -17,6 +17,7 @@
 | BI原MAT01/57 | 原108/90格、三个图内部重放各自完成；完整parent正验、概率负例、proper child与真实resident归还；新消费者0fit | [01接受](bi_original_mat01_delivery_20261016.json)、[57接受](bi_original_mat57_delivery_20261016.json) |
 | Joint消费者组件复用 | 原unweighted QR memo与每模型私有verified-components LRU；首次真实重算/byte-match，后续保完整权限与诊断；save/load/digest保持 | `eee72b3`，[四合同及旧producer实际消费](joint_history_score_cache_20261016.json) |
 | Generic原fit/P复用 | run内共享原fit/capture，CLI/bound/recovery同locator；future/forward/selector复用，非joint保None；真实21请求计划准备完成 | [源码、单caller与计划接受](joint_generic_primitive_reuse_20261016.json) |
+| 快速single-record λ核 | flat先消、完整SVD与log-domain source/能量，raw N/Gamma/测度/外尾接口；保全部弱/零方向，旧exact capture ABI保持 | [15合同、实际窄消费者与独审接受](joint_fast_lambda_20261016.json) |
 
 Shared AR实际31导×32点工厂3.814秒、峰值322MiB，误差证书1.6504e-12低于原3.1496e-7政策。独立AR3有理数oracle及真实保存包读取通过；旧689秒观察和小维配对计时分别保来源。load保原prefix/temporal启动因子，tail空间Cholesky仍由原owner构造。
 
