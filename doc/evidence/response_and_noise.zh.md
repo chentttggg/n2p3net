@@ -33,7 +33,7 @@ B11联合模型已在原Huebner记录的500个授权标签上完成采样。直�
 
 完整新fast消费者现已接受64/64（P32/F32）：相对原保存QR最大log积分差5.24e−10，whole/fixed归一log概率差≤9.31e−10，原绝对density常数一致。数值阶段观测76.800秒，两个native1 worker实用平均1.533核，单worker峰值297283584B；最终writer零积分恢复耗时1.163秒并退出0。原控制器因JSON布尔写出失败的OS1、partial与全部数值cell保原身份。完整source/128份worker-received结果与80位归约独审均已核回；此计时只描述这批单record数值，不拼接成完整B11耗时倍率。
 
-原有限采样programme已接受前6/7条OOF（K0至K340），每条原模型、capture、坐标与32配对概率函数均经独立复核并满足原政策。除K68的分子贡献ESS为1.47–1.53，其余完成行仍为1；后续新连续积分单独核其支持覆盖。K272/K340的逐state概率正规化舍入经80位量化，归一log概率扰动上界≤2.32e−10，低于既定1e−8归约容差；原数组与producer保持。逐行读数和误差关系集中保存在[预测积分接受](../assets/research_resume_20261012/joint_predictive_evidence_20261016.json)，最后K408、future与完整图继续。
+原有限采样programme的7/7条OOF（K0至K408）已全部保存并接受，每条原模型、capture、坐标与32配对概率函数均经独立复核并满足原政策。除K68的分子贡献ESS为1.47–1.53，其余行仍为1；新连续积分另核其支持覆盖。K272/K340/K408的逐state概率正规化舍入经80位量化，归一log概率扰动上界最高4.622e−10，低于既定1e−8归约容差；原数组与producer保持。逐行读数和误差关系集中保存在[预测积分接受](../assets/research_resume_20261012/joint_predictive_evidence_20261016.json)。原程序已进入独立future队列，首项按原C24 embargo返回不可用，后续future与完整图继续。
 
 源码及独审还确认：当前C draws只用于P sampler的初始点；实际P law从原source prior与C/P完整likelihood重新构造，同record的C不重复计入。因此具备上述条件的新连续programme可直接由真实earlier-prefix/history权限积分，省去纯初始化用途的C/P抽样。七条新连续前向概率沿这些真实权限完成，旧有限programme继续其原实验。
 

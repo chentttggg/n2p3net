@@ -537,5 +537,71 @@
     },
     "root_verified_original_references": 3,
     "new_fits_or_sampler_calls": 0
+  },
+  "OOF6": {
+    "status": "accepted_original_finite_empirical_programme",
+    "receipts": [
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_COMPLETED_FORWARD_006_AUDIT.json",
+        "sha256": "9747098edb55eb22da9b913cecc9ce93de55d7494bfb63982f5e6330c7e1346b",
+        "bytes": 3068
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FORWARD_006_FUNCTIONAL_AUDIT.json",
+        "sha256": "917dfc4238b611a8017e206b33a1791d36ed5d4afa124c58be81221979598335",
+        "bytes": 4732
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_COMPLETED_FORWARD_006_NORMALIZATION_AUDIT.py",
+        "sha256": "f10ea1f292b455eae32ba867af405a895bec6dfc5566f017bf11bfe8ccb096d9",
+        "bytes": 10751
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_OOF6_INDEPENDENT_REVIEW_20261016.md",
+        "sha256": "502fdbca3dea1c25a6c19bb93b1812059769e74698280dcdc17ed8fb9d61cb19",
+        "bytes": 2188
+      }
+    ],
+    "earlier_K": 408,
+    "capture_digest": "85864b0bc4646f9a7129586e57dad1c4c17769dde7eda25c2e2e5707dcafe766",
+    "raw_record_scalar_rows": [
+      4755555
+    ],
+    "global_beta_width": 496,
+    "coefficient_width": 558,
+    "record_precision_count": 1,
+    "current_q_support": 32,
+    "coordinate_max_rhat_min_bulk_min_tail": [
+      1.0523855660806656,
+      59.2456492494031,
+      77.11191961728427
+    ],
+    "functional_max_rhat_min_bulk_min_tail": [
+      0.9967848697227153,
+      216.70774797519613,
+      206.20014747517052
+    ],
+    "max_paired_batch_mcse": 1.3281658879858906e-62,
+    "A_contribution_ESS_min_max": [
+      1.0,
+      1.0
+    ],
+    "normalization_roundoff_addendum": {
+      "original_audit_source_sha256": "4d116109af239577ac54eb0f4699a6234f765439b5a89b82637fe6af40c1d9da",
+      "original_mean_mass_assertion_1e_minus_12_passed": false,
+      "mean_mass_defect_decimal80": "1.12576329521909216902582671330641498271984399593483195113147002894624E-11",
+      "per_state_log_mass_min_max": [
+        "-2.304644325818664029213574343862317379252628704969456689760926552367660E-10",
+        "2.316960365885465088572708356754086105339197950364923095558349307224649E-10"
+      ],
+      "per_state_max_absolute_mass_defect": "2.31696036615388036E-10",
+      "normalized_whole_log_probability_perturbation_bound": "4.621604691704129117786282700616403484591826655334379785319275859592309E-10",
+      "measured_normalized_whole_log_probability_perturbation": "1.8E-72",
+      "bound_basis": "positive mixture log A corrections lie between negative max and min log state mass; normalized log P changes by at most that range",
+      "original_captured_arrays_modified": false,
+      "existing_probability_reduction_tolerance": 1e-08
+    },
+    "root_verified_original_references": 3,
+    "new_fits_or_sampler_calls": 0
   }
 }
