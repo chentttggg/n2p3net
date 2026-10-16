@@ -74,6 +74,9 @@ def _original_bound_plan(request, run):
     if expected.get("source_seed_catalog"):
         expected["source_seed_catalog"] = [{**entry, "path": str((parent / entry["path"]).resolve())}
                                            for entry in expected["source_seed_catalog"]]
+    if expected.get("joint_source_catalog"):
+        expected["joint_source_catalog"] = [{**entry, "path": str((parent / entry["path"]).resolve())}
+                                            for entry in expected["joint_source_catalog"]]
     path = run / "bound_plan.json"
     content = path.read_bytes()
     if json.loads(content) != expected:

@@ -179,6 +179,66 @@ def _resolved_pipeline_requests(plan, record_index, requested, scopes):
         for request in _pipeline_requests(plan, record_index) for entry in requested]
 
 
+def _joint_source_entries(plan):
+    """Read typed source entries without rewriting their original stage paths."""
+    entries = {}
+    for receipt in plan.get("joint_source_catalog", ()):
+        path = Path(receipt["path"])
+        content = path.read_bytes()
+        if hashlib.sha256(content).hexdigest() != receipt["sha256"]:
+            raise ValueError("joint candidate source entry differs from its declared original bytes")
+        entry = json.loads(content)
+        source_id = receipt["source_id"]
+        if source_id in entries or entry["source_id"] != source_id:
+            raise ValueError("joint candidate source catalogue requires its unique actual source IDs")
+        entries[source_id] = entry, path.parent
+    return entries
+
+
+def _joint_sources_for_target(plan, specs, target_contract, *, pipeline_pair, _source_preparation=None):
+    """Resolve original joint parameters for one actual target; NN stays separate."""
+    from research.joint_source_catalog import (
+        JointFlatSourceCatalog,
+        admit_huebner_joint_source_data,
+        resolve_joint_candidate_sources,
+    )
+    from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
+
+    joints = tuple(spec for spec in specs if spec.family == "joint_flat")
+    if not joints:
+        return {}, {}
+    bindings = plan["joint_source_bindings"][target_contract["participant_key"]]
+    if set(bindings) != {spec.expert_id for spec in joints}:
+        raise ValueError("joint source bindings differ from the actual target expert roster")
+    entries = _joint_source_entries(plan)
+    preparation = _source_preparation or FrozenJointFlatSourcePreparation()
+    sources, resolutions = {}, {}
+    for source_id in dict.fromkeys(bindings.values()):
+        entry, base = entries[source_id]
+        selected = tuple(spec for spec in joints if bindings[spec.expert_id] == source_id)
+        admissions = []
+        if plan["evidence_scope"] == "public_calibration_development":
+            declaration = plan["joint_source_data_admission"][source_id]
+            if declaration["issuer"] != "Huebner2017_original_roster":
+                raise ValueError("joint public source requires its registered original-data issuer")
+            scopes = {spec.joint_flat.source_exclusion_scope for spec in selected}
+            if len(scopes) != 1:
+                raise ValueError("one joint source entry must retain one actual exclusion programme")
+            admissions.append(admit_huebner_joint_source_data(entry, target_contract=target_contract,
+                exclusion_scope=next(iter(scopes)), source_requests=declaration["source_requests"],
+                authorization_preprocessing=parse_preprocessing_spec(declaration["authorization_preprocessing"]),
+                response_seconds=declaration["response_seconds"], pre_roll_seconds=declaration["pre_roll_seconds"],
+                base_directory=base, _source_preparation=preparation))
+        catalog = JointFlatSourceCatalog([entry], base_directory=base,
+            evidence_scope=plan["evidence_scope"], data_admissions=admissions, _source_preparation=preparation)
+        actual, receipts = resolve_joint_candidate_sources(selected,
+            {spec.expert_id: source_id for spec in selected}, catalog,
+            target_contract=target_contract, pipeline_pair=pipeline_pair)
+        sources.update(actual)
+        resolutions.update(receipts)
+    return sources, resolutions
+
+
 def _expected_fit_roster(plan, scopes):
     declared = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
     independent = plan.get("evaluation_design") == "independent_prefix"
@@ -193,7 +253,7 @@ def _expected_fit_roster(plan, scopes):
             sources = {spec.expert_id: digests[source_seed] for spec in specs
                        if spec.family == "trial" and spec.recipe.initialization == "source"}
             for source in specs:
-                if source.expert_id not in sources:
+                if source.family != "trial" or source.expert_id not in sources:
                     continue
                 recipe = source.recipe.record()
                 recipe.pop("name")
@@ -209,6 +269,12 @@ def _expected_fit_roster(plan, scopes):
                     if recipe == candidate:
                         sources[control.expert_id] = sources[source.expert_id]
             for budget, prefix in scopes["calibration"].items():
+                joint_specs = tuple(spec for spec in specs if spec.family == "joint_flat")
+                if joint_specs:
+                    bindings = plan["joint_source_bindings"][prefix["target_contract"]["participant_key"]]
+                    entries = _joint_source_entries(plan)
+                    sources.update({spec.expert_id: entries[bindings[spec.expert_id]][0]["codec"]["sha256"]
+                                    for spec in joint_specs})
                 package = f"source{source_seed}_target{seed}_K{budget}"
                 expected[package] = {"package": package, "source_seed": source_seed, "target_seed": seed, "K": int(budget),
                     "expert_programs": [spec.record() for spec in specs],
@@ -239,6 +305,26 @@ def _expected_fit_roster(plan, scopes):
     return expected
 
 
+def _prefix_replay_source_artifacts(request, plan, source_artifacts):
+    from research.prefix_replay_execution import _request_source_programs
+
+    if not request["source_checkpoint_sha256"]:
+        return {}
+    specs = _request_source_programs({"original_request": request,
+        "source_checkpoints": request["source_checkpoint_sha256"]})
+    result = {}
+    for name, digest in request["source_checkpoint_sha256"].items():
+        key = _target_study(plan), request["source_seed"]
+        if specs[name].family == "joint_flat":
+            participant = request["target_contract"]["participant_key"]
+            key = "joint_flat", plan["joint_source_bindings"][participant][name]
+        receipt = source_artifacts[key]
+        if digest != receipt["sha256"]:
+            raise ValueError("replay source artifact differs from its original expert request")
+        result[name] = receipt
+    return result
+
+
 def _ordinary_pool_strategies(plan, mixture_name):
     requested = plan.get("mixture_calibration_strategies", {}).get(mixture_name, plan["calibration_strategies"])
     return tuple(strategy for strategy in requested if strategy in POOL_STRATEGIES)
@@ -258,7 +344,30 @@ def _write_candidate_json(path, payload, input_admission=None):
     return atomic_write_json(path, payload)
 
 
-def _participant_ledger(row, plan, directory, source, views, truths, scopes, fit_requests):
+def _prediction_read_support(spec, view, *, recorder=None):
+    support = {"raw_scope": list(view.raw_scope) if view.samples is not None else None,
+        "available_sample": view.available_sample, "profile": None if spec.profile is None else spec.profile.record(),
+        "filtering_scope": "independent_test_decision" if spec.family == "trial" else "native_unfiltered_decision"}
+    if spec.family != "joint_flat":
+        return support
+    row = recorder.joint_future[-1]
+    if row["view"].record_id != view.record_id:
+        raise ValueError("joint prediction read support differs from its actual recorded future request")
+    capability = row["issued_capabilities"].get(spec.expert_id)
+    refusal = row.get("issued_refusals", {}).get(spec.expert_id)
+    support.update(raw_scope=None, current_view_scope=list(view.raw_scope), filtering_scope="native_record_public_history")
+    if capability is not None:
+        binding = capability.binding
+        support.update(raw_scope=list(binding["read_sample_support"]),
+            conditioning_sample_support=list(binding["conditioning_sample_support"]),
+            score_sample_support=list(binding["score_sample_support"]), history_capability_sha256=capability.digest)
+    elif refusal is not None:
+        support["history_refusal_sha256"] = refusal.digest
+    return support
+
+
+def _participant_ledger(row, plan, directory, source, views, truths, scopes, fit_requests,
+                        *, joint_source_resolutions=None):
     requested = [DecisionPlanEntry(view.participant_key, view.decision_id, truths[view.decision_id]).record()
                  for view in views]
     coverage = [{"participant_key": view.participant_key, "decision_id": view.decision_id,
@@ -272,6 +381,8 @@ def _participant_ledger(row, plan, directory, source, views, truths, scopes, fit
         "requested": requested, "coverage": coverage, "candidate_vocabulary": list(views[0].decision.candidate_vocabulary),
         "evidence_level": views[0].decision.repetitions, "participant_key": views[0].participant_key,
         "pipeline_requests": resolved, "fit_requests": fit_requests}
+    if joint_source_resolutions is not None:
+        ledger["joint_source_resolutions"] = joint_source_resolutions
     if _target_study(plan) != BNCI2014_008_DATASET_ID:
         ledger["requested_evidence_levels"] = {view.decision_id: view.decision.repetitions for view in views}
     if "requested_to_actual_K" in scopes:
@@ -752,7 +863,7 @@ def _run_ordinary_pool_outputs(plan, directory, expected_source, views, requests
             {"strategy": strategy, "status": "unavailable", "failure": value.record(subject=prefix.target_contract["participant_key"])})
         pool = fitted.scorer.pool_calibration if fitted is not None else None
         for spec in specs:
-            use = prefix.label_use["raw"] if spec.family == "continuous_ar" else prefix.label_use["trial"][spec.profile.digest]
+            use = prefix.label_use["trial"][spec.profile.digest] if spec.family == "trial" else prefix.label_use["raw"]
             fits.append({"source_seed": source_seed, "target_seed": seed, "K": prefix.budget,
                 "requested_Ks": context["requested_Ks"], "calibration_strategy": strategy, "expert_id": spec.expert_id,
                 "package": package.name, "label_use": use, "matched_source_controls": controls,
@@ -796,23 +907,35 @@ def _run_ordinary_pool_outputs(plan, directory, expected_source, views, requests
 def _independent_subject_impl(row, plan, directory, expected_source, source_snapshots):
     """Fit C once per expert/seed/K; score the same future queue for every pool."""
     declared = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
+    joint_history = any(spec.family == "joint_flat" for spec in declared)
     mixtures = tuple(EnsembleProgram.from_record(value) for value in plan["mixtures"])
     views = prepare_dataset_independent_prefixes(_candidate_source_declaration(row),
         budgets=plan["budgets"], profiles=[spec.profile for spec in declared if spec.family == "trial"],
         authorization_preprocessing=parse_preprocessing_spec(plan["authorization_preprocessing"]),
         response_seconds=plan["observation_response_seconds"], pre_roll_seconds=plan["pre_roll_seconds"])
     atomic_write_json(directory / "scopes.json", views.ledger)
-    paired_specs, paired_sources, paired_controls = {}, {}, {}
+    paired_specs, paired_sources, paired_controls, joint_resolutions = {}, {}, {}, {}
+    joint_preparation = None
+    if joint_history:
+        from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
+
+        joint_preparation = FrozenJointFlatSourcePreparation()
+    target_contract = next(iter(views.calibration.values())).target_contract
     for source_seed, seed in plan["seed_pairs"]:
         specs = tuple(replace(spec, recipe=None if spec.recipe is None else replace(spec.recipe, seed=seed))
                       for spec in declared)
         sources = {spec.expert_id: source_snapshots[(_target_study(plan), source_seed)] for spec in specs
             if spec.family == "trial" and spec.recipe.initialization == "source"}
+        if joint_history:
+            joint_sources, joint_resolutions[str(source_seed)] = _joint_sources_for_target(plan, specs,
+                target_contract, pipeline_pair=(source_seed, seed), _source_preparation=joint_preparation)
+            sources.update(joint_sources)
         paired_specs[source_seed] = specs
         paired_sources[source_seed], paired_controls[source_seed] = _matched_source_controls(specs, sources)
     fit_requests = list(_expected_fit_roster(plan, views.ledger).values())
     ledger = _participant_ledger(row, plan, directory, expected_source, views.decisions,
-                                views.scoring_truth, views.ledger, fit_requests)
+                                views.scoring_truth, views.ledger, fit_requests,
+                                joint_source_resolutions=joint_resolutions if joint_history else None)
     fit_requests = {request["package"]: request for request in fit_requests}
     predictions, fits = [], []
     base_strategies = [strategy for strategy in plan["calibration_strategies"] if strategy not in POOL_STRATEGIES]
@@ -825,7 +948,12 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                 package = directory / f"source{source_seed}_target{seed}_K{budget}"
                 request = fit_requests[package.name]
                 _fit_started(directory, request)
-                recorder = InnerReplayRecorder()
+                if joint_history:
+                    from research.joint_flat_replay import JointFlatReplayRecorder
+
+                    recorder = JointFlatReplayRecorder()
+                else:
+                    recorder = InnerReplayRecorder()
                 prediction_start = len(predictions)
                 prefix_context = {
                     "source_seed": source_seed,
@@ -841,8 +969,9 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                     strategies=base_strategies, source_checkpoints=sources, device=plan["device"],
                     temperature_expert_ids=plan.get("temperature_expert_ids"),
                     inner_replay_recorder=recorder, inner_replay_context=prefix_context,
-                    _source_preparation=source_preparation)
-                FittedEnsemble.save_programs(package, programs, participant_key=prefix.target_contract["participant_key"])
+                    _source_preparation=source_preparation, prefix_compiler=views.prefix_compiler)
+                if not joint_history:
+                    FittedEnsemble.save_programs(package, programs, participant_key=prefix.target_contract["participant_key"])
                 for strategy in base_strategies:
                     _abort_checkpoint()
                     fitted = None
@@ -854,21 +983,21 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                         calibration = {"strategy": strategy, "status": "unavailable",
                             "failure": result.record(subject=prefix.target_contract["participant_key"])}
                     for spec in specs:
-                        use = prefix.label_use["raw"] if spec.family == "continuous_ar" else prefix.label_use["trial"][spec.profile.digest]
+                        use = prefix.label_use["trial"][spec.profile.digest] if spec.family == "trial" else prefix.label_use["raw"]
                         fits.append({"source_seed": source_seed, "target_seed": seed, "K": budget,
                             "requested_Ks": [int(key) for key, actual in views.ledger["requested_to_actual_K"].items() if actual == budget],
                             "calibration_strategy": strategy, "expert_id": spec.expert_id,
                             "package": package.name, "label_use": use,
                             "matched_source_controls": controls, "temperature_calibration": calibration,
                             "fit_available": fitted is not None and fitted.expert_fit_available[spec.expert_id],
-                            "source_only": strategy == "fixed" and budget == 0 and spec.family == "trial"
-                                and spec.recipe.initialization == "source",
+                            "source_only": strategy == "fixed" and budget == 0 and spec.source_only_capable,
                             "temperature_calibrated": strategy == "grouped_temperature" and spec.expert_id in
                                 plan.get("temperature_expert_ids", roster.expert_ids)})
                 predictions_by_strategy = {strategy: [] for strategy in base_strategies}
                 for view in views.decisions:
                     _abort_checkpoint()
-                    shared = FittedEnsemble.score_programs(programs, view)
+                    shared = (recorder.score_future(programs, view, compiler=views.prefix_compiler, prefix=prefix)
+                              if joint_history else FittedEnsemble.score_programs(programs, view))
                     for strategy in base_strategies:
                         result = programs[strategy]
                         fitted = None if isinstance(result, ExpectedSubjectError) else result
@@ -881,7 +1010,8 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                             evidence = unavailable_prefix_expert_scores(prefix.record(),
                                 [spec.record() for spec in specs], strategy,
                                 result.record(subject=prefix.target_contract["participant_key"]), view)
-                        recorder.record_prefix_future_score(strategy, view=view, evidence=evidence)
+                        if not joint_history:
+                            recorder.record_prefix_future_score(strategy, view=view, evidence=evidence)
                         for mixture in mixtures:
                             if strategy not in plan.get("mixture_calibration_strategies", {}).get(mixture.name, plan["calibration_strategies"]):
                                 continue
@@ -892,10 +1022,7 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                                 "requested_Ks": [int(key) for key, actual in views.ledger["requested_to_actual_K"].items() if actual == budget],
                                 "saved_replay_exact": fitted is not None,
                                 "temperature_calibration": calibration,
-                                "prediction_read_support": {spec.expert_id: {
-                                    "raw_scope": list(view.raw_scope) if view.samples is not None else None,
-                                    "available_sample": view.available_sample, "profile": None if spec.profile is None else spec.profile.record(),
-                                    "filtering_scope": "independent_test_decision" if spec.family == "trial" else "native_unfiltered_decision"}
+                                "prediction_read_support": {spec.expert_id: _prediction_read_support(spec, view, recorder=recorder)
                                     for spec in specs if spec.expert_id in mixture.expert_ids},
                                 "score_source_digest": semantic_sha256(expected_source)})
                 # Preserve the established strategy-major terminal and seal
@@ -907,7 +1034,7 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                 _fit_saved(directory, request)
                 admitted = replay_prefix_inner_replay(package, prefix=prefix, future_views=views.decisions,
                     source_checkpoints=sources, context=prefix_context, device=plan["device"],
-                    expected_record_sha256=recorder.prefix_receipt_sha256)
+                    expected_record_sha256=recorder.prefix_receipt_sha256, prefix_compiler=views.prefix_compiler)
                 if (len(admitted["scores"]) != len(views.decisions)
                         or admitted["exact_score_checks"] < len(recorder.prefix_future_scores)):
                     raise ValueError("prefix replay did not verify its complete requested future score roster")
@@ -928,6 +1055,8 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
         predictions.extend(extra)
     result = {"status": "completed", "predictions": predictions, "fits": fits, "selection_fits": selection_fits, **{key: ledger[key] for key in
         ("requested", "requested_to_actual_K", "budget_adjustments", "coverage", "candidate_vocabulary", "evidence_level", "participant_key", *(["requested_evidence_levels"] if "requested_evidence_levels" in ledger else []))}}
+    if joint_history:
+        result["joint_source_resolutions"] = ledger["joint_source_resolutions"]
     atomic_write_json(directory / "result.json", result)
     atomic_write_json(directory / "progress.json", {"completed_prediction_cells": len(predictions), "status": "completed"})
     return json.loads((directory / "result.json").read_bytes())
@@ -1066,7 +1195,8 @@ def candidate_participant_admission_adapter(arguments):
 
 
 def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, source_snapshots=None,
-                                     replay_admission=None, _metadata_admission=None, _joint_source_preparation=None):
+                                     replay_admission=None, _metadata_admission=None, _joint_source_preparation=None,
+                                     _joint_sources=None, _prepared_views=None):
     from research.prefix_selection_replay import _SelectionReplayAdmission
 
     expected = _prefix_selection_requests(plan, scopes)
@@ -1105,11 +1235,13 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, 
     row = ledger["record"]
     declared = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
     if replay_admission is None:
-        with cpu_thread_budget(1):
-            views = prepare_dataset_independent_prefixes(_candidate_source_declaration(row), budgets=plan["budgets"],
-                profiles=[spec.profile for spec in declared if spec.family == "trial"],
-                authorization_preprocessing=parse_preprocessing_spec(plan["authorization_preprocessing"]),
-                response_seconds=plan["observation_response_seconds"], pre_roll_seconds=plan["pre_roll_seconds"])
+        views = _prepared_views
+        if views is None:
+            with cpu_thread_budget(1):
+                views = prepare_dataset_independent_prefixes(_candidate_source_declaration(row), budgets=plan["budgets"],
+                    profiles=[spec.profile for spec in declared if spec.family == "trial"],
+                    authorization_preprocessing=parse_preprocessing_spec(plan["authorization_preprocessing"]),
+                    response_seconds=plan["observation_response_seconds"], pre_roll_seconds=plan["pre_roll_seconds"])
         if semantic_sha256(views.ledger) != semantic_sha256(scopes):
             raise ValueError("nested prefix parent original source compilation differs from actor scopes")
     for path in paths:
@@ -1151,7 +1283,11 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, 
                 or semantic_sha256(summary["selected_candidate"]) != semantic_sha256(selection["selected_candidate"])):
             raise ValueError("nested prefix saved replay summary changed its actual selected programme")
         if delivered is None:
-            sources = {expert: snapshots[request["source_seed"]] for expert in request["source_checkpoint_sha256"]}
+            sources = {}
+            for expert in request["source_checkpoint_sha256"]:
+                spec = next(spec for spec in declared if spec.expert_id == expert)
+                sources[expert] = (_joint_sources[request["source_seed"]][expert] if spec.family == "joint_flat"
+                                   else snapshots[request["source_seed"]])
             with cpu_thread_budget(1):
                 replay = graph_owner.replay(prefix=views.calibration[request["K"]],
                     prefix_compiler=views.prefix_compiler, future_views=views.decisions, source_checkpoints=sources)
@@ -1289,8 +1425,28 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
         from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
 
         joint_source_preparation = FrozenJointFlatSourcePreparation()
+    joint_sources, joint_resolutions, joint_views = {}, {}, None
+    if joint_source_preparation is not None:
+        declared = tuple(CalibrationExpertProgram.from_record(row) for row in plan["experts"])
+        target_contract = next(iter(scopes["calibration"].values()))["target_contract"]
+        if replay_admission is None:
+            with cpu_thread_budget(1):
+                joint_views = prepare_dataset_independent_prefixes(_candidate_source_declaration(ledger["record"]),
+                    budgets=plan["budgets"], profiles=[spec.profile for spec in declared if spec.family == "trial"],
+                    authorization_preprocessing=parse_preprocessing_spec(plan["authorization_preprocessing"]),
+                    response_seconds=plan["observation_response_seconds"], pre_roll_seconds=plan["pre_roll_seconds"])
+            if semantic_sha256(joint_views.ledger) != semantic_sha256(scopes):
+                raise ValueError("joint parent original input compilation differs from actor scopes")
+            target_contract = next(iter(joint_views.calibration.values())).target_contract
+        for source_seed, seed in plan["seed_pairs"]:
+            resolved, joint_resolutions[str(source_seed)] = _joint_sources_for_target(plan, declared,
+                target_contract, pipeline_pair=(source_seed, seed), _source_preparation=joint_source_preparation)
+            joint_sources[source_seed] = resolved
+        if semantic_sha256(ledger.get("joint_source_resolutions")) != semantic_sha256(joint_resolutions):
+            raise ValueError("candidate source resolution differs from its actual original source and target admission")
     dependencies = collect_source_dependencies(directory,
-        [path.parent for path in directory.rglob("ensemble.json")])
+        {path.parent for name in ("ensemble.json", "prefix_inner_replay.json") for path in directory.rglob(name)},
+        include_joint_prefixes=True)
     if dependencies is not None:
         admit_source_dependencies(dependencies, directory, admission=metadata_admission)
     if replay_admission is not None:
@@ -1300,7 +1456,8 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
             raise TypeError("candidate admission requires the actual private completed replay owner")
     selection_packages, selection_fits, selection_started, selection_failed = _admit_prefix_selection_packages(
         directory, group, plan, scopes, ledger, source_snapshots=source_snapshots, replay_admission=replay_admission,
-        _metadata_admission=metadata_admission, _joint_source_preparation=joint_source_preparation)
+        _metadata_admission=metadata_admission, _joint_source_preparation=joint_source_preparation,
+        _joint_sources=joint_sources, _prepared_views=joint_views)
     if semantic_sha256(ledger["pipeline_requests"]) != semantic_sha256(
             _resolved_pipeline_requests(plan, index, ledger["requested"], scopes)):
         raise ValueError("candidate prefit request ledger omits or changes declared pipeline requests")
@@ -1353,10 +1510,10 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
             for entry in record["experts"]:
                 spec = entry["program"]
                 checkpoint = request["source_checkpoint_sha256"].get(spec["expert_id"])
-                weights_from_source = spec["family"] == "trial" and spec["recipe"]["initialization"] == "source"
-                # The canonical fitter binds matched scratch checkpoints as
-                # architecture_only input; source_digest names fitted weights.
-                expected_origin = checkpoint if weights_from_source and entry["model"] is not None else None
+                program = CalibrationExpertProgram.from_record(spec)
+                # The family owner distinguishes fitted source parameters,
+                # pretrained weights and a matched scratch architecture.
+                expected_origin = checkpoint if program.source_only_capable and entry["model"] is not None else None
                 if entry["source_digest"] != expected_origin:
                     raise ValueError("candidate expert was fitted from another source checkpoint")
                 if "K" in request:
@@ -1367,7 +1524,7 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
                     else:
                         fit = {"program": spec, "authorized_calibration": prefix,
                             "source_checkpoint_sha256": checkpoint,
-                            "checkpoint_role": None if checkpoint is None else "pretrained_weights" if weights_from_source else "architecture_only"}
+                            "checkpoint_role": None if checkpoint is None else program.source_checkpoint_role}
                     if entry["fit_digest"] != semantic_sha256(fit):
                         raise ValueError("candidate expert fit digest differs from its authorized prefix or checkpoint role")
                 model_receipt = file_receipts.get(f"{package_name}/{entry['model']}")
@@ -1417,9 +1574,23 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
                 raise ValueError("candidate prefix replay receipt differs from its prefit request")
             prefix_digest = semantic_sha256(prefix_record)
             if delivered is None:
+                original_inputs = {}
+                if joint_views is not None:
+                    original_sources = {}
+                    for spec_record in request["expert_programs"]:
+                        name = spec_record["expert_id"]
+                        if name not in request["source_checkpoint_sha256"]:
+                            continue
+                        original_sources[name] = (joint_sources[request["source_seed"]][name]
+                            if spec_record["family"] == "joint_flat" else
+                            source_snapshots[(_target_study(plan), request["source_seed"])])
+                    original_inputs = {"prefix": joint_views.calibration[request["K"]],
+                        "future_views": joint_views.decisions, "prefix_compiler": joint_views.prefix_compiler,
+                        "source_checkpoints": original_sources}
                 replay_prefix_inner_replay(package, context=expected_context,
                     expected_record_sha256=prefix_digest, device=plan["device"],
-                    _metadata_admission=metadata_admission, _joint_source_preparation=joint_source_preparation)
+                    _metadata_admission=metadata_admission, _joint_source_preparation=joint_source_preparation,
+                    **original_inputs)
             elif (delivered["record_sha256"] != prefix_digest
                     or semantic_sha256(delivered["future_rows"]) != semantic_sha256(prefix_record["future_score_rows"])):
                 raise ValueError("candidate private prefix admission changed captured future probabilities")
@@ -1456,8 +1627,8 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
                 program = temperature[value["calibration_strategy"]]
                 calibration = (program["temperature_calibration"] if program["status"] == "completed" else
                     {"strategy": value["calibration_strategy"], "status": "unavailable", "failure": program["failure"]})
-                label_use = prefix["label_use"]["raw"] if spec["family"] == "continuous_ar" else prefix["label_use"]["trial"][
-                    CalibrationExpertProgram.from_record(spec).profile.digest]
+                label_use = (prefix["label_use"]["trial"][CalibrationExpertProgram.from_record(spec).profile.digest]
+                             if spec["family"] == "trial" else prefix["label_use"]["raw"])
                 if (key in fit_keys or value["package"] != request["package"] or value["K"] != request["K"]
                         or value["source_seed"] != request["source_seed"] or value["target_seed"] != request["target_seed"]
                         or value["label_use"] != label_use or value["requested_Ks"] != [int(key) for key, actual in
@@ -1546,6 +1717,8 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
                 models.get(value.expert_id) != value.model_digest for value in evidence.expert_identities)):
             raise ValueError("candidate probability output is not bound to its replayed saved models")
     metadata = {key: ledger[key] for key in ("requested", "coverage", "candidate_vocabulary", "evidence_level", "participant_key", *(["requested_evidence_levels"] if "requested_evidence_levels" in ledger else []))}
+    if joint_source_preparation is not None:
+        metadata["joint_source_resolutions"] = joint_resolutions
     if "requested_to_actual_K" in ledger:
         metadata.update(requested_to_actual_K=ledger["requested_to_actual_K"], budget_adjustments=ledger["budget_adjustments"])
     pipeline = []
@@ -1649,6 +1822,10 @@ class CandidateCloudProgramme:
         if self.plan.get("source_seed_catalog"):
             self.plan["source_seed_catalog"] = [{**entry, "path": str((self.original_plan_path.parent / entry["path"]).resolve())}
                                                 for entry in self.plan["source_seed_catalog"]]
+        if self.plan.get("joint_source_catalog"):
+            self.plan["joint_source_catalog"] = [{**entry,
+                "path": str((self.original_plan_path.parent / entry["path"]).resolve())}
+                for entry in self.plan["joint_source_catalog"]]
         self.source, self.normalized, self.admitted, self.admission_failures = None, None, {}, {}
         self.source_snapshots = {}
         self.recovery_binding = None
@@ -1765,7 +1942,7 @@ class CandidateCloudProgramme:
     def _source_replay_artifacts(self):
         from research.prefix_replay_execution import artifact_receipt
 
-        if self.source_artifacts or not self.source_snapshots:
+        if self.source_artifacts:
             return self.source_artifacts
         directory = self.output / "replay_sources"
         directory.mkdir(exist_ok=True)
@@ -1780,6 +1957,12 @@ class CandidateCloudProgramme:
             if receipt["sha256"] != snapshot.digest:
                 raise ValueError("replay control artifact changed its original canonical source bytes")
             self.source_artifacts[key] = receipt
+        for source_id, (entry, base) in _joint_source_entries(self.plan).items():
+            receipt = artifact_receipt((base / entry["codec"]["path"]).resolve())
+            if (receipt["sha256"] != entry["codec"]["sha256"]
+                    or receipt["bytes"] != entry["codec"]["bytes"]):
+                raise ValueError("replay joint source artifact differs from its original catalogue codec")
+            self.source_artifacts["joint_flat", source_id] = receipt
         return self.source_artifacts
 
     def _make_replay_preparation(self, producer_task, fit_outcome, context, plan, source, role,
@@ -1793,20 +1976,11 @@ class CandidateCloudProgramme:
         _, index, _, _, _, _ = authority
         source_artifacts = self._source_replay_artifacts()
 
-        def inputs_for(request):
-            if not request["source_checkpoint_sha256"]:
-                return {}
-            key = _target_study(self.plan), request["source_seed"]
-            receipt = source_artifacts[key]
-            if any(digest != receipt["sha256"] for digest in request["source_checkpoint_sha256"].values()):
-                raise ValueError("replay source artifacts differ from the original prefit source request")
-            return {name: receipt for name in request["source_checkpoint_sha256"]}
-
         request = _prefix_replay_participant_anchor(producer_task, plan, source, self.source, authority,
                                                    source_root=source_root)
         selection, ordinary = request["selection_packages"], request["ordinary_packages"]
         for row in selection + ordinary:
-            row["source_checkpoints"] = inputs_for(row["original_request"])
+            row["source_checkpoints"] = _prefix_replay_source_artifacts(row["original_request"], plan, source_artifacts)
         if not selection and not ordinary:
             return self._make_admission_task(producer_task, fit_outcome, context, plan, source, role,
                 dependencies=dependencies)
@@ -2296,6 +2470,27 @@ def _prepare_candidate_plan(plan_path, *, native_threads=None, load_sources=True
                               for row in plan["records"]]
     normalized["source_checkpoints"] = {name: str((plan_path.parent / path).resolve())
                                         for name, path in plan["source_checkpoints"].items()}
+    joint_specs = tuple(spec for spec in expert_programs if spec.family == "joint_flat")
+    if joint_specs:
+        if not independent:
+            raise ValueError("joint candidates require their original independent-prefix compiler")
+        if len(pairs) != 1:
+            raise ValueError("joint programme uses one declared pipeline pair; independent repeats need distinct sampler programmes")
+        normalized["joint_source_catalog"] = [{**row,
+            "path": str((plan_path.parent / row["path"]).resolve())} for row in plan["joint_source_catalog"]]
+        entries = _joint_source_entries(normalized)
+        bindings = plan["joint_source_bindings"]
+        if not bindings or any(set(row) != {spec.expert_id for spec in joint_specs} for row in bindings.values()):
+            raise ValueError("joint programme needs an exact source binding for each actual target and joint expert")
+        for participant, row in bindings.items():
+            for source_id in row.values():
+                if (source_id not in entries
+                        or entries[source_id][0]["exclusion"]["target_participant_key"] != participant):
+                    raise ValueError("joint source entry differs from its declared excluded target participant")
+        for mixture in mixtures:
+            if any(spec.expert_id in mixture.expert_ids for spec in joint_specs) and set(
+                    plan.get("mixture_calibration_strategies", {}).get(mixture.name, strategies)) & POOL_STRATEGIES:
+                raise ValueError("joint probability programmes use their declared forward temperature algorithm")
     if not normalized["records"] or len({row["path"] for row in normalized["records"]}) != len(normalized["records"]):
         raise ValueError("candidate study requires unique nonempty physical source records")
     if len({row["sha256"] for row in normalized["records"]}) != len(normalized["records"]):
@@ -2493,6 +2688,11 @@ def _finalize_candidate_report(plan, source, completed, output, *, status="compl
             requested_budgets=plan["budgets"], actual_budgets=budgets,
             source_seed_catalog=normalized["source_seed_catalog"],
             source_replication="not_applicable_no_source_NN" if not normalized.get("source_seed_catalog", normalized["source_checkpoints"]) else plan["evidence_scope"])
+        if normalized.get("joint_source_catalog"):
+            report.update(joint_source_catalog=normalized["joint_source_catalog"],
+                joint_source_randomness="deterministic_original_source_fit; actual source seed is null",
+                source_replication="declared_NN_seed_producers_and_deterministic_joint_sources"
+                    if normalized["source_seed_catalog"] else "deterministic_joint_sources")
     if prior_panel is not None:
         report["prior_panel"] = prior_panel
         report["prior_shape_contrasts"] = [{**row,

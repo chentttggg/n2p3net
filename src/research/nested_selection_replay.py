@@ -73,9 +73,7 @@ def _source_roles(candidates, sources):
             if spec.expert_id not in sources:
                 roles.setdefault(spec.expert_id, {"digest": None, "role": None})
                 continue
-            role = ("pretrained_weights" if spec.family == "trial"
-                    and spec.recipe is not None and spec.recipe.initialization == "source"
-                    else "architecture_only")
+            role = spec.source_checkpoint_role
             roles[spec.expert_id] = {"digest": sources[spec.expert_id].digest, "role": role}
     return roles
 

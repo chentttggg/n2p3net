@@ -31,6 +31,8 @@ _CONSUMER_PATHS = (
     "src/transfer/ensemble_views.py", "src/research/selection_graph_store.py",
     "src/research/frozen_metadata.py", "src/research/execution.py",
     "src/research/calibration_selection.py", "src/research/contracts.py",
+    "src/research/nested_selection_replay.py", "src/research/joint_flat_replay.py",
+    "src/transfer/ensemble_fit.py", "src/transfer/joint_flat_model.py", "src/transfer/joint_flat_programme.py",
 )
 
 
@@ -195,11 +197,58 @@ def _worker_native_threads(request, *, ordinary):
     return native
 
 
-def _sources(row):
+def _request_source_programs(row):
+    """Resolve each source role from its original declared expert programme."""
+    from transfer.ensemble_fit import CalibrationExpertProgram
+
+    request = row["original_request"]
+    groups = (candidate["expert_programs"] for candidate in request["candidates"]) if "candidates" in request else (
+        request["expert_programs"],)
+    programs = {}
+    for group in groups:
+        for record in group:
+            spec = CalibrationExpertProgram.from_record(record)
+            previous = programs.get(spec.expert_id)
+            if previous is not None and (previous.family, previous.source_checkpoint_role) != (
+                    spec.family, spec.source_checkpoint_role):
+                raise ValueError("prefix replay source has conflicting original expert roles")
+            programs[spec.expert_id] = spec
+    if not set(row["source_checkpoints"]) <= set(programs):
+        raise ValueError("prefix replay source lacks its original declared expert role")
+    return programs
+
+
+def _joint_sources_owner(row):
+    if not row["source_checkpoints"]:
+        return None
+    programs = _request_source_programs(row)
+    if any(programs[name].family == "joint_flat" for name in row["source_checkpoints"]):
+        from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
+
+        return FrozenJointFlatSourcePreparation()
+    return None
+
+
+def _sources(row, *, joint_source_preparation=None):
     from transfer.ensemble_fit import FrozenSourceCheckpoint
 
-    return {name: FrozenSourceCheckpoint(_artifact_bytes(receipt))
-        for name, receipt in row["source_checkpoints"].items()}
+    if not row["source_checkpoints"]:
+        return {}
+    programs = _request_source_programs(row)
+    sources = {}
+    for name, receipt in row["source_checkpoints"].items():
+        content = _artifact_bytes(receipt)
+        if programs[name].family == "joint_flat":
+            from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
+
+            if joint_source_preparation is None:
+                joint_source_preparation = FrozenJointFlatSourcePreparation()
+            if not isinstance(joint_source_preparation, FrozenJointFlatSourcePreparation):
+                raise TypeError("joint replay source requires its actual private preparation owner")
+            sources[name] = joint_source_preparation.prepare(content, expected_sha256=receipt["sha256"])
+        else:
+            sources[name] = FrozenSourceCheckpoint(content)
+    return sources
 
 
 def _writer(output, estimate):
@@ -231,6 +280,74 @@ def _graph_budgets(graph):
         budgets.add(trace["training_scope"]["actual_K"])
         budgets.update(row["training_scope"]["actual_K"] for row in trace["structural_scope_rows"])
     return budgets
+
+
+def _prepare_history_capabilities(views, budgets, records):
+    """Reissue original requests from actual source operands before export."""
+    from research.prefix_selection_replay import _selection_node_manifest
+    from transfer.ensemble_views import calibration_prefix_identity
+
+    joint_records = []
+    for directory, expected in records:
+        record = _selection_node_manifest(directory, expected_record_sha256=expected)
+        if record["schema"] == "n2p3_joint_flat_prefix_inner_replay/1":
+            joint_records.append(record)
+    if not joint_records:
+        return (), ()
+    prefixes, original_views = {}, {}
+    compiler = views.prefix_compiler
+    for budget in budgets:
+        prefix = compiler.compile(budget)
+        prefixes[semantic_sha256(calibration_prefix_identity(prefix))] = prefix
+        for group in prefix.complete_groups:
+            original_views[semantic_sha256(group.view.record())] = group.view
+    original_views.update((semantic_sha256(view.record()), view) for view in views.decisions)
+    capabilities, refusals = {}, {}
+    for record in joint_records:
+        for row in (*record["OOF"], *record["future"]):
+            for permission in row["issued_history_permissions"].values():
+                digest, binding = permission["sha256"], permission["binding"]
+                if semantic_sha256(binding) != digest:
+                    raise ValueError("original history permission differs from its captured complete binding")
+                if digest in capabilities:
+                    continue
+                prefix = prefixes.get(semantic_sha256(binding["prefix_identity"]))
+                view = original_views.get(semantic_sha256(binding["current_view"]))
+                if prefix is None or view is None:
+                    raise ValueError("original history request lacks its actual prefix or physical view")
+                cap = compiler.record_read_scope(view, prefix=prefix,
+                    conditioning_stop=binding["conditioning_sample_support"][1],
+                    available_stop=binding["score_sample_support"][1], program=binding["program"])
+                if cap.digest != digest or semantic_sha256(cap.binding) != semantic_sha256(binding):
+                    raise ValueError("original compiler reissued a different C/P/T history permission")
+                capabilities[digest] = cap
+            for permission in row.get("issued_history_refusals", {}).values():
+                from research.history_authority import HistoryUnavailableError
+                from transfer.ensemble_views import _record_history_refusal_key
+
+                digest, binding = permission["sha256"], permission["binding"]
+                if semantic_sha256(binding) != digest:
+                    raise ValueError("original history refusal differs from its captured complete binding")
+                if digest in refusals:
+                    continue
+                request = binding["request"]
+                prefix = prefixes.get(semantic_sha256(request["prefix_identity"]))
+                view = original_views.get(semantic_sha256(request["current_view"]))
+                if prefix is None or view is None:
+                    raise ValueError("original history refusal lacks its actual prefix or physical view")
+                try:
+                    compiler.record_read_scope(view, prefix=prefix, conditioning_stop=request["conditioning_stop"],
+                        available_stop=request["available_stop"], program=request["program"])
+                except HistoryUnavailableError as error:
+                    if semantic_sha256(error.record()) != semantic_sha256(binding["error"]):
+                        raise ValueError("original compiler returned a different history refusal") from error
+                else:
+                    raise ValueError("original compiler now permits a previously refused history request")
+                refusal = compiler._record_history_refusals.get(_record_history_refusal_key(binding))
+                if refusal is None or refusal.digest != digest or semantic_sha256(refusal.binding) != semantic_sha256(binding):
+                    raise ValueError("original compiler reissued a different exact-request refusal witness")
+                refusals[digest] = refusal
+    return tuple(capabilities.values()), tuple(refusals.values())
 
 
 def _prepared_graph_owner(job, original, participant_directory):
@@ -312,7 +429,7 @@ def _frozen_preparation(arguments):
     exec(compile(verified_code, old["path"], "exec"), module.__dict__)
     from data.epochs import parse_preprocessing_spec
     from research.prefix_replay_inputs import export_prepared_views
-    from research.prefix_selection_replay import _SelectionReplayAdmission
+    from research.prefix_selection_replay import _node_path, _SelectionReplayAdmission
     from research.selection_graph_store import prepare_selection_graph_store
     from train.runtime import configure_spawned_worker_threads, cpu_thread_budget
 
@@ -328,7 +445,7 @@ def _frozen_preparation(arguments):
         scopes = json.loads(_artifact_bytes(request["scopes"]))
         if semantic_sha256(views.ledger) != semantic_sha256(scopes):
             raise ValueError("frozen original MAT compilation differs from the sealed actor scopes")
-        jobs, budgets = [], set(inputs["actual_Ks"])
+        jobs, budgets, history_records = [], set(inputs["actual_Ks"]), []
         for row in request["selection_packages"]:
             directory = _package(request["participant_directory"], row["package"])
             files = _saved_byte_contract(request, row, graph=True)
@@ -344,8 +461,11 @@ def _frozen_preparation(arguments):
                 _verify_package_files(request, row, already_read=(graph_name,))
                 graph = admitted.graph
                 budgets.update(_graph_budgets(graph))
+                history_records.extend((_node_path(directory, node), node["prefix_receipt_sha256"])
+                    for node in graph["nodes"])
                 plan = admitted.prepare_replay(prefix=views.prefix_compiler.compile(row["original_request"]["K"]),
-                    prefix_compiler=views.prefix_compiler, future_views=views.decisions, source_checkpoints=_sources(row))
+                    prefix_compiler=views.prefix_compiler, future_views=views.decisions,
+                    source_checkpoints=_sources(row, joint_source_preparation=admitted._joint_source_preparation))
                 jobs.append({"package": row["package"], "graph": imported["consumer_store"],
                     "logical_graph_sha256": store.graph_sha256, "graph_scope_files": list(store.scope_receipts),
                     "graph_import": artifact_receipt(path.with_suffix(".import.json")),
@@ -366,7 +486,11 @@ def _frozen_preparation(arguments):
                 if earlier.budget not in complete:
                     pending.append(earlier.budget)
         prepared_inputs = {**inputs, "actual_Ks": sorted(complete)}
-        capsule = export_prepared_views(views, profiles, output / "inputs", prepared_inputs)
+        history_records.extend((_package(request["participant_directory"], row["package"]), row["prefix_record_sha256"])
+            for row in request["ordinary_packages"])
+        histories, refusals = _prepare_history_capabilities(views, complete, history_records)
+        capsule = export_prepared_views(views, profiles, output / "inputs", prepared_inputs,
+            record_history_scopes=histories, record_history_refusals=refusals)
         manifest = {"schema": PREPARATION_SCHEMA, "request": request,
             "request_sha256": semantic_sha256(request), "input_request": prepared_inputs,
             "input_request_sha256": semantic_sha256(prepared_inputs), "capsule": capsule,
@@ -449,11 +573,13 @@ def selection_chunk_adapter(arguments):
     row = _roster(request, "selection")[arguments["package"]]
     with _borrow(arguments) as borrowed:
         _require_input_binding(arguments, borrowed.receipt)
+        source_preparation = _joint_sources_owner(row)
         results = replay_selection_chunk(arguments["node_requests"],
             directory=_package(request["participant_directory"], row["package"]),
             parent_prefix=borrowed.views.prefix_compiler.compile(row["original_request"]["K"]),
             prefix_compiler=borrowed.views.prefix_compiler, future_views=borrowed.views.decisions,
-            source_checkpoints=_sources(row))
+            source_checkpoints=_sources(row, joint_source_preparation=source_preparation),
+            _joint_source_preparation=source_preparation)
         return _result(arguments, {"kind": "selection_chunk", "package": row["package"],
             "native_threads": 1,
             "node_requests_sha256": semantic_sha256(arguments["node_requests"]),
@@ -474,9 +600,13 @@ def ordinary_prefix_replay_adapter(arguments):
         _saved_byte_contract(request, row)
         _verify_package_files(request, row)
         path = _package(request["participant_directory"], row["package"])
-        package = _PrefixPackageAdmission(path, expected_record_sha256=row["prefix_record_sha256"])
+        source_preparation = _joint_sources_owner(row)
+        package = _PrefixPackageAdmission(path, expected_record_sha256=row["prefix_record_sha256"],
+            _joint_source_preparation=source_preparation)
         replay = package.replay(prefix=borrowed.views.prefix_compiler.compile(row["original_request"]["K"]),
-            future_views=borrowed.views.decisions, source_checkpoints=_sources(row),
+            prefix_compiler=borrowed.views.prefix_compiler,
+            future_views=borrowed.views.decisions,
+            source_checkpoints=_sources(row, joint_source_preparation=source_preparation),
             context=row["context"], atol=0.0, rtol=0.0)
         return _result(arguments, {"kind": "ordinary", "package": row["package"],
             "prefix_record_sha256": row["prefix_record_sha256"], "replay": replay,
@@ -544,7 +674,7 @@ def selection_reducer_adapter(arguments):
             expected_graph_sha256=row["graph_sha256"], expected_selection_sha256=job["selection_sha256"])
         plan = admitted.prepare_replay(prefix=borrowed.views.prefix_compiler.compile(row["original_request"]["K"]),
             prefix_compiler=borrowed.views.prefix_compiler, future_views=borrowed.views.decisions,
-            source_checkpoints=_sources(row))
+            source_checkpoints=_sources(row, joint_source_preparation=admitted._joint_source_preparation))
         if semantic_sha256(plan.node_requests) != semantic_sha256(job["node_requests"]):
             raise ValueError("selection reducer prepared nodes differ from original graph/input authority")
         summary = plan.finish_replay(results)
@@ -568,8 +698,8 @@ def selection_reducer_adapter(arguments):
 
 def ordinary_reducer_adapter(arguments):
     """Read the original manifest once and bind exact actual worker output."""
-    from research.prefix_inner_replay import _manifest, _recursive_close, future_input_identity
-    from research.prefix_selection_replay import _saved_replay_result
+    from research.prefix_inner_replay import _recursive_close, future_input_identity
+    from research.prefix_selection_replay import _saved_replay_result, _selection_node_manifest
     from train.runtime import cpu_thread_budget
 
     request = arguments["request"]
@@ -586,7 +716,7 @@ def ordinary_reducer_adapter(arguments):
         raise ValueError("ordinary prefix reducer changed its original exact CPU replay programme")
     with cpu_thread_budget(native), _borrow(arguments) as borrowed:
         _require_input_binding(arguments, borrowed.receipt)
-        original = _manifest(_package(request["participant_directory"], row["package"]),
+        original = _selection_node_manifest(_package(request["participant_directory"], row["package"]),
             expected_record_sha256=row["prefix_record_sha256"])
         if (record["captured_fit_device"] != original["device"]
                 or semantic_sha256(original["fit_context"]) != semantic_sha256(row["context"])):

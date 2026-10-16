@@ -216,7 +216,7 @@ def _pack_view(view, writer, *, calibration=False):
                          raw_key=(view.source_sha256, view.source_relative_path))}
 
 
-def export_prepared_views(views, profiles, directory, request, *, record_history_scopes=()):
+def export_prepared_views(views, profiles, directory, request, *, record_history_scopes=(), record_history_refusals=()):
     """Export actual old-compiler prefixes, including all recursively earlier K.
 
     Run this function in the frozen producer process. The request pins its real
@@ -227,6 +227,7 @@ def export_prepared_views(views, profiles, directory, request, *, record_history
     from transfer.noise_model import array_digest
 
     record_history_scopes = tuple(record_history_scopes)
+    record_history_refusals = tuple(record_history_refusals)
 
     requested_profiles = _validate_request(request)
     compiler = views.prefix_compiler
@@ -240,6 +241,15 @@ def export_prepared_views(views, profiles, directory, request, *, record_history
                 or cap.binding["source_owner_sha256"] != request["producer_source_sha256"]
                 or cap.binding["samples_sha256"] != array_digest(cap.samples)):
             raise ValueError("history capsule export requires the actual original issuer-owned native history cap")
+    if record_history_refusals:
+        from transfer.ensemble_views import RecordHistoryRefusal, _record_history_refusal_key
+    for refusal in record_history_refusals:
+        if (not isinstance(refusal, RecordHistoryRefusal)
+                or getattr(compiler, "_record_history_refusals", {}).get(
+                    _record_history_refusal_key(refusal.binding)) is not refusal
+                or refusal.binding["request"]["source_owner_sha256"] != request["producer_source_sha256"]
+                or semantic_sha256(refusal.binding) != refusal.digest):
+            raise ValueError("history refusal export requires its actual original issuer-owned exact request")
     producer_module = sys.modules[type(compiler).__module__]
     actual_sha = hashlib.sha256(Path(inspect.getfile(type(compiler))).read_bytes()).hexdigest()
     if (actual_sha != request["producer_source_sha256"]
@@ -342,6 +352,9 @@ def export_prepared_views(views, profiles, directory, request, *, record_history
         "calibration_Ks": list(views.calibration), "decisions": decisions, "ledger": views.ledger}
     if histories:
         document["record_history_scopes"] = histories
+    if record_history_refusals:
+        document["record_history_refusals"] = [{"binding": refusal.binding, "sha256": refusal.digest}
+            for refusal in record_history_refusals]
     capsule_path = directory / "capsule.json"
     capsule_path.write_bytes(_json_bytes(document))
     # Future truth belongs only to the parent scoring owner, never reader capsules.
@@ -741,8 +754,16 @@ def _restore_views(document, reader):
     for prefix in prefixes.values():
         for group in prefix.complete_groups:
             compiler.before_group(prefix, group)
+    decisions = tuple(_unpack_view(row, reader) for row in document["decisions"])
+    if document.get("record_history_refusals"):
+        from transfer.ensemble_views import _restore_record_history_refusal
+
+        for refusal in document["record_history_refusals"]:
+            if set(refusal) != {"binding", "sha256"} or semantic_sha256(refusal["binding"]) != refusal["sha256"]:
+                raise ValueError("prepared history refusal differs from its original complete request seal")
+            _restore_record_history_refusal(compiler, refusal["binding"], future_views=decisions)
     return IndependentSubjectViews({budget: prefixes[budget] for budget in document["calibration_Ks"]},
-        tuple(_unpack_view(row, reader) for row in document["decisions"]), {}, document["ledger"], compiler)
+        decisions, {}, document["ledger"], compiler)
 
 
 class BorrowedPrefixInputs:

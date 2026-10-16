@@ -11,6 +11,7 @@ factories and independently attributable training ledgers.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -180,12 +181,43 @@ def build_source_parameters(source_cohort, *, target_participant_key, degrees_of
         source_model_path=source_model_path)
 
 
+def _reexport_cached_source(frozen_source, *, original_bytes, model, geometry, training,
+                            target_participant_key, degrees_of_freedom, relative_noise_shape):
+    """Rebind target exclusion after original-data checks; preserve all source operands."""
+    from transfer.joint_flat_programme import FrozenJointFlatSource
+
+    if not isinstance(frozen_source, FrozenJointFlatSource):
+        raise TypeError('cached source export requires an admitted FrozenJointFlatSource')
+    parameters = frozen_source.parameters
+    binding = parameters.binding
+    hyper = FixedHyperparameters(degrees_of_freedom, relative_noise_shape, 'externally_fixed')
+    if (original_bytes != frozen_source.original_model_content
+            or hashlib.sha256(original_bytes).hexdigest() != binding['source_model_sha256']
+            or model.digest() != binding['source_model_digest']
+            or parameters.noise.geometry != geometry
+            or not np.array_equal(parameters.basis, model.basis)
+            or array_digest(parameters.prior.mean, parameters.prior.root) != binding['beta_prior_sha256']
+            or array_digest(parameters.basis) != binding['basis_sha256']
+            or hyper != parameters.hyperparameters):
+        raise ValueError('cached source must preserve the original NPZ, geometry and complete frozen parameter law')
+    original_training = binding['source_prior_factor_conversion']['source_covariance_producer']['provenance']['records']
+    keys = ('record_id', 'participant_key', 'source_sha256', 'read_support',
+            'fit_scope', 'input_sha256', 'n_samples')
+    def identities(rows):
+        return {row['record_id']: metadata_digest({key: row[key] for key in keys}) for row in rows}
+    if len(training) != len(original_training) or identities(training) != identities(original_training):
+        raise ValueError('cached source cohort differs from original fitted records, identities or physical support')
+    rebound = {**binding, 'excluded_target_participant': target_participant_key}
+    return _parameters(parameters.prior, parameters.hyperparameters, parameters.basis, parameters.noise, rebound)
+
+
 def source_parameters_from_saved_model(source_cohort, *, target_participant_key, degrees_of_freedom,
-                                        relative_noise_shape, source_model_path):
+                                        relative_noise_shape, source_model_path, frozen_source=None):
     """Read-only original source model + original EEG authority, without refitting."""
     cohort, geometry = _source_cohort(source_cohort, target_participant_key)
-    model_file_sha256 = hashlib.sha256(Path(source_model_path).read_bytes()).hexdigest()
-    model = ContinuousDecisionModel.load(source_model_path)
+    original_bytes = Path(source_model_path).read_bytes()
+    model_file_sha256 = hashlib.sha256(original_bytes).hexdigest()
+    model = ContinuousDecisionModel.load(io.BytesIO(original_bytes))
     model_digest = model.digest()
     basis = model.basis
     if (model.provenance["fit_scope"] != "source_training" or model.noise is None
@@ -215,6 +247,10 @@ def source_parameters_from_saved_model(source_cohort, *, target_participant_key,
             "read_support": list(prefix.target_contract["raw_scope"]),
             "fit_scope": model.provenance["fit_scope"], "input_sha256": original["input_sha256"],
             "n_samples": original["n_samples"], "original_view": original_view})
+    if frozen_source is not None:
+        return _reexport_cached_source(frozen_source, original_bytes=original_bytes, model=model,
+            geometry=geometry, training=training, target_participant_key=target_participant_key,
+            degrees_of_freedom=degrees_of_freedom, relative_noise_shape=relative_noise_shape), model
     response = FrozenERPResponse.from_continuous_model(model, geometry=geometry,
         source_model_sha256=model_file_sha256, response_id="joint-flat-source-beta", training_records=training)
     # F.T=Q R => F F.T=R.T R. Keep the original covariance factor's
@@ -257,6 +293,136 @@ def source_parameters_from_saved_model(source_cohort, *, target_participant_key,
         "relative_noise_shape": relative_noise_shape, "degrees_of_freedom": str(degrees_of_freedom),
         "target_parameter_fits": 0, "target_labels_read": 0}
     return _parameters(prior, hyper, basis, noise, binding), model
+
+
+def _original_record_source_cohort(source_cohort, target_participant_key):
+    """Named original multi-record source issuer; the MAT gate stays intact."""
+    from transfer.ensemble_views import RecordCalibrationPrefixCompiler
+
+    cohort, records, authorities = [], [], []
+    original_inputs = set()
+    for compiler, declared_prefix in source_cohort:
+        if type(compiler) is not RecordCalibrationPrefixCompiler:
+            raise TypeError('record source parameters require the original registered recording compiler')
+        prefix = compiler.assert_original_prefix(declared_prefix)
+        if prefix.target_contract['participant_key'] == target_participant_key:
+            raise ValueError('actual source programme includes the excluded target participant')
+        for record in prefix.calibration_records:
+            scope = prefix.target_contract['record_scopes'][record.record_id]
+            matches = [r for r in compiler.sources if r.record_id == record.record_id
+                       and r.source_sha256 == scope['source_sha256']]
+            if len(matches) != 1 or tuple(scope['read_sample_support']) != (0, len(record.samples)):
+                raise ValueError('source fit has no unique original acquisition and admitted native C scope')
+            source = matches[0]
+            count = len(record.onsets)
+            if (source.source_sha256 in original_inputs
+                    or not np.array_equal(record.samples, source.read_native(0, len(record.samples)))
+                    or not np.array_equal(record.onsets, source.native_onsets[:count])
+                    or not np.array_equal(record.target_mask, source.authorized_binary_labels[:count])
+                    or source.participant_key != prefix.target_contract['participant_key']):
+                raise ValueError('source original bytes, clocks, C labels, participant or overlap changed')
+            original_inputs.add(source.source_sha256)
+            original_view = {**prefix.target_contract, 'record_id': record.record_id,
+                'source_sha256': source.source_sha256, 'raw_scope': scope['read_sample_support'],
+                'actual_record_scope': scope, 'original_prefix_digest': calibration_prefix_identity(prefix),
+                'original_compiler_source_sha256': compiler.history_owner_source,
+                'original_factory_source_sha256': compiler.adapter.original_factory_source_sha256,
+                'actual_input_sha256': array_digest(record.samples, record.onsets, record.target_mask),
+                'label_use': prefix.label_use['raw']}
+            records.append(record)
+            authorities.append(original_view)
+        cohort.append((compiler, prefix))
+    if not records or not target_participant_key:
+        raise ValueError('actual record source cohort and excluded target must be nonempty')
+    geometry = _geometry(cohort[0][1])
+    if any(_geometry(prefix) != geometry for _, prefix in cohort):
+        raise ValueError('source records require one actual native physical geometry or explicit transport')
+    if len({record.record_id for record in records}) != len(records):
+        raise ValueError('source record identifiers must retain their original unique acquisition keys')
+    return tuple(cohort), tuple(records), tuple(authorities), geometry
+
+
+def build_source_record_parameters(source_cohort, *, target_participant_key, degrees_of_freedom,
+        relative_noise_shape, basis, ridge, noise_order, conditioning_samples, source_model_path):
+    """Original source-record C authority -> existing response/noise source fit."""
+    cohort, records, _views, geometry = _original_record_source_cohort(source_cohort, target_participant_key)
+    model = ContinuousDecisionModel.fit(records, sfreq=geometry.sfreq, channels=geometry.channels,
+        candidate_ids=cohort[0][1].target_contract['candidate_vocabulary'], basis=np.asarray(basis), ridge=ridge,
+        fit_scope='source_training', noise_order=noise_order, conditioning_samples=conditioning_samples,
+        operator_identity=geometry.operator_identity)
+    model.save(source_model_path)
+    return source_record_parameters_from_saved_model(cohort, target_participant_key=target_participant_key,
+        degrees_of_freedom=degrees_of_freedom, relative_noise_shape=relative_noise_shape,
+        source_model_path=source_model_path)
+
+
+def source_record_parameters_from_saved_model(source_cohort, *, target_participant_key, degrees_of_freedom,
+        relative_noise_shape, source_model_path, frozen_source=None):
+    """Read-only original multi-record source export, with real cohort checks."""
+    cohort, records, views, geometry = _original_record_source_cohort(source_cohort, target_participant_key)
+    original_bytes = Path(source_model_path).read_bytes()
+    file_sha = hashlib.sha256(original_bytes).hexdigest()
+    model = ContinuousDecisionModel.load(io.BytesIO(original_bytes))
+    if (model.provenance['fit_scope'] != 'source_training' or model.posterior_state is None or model.noise is None
+            or model.channels != geometry.channels or model.sfreq != geometry.sfreq
+            or model.operator_identity != geometry.operator_identity):
+        raise ValueError('source model differs from the actual original native source programme')
+    fitted = {row['record_id']: row for row in model.provenance['records']}
+    if set(fitted) != {record.record_id for record in records}:
+        raise ValueError('source export must recover every actual original fitted recording')
+    training, residuals = [], []
+    for record, view in zip(records, views, strict=True):
+        original = fitted[record.record_id]
+        if (original['input_sha256'] != view['actual_input_sha256']
+                or original['n_samples'] != len(record.samples)):
+            raise ValueError('saved source producer differs from actual source C arrays or clock')
+        training.append({'record_id': record.record_id, 'participant_key': view['participant_key'],
+            'recording_id': view['source_sha256'], 'read_support': list(view['raw_scope']),
+            'source_sha256': view['source_sha256'], 'source_input_sha256': view['source_sha256'],
+            'fit_scope': 'source_training', 'input_sha256': original['input_sha256'],
+            'n_samples': original['n_samples'], 'original_view': view})
+    if frozen_source is not None:
+        return _reexport_cached_source(frozen_source, original_bytes=original_bytes, model=model,
+            geometry=geometry, training=training, target_participant_key=target_participant_key,
+            degrees_of_freedom=degrees_of_freedom, relative_noise_shape=relative_noise_shape), model
+    for record, view in zip(records, views, strict=True):
+        design = _event_design(record.onsets, record.target_mask, len(record.samples), model.basis)
+        residuals.append(ResidualRecord.from_arrays(samples=record.samples, design=design,
+            kernel_mean=model.kernel_mean, nuisance=np.zeros_like(record.samples), record_id=record.record_id,
+            participant_key=view['participant_key'], recording_id=view['source_sha256'], sample_start=0,
+            geometry=geometry, role='source_training', source_model_sha256=file_sha,
+            source_input_sha256=view['source_sha256']))
+    response = FrozenERPResponse.from_continuous_model(model, geometry=geometry,
+        source_model_sha256=file_sha, response_id='joint-flat-record-source-beta', training_records=training)
+    q, upper = np.linalg.qr(response.coefficient_factor.T, mode='reduced')
+    signs = np.where(np.diag(upper) < 0, -1., 1.)
+    root = upper.T*signs[None, :]
+    prior = GlobalGaussianPrior(response.mean.ravel(), root, 'source_only')
+    noise = FittedChannelNoise.from_temporal_noise(model.noise, model.innovation_covariance,
+        geometry=geometry, conditioning_samples=model.conditioning_samples,
+        source_model_sha256=file_sha, training_records=residuals)
+    hyper = FixedHyperparameters(degrees_of_freedom, relative_noise_shape, 'externally_fixed')
+    binding = {'schema': 'n2p3_joint_flat_parameter_authority/1', 'program': 'actual_source_response_and_noise',
+        'excluded_target_participant': target_participant_key, 'source_model': model._metadata(),
+        'source_model_digest': model.digest(), 'source_model_sha256': file_sha, 'noise': noise.record(),
+        'source_prefixes': [{'prefix_digest': calibration_prefix_identity(prefix),
+            'target_contract': prefix.target_contract, 'label_use': prefix.label_use['raw'],
+            'compiler_source_sha256': compiler.history_owner_source,
+            'original_factory_source_sha256': compiler.adapter.original_factory_source_sha256} for compiler, prefix in cohort],
+        'actual_source_record_views': list(views),
+        'beta_prior_sha256': array_digest(prior.mean, prior.root), 'basis_sha256': array_digest(model.basis),
+        'source_prior_factor_conversion': {'program': 'original_factor_transpose_QR_positive_lower_chart',
+            'original_factor_sha256': array_digest(response.coefficient_factor), 'chart_root_sha256': array_digest(root),
+            'orthogonal_sha256': array_digest(q), 'column_signs': signs.tolist(),
+            'actual_reconstruction_norm': float(np.linalg.norm(response.coefficient_factor.T-q@upper)),
+            'dense_Gram_formed': False, 'source_covariance_producer': response.record()},
+        'K0_definition': 'original_saved_source_temporal_noise_and_innovation_covariance',
+        'diagnostic_final_residual_records': [record.ledger() for record in residuals],
+        'noise_parameter_fits_after_original_source_model': 0, 'noise_original_fit_inputs': model.noise.provenance,
+        'Gamma_recording_law': 'one_scale_for_entire_original_record',
+        'relative_noise_shape': relative_noise_shape, 'degrees_of_freedom': str(degrees_of_freedom),
+        'target_parameter_fits': 0, 'target_labels_read': 0}
+    return _parameters(prior, hyper, model.basis, noise, binding), model
 
 
 @dataclass(frozen=True, init=False)

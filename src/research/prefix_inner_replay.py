@@ -33,6 +33,7 @@ from transfer.ensemble_fit import (
     _calibration_expert_fit_digest,
 )
 from transfer.ensemble_views import CalibrationPrefix, PredictionDecisionView
+from transfer.joint_flat_programme import FrozenJointFlatSource
 from transfer.noise_model import array_digest
 
 SCHEMA = "n2p3_prefix_inner_replay/2"
@@ -45,7 +46,7 @@ def _sha256(path: Path) -> str:
 def _normalise_sources(source_checkpoints):
     if source_checkpoints is None:
         return {}
-    return {name: (value if isinstance(value, FrozenSourceCheckpoint)
+    return {name: (value if isinstance(value, (FrozenSourceCheckpoint, FrozenJointFlatSource))
                    else FrozenSourceCheckpoint.from_path(value))
             for name, value in source_checkpoints.items()}
 
@@ -56,9 +57,7 @@ def _source_roles(expert_programs, sources):
         source = sources.get(spec.expert_id)
         role = None
         if source is not None:
-            role = ("pretrained_weights" if spec.family == "trial"
-                    and spec.recipe is not None and spec.recipe.initialization == "source"
-                    else "architecture_only")
+            role = spec.source_checkpoint_role
         roles[spec.expert_id] = {"digest": None if source is None else source.digest, "role": role}
     return roles
 
@@ -86,6 +85,10 @@ def actual_expert_fit_inputs(spec, data, raw_records, target, *, source_only=Fal
 
     if source_only:
         return {"origin": "source_only_or_unavailable", "actual_K": 0}
+    if spec.family == "joint_flat":
+        return {"origin": "joint_flat_original_target_prefix", "records": [
+            {"C_record_id": raw.record_id, "actual_C_arrays_sha256": array_digest(raw.samples, raw.onsets, raw.target_mask),
+             "n_native_samples": len(raw.samples), "n_authorized_labels": len(raw.onsets)} for raw in raw_records]}
     if spec.family == "continuous_ar":
         records = []
         for raw in raw_records:
@@ -128,7 +131,16 @@ def check_native_fit_inputs(expected_inputs, model, *, actual_K=None):
         if expert.predictor is None:
             continue
         expected = expected_inputs[expert.program.expert_id]
-        if expert.program.family == "continuous_ar":
+        if expert.program.family == "joint_flat":
+            actual = expert.predictor.calibration_inputs
+            wanted = () if expected['origin'] == 'source_only_or_unavailable' else expected['records']
+            if len(actual) != len(wanted) or any(
+                    saved['C_record_id'] != row['C_record_id']
+                    or saved['actual_C_arrays_sha256'] != row['actual_C_arrays_sha256']
+                    or saved['native_rows'] != row['n_native_samples']
+                    for saved, row in zip(actual, wanted, strict=True)):
+                raise ValueError('joint C posterior differs from original authorized recording samples and labels')
+        elif expert.program.family == "continuous_ar":
             actual = expert.predictor.provenance["records"]
             if expert.program.spatial is None and any(row["input_sha256"] != row["original_input_sha256"]
                                                       for row in expected["records"]):
@@ -319,6 +331,10 @@ def _check_seeds(specs, sources, context, *, admission=None):
     if not isinstance(owner, _SourceSeedAdmission):
         raise TypeError("prefix seed check requires its private actual source admission")
     for name, source in sources.items():
+        if isinstance(source, FrozenJointFlatSource):
+            actual[name] = {"digest": source.digest, "seed": None,
+                "source_kind": "original_continuous_response_noise_deterministic_source_fit"}
+            continue
         record = owner.source(source)
         if source_seed is not None and record["seed"] != source_seed:
             raise ValueError("prefix source seed differs from the actual checkpoint seed")
@@ -381,8 +397,8 @@ def _check_final_authority(record, loaded):
     expected_roles = {}
     for spec in specs:
         digest = record["source_checkpoint_digests"].get(spec.expert_id)
-        expected_roles[spec.expert_id] = {"digest": digest, "role": None if digest is None else
-            "pretrained_weights" if spec.recipe.initialization == "source" else "architecture_only"}
+        expected_roles[spec.expert_id] = {'digest': digest,
+            'role': None if digest is None else spec.source_checkpoint_role}
     if expected_roles != record["source_checkpoint_roles"]:
         raise ValueError("prefix source checkpoint role/digest changed")
     target_seed = record["fit_context"].get("target_seed")
@@ -402,7 +418,19 @@ def _check_final_authority(record, loaded):
             raise ValueError("prefix actual trial samples/labels differ from fit authority")
     for spec in specs:
         native = record["native_fit_inputs"][spec.expert_id]
-        if spec.family == "continuous_ar" and "native_records" in identity:
+        if spec.family == "joint_flat" and record['actual_K'] != 0:
+            wanted = identity.get('native_records')
+            if wanted is None:
+                wanted = [] if identity['raw'] is None else [identity['raw']]
+            actual = native['records']
+            if len(actual) != len(wanted) or any(
+                    row['C_record_id'] != item['record_id']
+                    or row['actual_C_arrays_sha256'] != item['fit_input_digest']
+                    or row['n_authorized_labels'] != len(item['event_onsets'])
+                    or row['n_native_samples'] != item['raw_scope'][1]-item['raw_scope'][0]
+                    for row, item in zip(actual, wanted, strict=True)):
+                raise ValueError('joint native fitter input differs from original C array identity, labels or sample support')
+        elif spec.family == "continuous_ar" and "native_records" in identity:
             rows = native["records"]
             wanted = identity["native_records"]
             if len(rows) != len(wanted) or any(a["record_id"] != b["record_id"]
@@ -428,7 +456,7 @@ def _check_final_authority(record, loaded):
             raise ValueError("prefix declaration or raw numerical input differs from actual package fit authority")
         for expert in model._experts:
             digest = record["source_checkpoint_digests"].get(expert.program.expert_id)
-            weights_from_source = (expert.program.family == "trial" and expert.program.recipe.initialization == "source")
+            weights_from_source = expert.program.source_only_capable
             if expert.source_digest != (digest if weights_from_source and expert.predictor is not None else None):
                 raise ValueError("prefix numerical producer source weights digest changed")
             if expert.predictor is not None:
@@ -455,7 +483,8 @@ def _check_oof_temperature_learning(loaded):
     seen = set()
     for model in loaded.values():
         oof = model.oof_probability_record
-        if oof is None or oof["schema"] != "n2p3_complete_group_probability_oof/1" or semantic_sha256(oof) in seen:
+        if (oof is None or oof["schema"] not in {"n2p3_complete_group_probability_oof/1",
+                "n2p3_joint_flat_forward_probability_OOF/1"} or semantic_sha256(oof) in seen):
             continue
         seen.add(semantic_sha256(oof))
         groups = {group["view"]["record_id"]: group for group in oof["calibration_groups"]}
@@ -720,6 +749,12 @@ def persist_prefix_inner_replay(prefix, programs, directory, *, recorder=None,
                                 expert_programs=None, program=None, source_checkpoints=None,
                                 context=None, device="cpu", _source_seed_admission=None):
     """Persist a captured prefix fit and all grouped-temperature inner models."""
+    from research.joint_flat_replay import JointFlatReplayRecorder, persist_joint_flat_prefix
+
+    if isinstance(recorder, JointFlatReplayRecorder):
+        return persist_joint_flat_prefix(prefix, programs, directory, recorder=recorder,
+            expert_programs=expert_programs, program=program, source_checkpoints=source_checkpoints,
+            context=context, device=device)
     if not isinstance(prefix, CalibrationPrefix):
         raise TypeError("prefix replay requires an authorized CalibrationPrefix")
     if recorder is None or not isinstance(recorder, InnerReplayRecorder):
@@ -861,6 +896,20 @@ class _PrefixPackageAdmission:
         if _source_seed_admission is not None and not isinstance(_source_seed_admission, _SourceSeedAdmission):
             raise TypeError("prefix package requires its actual checkpoint seed admission")
         self.directory = Path(directory)
+        if self.directory.is_symlink() or (self.directory / "prefix_inner_replay.json").is_symlink():
+            raise ValueError("prefix replay receipt path is a symlink")
+        payload = json.loads((self.directory/'prefix_inner_replay.json').read_bytes())
+        if payload.get('record', {}).get('schema') == 'n2p3_joint_flat_prefix_inner_replay/1':
+            from research.joint_flat_replay import JointFlatPackageAdmission
+
+            self._joint = JointFlatPackageAdmission(directory, expected_record_sha256=expected_record_sha256,
+                metadata_store=metadata_store, _metadata_admission=_metadata_admission,
+                _joint_source_preparation=_joint_source_preparation)
+            self.record, self.programs = self._joint.record, self._joint.programs
+            self._source_seed_admission, self._scope_owner = _source_seed_admission, _scope_owner
+            self._joint_source_preparation = self._joint._source_preparation
+            return
+        self._joint = None
         self.record = _manifest(self.directory, expected_record_sha256=expected_record_sha256)
         self._source_seed_admission = _source_seed_admission
         self._scope_owner = _scope_owner
@@ -909,7 +958,12 @@ class _PrefixPackageAdmission:
             raise ValueError("prefix requested K aliases differ from the captured caller fit context")
 
     def replay(self, *, prefix=None, future_views=None, source_checkpoints=None,
-               context=None, device=None, atol=0.0, rtol=0.0):
+               context=None, device=None, atol=0.0, rtol=0.0, prefix_compiler=None):
+        if self._joint is not None:
+            if device is not None and str(device) != self.record["device"]:
+                raise ValueError("prefix replay device differs from captured fit")
+            return self._joint.replay(prefix=prefix, future_views=future_views,
+                prefix_compiler=prefix_compiler, source_checkpoints=source_checkpoints, context=context)
         return _replay_admitted_prefix(self, prefix=prefix, future_views=future_views,
             source_checkpoints=source_checkpoints, context=context, device=device, atol=atol, rtol=rtol)
 
@@ -1025,13 +1079,13 @@ def _replay_admitted_prefix(admission, *, prefix=None, future_views=None,
 def replay_prefix_inner_replay(directory, *, prefix=None, future_views=None,
                                source_checkpoints=None, context=None, expected_record_sha256=None,
                                device=None, atol=0.0, rtol=0.0, _metadata_admission=None,
-                               _joint_source_preparation=None):
+                               _joint_source_preparation=None, prefix_compiler=None):
     """Admit saved state once and replay every actual requested observation."""
     admission = _PrefixPackageAdmission(directory, expected_record_sha256=expected_record_sha256,
                                         _metadata_admission=_metadata_admission,
                                         _joint_source_preparation=_joint_source_preparation)
     return admission.replay(prefix=prefix, future_views=future_views, source_checkpoints=source_checkpoints,
-                            context=context, device=device, atol=atol, rtol=rtol)
+                            context=context, device=device, atol=atol, rtol=rtol, prefix_compiler=prefix_compiler)
 
 
 __all__ = [

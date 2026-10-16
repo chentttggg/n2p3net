@@ -62,6 +62,8 @@ class CalibrationProgramCandidate:
             raise ValueError("candidate specs must match its complete frozen ensemble roster")
         if self.strategy not in {"fixed", "grouped_temperature"} | POOL_STRATEGIES:
             raise ValueError("nested selection supports declared fixed/grouped-temperature programs only")
+        if self.strategy in POOL_STRATEGIES and any(spec.family == 'joint_flat' for spec in self.expert_programs):
+            raise ValueError('joint-flat pool candidates require an implemented forward nested programme')
         if self.temperature_expert_ids is not None:
             selected = tuple(self.temperature_expert_ids)
             if (self.strategy not in {"grouped_temperature", TEMPERATURE_POOL_STRATEGY} or not selected or len(set(selected)) != len(selected)
@@ -386,6 +388,8 @@ def fit_nested_calibration_selection(calibration, candidates, *, baseline_name, 
                                      inner_replay_recorder=None):
     """Evaluate the complete selector outside each held group, then fit it on all C."""
     groups, candidates = tuple(calibration), tuple(candidates)
+    if any(spec.family == 'joint_flat' for candidate in candidates for spec in candidate.expert_programs):
+        raise ValueError('joint-flat selection requires the original chronological prefix compiler')
     if len(groups) < 3 or any(not isinstance(group, CalibrationSelection) for group in groups):
         raise ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
             stage="nested_selection", detail="at least three authorized complete groups required")
@@ -446,11 +450,13 @@ def fit_nested_calibration_selection(calibration, candidates, *, baseline_name, 
 class _PrefixFits:
     """Same-run whole prefix programmes, each with its real inner recorder."""
 
-    def __init__(self, sources, device, context, compiler):
+    def __init__(self, sources, device, context, compiler, *, prefix_fit_cache=None):
         from research.prefix_inner_replay import _PrefixScopeOwner
         from transfer.ensemble_fit import ScopedSourceCheckpointPreparation
 
         self.sources, self.device, self.context = sources, device, dict(context)
+        self.prefix_compiler = compiler
+        self.prefix_fit_cache = {} if prefix_fit_cache is None else prefix_fit_cache
         self.preparation = ScopedSourceCheckpointPreparation()
         self.scope_owner = _PrefixScopeOwner(compiler)
         self.nodes, self.uses, self.score_rows = {}, {}, {}
@@ -477,11 +483,17 @@ class _PrefixFits:
         else:
             context.setdefault("requested_Ks", [prefix.budget])
             context.setdefault("requested_to_actual_K", {str(prefix.budget): prefix.budget})
-        recorder = InnerReplayRecorder()
+        if any(spec.family == 'joint_flat' for spec in candidate.expert_programs):
+            from research.joint_flat_replay import JointFlatReplayRecorder
+
+            recorder = JointFlatReplayRecorder()
+        else:
+            recorder = InnerReplayRecorder()
         programs = fit_calibration_prefix_programs(prefix, candidate.expert_programs, candidate.ensemble_program,
             strategies=(candidate.strategy,), source_checkpoints=sources, device=self.device,
             temperature_expert_ids=candidate.temperature_expert_ids,
-            inner_replay_recorder=recorder, inner_replay_context=context, _source_preparation=self.preparation)
+            inner_replay_recorder=recorder, inner_replay_context=context, _source_preparation=self.preparation,
+            prefix_compiler=self.prefix_compiler, _prefix_fit_cache=self.prefix_fit_cache)
         self.fit_calls += 1
         self.nodes[key] = {"prefix": prefix, "candidate": candidate, "programs": programs,
             "sources": sources, "recorder": recorder, "context": context}
@@ -502,13 +514,18 @@ class _PrefixFits:
         if ("test_scope" not in context or "requested_decision_ids" not in context
                 or view.record_id not in context["requested_decision_ids"]):
             raise ValueError("nested prefix scoring requires its predeclared complete held/future scope")
-        shared = FittedEnsemble.score_programs(node["programs"], view)
+        if any(spec.family == 'joint_flat' for spec in candidate.expert_programs):
+            shared = node['recorder'].score_future(node['programs'], view,
+                compiler=self.prefix_compiler, prefix=node['prefix'])
+        else:
+            shared = FittedEnsemble.score_programs(node["programs"], view)
         scored = shared[candidate.strategy]
         if isinstance(scored, ExpectedSubjectError):
             scored = unavailable_prefix_expert_scores(node["prefix"].record(),
                 [spec.record() for spec in candidate.expert_programs], candidate.strategy,
                 scored.record(subject=view.participant_key), view)
-        node["recorder"].record_prefix_future_score(candidate.strategy, view=view, evidence=scored)
+        if not any(spec.family == 'joint_flat' for spec in candidate.expert_programs):
+            node["recorder"].record_prefix_future_score(candidate.strategy, view=view, evidence=scored)
         value = node["programs"][candidate.strategy]
         scorer = EnsembleScorer(candidate.ensemble_program) if isinstance(value, ExpectedSubjectError) else value.scorer
         evidence = scorer.score(scored)
@@ -526,8 +543,7 @@ def _prefix_common_training_groups(candidates):
     """Structural schedule from declared learners, never observed success."""
     return max(4 if candidate.strategy == TEMPERATURE_POOL_STRATEGY else
         2 if candidate.strategy == POOL_STRATEGY else 3 if candidate.strategy == "grouped_temperature" else
-        0 if all(spec.family == "trial" and spec.recipe.initialization == "source"
-                 for spec in candidate.expert_programs) else 1 for candidate in candidates)
+        0 if all(spec.source_only_capable for spec in candidate.expert_programs) else 1 for candidate in candidates)
 
 
 def _select_prefix_program(prefix, candidates, baseline_name, compiler, fits, minimum_rows, *, outer_held=None):
@@ -628,7 +644,8 @@ class FittedPrefixSelection:
 
 
 def fit_nested_prefix_selection(prefix, candidates, *, baseline_name, prefix_compiler,
-                                minimum_selection_rows, source_checkpoints=None, device="cpu", context=None):
+                                minimum_selection_rows, source_checkpoints=None, device="cpu", context=None,
+                                _prefix_fit_cache=None):
     """Run A(P) completely outside h/v, then refit selected A on all actual C.
 
     Each A retains the accepted single-prefix final fit and its explicitly
@@ -647,11 +664,13 @@ def fit_nested_prefix_selection(prefix, candidates, *, baseline_name, prefix_com
     profiles = {spec.profile.digest for candidate in candidates for spec in candidate.expert_programs if spec.family == "trial"}
     if not profiles <= set(prefix.label_use["trial"]):
         raise ValueError("candidate profile is absent from original prefix compilation")
-    sources = {} if source_checkpoints is None else {name: value if isinstance(value, FrozenSourceCheckpoint)
-        else FrozenSourceCheckpoint.from_path(value) for name, value in source_checkpoints.items()}
+    from transfer.ensemble_fit import _prefix_sources
+
+    sources = _prefix_sources(source_checkpoints,
+        tuple(spec for candidate in candidates for spec in candidate.expert_programs))
     if set(sources) - {spec.expert_id for candidate in candidates for spec in candidate.expert_programs}:
         raise ValueError("prefix selector received an undeclared source expert")
-    fits = _PrefixFits(sources, device, context or {}, prefix_compiler)
+    fits = _PrefixFits(sources, device, context or {}, prefix_compiler, prefix_fit_cache=_prefix_fit_cache)
     outer_rows, evidence = [], []
     for held in prefix.complete_groups:
         training = prefix_compiler.before_group(prefix, held)

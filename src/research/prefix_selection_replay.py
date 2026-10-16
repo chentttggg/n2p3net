@@ -272,7 +272,8 @@ def persist_prefix_selection(selection, directory):
     from research.source_metadata_store import collect_source_dependencies
 
     dependencies = collect_source_dependencies(directory,
-        [package.parent for package in directory.rglob("ensemble.json")])
+        {package.parent for name in ("ensemble.json", "prefix_inner_replay.json") for package in directory.rglob(name)},
+        include_joint_prefixes=True)
     if dependencies is not None:
         graph["source_metadata"] = dependencies
     graph = freeze_metadata(graph)
@@ -320,7 +321,8 @@ class _SelectionReplayAdmission:
 
         descriptor = plain_metadata(self.graph.get("source_metadata"))
         actual = collect_source_dependencies(self.directory,
-            [package.parent for package in self.directory.rglob("ensemble.json")])
+            {package.parent for name in ("ensemble.json", "prefix_inner_replay.json")
+             for package in self.directory.rglob(name)}, include_joint_prefixes=True)
         if semantic_sha256(actual) != semantic_sha256(descriptor):
             raise ValueError("selection graph source closure differs from its actual numerical packages")
         self._metadata_admission = (admission or _SourceMetadataAdmission(store=metadata_store)
@@ -382,12 +384,28 @@ def _load_admitted_selection(admission):
                                            _metadata_admission=admission._metadata_admission,
                                            _joint_source_preparation=admission._joint_source_preparation,
                                            _source_seed_admission=admission._source_seed_admission)
-        package.replay()
+        if package.record.get("schema") != "n2p3_joint_flat_prefix_inner_replay/1":
+            package.replay()
         records[node["fit_key"]] = package.record
         if node["fit_key"] == graph["selection"]["final_refit_key"]:
             final_programs = package.programs
     _audit_graph(graph, records)
     return _loaded_final_selection(graph, records[graph["selection"]["final_refit_key"]], final_programs)
+
+
+def _selection_node_manifest(directory, *, expected_record_sha256):
+    """Read an externally sealed reducer record without reopening numeric state."""
+    directory = Path(directory)
+    path = directory / "prefix_inner_replay.json"
+    if directory.is_symlink() or path.is_symlink():
+        raise ValueError("selection node manifest path is a symlink")
+    payload = json.loads(path.read_bytes())
+    if payload.get("record", {}).get("schema") != "n2p3_joint_flat_prefix_inner_replay/1":
+        return _manifest(directory, expected_record_sha256=expected_record_sha256)
+    record = payload["record"]
+    if semantic_sha256(record) != payload["record_sha256"] or payload["record_sha256"] != expected_record_sha256:
+        raise ValueError("joint selection node differs from its original externally sealed receipt")
+    return record
 
 
 def _original_parent(prefix, prefix_compiler, scope_owner=None):
@@ -496,7 +514,7 @@ def _replay_selection_node(envelope, *, directory, parent_prefix, prefix_compile
         _check_candidate_temperature_subset(candidate, programme["temperature_calibration"])
     # Captured device remains a fit identity. Loaded predictors replay on CPU;
     # passing device='cpu' would incorrectly rebind a historical CUDA fit.
-    result = package.replay(prefix=current, future_views=views, source_checkpoints=sources,
+    result = package.replay(prefix=current, future_views=views, prefix_compiler=prefix_compiler, source_checkpoints=sources,
         atol=0.0, rtol=0.0)
     result_record = {"schema": NODE_RESULT_SCHEMA, "request": envelope,
         "prefix_record_ref": f"{request['package']}/prefix_inner_replay.json",
@@ -507,7 +525,7 @@ def _replay_selection_node(envelope, *, directory, parent_prefix, prefix_compile
 
 
 def replay_selection_chunk(requests, *, directory, parent_prefix, prefix_compiler,
-                           future_views=(), source_checkpoints=None):
+                           future_views=(), source_checkpoints=None, _joint_source_preparation=None):
     """Independently replay sealed nodes at native1/exact0, without a graph load."""
     requests = tuple(requests)
     if not requests:
@@ -523,8 +541,9 @@ def replay_selection_chunk(requests, *, directory, parent_prefix, prefix_compile
 
         metadata_admission = _SourceMetadataAdmission()
         scope_owner, seed_admission = _PrefixScopeOwner(prefix_compiler), _SourceSeedAdmission()
-        joint_source_preparation = None
-        if any(spec["family"] == "joint_flat" for row in records for spec in row["candidate"]["expert_programs"]):
+        joint_source_preparation = _joint_source_preparation
+        if joint_source_preparation is None and any(
+                spec["family"] == "joint_flat" for row in records for spec in row["candidate"]["expert_programs"]):
             from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
 
             joint_source_preparation = FrozenJointFlatSourcePreparation()
@@ -620,7 +639,7 @@ class SelectionReplayPlan:
             key = request["fit_key"]
             record = self._serial_records.get(key)
             if record is None:
-                record = _manifest(_node_path(self._directory, request),
+                record = _selection_node_manifest(_node_path(self._directory, request),
                     expected_record_sha256=request["prefix_receipt_sha256"])
             if result["captured_fit_device"] != record["device"]:
                 raise ValueError("selection node result changed the captured fit device")

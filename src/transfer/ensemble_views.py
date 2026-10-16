@@ -886,24 +886,7 @@ class CalibrationPrefix:
         return self
 
     def trial_target(self, profile):
-        contract = self.target_contract
-        channels = tuple(map(canonical_channel_name, profile.channel_names))
-        native = tuple(map(canonical_channel_name, contract["channel_names"]))
-        required = set(channels)
-        if profile.reference_channel is not None:
-            required.add(profile.reference_channel)
-        missing = required-set(native)
-        if (profile.source_sample_rate_hz != contract["sample_rate_hz"]
-                or profile.reference != contract["reference"]
-                or missing and (not profile.allow_missing_channels or profile.reference_channel in missing)):
-            raise ValueError("prefix profile must use the actual measured native channels/reference")
-        reference = ("measured_channel:" + profile.reference_channel if profile.reference_channel is not None else
-                     contract["reference"] if channels == native else "native:" + contract["reference"])
-        capability = (profile.execution_capability() if self._prepared_capabilities is None else
-                      self._prepared_capabilities[profile.digest])
-        return TrialCheckpointTarget(profile.preprocessing, channels,
-            DatasetIdentityTable.from_source_rows([contract["source_subject_id"]], [contract["source_dataset_id"]]),
-            {"source_reference": reference, "selection_epoch_capability": capability})
+        return _trial_target_from_contract(self.target_contract, profile, capabilities=self._prepared_capabilities)
 
     def record(self):
         return {"budget": self.budget, "target_contract": self.target_contract,
@@ -918,6 +901,26 @@ class IndependentSubjectViews:
     scoring_truth: dict[str, str]
     ledger: dict
     prefix_compiler: CalibrationPrefixCompiler | None = None
+
+
+def _trial_target_from_contract(contract, profile, *, capabilities=None):
+    """Compile the same metadata-only checkpoint target at fit and package load."""
+    channels = tuple(map(canonical_channel_name, profile.channel_names))
+    native = tuple(map(canonical_channel_name, contract["channel_names"]))
+    required = set(channels)
+    if profile.reference_channel is not None:
+        required.add(profile.reference_channel)
+    missing = required-set(native)
+    if (profile.source_sample_rate_hz != contract["sample_rate_hz"]
+            or profile.reference != contract["reference"]
+            or missing and (not profile.allow_missing_channels or profile.reference_channel in missing)):
+        raise ValueError("prefix profile must use the actual measured native channels/reference")
+    reference = ("measured_channel:" + profile.reference_channel if profile.reference_channel is not None else
+                 contract["reference"] if channels == native else "native:" + contract["reference"])
+    capability = profile.execution_capability() if capabilities is None else capabilities[profile.digest]
+    return TrialCheckpointTarget(profile.preprocessing, channels,
+        DatasetIdentityTable.from_source_rows([contract["source_subject_id"]], [contract["source_dataset_id"]]),
+        {"source_reference": reference, "selection_epoch_capability": capability})
 
 
 def _bnci_prediction_view(record, indices, start, stop, *, available_sample, reason=None,
@@ -1200,6 +1203,19 @@ class CalibrationPrefixCompiler:
 
     def record_read_scope(self, view, *, prefix, conditioning_stop, available_stop=None,
                           program="record_prequential_public_history/1"):
+        """Issue a history cap, or retain the exact original typed refusal."""
+        from research.history_authority import HistoryUnavailableError
+
+        try:
+            return self._issue_record_read_scope(view, prefix=prefix, conditioning_stop=conditioning_stop,
+                available_stop=available_stop, program=program)
+        except HistoryUnavailableError as error:
+            _register_record_history_refusal(self, view, prefix=prefix, conditioning_stop=conditioning_stop,
+                available_stop=available_stop, program=program, error=error)
+            raise
+
+    def _issue_record_read_scope(self, view, *, prefix, conditioning_stop, available_stop=None,
+                                 program="record_prequential_public_history/1"):
         """Issue one original MAT acquisition's C/P/T history without changing legacy C IDs."""
         prefix = self.assert_original_prefix(prefix)
         record = self._record
@@ -1808,8 +1824,8 @@ class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
             raise ValueError("earlier record-aware prefix overlaps actual held raw observations")
         return earlier
 
-    def record_read_scope(self, view, *, prefix, conditioning_stop, available_stop=None,
-                          program="record_prequential_public_history/1"):
+    def _issue_record_read_scope(self, view, *, prefix, conditioning_stop, available_stop=None,
+                                 program="record_prequential_public_history/1"):
         """New named P/T history permission; the independent holdout stays strict.
 
         C may overlap the observed conditioning prefix. C must end before P's
@@ -1986,6 +2002,98 @@ class AuthorizedRecordPublicHistory:
         return semantic_sha256(self.binding)
 
 
+@dataclass(frozen=True, init=False)
+class RecordHistoryRefusal:
+    """Original issuer refusal for one exact request; no reading capability."""
+    binding: dict
+
+    @property
+    def digest(self):
+        return semantic_sha256(self.binding)
+
+
+def _record_history_refusal_request(compiler, view, *, prefix, conditioning_stop, available_stop=None,
+                                    program="record_prequential_public_history/1"):
+    prefix = compiler.assert_original_prefix(prefix)
+    return {"program": program, "prefix_identity": calibration_prefix_identity(prefix),
+        "current_view": view.record(), "conditioning_stop": conditioning_stop,
+        "available_stop": view.available_sample if available_stop is None else available_stop,
+        "target_contract_sha256": semantic_sha256(prefix.target_contract),
+        "C_record_input_sha256": {raw.record_id: array_digest(raw.samples, raw.onsets, raw.target_mask)
+                                  for raw in prefix.calibration_records},
+        "source_owner_sha256": getattr(compiler, "producer_source_sha256", _SELECTION_EXECUTION_SOURCE_SHA256)}
+
+
+def _record_history_refusal_key(binding):
+    return semantic_sha256(binding["request"])
+
+
+def _register_record_history_refusal(compiler, view, *, prefix, conditioning_stop, available_stop,
+                                     program, error):
+    if type(compiler) not in {CalibrationPrefixCompiler, RecordCalibrationPrefixCompiler}:
+        raise TypeError("history refusal must be issued by its original acquisition compiler")
+    clock_roster = [{"record_id": source.record_id, "source_sha256": source.source_sha256,
+        "native_sample_count": source.native_sample_count,
+        "native_onsets_sha256": array_digest(source.native_onsets),
+        "unavailable_public_onsets_sha256": None if source.unavailable_public_onsets is None
+            else array_digest(source.unavailable_public_onsets),
+        "public_record_sha256": semantic_sha256(source.public_record())} for source in compiler.sources]
+    binding = {"schema": "n2p3_record_history_refusal/1",
+        "request": _record_history_refusal_request(compiler, view, prefix=prefix,
+            conditioning_stop=conditioning_stop, available_stop=available_stop, program=program),
+        "original_record_clock_roster": clock_roster, "error": error.record(),
+        "raw_read_permission_granted": False, "future_labels_granted": False}
+    return _store_record_history_refusal(compiler, binding)
+
+
+def _store_record_history_refusal(compiler, binding):
+    refusal = object.__new__(RecordHistoryRefusal)
+    object.__setattr__(refusal, "binding", freeze_metadata(binding))
+    if not hasattr(compiler, "_record_history_refusals"):
+        compiler._record_history_refusals = {}
+    compiler._record_history_refusals[_record_history_refusal_key(binding)] = refusal
+    return refusal
+
+
+def _lookup_record_history_refusal(compiler, view, *, prefix, conditioning_stop, available_stop=None,
+                                   program="record_prequential_public_history/1"):
+    request = _record_history_refusal_request(compiler, view, prefix=prefix,
+        conditioning_stop=conditioning_stop, available_stop=available_stop, program=program)
+    refusal = getattr(compiler, "_record_history_refusals", {}).get(semantic_sha256(request))
+    if refusal is None or semantic_sha256(refusal.binding["request"]) != semantic_sha256(request):
+        raise ValueError("history refusal was not issued for this exact original request")
+    return refusal
+
+
+def _restore_record_history_refusal(compiler, binding, *, future_views=()):
+    if (not isinstance(compiler, _PreparedCalibrationPrefixCompiler)
+            or binding["schema"] != "n2p3_record_history_refusal/1"
+            or binding["raw_read_permission_granted"] is not False or binding["future_labels_granted"] is not False
+            or binding["error"]["kind"] != "authorized_history_unavailable"):
+        raise ValueError("prepared refusal requires its original typed issuer record, without reading permissions")
+    request = binding["request"]
+    prefixes = [p for p in compiler._prefixes.values() if calibration_prefix_identity(p) == request["prefix_identity"]]
+    if len(prefixes) != 1:
+        raise ValueError("prepared history refusal changed its original prefix identity")
+    prefix = prefixes[0]
+    views = [*future_views, *(group.view for p in compiler._prefixes.values() for group in p.complete_groups)]
+    matches = [view for view in views if semantic_sha256(view.record()) == semantic_sha256(request["current_view"])]
+    if not matches or semantic_sha256(_record_history_refusal_request(compiler, matches[0], prefix=prefix,
+            conditioning_stop=request["conditioning_stop"], available_stop=request["available_stop"],
+            program=request["program"])) != semantic_sha256(request):
+        raise ValueError("prepared history refusal changed its exact view, C inputs, issuer or clock request")
+    roster = prefix.target_contract["source_record_roster"]
+    clock_roster = binding["original_record_clock_roster"]
+    if (len(clock_roster) != len(roster) or {row["record_id"] for row in clock_roster} != set(roster)
+            or any(any(row[key] != roster[row["record_id"]][key] for key in
+                ("source_sha256", "native_sample_count")) for row in clock_roster)):
+        raise ValueError("prepared refusal changed the original acquisition roster")
+    key = _record_history_refusal_key(binding)
+    if key in getattr(compiler, "_record_history_refusals", {}):
+        raise ValueError("prepared input capsule repeats an original history refusal")
+    return _store_record_history_refusal(compiler, binding)
+
+
 def _record_history_key(binding):
     return semantic_sha256({key: binding[key] for key in ("source_sha256", "record_id", "current_decision_id",
         "prefix_identity", "conditioning_sample_support", "score_sample_support")})
@@ -2006,6 +2114,14 @@ def _prepared_record_read_scope(compiler, view, *, prefix, conditioning_stop, av
                                 program="record_prequential_public_history/1"):
     prefix = compiler.assert_original_prefix(prefix)
     stop = view.available_sample if available_stop is None else available_stop
+    request = _record_history_refusal_request(compiler, view, prefix=prefix, conditioning_stop=conditioning_stop,
+        available_stop=available_stop, program=program)
+    refusal = getattr(compiler, "_record_history_refusals", {}).get(semantic_sha256(request))
+    if refusal is not None:
+        from research.history_authority import HistoryUnavailableError
+
+        error = refusal.binding["error"]
+        raise HistoryUnavailableError(error["reason"], failure_kind=error["failure_kind"], evidence=error.get("evidence"))
     scopes = getattr(compiler, "_record_history_scopes", {})
     matches = [cap for cap in scopes.values() if cap.binding["source_sha256"] == view.source_sha256
         and cap.binding["current_decision_id"] == view.decision_id
