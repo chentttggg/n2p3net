@@ -25,6 +25,8 @@ from scipy.linalg import solve_triangular  # noqa: E402
 from threadpoolctl import threadpool_info, threadpool_limits  # noqa: E402
 
 from research import channel_noise_mechanism as owner  # noqa: E402
+from research.shared_stationary_factor import compile_shared_stationary_root  # noqa: E402
+from research.stationary_noise_artifact import stationary_root  # noqa: E402
 from transfer.noise_model import array_digest, metadata_digest  # noqa: E402
 from transfer.temporal_noise import TemporalNoise  # noqa: E402
 
@@ -101,6 +103,23 @@ def main():
             raise AssertionError("saved factor root changed actual whitening")
         old_prefix_white = solve_triangular(old_root, samples[:prefix].reshape(-1), lower=True)
         new_prefix_white = white[:prefix].reshape(-1)
+        # A same-process/same-input small dense baseline complements the
+        # historical large dense observation without repeating that large fit.
+        small_prefix, small_channels = 8, min(4, len(geometry.channels))
+        small_sigma = sigma[:small_channels, :small_channels]
+        small_reflections = temporal.reflection_coefficients
+        small_runs = []
+        stationary_root([small_reflections]*small_channels, small_sigma, small_prefix)
+        compile_shared_stationary_root(small_reflections, small_sigma, small_prefix)
+        for _ in range(3):
+            tick = time.perf_counter()
+            dense = stationary_root([small_reflections]*small_channels, small_sigma, small_prefix)
+            dense_seconds = time.perf_counter()-tick
+            tick = time.perf_counter()
+            small_root, _ = compile_shared_stationary_root(small_reflections, small_sigma, small_prefix)
+            small_runs.append({"dense_seconds": dense_seconds, "factor_seconds": time.perf_counter()-tick})
+        small_baseline = {"prefix": small_prefix, "channels": small_channels, "warmup_each": 1,
+            "runs": small_runs, "root_max_abs_difference": float(np.max(np.abs(dense-small_root)))}
     if _sha(args.frozen_source) != original_sha:
         raise AssertionError("read-only original source bytes changed during benchmark")
     repository = Path(__file__).resolve().parents[1]
@@ -119,6 +138,7 @@ def main():
         "original_parameters_unchanged": array_digest(sigma, reflections) == array_digest(
             fitted.innovation_covariance, np.asarray([v.reflection_coefficients for v in fitted.temporal])),
         "fit_calls": 0, "root_calls": calls, "timings": timings,
+        "same_process_small_baseline": small_baseline,
         "certificate": fitted.shared_factor_state["certificate"],
         "saved_original_state_equal": restored.record() == fitted.record(), "whitening_replay_bitwise_equal": True,
         "old_new_root_max_abs_difference": float(np.max(np.abs(old_root-fitted.compiled_prefix_root))),
