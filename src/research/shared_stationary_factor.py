@@ -245,6 +245,6 @@ def admit_shared_stationary_root(reflections, covariance, prefix, root, state):
         actual = _certificate(temporal_root, spatial_root, temporal_law, spatial_law, root)
     except (UnidentifiableFitError, DecimalException, OverflowError, DictionaryArtifactError) as error:
         raise ValueError("saved shared stationary factor law cannot be admitted") from error
-    if state["certificate"] != actual:
+    if metadata_digest(state["certificate"]) != metadata_digest(actual):
         raise ValueError("saved shared stationary factor certificate differs from its exact input/root witnesses")
     return root

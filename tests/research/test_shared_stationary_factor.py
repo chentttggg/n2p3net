@@ -174,6 +174,27 @@ def test_exact_inverse_defect_and_square_root_upper_bounds():
         assert Q.from_float(factor._sqrt_upper(value))**2 >= value
 
 
+def test_product_underflow_has_a_nonzero_exact_defect_covered_by_the_bound():
+    tiny = 2.**-600
+    root, state = factor.compile_shared_stationary_root([-tiny], [[1., tiny], [tiny, 1.]], 2)
+    a = [[Q.from_float(v) for v in row] for row in state["temporal_root"]]
+    b = [[Q.from_float(v) for v in row] for row in state["spatial_root"]]
+    product = [[a[i//2][j//2]*b[i % 2][j % 2] for j in range(4)] for i in range(4)]
+    delta = [[Q.from_float(float(root[i, j]))-product[i][j] for j in range(4)] for i in range(4)]
+    assert root[3, 0] == 0 and product[3][0] == Q(1, 2**1200)
+    pulled = _matmul(_inverse(product), delta)
+    bound = Q.from_float(state["certificate"]["product_rounding_F_bound"])
+    assert 0 < sum((v*v for row in pulled for v in row), Q()) <= bound**2
+
+
+def test_certificate_does_not_accept_a_boolean_in_place_of_an_exact_zero_bound():
+    root, state = factor.compile_shared_stationary_root([], [[1.]], 2)
+    assert state["certificate"]["temporal_law_pullback_F_bound"] == 0.
+    state["certificate"]["temporal_law_pullback_F_bound"] = False
+    with pytest.raises(ValueError, match="certificate differs"):
+        factor.admit_shared_stationary_root([], [[1.]], 2, root, state)
+
+
 def test_nonpositive_law_and_unrepresentable_coordinate_range_are_typed():
     with pytest.raises(UnidentifiableFitError):
         factor.compile_shared_stationary_root([-.5], [[1., 2.], [2., 1.]], 4)
