@@ -210,6 +210,8 @@ def _validate_zero_fit_roster(declaration, original_plan, original_result, index
 
 def load_prefix_recovery(plan, consumer_source, *, output, consumer_root):
     """Admit an explicit completed subset without shrinking its original programme."""
+    from experiments.run_candidate_ensemble_study import _candidate_participant_authority
+
     declaration = plan["prefix_recovery"]
     if (declaration["schema"] != "n2p3_prefix_participant_recovery/1"
             or plan.get("evaluation_design") != "independent_prefix"
@@ -291,11 +293,11 @@ def load_prefix_recovery(plan, consumer_source, *, output, consumer_root):
                                                             if key != "cpu_threads_per_worker"})
                 or semantic_sha256(prefix_programme_authority(actor_plan)) != semantic_sha256(prefix_programme_authority(original_plan))):
             raise ValueError("prefix recovery participant does not retain its complete original producer authority")
-        scopes = _bound_json({"path": str(directory / "scopes.json"), "sha256": ledger["scopes_sha256"]})
-        if scopes["source_sha256"] != ledger["record"]["sha256"]:
-            raise ValueError("prefix recovery original fit scopes differ from its raw-record authority")
         task, outcome = _original_fit_execution(row, original_result, original_plan, source,
             run=run, producer_root=producer_root, index=index, ledger=ledger)
+        # The public ingress owns both raw-MAT and record-declaration scope
+        # identities, including their distinct declaration/acquisition digests.
+        _candidate_participant_authority(task, outcome, original_plan, source)
         participants.append(PrefixRecoveryParticipant(index, group, ledger["native_threads"], task, outcome))
         participant_requests.extend(ledger["pipeline_requests"])
     original_requests = original_result.get("requested_pipeline_cells", [])
