@@ -306,6 +306,7 @@ def load_completed_joint_primitives(declaration, *, views, expert_programs, sour
         prefix = views.prefix_compiler.compile(row['K'])
         specs = tuple(expert.program for expert in fitted._experts)
         if (fitted.temperature_record['strategy'] != 'fixed' or fitted.oof_probability_record is not None
+                or fitted.beta_calibration is not None or fitted.beta_oof_record is not None
                 or fitted.pool_oof_record is not None or not fitted.fit_available
                 or any(spec.family != 'joint_flat' or spec.expert_id not in declared
                     or semantic_sha256(spec.record()) != semantic_sha256(declared[spec.expert_id].record()) for spec in specs)):
@@ -658,6 +659,15 @@ class JointFlatPackageAdmission:
                 raise ValueError('joint whole-study source exclusion includes the actual target study')
         self._check_saved_rosters()
         for model in loaded.values():
+            if model.beta_oof_record is not None:
+                original = model.beta_oof_record
+                actual_groups = [row['group'] for row in self.record['prefix_input']['complete_groups']]
+                if (semantic_sha256(original['rows']) != semantic_sha256([row['row'] for row in self.record['OOF']])
+                        or semantic_sha256(original['fit_authority']) != semantic_sha256(self.authority)
+                        or semantic_sha256(original['calibration_groups']) != semantic_sha256(actual_groups)
+                        or semantic_sha256(original['OOF_expert_programs']) !=
+                            semantic_sha256(self.record['expert_programs'])):
+                    raise ValueError('joint Beta likelihood differs from its actual C groups and captured raw OOF')
             if model.oof_probability_record is not None:
                 original = model.oof_probability_record
                 if (original['schema'] != 'n2p3_joint_flat_forward_probability_OOF/1'
@@ -768,7 +778,7 @@ class JointFlatPackageAdmission:
             sources = _prefix_sources(source_checkpoints, specs)
             if {name: source.digest for name, source in sources.items()} != self.record['source_checkpoint_digests']:
                 raise ValueError('joint original source cohort/parameter checkpoint changed')
-        checks, preserved = 0, []
+        checks, preserved, replayed_oof = 0, [], []
         groups = {group.view.record_id: group for group in prefix.complete_groups}
         for row in self.record['OOF']:
             held = groups[row['held_view']['record_id']]
@@ -800,10 +810,21 @@ class JointFlatPackageAdmission:
                 scored = inner._apply_probability_program(raw)
             if semantic_sha256({name: item.record() for name, item in scored.items()}) != semantic_sha256(row['row']['expert_evidence']):
                 raise ValueError('captured original forward OOF probabilities changed on model-only replay')
+            replayed_oof.append({**row['row'], 'expert_evidence': {name: item.record() for name, item in scored.items()},
+                'earlier_actual_K': earlier.budget,
+                'training_record_ids': [group.view.record_id for group in earlier.complete_groups]})
             if row['row']['status'] == 'scored':
                 checks += 1
             else:
                 preserved.append({'fit_key': semantic_sha256(row['authority']), **row['row']})
+        from transfer.ensemble_fit import validate_beta_uniform_oof
+
+        for model in self.programs.values():
+            if isinstance(model, FittedEnsemble) and model.beta_oof_record is not None:
+                actual = {**model.beta_oof_record,
+                    'fit_authority': prefix.record(), 'fit_authority_sha256': semantic_sha256(prefix.record()),
+                    'calibration_groups': [group.record() for group in prefix.complete_groups], 'rows': replayed_oof}
+                validate_beta_uniform_oof(actual, model.scorer.program, prior=model.beta_calibration['prior'])
         future_views = tuple(future_views)
         if ([view.record_id for view in future_views] != [row['view']['record_id'] for row in self.record['future']]
                 or len({view.record_id for view in future_views}) != len(future_views)):

@@ -18,6 +18,7 @@ POOL_OOF_SCHEMA = "n2p3_complete_pool_probability_oof/1"
 POOL_STRATEGY = "grouped_uniform_contamination"
 TEMPERATURE_POOL_STRATEGY = "grouped_temperature_uniform_contamination"
 POOL_STRATEGIES = frozenset({POOL_STRATEGY, TEMPERATURE_POOL_STRATEGY})
+FORWARD_BETA_STRATEGY = "forward_beta_uniform"
 POOL_RISK = "equal_requested_complete_selection/1"
 
 

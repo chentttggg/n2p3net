@@ -104,7 +104,8 @@ def _audit_graph(graph, node_records):
             raise ValueError("nested prefix actual node differs from declared programme/scope")
         programme = record["programs"][candidate.strategy]
         if programme["status"] == "completed":
-            _check_candidate_temperature_subset(candidate, programme["temperature_calibration"])
+            _check_candidate_temperature_subset(candidate, programme["temperature_calibration"],
+                beta_calibration=programme.get('beta_calibration'))
         for use in node["uses"]:
             for key in ("outer_held_record_id", "selection_held_record_id"):
                 if use.get(key) is not None:
@@ -511,7 +512,8 @@ def _replay_selection_node(envelope, *, directory, parent_prefix, prefix_compile
         raise ValueError("selection node request differs from its original producer declaration")
     programme = record["programs"][candidate.strategy]
     if programme["status"] == "completed":
-        _check_candidate_temperature_subset(candidate, programme["temperature_calibration"])
+        _check_candidate_temperature_subset(candidate, programme["temperature_calibration"],
+            beta_calibration=programme.get('beta_calibration'))
     # Captured device remains a fit identity. Loaded predictors replay on CPU;
     # passing device='cpu' would incorrectly rebind a historical CUDA fit.
     result = package.replay(prefix=current, future_views=views, prefix_compiler=prefix_compiler, source_checkpoints=sources,

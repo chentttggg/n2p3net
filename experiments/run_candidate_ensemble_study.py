@@ -65,6 +65,7 @@ from transfer.kernel_prior import KernelPriorRankError  # noqa: E402
 from transfer.noise_model import freeze_metadata  # noqa: E402
 from transfer.outcomes import CandidateCoverage, DecisionKey  # noqa: E402
 from transfer.pool_calibration import (  # noqa: E402
+    FORWARD_BETA_STRATEGY,
     POOL_STRATEGIES,
     POOL_STRATEGY,
     TEMPERATURE_POOL_STRATEGY,
@@ -280,7 +281,9 @@ def _expected_fit_roster(plan, scopes):
                     "expert_programs": [spec.record() for spec in specs],
                     "ensemble_program": EnsembleProgram.equal_weights("prefix_fit", tuple(spec.expert_id for spec in specs)).record(),
                     "training_digest": semantic_sha256(prefix), "target_contract": prefix["target_contract"],
-                    "source_checkpoint_sha256": sources}
+                    "source_checkpoint_sha256": sources,
+                    **({'beta_uniform_prior': plan['beta_uniform_prior']}
+                       if FORWARD_BETA_STRATEGY in plan['calibration_strategies'] else {})}
                 for mixture in plan["mixtures"]:
                     programme = EnsembleProgram.from_record(mixture)
                     selected = tuple(spec for name in programme.expert_ids for spec in specs if spec.expert_id == name)
@@ -984,7 +987,9 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                     temperature_expert_ids=plan.get("temperature_expert_ids"),
                     inner_replay_recorder=recorder, inner_replay_context=prefix_context,
                     _source_preparation=source_preparation, prefix_compiler=views.prefix_compiler,
-                    _prefix_fit_cache=joint_fit_cache, _joint_history_captures=joint_history_captures)
+                    _prefix_fit_cache=joint_fit_cache, _joint_history_captures=joint_history_captures,
+                    **({'beta_uniform_prior': plan['beta_uniform_prior']}
+                       if FORWARD_BETA_STRATEGY in base_strategies else {}))
                 if not joint_history:
                     FittedEnsemble.save_programs(package, programs, participant_key=prefix.target_contract["participant_key"])
                 for strategy in base_strategies:
@@ -1006,6 +1011,8 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                             "matched_source_controls": controls, "temperature_calibration": calibration,
                             "fit_available": fitted is not None and fitted.expert_fit_available[spec.expert_id],
                             "source_only": strategy == "fixed" and budget == 0 and spec.source_only_capable,
+                            **({'beta_calibration': None if fitted is None else fitted.beta_calibration}
+                               if strategy == FORWARD_BETA_STRATEGY else {}),
                             "temperature_calibrated": strategy == "grouped_temperature" and spec.expert_id in
                                 plan.get("temperature_expert_ids", roster.expert_ids)})
                 predictions_by_strategy = {strategy: [] for strategy in base_strategies}
@@ -1037,6 +1044,8 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                                 "requested_Ks": [int(key) for key, actual in views.ledger["requested_to_actual_K"].items() if actual == budget],
                                 "saved_replay_exact": fitted is not None,
                                 "temperature_calibration": calibration,
+                                **({'beta_calibration': None if fitted is None else fitted.beta_calibration}
+                                   if strategy == FORWARD_BETA_STRATEGY else {}),
                                 "prediction_read_support": {spec.expert_id: _prediction_read_support(spec, view, recorder=recorder)
                                     for spec in specs if spec.expert_id in mixture.expert_ids},
                                 "score_source_digest": semantic_sha256(expected_source)})
@@ -1562,6 +1571,9 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
                     or set(record["programs"]) != set(_request_strategies(plan, request))):
                 raise ValueError("candidate temperature programmes differ from their saved numerical package")
             for strategy, programme in record["programs"].items():
+                if strategy == FORWARD_BETA_STRATEGY and programme['status'] == 'completed':
+                    if semantic_sha256(programme['beta_calibration']['prior']) != semantic_sha256(plan['beta_uniform_prior']):
+                        raise ValueError('candidate Beta prior differs from its original requested programme')
                 if strategy in {"grouped_temperature", TEMPERATURE_POOL_STRATEGY} and programme["status"] == "completed":
                     roster = tuple(request["ensemble_program"]["expert_ids"])
                     subset = plan.get("temperature_expert_ids")
@@ -1575,6 +1587,10 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
             if sealed_prefix is None or not prefix_receipt.is_file():
                 raise ValueError("candidate prefix package lacks its required captured replay receipt")
             prefix_record = _read_sealed_record(prefix_receipt)
+            for strategy, programme in prefix_record['programs'].items():
+                if strategy == FORWARD_BETA_STRATEGY and programme['status'] == 'completed':
+                    if semantic_sha256(programme['beta_calibration']['prior']) != semantic_sha256(plan['beta_uniform_prior']):
+                        raise ValueError('prefix Beta prior differs from its original declared request')
             expected_context = {
                 "source_seed": request["source_seed"], "target_seed": request["target_seed"],
                 "requested_Ks": [int(key) for key, actual in scopes["requested_to_actual_K"].items()
@@ -2418,9 +2434,9 @@ def _prepare_candidate_plan(plan_path, *, native_threads=None, load_sources=True
     independent = plan.get("evaluation_design") == "independent_prefix"
     pairs = paired_pipeline_seeds(plan["seed_pairs"]) if independent else None
     strategies = plan["calibration_strategies"] if independent else [plan["calibration_strategy"]]
-    supported = {"fixed", "grouped_temperature"} | (POOL_STRATEGIES if independent else set())
+    supported = {"fixed", "grouped_temperature"} | ((POOL_STRATEGIES | {FORWARD_BETA_STRATEGY}) if independent else set())
     if (not isinstance(strategies, list) or not strategies or len(set(strategies)) != len(strategies)
-            or set(strategies) - supported or not set(strategies) & {"fixed", "grouped_temperature"}):
+            or set(strategies) - supported or not set(strategies) & {"fixed", "grouped_temperature", FORWARD_BETA_STRATEGY}):
         raise ValueError("calibration programmes need distinct supported strategies and a declared base programme")
     seeds = [pair[1] for pair in pairs] if independent else plan["seeds"]
     if not seeds or len(set(seeds)) != len(seeds) or any(type(seed) is not int or seed < 0 for seed in seeds):
@@ -2431,6 +2447,16 @@ def _prepare_candidate_plan(plan_path, *, native_threads=None, load_sources=True
     plan = {**plan, "experts": [{**value, **({"spatial": spatial[value["expert_id"]]} if value["expert_id"] in spatial else {})}
                                 for value in plan["experts"]]}
     expert_programs = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
+    if FORWARD_BETA_STRATEGY in strategies:
+        from transfer.beta_uniform_calibration import validate_beta_uniform_prior
+
+        if (set(strategies) - {'fixed', FORWARD_BETA_STRATEGY}
+                or len(expert_programs) != 1 or expert_programs[0].family != 'joint_flat'
+                or plan.get('temperature_expert_ids') is not None):
+            raise ValueError('forward Beta invocation requires its one joint expert, fixed/Beta strategies and no temperature subset')
+        plan = {**plan, 'beta_uniform_prior': validate_beta_uniform_prior(plan.get('beta_uniform_prior'))}
+    elif plan.get('beta_uniform_prior') is not None:
+        raise ValueError('the explicit Beta prior requires the forward Beta strategy in this invocation')
     comparison_role = plan.get("comparison_role", "candidate_ensemble")
     prior_panel = _calibration_prior_panel(expert_programs) if comparison_role == "fixed_reference_kernel_prior" else None
     dictionary_panel = _dictionary_panel(expert_programs) if comparison_role == "fixed_dictionary_endpoints" else None

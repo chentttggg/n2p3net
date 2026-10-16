@@ -28,6 +28,12 @@ from research.execution import (
 )
 from research.history_authority import HistoryUnavailableError
 from research.joint_response_sampling import SamplingResolutionError
+from transfer.beta_uniform_calibration import (
+    BETA_UNIFORM_OOF_SCHEMA,
+    BetaCalibrationResolutionError,
+    beta_uniform_from_oof,
+    validate_beta_uniform_prior,
+)
 from transfer.calibration_candidates import fit_calibration_candidate
 from transfer.calibration_state import FrozenTrialPredictor
 from transfer.checkpoint import ScopedSourceCheckpointPreparation
@@ -35,7 +41,7 @@ from transfer.continuous_decision import (
     CalibrationRecord,
     ContinuousDecisionModel,
 )
-from transfer.ensemble import EnsembleProgram, EnsembleScorer
+from transfer.ensemble import EnsembleProgram, EnsembleScorer, beta_uniform_evidence
 from transfer.ensemble_views import (
     CalibrationPrefix,
     CalibrationSelection,
@@ -48,6 +54,7 @@ from transfer.joint_flat_programme import FrozenJointFlatSource, JointFlatProgra
 from transfer.kernel_prior import KernelPriorSpec, resolve_kernel_prior
 from transfer.noise_model import freeze_metadata, metadata_digest
 from transfer.pool_calibration import (
+    FORWARD_BETA_STRATEGY,
     POOL_OOF_SCHEMA,
     POOL_STRATEGIES,
     POOL_STRATEGY,
@@ -60,6 +67,83 @@ from transfer.spatial_programme import SpatialDecisionModel, SpatialSignalProgra
 
 FITTED_ENSEMBLE_SCHEMA = "n2p3_fitted_candidate_ensemble/2"
 GROUPED_PROBABILITY_OOF_SCHEMA = "n2p3_complete_group_probability_oof/1"
+
+
+def _beta_uniform_oof_state(record, program, prior):
+    """Derive the full posterior from bound raw forecasts and authorized C groups.
+
+    Saved graph/public-parent admission additionally restores these original
+    groups and producer outputs through its actual input owner.
+    """
+    groups, rows = record["calibration_groups"], record["rows"]
+    names = [group["view"]["record_id"] for group in groups]
+    inner_program = EnsembleProgram.from_record(record["OOF_program"])
+    authority = record["fit_authority"]
+    if (record["schema"] != BETA_UNIFORM_OOF_SCHEMA or len(program.expert_ids) != 1
+            or tuple(record["captured_expert_ids"]) != program.expert_ids
+            or inner_program.expert_ids != program.expert_ids
+            or semantic_sha256(record["OOF_expert_programs"]) != semantic_sha256(
+                [entry["program"] for entry in record["final_base_experts"]])
+            or record["OOF_method"] != "original_earlier_C_prefix_prequential"
+            or semantic_sha256(record["final_program"]) != program.digest()
+            or semantic_sha256(authority) != record["fit_authority_sha256"]
+            or semantic_sha256(authority["temperature_group_records"]) != semantic_sha256(groups)
+            or authority["budget"] != record["actual_K"]
+            or semantic_sha256(authority["target_contract"]) != record["final_target_contract_sha256"]
+            or len(set(names)) != len(names) or len(rows) != len(groups)
+            or [row["held_record_id"] for row in rows] != names):
+        raise ValueError("Beta OOF must preserve the full original ordered forward roster")
+    declared_prior = validate_beta_uniform_prior(prior)
+    forecasts = []
+    earlier_k = -1
+    for index, (row, group) in enumerate(zip(rows, groups, strict=True)):
+        training = list(row["training_record_ids"])
+        training_set = set(training)
+        if (row["status"] != "scored" or row["expert_failures"] or row["fit_failure"] is not None
+                or row["held_labels_used_for_fit"] is not False
+                or len(training_set) != len(training)
+                or training != [name for name in names[:index] if name in training_set]
+                or type(row["earlier_actual_K"]) is not int
+                or row["earlier_actual_K"] < 0 or row["earlier_actual_K"] < earlier_k
+                or row["earlier_actual_K"] >= record["actual_K"]
+                or set(row["expert_evidence"]) != set(program.expert_ids)
+                or not row["earlier_prefix_identity"]):
+            raise ValueError("Beta OOF forecast must be complete and use only its actual earlier C")
+        earlier_k = row["earlier_actual_K"]
+        item = CandidateEvidence.from_record(row["expert_evidence"][program.expert_ids[0]])
+        view = group["view"]
+        if (not item.probability_available or item.decision_id != view["decision_id"]
+                or item.candidate_vocabulary != tuple(view["decision"]["candidate_vocabulary"])
+                or item.physical_support_digest != view["physical_support_digest"]
+                or item.participant_key != view["participant_key"]
+                or len(item.expert_identities) != 1
+                or item.expert_identities[0].expert_id != program.expert_ids[0]
+                or item.expert_identities[0].fit_digest != row["expert_fit_digests"][program.expert_ids[0]]
+                or item.expert_identities[0].probability_calibrated):
+            raise ValueError("Beta OOF differs from its original raw complete candidate forecast")
+        target = item.candidate_vocabulary.index(group["target_candidate"])
+        value = float(item.log_probability[target])
+        forecasts.append({"row_id": names[index], "candidate_count": len(item.candidate_vocabulary),
+            "true_log_probability": None if np.isneginf(value) else value,
+            "forecast_identity": {"raw_row_sha256": semantic_sha256(row),
+                "group_sha256": semantic_sha256(group), "earlier_prefix_identity": row["earlier_prefix_identity"],
+                "base_expert_identities": [identity.record() for identity in item.expert_identities]}})
+    lineage = {key: record[key] for key in ("fit_authority_sha256", "native_observation",
+        "source_checkpoint_sha256", "final_program", "final_training_receipts_sha256",
+        "final_target_contract_sha256", "final_base_experts", "actual_K", "complete_group_labels")}
+    expected = beta_uniform_from_oof(forecasts, prior=declared_prior, requested_row_ids=names, lineage=lineage)
+    return expected
+
+
+def validate_beta_uniform_oof(record, program, prior=None):
+    """Rebuild the saved full state from original raw rows and C-group labels."""
+    declared = validate_beta_uniform_prior(record["beta_calibration"]["prior"])
+    if prior is not None and declared != validate_beta_uniform_prior(prior):
+        raise ValueError("Beta posterior prior differs from its explicit programme declaration")
+    expected = _beta_uniform_oof_state(record, program, declared)
+    if semantic_sha256(expected) != semantic_sha256(record["beta_calibration"]):
+        raise ValueError("full Beta posterior differs from the original OOF forecasts and C labels")
+    return expected
 
 
 def _validate_pool_oof(record, program):
@@ -547,7 +631,7 @@ class FittedEnsemble:
     """Own expert state, fit authority and one frozen mixture behind score(view)."""
 
     def __init__(self, scorer, experts, training_receipts, temperature_record=None, *, target_contract=None,
-                 oof_probability_record=None, pool_oof_record=None):
+                 oof_probability_record=None, pool_oof_record=None, beta_calibration=None, beta_oof_record=None):
         self._scorer = scorer
         self._experts = tuple(experts)
         self._training_receipts = tuple(freeze_metadata(row) for row in training_receipts)
@@ -592,6 +676,27 @@ class FittedEnsemble:
             raise ValueError("learned pool calibration requires its actual C-only pool OOF binding")
         if self._pool_oof_record is not None:
             self._validate_pool_binding()
+        self._beta_calibration = None if beta_calibration is None else freeze_metadata(beta_calibration)
+        self._beta_oof_record = None if beta_oof_record is None else freeze_metadata(beta_oof_record)
+        if (beta_calibration is None) != (beta_oof_record is None):
+            raise ValueError("Beta probability programme requires its complete original forward OOF state")
+        if beta_calibration is not None:
+            if (len(self._experts) != 1 or self._experts[0].program.family != "joint_flat"
+                    or self.temperature_record["strategy"] != "fixed" or self.scorer.pool_calibration is not None
+                    or self.oof_probability_record is not None or self.pool_oof_record is not None):
+                raise ValueError("forward Beta calibration requires one original raw joint programme")
+            record = self._beta_oof_record
+            if (record["final_training_receipts_sha256"] != semantic_sha256(self.fit_receipts)
+                    or record["final_target_contract_sha256"] != semantic_sha256(self._target_contract)
+                    or semantic_sha256(record["final_base_experts"]) != semantic_sha256(
+                        [_expert_state_record(expert) for expert in self._experts])
+                    or semantic_sha256(record["beta_calibration"]) != semantic_sha256(self._beta_calibration)):
+                raise ValueError("Beta calibration differs from its unchanged original final numerical producers")
+            validate_beta_uniform_oof(record, self.scorer.program)
+            expert = self._experts[0]
+            if expert.predictor is not None and _calibration_expert_fit_digest(
+                    expert.program, record["fit_authority"], expert.predictor.source.digest) != expert.fit_digest:
+                raise ValueError("Beta calibration groups differ from the original numerical model's C fit authority")
 
     def _validate_oof_binding(self):
         record = self._oof_probability_record
@@ -680,12 +785,21 @@ class FittedEnsemble:
         return self._pool_oof_record
 
     @property
+    def beta_calibration(self):
+        return self._beta_calibration
+
+    @property
+    def beta_oof_record(self):
+        return self._beta_oof_record
+
+    @property
     def temperature_record(self):
         return self._temperature_record
 
     @property
     def probability_strategy(self):
-        return (self.scorer.pool_calibration["strategy"] if self.scorer.pool_calibration is not None
+        return (FORWARD_BETA_STRATEGY if self.beta_calibration is not None else
+                self.scorer.pool_calibration["strategy"] if self.scorer.pool_calibration is not None
                 else self.temperature_record["strategy"])
 
     @property
@@ -742,6 +856,8 @@ class FittedEnsemble:
         return scored
 
     def _apply_probability_program(self, scored):
+        if self.beta_calibration is not None:
+            return {name: beta_uniform_evidence(item, self.beta_calibration) for name, item in scored.items()}
         if self.temperature_record["strategy"] == "fixed":
             return scored
         calibrated = {}
@@ -769,7 +885,7 @@ class FittedEnsemble:
         evidence lives only in this call; each probability program applies its
         original transform and keeps unavailable experts in the full roster.
         """
-        if not programs or set(programs) - ({"fixed", "grouped_temperature"} | POOL_STRATEGIES):
+        if not programs or set(programs) - ({"fixed", "grouped_temperature", FORWARD_BETA_STRATEGY} | POOL_STRATEGIES):
             raise ValueError("shared scoring requires declared probability programs")
         available = []
         for name, value in programs.items():
@@ -821,7 +937,8 @@ class FittedEnsemble:
                 "model_file_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                 "model_digest": expert.model_digest, "fit_digest": expert.fit_digest,
                 "source_digest": expert.source_digest, "logit_offset": expert.logit_offset})
-        record = {"schema": (FITTED_ENSEMBLE_SCHEMA if self.pool_oof_record is None
+        record = {"schema": ("n2p3_fitted_candidate_ensemble/5" if self.beta_calibration is not None else
+                             FITTED_ENSEMBLE_SCHEMA if self.pool_oof_record is None
                              else "n2p3_fitted_candidate_ensemble/3"), "program": self.scorer.program.record(),
                   "experts": entries, "training_receipts": list(self._training_receipts),
                   "temperature_calibration": self.temperature_record}
@@ -833,6 +950,8 @@ class FittedEnsemble:
             record["pool_calibration"] = self.scorer.pool_calibration
         if self.pool_oof_record is not None:
             record["pool_OOF_probability"] = self.pool_oof_record
+        if self.beta_calibration is not None:
+            record.update(beta_calibration=self.beta_calibration, beta_OOF_probability=self.beta_oof_record)
         if source_references:
             from research.source_metadata_store import source_dependency_descriptor
 
@@ -862,7 +981,7 @@ class FittedEnsemble:
             base_digest = hashlib.sha256((directory / "ensemble.json").read_bytes()).hexdigest()
         records = {}
         for name, value in programs.items():
-            if name not in {"fixed", "grouped_temperature"} | POOL_STRATEGIES:
+            if name not in {"fixed", "grouped_temperature", FORWARD_BETA_STRATEGY} | POOL_STRATEGIES:
                 raise ValueError("unknown declared ensemble calibration strategy")
             if isinstance(value, ExpectedSubjectError):
                 records[name] = {"status": "unavailable", "failure": value.record(subject=participant_key)}
@@ -878,8 +997,11 @@ class FittedEnsemble:
                 records[name] = {"status": "completed", "temperature_calibration": value.temperature_record}
                 if value.scorer.pool_calibration is not None:
                     records[name]["pool_calibration"] = value.scorer.pool_calibration
+                if value.beta_calibration is not None:
+                    records[name].update(beta_calibration=value.beta_calibration, beta_OOF_probability=value.beta_oof_record)
         has_pool = bool(set(programs) & POOL_STRATEGIES)
-        record = {"schema": ("n2p3_prefix_probability_programs/2" if has_pool else "n2p3_prefix_temperature_programs/1"), "base_package_sha256": base_digest,
+        record = {"schema": ("n2p3_prefix_probability_programs/3" if FORWARD_BETA_STRATEGY in programs else
+                             "n2p3_prefix_probability_programs/2" if has_pool else "n2p3_prefix_temperature_programs/1"), "base_package_sha256": base_digest,
                   "participant_key": participant_key,
                   "programs": records}
         atomic_write_json(directory / "temperature_programs.json", {"record": record, "record_sha256": semantic_sha256(record)})
@@ -901,16 +1023,19 @@ class FittedEnsemble:
             raise ValueError("prefix temperature_programs.json differs from captured package")
         payload = json.loads(temperature_content)
         record = payload["record"]
-        if record["schema"] not in {"n2p3_prefix_temperature_programs/1", "n2p3_prefix_probability_programs/2"} or semantic_sha256(record) != payload["record_sha256"]:
+        if record["schema"] not in {"n2p3_prefix_temperature_programs/1", "n2p3_prefix_probability_programs/2", "n2p3_prefix_probability_programs/3"} or semantic_sha256(record) != payload["record_sha256"]:
             raise ValueError("frozen temperature program manifest changed")
-        if not record["programs"] or set(record["programs"]) - ({"fixed", "grouped_temperature"} | POOL_STRATEGIES):
+        if not record["programs"] or set(record["programs"]) - ({"fixed", "grouped_temperature", FORWARD_BETA_STRATEGY} | POOL_STRATEGIES):
             raise ValueError("unknown declared ensemble calibration strategy")
         if (record["schema"] == "n2p3_prefix_probability_programs/2") != bool(set(record["programs"]) & POOL_STRATEGIES):
             raise ValueError("pool probability strategies require their explicit package schema")
+        if (record["schema"] == "n2p3_prefix_probability_programs/3") != (FORWARD_BETA_STRATEGY in record["programs"]):
+            raise ValueError("forward Beta strategy requires its explicit package schema")
         for name, value in record["programs"].items():
             if value["status"] not in {"completed", "unavailable"}:
                 raise ValueError("temperature program requires an explicit completed or unavailable state")
             if value["status"] == "completed" and name != (
+                    FORWARD_BETA_STRATEGY if "beta_calibration" in value else
                     value["pool_calibration"]["strategy"] if "pool_calibration" in value
                     else value["temperature_calibration"]["strategy"]):
                 raise ValueError("temperature program name differs from its actual strategy")
@@ -934,7 +1059,8 @@ class FittedEnsemble:
             raise ValueError("temperature program participant differs from actual final model package")
         return record, {name: cls(EnsembleScorer(fitted.scorer.program, value.get("pool_calibration")), fitted._experts, fitted._training_receipts,
             value["temperature_calibration"], target_contract=fitted._target_contract,
-            oof_probability_record=fitted.oof_probability_record, pool_oof_record=fitted.pool_oof_record)
+            oof_probability_record=fitted.oof_probability_record, pool_oof_record=fitted.pool_oof_record,
+            beta_calibration=value.get("beta_calibration"), beta_oof_record=value.get("beta_OOF_probability"))
             for name, value in record["programs"].items() if value["status"] == "completed"}
 
     @classmethod
@@ -950,7 +1076,7 @@ class FittedEnsemble:
         payload = json.loads(content)
         record = payload["record"]
         if semantic_sha256(record) != payload["record_sha256"] or record["schema"] not in {
-            FITTED_ENSEMBLE_SCHEMA, "n2p3_fitted_candidate_ensemble/3", "n2p3_fitted_candidate_ensemble/4"
+            FITTED_ENSEMBLE_SCHEMA, "n2p3_fitted_candidate_ensemble/3", "n2p3_fitted_candidate_ensemble/4", "n2p3_fitted_candidate_ensemble/5"
         }:
             raise ValueError("frozen ensemble manifest changed or has an unsupported schema")
         from research.source_metadata_store import (
@@ -962,7 +1088,7 @@ class FittedEnsemble:
             metadata_admission = admit_source_dependencies(record["source_metadata"], directory,
                 store=metadata_store, admission=_metadata_admission)
             scientific_schema = record["scientific_schema"]
-            if scientific_schema not in {FITTED_ENSEMBLE_SCHEMA, "n2p3_fitted_candidate_ensemble/3"}:
+            if scientific_schema not in {FITTED_ENSEMBLE_SCHEMA, "n2p3_fitted_candidate_ensemble/3", "n2p3_fitted_candidate_ensemble/5"}:
                 raise ValueError("source-reference package changed its original scientific schema")
         else:
             if "source_metadata" in record or "scientific_schema" in record:
@@ -971,6 +1097,8 @@ class FittedEnsemble:
             scientific_schema = record["schema"]
         if (scientific_schema == "n2p3_fitted_candidate_ensemble/3") != ("pool_OOF_probability" in record):
             raise ValueError("pool probability state requires its explicit model schema")
+        if (scientific_schema == "n2p3_fitted_candidate_ensemble/5") != ("beta_OOF_probability" in record):
+            raise ValueError("Beta probability state requires its explicit model schema")
         experts = []
         actual_source_references = set()
         for entry in record["experts"]:
@@ -1050,7 +1178,8 @@ class FittedEnsemble:
         return cls(EnsembleScorer(EnsembleProgram.from_record(record["program"]), record.get("pool_calibration")), experts,
                    record["training_receipts"], record["temperature_calibration"],
                    target_contract=record.get("target_contract"),
-                   oof_probability_record=record.get("OOF_probability"), pool_oof_record=record.get("pool_OOF_probability"))
+                   oof_probability_record=record.get("OOF_probability"), pool_oof_record=record.get("pool_OOF_probability"),
+                   beta_calibration=record.get("beta_calibration"), beta_oof_record=record.get("beta_OOF_probability"))
 
 
 def validate_calibration_ensemble_groups(calibration, expert_programs):
@@ -1102,10 +1231,12 @@ def _calibration_expert_fit_digest(spec, fit_inputs, checkpoint_digest):
 def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProgram, *,
                              source_checkpoints=None, device="cpu", calibration_strategy="fixed", temperature_expert_ids=None,
                              _fixed_fit_cache=None, _producer_recorder=None, _producer_context=None,
-                             _record_self=True, _source_preparation=None):
+                             _record_self=True, _source_preparation=None, beta_uniform_prior=None):
     """Fit only supplied authorized groups; no prediction data or truth is accepted."""
     calibration = tuple(calibration)
     expert_programs = tuple(expert_programs)
+    if calibration_strategy == FORWARD_BETA_STRATEGY or beta_uniform_prior is not None:
+        raise ValueError("forward Beta calibration requires the original authorized CalibrationPrefix and compiler")
     if any(spec.family == 'joint_flat' for spec in expert_programs):
         raise ValueError('joint-flat fitting requires the original record-aware CalibrationPrefix and its compiler')
     preparation = _source_preparation or ScopedSourceCheckpointPreparation()
@@ -1272,7 +1403,8 @@ def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *
 def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: EnsembleProgram, *,
                             source_checkpoints=None, device="cpu", calibration_strategy="fixed",
                             inner_replay_recorder=None, inner_replay_context=None, _source_preparation=None,
-                            prefix_compiler=None, _prefix_fit_cache=None, _joint_history_captures=None):
+                            prefix_compiler=None, _prefix_fit_cache=None, _joint_history_captures=None,
+                            beta_uniform_prior=None):
     """Fit all legitimate prefix rows; complete C groups serve only temperature."""
     if not isinstance(prefix, CalibrationPrefix):
         raise TypeError("prefix fitting requires an authorized CalibrationPrefix")
@@ -1281,14 +1413,17 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
     specs = tuple(expert_programs)
     if tuple(spec.expert_id for spec in specs) != program.expert_ids:
         raise ValueError("prefix fit programs must match the complete frozen expert roster")
-    if calibration_strategy not in {"fixed", "grouped_temperature"} | POOL_STRATEGIES:
+    if calibration_strategy not in {"fixed", "grouped_temperature", FORWARD_BETA_STRATEGY} | POOL_STRATEGIES:
         raise ValueError("unknown declared ensemble calibration strategy")
-    if calibration_strategy in POOL_STRATEGIES:
+    if calibration_strategy in POOL_STRATEGIES or calibration_strategy == FORWARD_BETA_STRATEGY:
         return fit_calibration_prefix_programs(prefix, specs, program, strategies=(calibration_strategy,),
             source_checkpoints=source_checkpoints, device=device, inner_replay_recorder=inner_replay_recorder,
             inner_replay_context=inner_replay_context, _source_preparation=preparation,
             prefix_compiler=prefix_compiler, _prefix_fit_cache=_prefix_fit_cache,
-            _joint_history_captures=_joint_history_captures)[calibration_strategy]
+            _joint_history_captures=_joint_history_captures,
+            beta_uniform_prior=beta_uniform_prior)[calibration_strategy]
+    if beta_uniform_prior is not None:
+        raise ValueError("a Beta prior requires the explicit forward Beta strategy")
     if calibration_strategy == "grouped_temperature" and len(prefix.complete_groups) < 3:
         raise ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
             stage="temperature", detail="fewer than three complete C-only groups")
@@ -1550,9 +1685,9 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device, 
     return _attach_oof_probability(fitted, temperature_record, oof_record, _producer_recorder=_producer_recorder)
 
 
-def _forward_joint_temperature(fitted, calibration, expert_programs, sources, device, *, prefix,
+def _collect_forward_joint_oof(fitted, calibration, expert_programs, sources, device, *, prefix,
         prefix_compiler, temperature_expert_ids, producer_recorder, producer_context, prefix_fit_cache=None,
-        history_captures=None):
+        history_captures=None, programme_suffix="forward_temperature", failure_stage="forward_temperature"):
     """All held C groups scored by earlier original C, including lawful K0."""
     if prefix_compiler is None or prefix is None:
         raise TypeError('forward joint OOF requires its original C prefix compiler')
@@ -1560,7 +1695,7 @@ def _forward_joint_temperature(fitted, calibration, expert_programs, sources, de
     if not selected or len(set(selected)) != len(selected) or not set(selected) <= set(fitted.scorer.program.expert_ids):
         raise ValueError('forward temperature roster must be explicitly declared')
     selected_specs = tuple(next(spec for spec in expert_programs if spec.expert_id == name) for name in selected)
-    inner_program = EnsembleProgram.equal_weights(fitted.scorer.program.name+':forward_temperature', selected)
+    inner_program = EnsembleProgram.equal_weights(fitted.scorer.program.name+':'+programme_suffix, selected)
     from transfer.ensemble_views import calibration_prefix_identity
 
     score_rows, producers, failed = [], [], []
@@ -1637,8 +1772,18 @@ def _forward_joint_temperature(fitted, calibration, expert_programs, sources, de
         # earlier model/capture/evidence row before declining the meta learner.
         ledger = [{key: row[key] for key in ('held_record_id', 'earlier_actual_K', 'status', 'expert_failures')}
                   for row in score_rows]
-        raise ExpectedSubjectError(SubjectFailureCode.NUMERICAL_FAILURE, stage='forward_temperature',
+        raise ExpectedSubjectError(SubjectFailureCode.NUMERICAL_FAILURE, stage=failure_stage,
             detail='complete original forward OOF probabilities required: '+json.dumps(ledger, sort_keys=True))
+    return score_rows, producers, probabilities, inner_program, selected_specs, selected
+
+
+def _forward_joint_temperature(fitted, calibration, expert_programs, sources, device, *, prefix,
+        prefix_compiler, temperature_expert_ids, producer_recorder, producer_context, prefix_fit_cache=None,
+        history_captures=None):
+    score_rows, producers, probabilities, inner_program, selected_specs, selected = _collect_forward_joint_oof(
+        fitted, calibration, expert_programs, sources, device, prefix=prefix, prefix_compiler=prefix_compiler,
+        temperature_expert_ids=temperature_expert_ids, producer_recorder=producer_recorder,
+        producer_context=producer_context, prefix_fit_cache=prefix_fit_cache, history_captures=history_captures)
     temperatures = {name: 1. for name in fitted.scorer.program.expert_ids}
     for name, rows in probabilities.items():
         temperatures[name] = temperature_from_oof(np.stack([row[0] for row in rows]), np.asarray([row[1] for row in rows]))
@@ -1663,14 +1808,54 @@ def _forward_joint_temperature(fitted, calibration, expert_programs, sources, de
     return _attach_oof_probability(fitted, temperature, record)
 
 
+def _forward_joint_beta(fitted, calibration, expert_programs, sources, device, *, prior, prefix,
+        prefix_compiler, producer_recorder=None, producer_context=None, prefix_fit_cache=None,
+        history_captures=None):
+    """One new calibration consumer; preserve original numerical producers."""
+    prior = validate_beta_uniform_prior(prior)
+    score_rows, _, _, inner_program, selected_specs, selected = _collect_forward_joint_oof(
+        fitted, calibration, expert_programs, sources, device, prefix=prefix, prefix_compiler=prefix_compiler,
+        temperature_expert_ids=None, producer_recorder=producer_recorder, producer_context=producer_context,
+        prefix_fit_cache=prefix_fit_cache, history_captures=history_captures, programme_suffix="forward_beta_base",
+        failure_stage="forward_beta_probability")
+    record = {"schema": BETA_UNIFORM_OOF_SCHEMA, "evidence_scope": "calibration_development",
+        "OOF_method": "original_earlier_C_prefix_prequential", "captured_expert_ids": selected,
+        "OOF_program": inner_program.record(), "OOF_expert_programs": [spec.record() for spec in selected_specs],
+        "calibration_groups": [group.record() for group in calibration], "rows": score_rows,
+        "actual_K": prefix.budget, "complete_group_labels": sum(len(group.labels) for group in calibration),
+        "fit_authority_sha256": semantic_sha256(prefix.record()),
+        "fit_authority": prefix.record(),
+        "native_observation": _native_observation_contract_record(prefix.target_contract),
+        "source_checkpoint_sha256": {name: source.digest for name, source in sources.items()},
+        "final_program": fitted.scorer.program.record(),
+        "final_training_receipts_sha256": semantic_sha256(fitted.fit_receipts),
+        "final_target_contract_sha256": semantic_sha256(fitted._target_contract),
+        "final_base_experts": [_expert_state_record(expert) for expert in fitted._experts],
+        "selection_performed": False}
+    record["beta_calibration"] = _beta_uniform_oof_state(record, fitted.scorer.program, prior)
+    return FittedEnsemble(fitted.scorer, fitted._experts, fitted._training_receipts,
+        fitted.temperature_record, target_contract=fitted._target_contract,
+        beta_calibration=record["beta_calibration"], beta_oof_record=record)
+
+
 def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strategies,
                                     source_checkpoints=None, device="cpu", temperature_expert_ids=None,
                                     inner_replay_recorder=None, inner_replay_context=None, _source_preparation=None,
-                                    prefix_compiler=None, _prefix_fit_cache=None, _joint_history_captures=None):
+                                    prefix_compiler=None, _prefix_fit_cache=None, _joint_history_captures=None,
+                                    beta_uniform_prior=None):
     """Declared temperature programs share one actual all-C final expert fit."""
     if (not strategies or len(set(strategies)) != len(strategies)
-            or set(strategies) - ({"fixed", "grouped_temperature"} | POOL_STRATEGIES)):
+            or set(strategies) - ({"fixed", "grouped_temperature", FORWARD_BETA_STRATEGY} | POOL_STRATEGIES)):
         raise ValueError("prefix temperature programs must be explicit and distinct")
+    if FORWARD_BETA_STRATEGY in strategies:
+        beta_uniform_prior = validate_beta_uniform_prior(beta_uniform_prior)
+        if (set(strategies) - {"fixed", FORWARD_BETA_STRATEGY} or len(expert_programs) != 1
+                or expert_programs[0].family != "joint_flat" or temperature_expert_ids is not None):
+            raise ValueError("forward Beta programme requires only fixed/single-joint raw base and no temperature subset")
+        if prefix_compiler is None:
+            raise TypeError("forward Beta calibration requires the original prefix compiler")
+    elif beta_uniform_prior is not None:
+        raise ValueError("a Beta prior requires the explicit forward Beta strategy")
     if any(spec.family == 'joint_flat' for spec in expert_programs) and set(strategies) & POOL_STRATEGIES:
         raise ValueError('joint-flat pool calibration requires a separately implemented forward nested programme; '
                          'the original C-minus-held pool learner is not an admissible joint-flat strategy')
@@ -1680,7 +1865,8 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
     result = {}
     preparation = _source_preparation or ScopedSourceCheckpointPreparation()
     replay_cache = {} if inner_replay_recorder is not None else None
-    required = {"fixed": 0, "grouped_temperature": 3, POOL_STRATEGY: 2, TEMPERATURE_POOL_STRATEGY: 4}
+    required = {"fixed": 0, "grouped_temperature": 3, POOL_STRATEGY: 2, TEMPERATURE_POOL_STRATEGY: 4,
+                FORWARD_BETA_STRATEGY: 0}
     eligible = any(len(prefix.complete_groups) >= required[strategy] for strategy in strategies)
     fixed = (fit_calibration_prefix(prefix, expert_programs, program, source_checkpoints=sources, device=device,
                                     inner_replay_recorder=inner_replay_recorder,
@@ -1697,7 +1883,12 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
                 detail=f"fewer than {required[strategy]} complete C-only groups")
         else:
             try:
-                if strategy in POOL_STRATEGIES:
+                if strategy == FORWARD_BETA_STRATEGY:
+                    result[strategy] = _forward_joint_beta(fixed, prefix.complete_groups, expert_programs, sources,
+                        device, prior=beta_uniform_prior, prefix=prefix, prefix_compiler=prefix_compiler,
+                        producer_recorder=inner_replay_recorder, producer_context=inner_replay_context,
+                        prefix_fit_cache=_prefix_fit_cache, history_captures=_joint_history_captures)
+                elif strategy in POOL_STRATEGIES:
                     base = fixed
                     if strategy == TEMPERATURE_POOL_STRATEGY:
                         base = result.get("grouped_temperature")
@@ -1721,9 +1912,10 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
                                                        _joint_history_captures=_joint_history_captures)
             except ExpectedSubjectError as error:
                 result[strategy] = error
-            except (UnidentifiableFitError, np.linalg.LinAlgError) as error:
+            except (UnidentifiableFitError, BetaCalibrationResolutionError, np.linalg.LinAlgError) as error:
                 result[strategy] = ExpectedSubjectError(SubjectFailureCode.NUMERICAL_FAILURE,
-                    stage="temperature", detail=f"{type(error).__name__}: {error}")
+                    stage="beta_probability" if strategy == FORWARD_BETA_STRATEGY else "temperature",
+                    detail=f"{type(error).__name__}: {error}")
     grouped = result.get(TEMPERATURE_POOL_STRATEGY, result.get(POOL_STRATEGY, result.get("grouped_temperature")))
     if isinstance(grouped, FittedEnsemble):
         for name, value in tuple(result.items()):

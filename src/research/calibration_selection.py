@@ -43,7 +43,12 @@ from transfer.ensemble_views import (
 )
 from transfer.noise_model import freeze_metadata
 from transfer.outcomes import CandidateCoverage, DecisionKey
-from transfer.pool_calibration import POOL_STRATEGIES, POOL_STRATEGY, TEMPERATURE_POOL_STRATEGY
+from transfer.pool_calibration import (
+    FORWARD_BETA_STRATEGY,
+    POOL_STRATEGIES,
+    POOL_STRATEGY,
+    TEMPERATURE_POOL_STRATEGY,
+)
 
 
 @dataclass(frozen=True)
@@ -53,6 +58,7 @@ class CalibrationProgramCandidate:
     ensemble_program: EnsembleProgram
     strategy: str = "fixed"
     temperature_expert_ids: tuple[str, ...] | None = None
+    beta_uniform_prior: dict | None = None
 
     def __post_init__(self):
         object.__setattr__(self, "expert_programs", tuple(self.expert_programs))
@@ -60,8 +66,16 @@ class CalibrationProgramCandidate:
             raise ValueError("calibration candidate needs an exact name")
         if tuple(spec.expert_id for spec in self.expert_programs) != self.ensemble_program.expert_ids:
             raise ValueError("candidate specs must match its complete frozen ensemble roster")
-        if self.strategy not in {"fixed", "grouped_temperature"} | POOL_STRATEGIES:
+        if self.strategy not in {"fixed", "grouped_temperature", FORWARD_BETA_STRATEGY} | POOL_STRATEGIES:
             raise ValueError("nested selection supports declared fixed/grouped-temperature programs only")
+        if self.strategy == FORWARD_BETA_STRATEGY:
+            from transfer.beta_uniform_calibration import validate_beta_uniform_prior
+
+            if len(self.expert_programs) != 1 or self.expert_programs[0].family != 'joint_flat':
+                raise ValueError('forward Beta candidate requires its one actual joint expert')
+            object.__setattr__(self, 'beta_uniform_prior', freeze_metadata(validate_beta_uniform_prior(self.beta_uniform_prior)))
+        elif self.beta_uniform_prior is not None:
+            raise ValueError('Beta prior belongs only to the explicit forward Beta candidate')
         if self.strategy in POOL_STRATEGIES and any(spec.family == 'joint_flat' for spec in self.expert_programs):
             raise ValueError('joint-flat pool candidates require an implemented forward nested programme')
         if self.temperature_expert_ids is not None:
@@ -74,12 +88,14 @@ class CalibrationProgramCandidate:
     def record(self):
         return {"name": self.name, "expert_programs": [spec.record() for spec in self.expert_programs],
                 "ensemble_program": self.ensemble_program.record(), "strategy": self.strategy,
-                "temperature_expert_ids": self.temperature_expert_ids}
+                "temperature_expert_ids": self.temperature_expert_ids,
+                **({"beta_uniform_prior": self.beta_uniform_prior} if self.beta_uniform_prior is not None else {})}
 
     @classmethod
     def from_record(cls, record):
         return cls(record["name"], tuple(CalibrationExpertProgram.from_record(spec) for spec in record["expert_programs"]),
-            EnsembleProgram.from_record(record["ensemble_program"]), record["strategy"], record["temperature_expert_ids"])
+            EnsembleProgram.from_record(record["ensemble_program"]), record["strategy"], record["temperature_expert_ids"],
+            record.get('beta_uniform_prior'))
 
 
 def transfer_scratch_prefix_plan(plan, *, source_expert_id, scratch_expert_id, xdawn_expert_id,
@@ -128,7 +144,7 @@ def transfer_scratch_prefix_plan(plan, *, source_expert_id, scratch_expert_id, x
     return derived
 
 
-def _check_candidate_temperature_subset(candidate, temperature_record):
+def _check_candidate_temperature_subset(candidate, temperature_record, *, beta_calibration=None):
     """Join the declared learner subset to the actual saved temperature state."""
     if candidate.strategy in {"grouped_temperature", TEMPERATURE_POOL_STRATEGY}:
         actual = tuple(temperature_record.get("temperature_expert_ids", candidate.ensemble_program.expert_ids))
@@ -136,6 +152,12 @@ def _check_candidate_temperature_subset(candidate, temperature_record):
                     else candidate.temperature_expert_ids)
         if actual != declared:
             raise ValueError("selected temperature subset differs from the actual fitted programme")
+    if candidate.strategy == FORWARD_BETA_STRATEGY:
+        if (beta_calibration is None or semantic_sha256(beta_calibration['prior']) !=
+                semantic_sha256(candidate.beta_uniform_prior)):
+            raise ValueError('selected forward Beta prior differs from its actual fitted programme')
+    elif beta_calibration is not None:
+        raise ValueError('unexpected Beta state on a different declared candidate programme')
 
 
 def _scope(groups):
@@ -170,6 +192,9 @@ def _final_identity(fitted):
         record["pool_calibration"] = fitted.scorer.pool_calibration
     if fitted.pool_oof_record is not None:
         record["pool_OOF_probability_sha256"] = semantic_sha256(fitted.pool_oof_record)
+    if fitted.beta_calibration is not None:
+        record['beta_calibration'] = fitted.beta_calibration
+        record['beta_OOF_probability_sha256'] = semantic_sha256(fitted.beta_oof_record)
     return record
 
 
@@ -198,6 +223,8 @@ class _SubsetFits:
         self.producer_context = dict(context)
 
     def fit(self, groups, candidate):
+        if candidate.strategy == FORWARD_BETA_STRATEGY:
+            raise ValueError('forward Beta selection requires the original chronological prefix compiler')
         sources = {name: self.sources[name] for name in candidate.ensemble_program.expert_ids if name in self.sources}
         key = semantic_sha256({"scope": _scope(groups), "candidate": candidate.record(),
             "sources": {name: source.digest for name, source in sources.items()}, "device": self.device})
@@ -333,7 +360,7 @@ class FittedCalibrationSelection:
                 or selected.strategy != final.probability_strategy
                 or [spec.record() for spec in selected.expert_programs] != [expert.program.record() for expert in final._experts]):
             raise ValueError("selected declaration differs from the actual final fitted programme")
-        _check_candidate_temperature_subset(selected, final.temperature_record)
+        _check_candidate_temperature_subset(selected, final.temperature_record, beta_calibration=final.beta_calibration)
         fit_inputs = scope["group_records"]
         if (final.participant_key != self.record["participant_key"]
                 or semantic_sha256(final.fit_receipts) != semantic_sha256([group["view"] for group in fit_inputs])
@@ -495,7 +522,8 @@ class _PrefixFits:
             temperature_expert_ids=candidate.temperature_expert_ids,
             inner_replay_recorder=recorder, inner_replay_context=context, _source_preparation=self.preparation,
             prefix_compiler=self.prefix_compiler, _prefix_fit_cache=self.prefix_fit_cache,
-            _joint_history_captures=self.joint_history_captures)
+            _joint_history_captures=self.joint_history_captures,
+            **({'beta_uniform_prior': candidate.beta_uniform_prior} if candidate.strategy == FORWARD_BETA_STRATEGY else {}))
         self.fit_calls += 1
         self.nodes[key] = {"prefix": prefix, "candidate": candidate, "programs": programs,
             "sources": sources, "recorder": recorder, "context": context}
@@ -543,7 +571,8 @@ def _prefix_selection_scope(prefix):
 
 def _prefix_common_training_groups(candidates):
     """Structural schedule from declared learners, never observed success."""
-    return max(4 if candidate.strategy == TEMPERATURE_POOL_STRATEGY else
+    return max(0 if candidate.strategy == FORWARD_BETA_STRATEGY else
+        4 if candidate.strategy == TEMPERATURE_POOL_STRATEGY else
         2 if candidate.strategy == POOL_STRATEGY else 3 if candidate.strategy == "grouped_temperature" else
         0 if all(spec.source_only_capable for spec in candidate.expert_programs) else 1 for candidate in candidates)
 
@@ -616,7 +645,7 @@ class FittedPrefixSelection:
                 or semantic_sha256(_final_identity(final)) != record["final_producer_sha256"]):
             raise ValueError("nested prefix actual final numerical programme changed")
         if isinstance(final, FittedEnsemble):
-            _check_candidate_temperature_subset(selected, final.temperature_record)
+            _check_candidate_temperature_subset(selected, final.temperature_record, beta_calibration=final.beta_calibration)
 
     @property
     def record(self):

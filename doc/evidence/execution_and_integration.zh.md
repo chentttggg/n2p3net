@@ -32,6 +32,8 @@ Generic原fit/capture复用已接通：新caller先证明漏传capture会误触�
 
 独立快速λ数值模块已合入d65a618，root格式修正只移除EOF空行，实际4b冻结源与当前3856源AST相同并分列绑定。完整新fast64消费者按原prepared输入完成P32/F32，最大原QR积分差5.24e−10；两worker数值阶段76.800秒、平均1.533核、单worker峰297MB。原数值控制器OS1的partial保持，新writer从64份原结果零积分恢复并OS0/owned0，独审再以stdlib80位重归约。root核135件物理引用，[完整接受](../assets/research_resume_20261012/joint_fast_lambda_20261016.json)已落地。首次失败的展开code副本经193成员归档核验后用cmd逐项清理，原失败/source archive保持。
 
+显式proper Beta的前向概率程序已完成数学、fit/score、save/load、generic候选、完整nested选择及真实capsule/parent接线。最后一个区分性软件纵向以4个outer和1个future通过，重放0新fit/采样；一致重签的C标签和raw OOF分别由原fit身份、原数值重放拒绝。21个实际执行文件before=after，20个涉及生产模块与277成员代码档案逐SHA对应，exact test单独保留。旧fixed/温度候选、原模型与P captures各持原身份；新Beta(1,1)仅为显式开发配置。实际H的K500/7future/21最终请求计划已通过代码/元数据准入，实际执行前复用所有已完成primitive并刷新冻结源。三份旧软件fixture展开已按cmd逐项清理，释放8086935B；最后纵向和必要失败凭证保留，接受见[校准实施](../assets/research_resume_20261012/joint_forward_beta_design_20261016.json)。
+
 
 ### 当前工作成果（2026-10-14）
 

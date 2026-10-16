@@ -1,6 +1,6 @@
 {
   "schema": "n2p3_joint_forward_beta_design_root_acceptance/1",
-  "status": "accepted_math_and_independent_review_full_optin_implementation_authorized",
+  "status": "accepted_math_and_complete_optin_production_pipeline",
   "artifacts": {
     "HANDOFF.md": {
       "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/HANDOFF.md",
@@ -64,6 +64,117 @@
   "source_target_fits_samplers_or_EEG_decodes_in_design": 0,
   "design_completed_rows": 2,
   "full_programme_requested_OOF_rows": 7,
-  "production_implementation": "ongoing_with_separate_probability_and_pipeline_owners",
+  "production_implementation": {
+    "status": "accepted_root_source_review_and_independent_full_pipeline_review",
+    "artifacts": {
+      "IMPLEMENTATION_HANDOFF.md": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/implementation/IMPLEMENTATION_HANDOFF.md",
+        "sha256": "2fb844abb06d6d3307fe0657d6de0c041f9578a03612f51ab0d5002666fddd86",
+        "bytes": 9112
+      },
+      "probability_owner_implementation_binding.json": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/implementation/probability_owner_implementation_binding.json",
+        "sha256": "386ccfcf9b8d8fa4b8207b2e1602888cf25f97757054d3ab9e5758f71ad9413f",
+        "bytes": 3254
+      },
+      "SOURCE_PIPELINE_HANDOFF.md": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/implementation/SOURCE_PIPELINE_HANDOFF.md",
+        "sha256": "8588bcc2bc7af2c89854701a808b435ba8e25650725805948ee8d87df7319b2b",
+        "bytes": 6190
+      },
+      "FORWARD_BETA_CORE_INDEPENDENT_REVIEW_20261016.md": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/implementation/FORWARD_BETA_CORE_INDEPENDENT_REVIEW_20261016.md",
+        "sha256": "84177685bda22d561d49a036c98777590412a97ad2a5516861303a3add9f84e9",
+        "bytes": 3538
+      },
+      "FORWARD_BETA_FULL_PIPELINE_INDEPENDENT_REVIEW_20261016.md": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/implementation/FORWARD_BETA_FULL_PIPELINE_INDEPENDENT_REVIEW_20261016.md",
+        "sha256": "870f493840d30fd670496bac050ebad8af6fdbf5ae5f016ae3bb62c65e64efa3",
+        "bytes": 4484
+      },
+      "FORWARD_BETA_FULL_PIPELINE_INDEPENDENT_AUDIT_20261016.py": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/implementation/FORWARD_BETA_FULL_PIPELINE_INDEPENDENT_AUDIT_20261016.py",
+        "sha256": "4106927f3a4ced27bdde7637bdc19a4705324257d0fe23d0c36911893a253fd7",
+        "bytes": 4331
+      },
+      "FORWARD_BETA_FULL_PIPELINE_INDEPENDENT_AUDIT_20261016_FINAL.json": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/implementation/FORWARD_BETA_FULL_PIPELINE_INDEPENDENT_AUDIT_20261016_FINAL.json",
+        "sha256": "feb5c260b7527d74bd2c716804011eba57ae68c9deafe06746947d13e524c8df",
+        "bytes": 5520
+      },
+      "SOURCE_PIPELINE_MAP.json": {
+        "path": "D:/BCI/artifacts/joint-source-catalog-revision/forward-beta-integration/SOURCE_PIPELINE_MAP.json",
+        "sha256": "f72bd68ae674613653ac517a3b700be4739374505451b667ea9c9a8b43a082da",
+        "bytes": 10241
+      },
+      "SOURCE_PIPELINE_VERIFICATION.json": {
+        "path": "D:/BCI/artifacts/joint-source-catalog-revision/forward-beta-integration/SOURCE_PIPELINE_VERIFICATION.json",
+        "sha256": "6cde891bd8aa48daadaf304b1d83eab4bec3a9928e1da8c71666bfe196c938f2",
+        "bytes": 8199
+      },
+      "PLAN_VERIFICATION.json": {
+        "path": "D:/BCI/artifacts/joint-source-catalog-revision/forward-beta-integration/PLAN_VERIFICATION.json",
+        "sha256": "b5d8216a2887aa31ed9c8b9eaa4a4c25701ce90dbe6024898b0160db52babad6",
+        "bytes": 3264
+      },
+      "CLEANUP.json": {
+        "path": "D:/BCI/artifacts/joint-source-catalog-revision/forward-beta-integration/CLEANUP.json",
+        "sha256": "efae8778325209b92b5c30d85f09c6d295d1750918813a2ab1521d6b75809342",
+        "bytes": 887
+      }
+    },
+    "root_read_call_chain": [
+      "explicit prior and full positive log-Beta mixture",
+      "actual before_group full forecast collection and single-selection likelihood",
+      "raw score then calibrated consumer identity",
+      "full posterior ensemble and shared programme save/load",
+      "candidate and nested cache/programme identity",
+      "original C/P captured numeric replay and posterior reconstruction",
+      "generic original-prior checks and real capsule/public parent"
+    ],
+    "root_verified_source_map_physical_references": 35,
+    "current_executed_source_closure_files": 21,
+    "runtime_archive_total_members": 277,
+    "root_exact_affected_runtime_members": 20,
+    "exact_final_test_retained": true,
+    "core_owner_verification": {
+      "math_cases": 28,
+      "new_forward_cases": 7,
+      "old_ensemble_compatibility_cases": 27,
+      "Ruff": 0,
+      "diff_check": 0
+    },
+    "final_vertical_software_case": {
+      "OS_exit": 0,
+      "tests": 1,
+      "seconds": 27.407,
+      "outer_requested": 4,
+      "future_requested": 1,
+      "complete_rosters_n": [
+        0,
+        4
+      ],
+      "nested_candidates": [
+        "fixed",
+        "legacy_grouped_temperature",
+        "forward_beta_uniform"
+      ],
+      "capsule_hidden_future_truth": false,
+      "replay_new_fit_sampler_calls": 0,
+      "fully_resealed_raw_forecast_loads_before_original_numeric_replay_rejects": true,
+      "C_label_authority_reseal_rejected_by_original_base_fit_digest": true
+    },
+    "actual_public_programme": {
+      "status": "plan_validated_execution_continues_separately",
+      "K": 500,
+      "OOF_requested": 7,
+      "future_requested": 7,
+      "final_prediction_denominator": 21,
+      "new_public_fit_sampler_calls_in_software_validation": 0,
+      "original_actual004_restarts": 0
+    },
+    "regenerable_fixture_cleanup_bytes": 8086935,
+    "default_prior_or_tie_promotion_policy_changed": false
+  },
   "implementation_truth_authority": "Original issuer-authorized C-prefix labels are retained for fit/replay; hidden future truth is excluded from prediction, and outer held/later labels from each outer learner."
 }

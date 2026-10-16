@@ -306,6 +306,8 @@ def _fit_record(value, *, participant_key):
             semantic_sha256(value.oof_probability_record),
         **({"pool_calibration": value.scorer.pool_calibration} if value.scorer.pool_calibration is not None else {}),
         **({"pool_OOF_probability_sha256": semantic_sha256(value.pool_oof_record)} if value.pool_oof_record is not None else {}),
+        **({'beta_calibration': value.beta_calibration,
+            'beta_OOF_probability_sha256': semantic_sha256(value.beta_oof_record)} if value.beta_calibration is not None else {}),
     }
 
 
@@ -478,10 +480,13 @@ def _check_oof_temperature_learning(loaded):
     This small meta-objective replay never fits an EEG model, consumes future
     scores, modifies frozen state, or silently changes the declared estimator.
     """
-    from transfer.ensemble_fit import temperature_from_oof
+    from transfer.ensemble_fit import temperature_from_oof, validate_beta_uniform_oof
 
     seen = set()
     for model in loaded.values():
+        if model.beta_oof_record is not None:
+            validate_beta_uniform_oof(model.beta_oof_record, model.scorer.program,
+                prior=model.beta_calibration['prior'])
         oof = model.oof_probability_record
         if (oof is None or oof["schema"] not in {"n2p3_complete_group_probability_oof/1",
                 "n2p3_joint_flat_forward_probability_OOF/1"} or semantic_sha256(oof) in seen):
@@ -982,6 +987,11 @@ def _check_program_declarations(record, loaded, actual_programs):
                     semantic_sha256(value["temperature_calibration"])
                 or semantic_sha256(actual_programs[name].get("pool_calibration")) !=
                     semantic_sha256(value.get("pool_calibration"))
+                or semantic_sha256(actual_programs[name].get('beta_calibration')) !=
+                    semantic_sha256(value.get('beta_calibration'))
+                or (semantic_sha256(actual_programs[name]['beta_OOF_probability'])
+                    if actual_programs[name].get('beta_calibration') is not None else None) !=
+                    value.get('beta_OOF_probability_sha256')
                 or semantic_sha256(_final_identity(loaded[name])) != semantic_sha256(value["model_identity"])):
             raise ValueError("prefix completed program numerical or temperature identity changed")
     if (record["source_seed"] != record["fit_context"].get("source_seed")

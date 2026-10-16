@@ -2312,7 +2312,6 @@
     "ongoing": [
       "B11 actual004 remaining OOF/future and complete graph; original C500/OOF0 retained",
       "complete new seven-row continuous OOF from original earlier-C authority",
-      "full forward Beta nested/replay/capsule/parent integration review",
       "actual generic public DAG sharing preserved primitive fits/captures",
       "cloud reopening: saved S4 304/8parent final gate then remaining five stages",
       "B00-B14 programme"
@@ -2582,13 +2581,14 @@
       "integration_commit": "d65a618"
     },
     "joint_forward_beta": {
-      "status": "accepted_math_and_independent_review_full_optin_implementation_authorized",
+      "status": "accepted_math_and_complete_optin_production_pipeline",
       "root_delivery": {
         "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_forward_beta_design_20261016.json",
-        "sha256": "3973b753ffa7c9f902c44662162222aa3ec29aa29dc07dbe00148f2f040983a4",
-        "bytes": 3923
+        "sha256": "636e6d460034665b32a10c0de069adba4b61b8de56c887732553ed740cee33ed",
+        "bytes": 9340
       },
-      "production": "ongoing"
+      "production": "accepted_complete_optin_pipeline",
+      "actual_public_programme": "separate_pending_numerical_execution"
     }
   }
 }

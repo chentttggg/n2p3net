@@ -13,10 +13,24 @@ from scipy.special import logsumexp
 from models.candidate_evidence import CandidateEvidence
 from research.contracts import semantic_sha256
 from research.execution import atomic_write_json
+from transfer.beta_uniform_calibration import beta_uniform_log_probability
 from transfer.noise_model import freeze_metadata
 from transfer.pool_calibration import POOL_CALIBRATION_SCHEMA, uniform_contamination_log_probability
 
 ENSEMBLE_PROGRAM_SCHEMA = "n2p3_candidate_ensemble_program/1"
+
+
+def beta_uniform_evidence(evidence: CandidateEvidence, calibration):
+    """Derive one calibrated consumer without rebinding the raw model/capture."""
+    if not evidence.probability_available:
+        return evidence
+    digest = semantic_sha256(calibration)
+    identities = tuple(replace(item, probability_calibrated=True,
+        fit_digest=semantic_sha256({"expert_fit": item.fit_digest, "beta_probability": digest}),
+        score_kind=item.score_kind + ":forward_beta_uniform_predictive/1")
+        for item in evidence.expert_identities)
+    return replace(evidence, log_probability=beta_uniform_log_probability(evidence.log_probability, calibration),
+                   expert_identities=identities)
 
 
 @dataclass(frozen=True)
