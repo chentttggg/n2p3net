@@ -3072,7 +3072,60 @@
         "independent_original_BNCI_MAT_data_admission_for_public_programme",
         "actual_public_rank_complete_resident_budget_and_streaming_closed_local_Gaussian_marginalization",
         "complete_paired_public_response_and_calibration_programmes"
-      ]
+      ],
+      "generic_CPU_resource_policy": {
+        "status": "accepted",
+        "integrated_commit": "c873526",
+        "delivery": {
+          "path": "D:/BCI/artifacts/source-response-pipeline/generic-resources/DELIVERY.json",
+          "bytes": 2399,
+          "sha256": "5652d31d5fc78e5ad8a614ff25f38b4cd9c02d2db01b202f91b43673a142808a"
+        },
+        "independent_source_review": "joint_review: explicit CPU and CUDA native/inter-op claims, unchanged defaults, actual candidate builder and ordinary-reader/parent CPU accounting accepted",
+        "actual_RED_parent_reservation": null,
+        "actual_GREEN_contracts": 2,
+        "descriptor_compatibility_cases": 5,
+        "local_software_CPU_topology": {
+          "budget": 3,
+          "coordinator": 1,
+          "actual_worker_capacity": 1,
+          "native": 1,
+          "interop": 1
+        },
+        "scientific_fits": 0,
+        "workers_launched": 0,
+        "independent_review": {
+          "path": "D:/BCI/artifacts/source-response-pipeline/independent-review/B07_GENERIC_PRELAUNCH_GATES_INDEPENDENT_REVIEW_20261016.md",
+          "bytes": 3362,
+          "sha256": "86d6ec3e8e3d1f4846d8ed8ea4b3875ae59fe67f30eba1a3c79678e3a1e05b4c"
+        }
+      },
+      "generic_consumer_source_closure": {
+        "status": "accepted",
+        "integrated_commit": "19baaee",
+        "acceptance": {
+          "path": "D:/BCI/artifacts/source-response-pipeline/consumer-identity/METADATA_ACCEPTANCE.json",
+          "bytes": 11944,
+          "sha256": "6b97b663c6ae054e5d6791d158c1d6a262261c2bfaf88e558242eba3304d9d93"
+        },
+        "independent_review": {
+          "path": "D:/BCI/artifacts/source-response-pipeline/independent-review/B07_GENERIC_PRELAUNCH_GATES_INDEPENDENT_REVIEW_20261016.md",
+          "bytes": 3362,
+          "sha256": "86d6ec3e8e3d1f4846d8ed8ea4b3875ae59fe67f30eba1a3c79678e3a1e05b4c"
+        },
+        "source_archive": {
+          "path": "D:\\BCI\\artifacts\\source-response-pipeline\\consumer-identity\\EXECUTED_SOURCE.code-only.tar.gz",
+          "bytes": 392996,
+          "sha256": "5e80d23d6f7e3ca8c8916e1472d83e274c8d1668b87b34285bac3c305cae48d7"
+        },
+        "legacy_policy_owner_count": 15,
+        "added_new_family_owner_count": 24,
+        "total_new_family_owner_count": 39,
+        "root_verified_physical_sources_and_test": 40,
+        "ordinary_and_selected_actual_file_drift_checks": 6,
+        "legacy_joint_trial_continuous_policies_unchanged": true,
+        "new_fit_score_QR_sampler_calls": 0
+      }
     }
   }
 }

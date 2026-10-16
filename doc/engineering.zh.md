@@ -244,6 +244,8 @@ Python兼容检查覆盖`src/`、`tests/`、根配置和`experiments/`直接入�
 子进程线程预算仍由相应测试显式指定；资源不足不能通过重试或跳过行为断言来掩盖。
 
 原continuous source stage用独立worker/observer保存start→saved、实际PID/birth、scientific/shim各自OS退出、Job回收及导入源码对预启动code-only归档的关系。原NPZ和完整FrozenSource读回后才发布saved；只读catalog准入与aggregate独立封存。保存后导出失败通过`research.original_continuous_source_stage --admit-only`写入全新导出目录，原stage/model/aggregate保留。首个实际software genesis成功1fit、native1、峰值RSS606564352B；公共scope另由原数据issuer与完整计划取得。
+
+显式`target_native_threads_per_worker`在CPU和CUDA任务均由同一phase builder消费，并计入一个inter-op线程；CUDA另保延迟取得GPU的政策。单worker本地软件可声明CPU总预算3＝调度1＋native1＋inter-op1，拟合退出后的ordinary reader和parent沿同native1/总claim2运行；无需为降低native数虚配第二个内存worker。默认未声明路径及既有CUDA描述保持，实际resolver→actor→parent账本反例和源审已通过。
 定位耗时用`python -m pytest --durations=20`。真实spawn、快照校验、模型拟合与重载继续执行；
 源训练进程池在组间复用worker，Manager和CLI参数入口不提前导入训练依赖，
 Braindecode仅在构造其对照模型时加载。调度日志直接格式化plan/builder已解析的路径，
