@@ -23,6 +23,8 @@ B11联合模型已在原Huebner记录的500个授权标签上完成采样。直�
 
 全部候选对的对数赔率最大变化73.9175，绝对对数密度增加950.4577。赢家保持、备选排序和相对权重改变，这把改进重点定位到了预测积分的覆盖。原有限样本结果保原producer；新结果接受范围为单记录/K0/current-only原连续law，来源见[预测积分接受](../assets/research_resume_20261012/joint_predictive_evidence_20261016.json)。
 
+原C500授权内的marker读数已接上这条预测：首条真答案是position:9，原/连续NLL分别409.5816/470.3023，赢家position:12保持。第二条已完成OOF也为高置信错答，完整两条及C-only校准方向集中于[校准与选择](calibration_and_selection.zh.md)。后续同时推进正确积分、概率风险和响应/noise匹配。
+
 计算保持一个不随λ缩放的proper响应先验β和原physical flat漂移测度。令`m_H,q(λ)`为已积分β/漂移的原QR对数核，`x=logλ`，则`I_H,q=∫exp(((N_H+ν)/2)x−νexp(x)/2+m_H,q(exp(x)))dx`；`N_H`用原scalar Gaussian行数，flat行列式已包含在`m`中。whole law按`π_q I_PT,q`归一，绝对T密度还恢复原P积分与Gaussian/noise常数。该实际输入的64个积分已用保存小根的误差界证明logλ全域严格凹，各有唯一峰；三档容差的log积分逐位相同，最大source误差估计跨度为5.87e−5 nats，两端有解析Gamma质量上界。独立80位聚合与原数组身份均已核回。
 
 下一实现预先消去漂移并分解响应矩阵，让每个λ点只计算标量有理项。多record扩展继续保持ONE global β，并按正确P边缘分布平均其余record的λ及未定候选；完整公共预测链沿各自新producer验收。

@@ -190,5 +190,72 @@
     "actual31 remaining OOF and future, capsule/parent/full nested graph",
     "generic run-scoped original-fit and history-capture reuse wiring",
     "fast spectral continuous-lambda kernel and conditional multi-record extension"
-  ]
+  ],
+  "authorized_C_only_label_readout": {
+    "scope": "first_2_of_7_original_forward_OOF_rows_within_original_C500_label_authority",
+    "receipts": [
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/OOF01_authorized_label_readout.json",
+        "sha256": "0b216b010519a75046230934f6066b26c0db8bac676d226678b8a831f20dd392",
+        "bytes": 3591
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/joint_flat_OOF01_label_readout.py",
+        "sha256": "dc7abd5df1c73bb34b74c9c937efdbcee0dbf351791792433627ef239ba03743",
+        "bytes": 7448
+      }
+    ],
+    "rows": [
+      {
+        "ordinal": 0,
+        "earlier_K": 0,
+        "decision_id": "Huebner2017:1:session:0:run:0:character:0",
+        "authorized_global_label_range": [
+          0,
+          68
+        ],
+        "original_true_candidate": "position:9",
+        "original_predicted_candidate": "position:12",
+        "hit": false,
+        "true_log_probability": -409.5815992997959,
+        "true_probability_float64": 1.321209035202041e-178,
+        "NLL_nats": 409.5815992997959,
+        "top_log_probability": 0.0,
+        "top_probability_float64": 1.0,
+        "top_two_logodds": 143.8795959064737,
+        "target_coded_frames": 16,
+        "marker_first_last": [
+          "Mk4",
+          "Mk942"
+        ],
+        "original_saved_row_sha256": "3791191da7c3106da5c3c9eb1157ad0033826d6745d85f0c28cf434f30f57c03"
+      },
+      {
+        "ordinal": 1,
+        "earlier_K": 68,
+        "decision_id": "Huebner2017:1:session:0:run:0:character:1",
+        "authorized_global_label_range": [
+          68,
+          136
+        ],
+        "original_true_candidate": "position:24",
+        "original_predicted_candidate": "position:11",
+        "hit": false,
+        "true_log_probability": -610.5583278303966,
+        "true_probability_float64": 6.884736817911363e-266,
+        "NLL_nats": 610.5583278303966,
+        "top_log_probability": 0.0,
+        "top_probability_float64": 1.0,
+        "top_two_logodds": 249.52643636334687,
+        "target_coded_frames": 16,
+        "marker_first_last": [
+          "Mk956",
+          "Mk1894"
+        ],
+        "original_saved_row_sha256": "11dff54f676b8409cc8c162ae9d4e8176fdd2bb7c11816ae73a0fcabd1fe9df0"
+      }
+    ],
+    "OOF0_continuous_true_NLL": 470.3022740976885,
+    "next": "independent_forward_joint_temperature_uniform_risk_design_using_only_C"
+  }
 }

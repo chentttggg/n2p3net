@@ -6,6 +6,8 @@
 
 ## 当前结论与实施
 
+Joint程序已完成的前两条C内forward OOF显示高置信错答：K0把真position:9判为12，NLL409.5816；K68把真position:24判为11，NLL610.5583，两个最大概率均舍入为1。原marker的target编码与物理membership一致，标签都在原C500授权范围内；其余五条OOF与全部future沿原完整程序继续。单record连续λ积分保持首条赢家，真答案NLL为470.3023。这把后续研究明确分成两条：准确计算原law，以及用C内证据学习概率尺度/保留备选质量并检验响应与噪声匹配。下一opt-in比较现有有界温度、含uniform锚点的逆温度与ε混合；完整forward/nested学习关系保持，原程序照原政策执行。证据见[预测积分及授权标签读数](../assets/research_resume_20261012/joint_predictive_evidence_20261016.json)。
+
 binary候选的排名量固定为fit前requested正负样本对的成功credit；任一输出缺失的pair记0，分母保持`n+×n−`。完整输出等于原AUC，删除输出只能丢失非负credit。可用子集ROC AUC作诊断单列，同风险先保coverage。legacy CE固定共同校准class cost与requested验证mass，完整输出才参与排名；BrainSync继续保全部真实45-flash block，缺失及tie为miss。普通/QC/EOG产品与公共E3共原fit/refit owner，保存支持、评分和final选择关系。两个实际source候选的新旧对照中，full-C参数、独立预测及保存加载逐bit一致；最终入口关系核查随集成源码绑定。
 
 `transfer_scratch_prefix_plan`已将source NN、matched scratch NN及各自NN+xDAWN接入新四候选fixed程序族，只替换新计划的`prefix_selection`。source/scratch共input profile、架构和匹配配方，xDAWN保其自身声明视图；物理decision、预算与可用时间由原owner核。baseline与tie政策预声明，future队列评价最终程序。实际source/scratch初始化、K0、C200/800、五个合法forward选择行、同run图/保存/零fit重放与parent评分已贯通，见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。下一公共计划沿该新roster冻结，与原entry005分别保存身份。

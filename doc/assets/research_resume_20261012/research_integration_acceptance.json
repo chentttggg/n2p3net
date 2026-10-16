@@ -2535,8 +2535,8 @@
       "status": "accepted_empirical_OOF1_and_separate_single_record_continuous_audit",
       "root_delivery": {
         "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_predictive_evidence_20261016.json",
-        "sha256": "95e961aa4d01723b44d84e1a8681122b3515795ae1c95bd7d8f347ed25f042a8",
-        "bytes": 9847
+        "sha256": "386f0818d47bcab2a0358d87f461076506775eaa25d01d17b49fcf6dcd759531",
+        "bytes": 12380
       },
       "remaining_public_programme": "ongoing",
       "original_finite_programme_retained": true
