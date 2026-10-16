@@ -63,6 +63,7 @@ from transfer.pool_calibration import (
 )
 from transfer.recipes import TargetRecipe
 from transfer.response_dictionary import ResponseDictionary, ResponseDictionarySpec
+from transfer.source_response_programme import SourceResponseSourceRef
 from transfer.spatial_programme import SpatialDecisionModel, SpatialSignalProgram
 
 FITTED_ENSEMBLE_SCHEMA = "n2p3_fitted_candidate_ensemble/2"
@@ -210,12 +211,12 @@ def _prefix_sources(sources, specs):
             or any(by_id[name].source_checkpoint_role is None for name in sources)):
         raise ValueError('source checkpoints must belong to a declared source or matched scratch programme')
     if sources is not None and any(
-            isinstance(value, FrozenJointFlatSource) and by_id[name].family != 'joint_flat'
-            or isinstance(value, FrozenSourceCheckpoint) and by_id[name].family == 'joint_flat'
+            isinstance(value, FrozenJointFlatSource) and by_id[name].family not in {'joint_flat', 'source_response'}
+            or isinstance(value, FrozenSourceCheckpoint) and by_id[name].family in {'joint_flat', 'source_response'}
             for name, value in sources.items()):
         raise TypeError('frozen source checkpoint type differs from its declared numerical expert family')
     return {} if sources is None else {name: value if isinstance(value, (FrozenSourceCheckpoint, FrozenJointFlatSource))
-        else FrozenJointFlatSource.from_path(value) if by_id[name].family == 'joint_flat'
+        else FrozenJointFlatSource.from_path(value) if by_id[name].family in {'joint_flat', 'source_response'}
         else FrozenSourceCheckpoint.from_path(value) for name, value in sources.items()}
 
 
@@ -265,10 +266,25 @@ class CalibrationExpertProgram:
     spatial: dict | None = None
     signal_prior: SpatialSignalProgram | None = None
     joint_flat: JointFlatProgram | None = None
+    source_response_program: object | None = None
+    source_ref: SourceResponseSourceRef | None = None
 
     def __post_init__(self):
-        if not self.expert_id or self.family not in {"trial", "continuous_ar", "joint_flat"}:
+        if not self.expert_id or self.family not in {"trial", "continuous_ar", "joint_flat", "source_response"}:
             raise ValueError("calibration expert requires an explicit ID and supported family")
+        if self.family == 'source_response':
+            from research.source_response_states import SourceInformedFiniteResponseProgram
+
+            if (not isinstance(self.source_response_program, SourceInformedFiniteResponseProgram)
+                    or not isinstance(self.source_ref, SourceResponseSourceRef)
+                    or any(value is not None for value in (self.recipe, self.profile, self.spatial,
+                        self.signal_prior, self.kernel_prior, self.dictionary, self.joint_flat))):
+                raise ValueError('source response requires its own finite programme and original source reference')
+            object.__setattr__(self, '_prior_spec', None)
+            object.__setattr__(self, '_dictionary_spec', None)
+            return
+        if self.source_response_program is not None or self.source_ref is not None:
+            raise ValueError('finite source response declaration belongs to its own family')
         if self.family == "joint_flat":
             if (not isinstance(self.joint_flat, JointFlatProgram)
                     or any(value is not None for value in (self.recipe, self.profile, self.spatial,
@@ -336,7 +352,7 @@ class CalibrationExpertProgram:
     @property
     def source_checkpoint_role(self):
         """One family owner for parameter sources, weights and matched architecture."""
-        if self.family == 'joint_flat':
+        if self.family in {'joint_flat', 'source_response'}:
             return 'original_source_response_and_noise_parameters'
         if self.family == 'trial' and self.recipe.initialization == 'source':
             return 'pretrained_weights'
@@ -353,6 +369,9 @@ class CalibrationExpertProgram:
         return self._dictionary_spec
 
     def record(self):
+        if self.family == 'source_response':
+            return {'expert_id': self.expert_id, 'family': self.family,
+                'source_response_program': self.source_response_program.record(), 'source_ref': self.source_ref.record()}
         if self.family == "joint_flat":
             return {"expert_id": self.expert_id, "family": self.family, "joint_flat": self.joint_flat.record()}
         record = {"expert_id": self.expert_id, "family": self.family,
@@ -377,6 +396,12 @@ class CalibrationExpertProgram:
 
     @classmethod
     def from_record(cls, record):
+        if record['family'] == 'source_response':
+            from research.source_response_states import SourceInformedFiniteResponseProgram
+
+            return cls(record['expert_id'], record['family'],
+                source_response_program=SourceInformedFiniteResponseProgram.from_record(record['source_response_program']),
+                source_ref=SourceResponseSourceRef.from_record(record['source_ref']))
         if record["family"] == "joint_flat":
             return cls(record["expert_id"], "joint_flat", joint_flat=JointFlatProgram.from_record(record["joint_flat"]))
         values = dict(record)
@@ -446,6 +471,17 @@ class _FittedExpert:
                     or model.provenance.get("noise_estimator", "burg") != self.program.noise_estimator
                     or not np.array_equal(model.basis, dictionary.matrix)):
                 raise ValueError("frozen continuous recipe differs from its actual numerical model")
+        elif self.program.family == 'source_response':
+            from research.source_response_states import SourceInformedResponseModel
+
+            if (not isinstance(self.predictor, SourceInformedResponseModel)
+                    or self.predictor.program.digest() != self.program.source_response_program.digest()
+                    or self.predictor.parameters.source.digest != self.source_digest):
+                raise ValueError('source response expert differs from its actual saved source or finite programme')
+            self.program.source_ref.check_source(self.predictor.parameters.source,
+                self.predictor.parameters.binding['target_contract'])
+            self.program.source_ref.check_continuation(self.predictor.parameters.source,
+                self.predictor.parameters.dictionary)
         elif self.program.family == "joint_flat" and (not isinstance(self.predictor, JointFlatModel)
                 or metadata_digest(self.predictor.programme.record()) != metadata_digest(self.program.joint_flat.record())):
             raise ValueError("joint expert differs from its actual saved source/sampling programme")
@@ -466,6 +502,53 @@ class _FittedExpert:
               history_refusal_recorder=None):
         if self.predictor is None:
             return self.unavailable(view, self.unavailable_reason, self.unavailable_kind)
+        if self.program.family == 'source_response':
+            from research.channel_noise_mechanism import DiffuseProjectionResolutionError
+            from research.finite_response_law import FiniteResponseResolutionError
+            from research.joint_response_scale import NumericalResolutionError
+            from research.response_history_identification import HistoryNuisanceResolutionError
+            from transfer.source_response_programme import score_source_response
+
+            if history_context is None:
+                raise ValueError('source response expert requires its original C and actual history issuer')
+            compiler, prefix = history_context
+            def remember_permission(capability):
+                if history_capability_recorder is not None:
+                    history_capability_recorder(self.program.expert_id, capability)
+            try:
+                result, binding, capability = score_source_response(self.predictor, compiler, prefix, view,
+                    permission_recorder=remember_permission)
+            except HistoryUnavailableError as error:
+                if history_refusal_recorder is not None:
+                    from transfer.ensemble_views import _lookup_record_history_refusal
+
+                    cutoff = int(view.raw_scope[0])+int(view.onsets[0])+self.program.source_response_program.conditioning_offset_samples
+                    try:
+                        refusal = _lookup_record_history_refusal(compiler, view, prefix=prefix, conditioning_stop=cutoff)
+                    except ValueError:
+                        # A core state/resource refusal grants no permission and
+                        # is distinct from an actual original issuer refusal.
+                        pass
+                    else:
+                        if semantic_sha256(refusal.binding['error']) != semantic_sha256(error.record()):
+                            raise ValueError('source response changed its actual original history refusal') from error
+                        history_refusal_recorder(self.program.expert_id, refusal)
+                kind = 'not_available' if error.failure_kind == 'numerical' else error.failure_kind
+                return self.unavailable(view, json.dumps(error.record(), sort_keys=True), kind)
+            except (FiniteResponseResolutionError, UnidentifiableFitError, DiffuseProjectionResolutionError, NumericalResolutionError,
+                    HistoryNuisanceResolutionError, np.linalg.LinAlgError) as error:
+                return self.unavailable(view, json.dumps({'stage': 'source_response_history',
+                    'type': type(error).__name__, 'message': str(error)}, sort_keys=True), 'not_available')
+            if history_recorder is not None:
+                history_recorder(self.program.expert_id, capability, binding)
+            identity = CandidateExpertIdentity(self.program.expert_id, semantic_sha256(binding),
+                self.model_digest, self.source_digest, self.fit_digest,
+                'source_response_'+self.program.source_response_program.scoring_law+'/1', False)
+            member = view.decision.membership
+            return CandidateEvidence(view.decision.candidate_vocabulary, result.log_candidate_probability,
+                view.participant_key, view.decision_id, view.physical_support_digest, (identity,),
+                view.decision.repetitions, tuple(map(int, member.sum(axis=0))),
+                tuple(map(int, member[view.decision.evidence_indices >= 0].sum(axis=0))))
         if self.program.family == "joint_flat":
             allowed = {None, 'previous_unknown_decision_overlaps_finite_response_support',
                        'next_unknown_decision_overlaps_finite_response_support',
@@ -583,7 +666,7 @@ def _model_fit_binding(predictor, family):
 
 
 def _with_model_fit_binding(predictor, family, binding):
-    return (predictor.with_fit_binding(binding) if family == "trial" else
+    return (predictor.with_fit_binding(binding) if family in {"trial", 'source_response'} else
             replace(predictor, provenance={**predictor.provenance, "ensemble_fit_binding": binding}))
 
 
@@ -837,7 +920,7 @@ class FittedEnsemble:
         for expert in self._experts:
             if expert.program.family == "trial":
                 expert.program.profile.validate_observation(view)
-        if any(expert.program.family in {"continuous_ar", "joint_flat"} for expert in self._experts):
+        if any(expert.program.family in {"continuous_ar", "joint_flat", 'source_response'} for expert in self._experts):
             first = self._training_receipts[0] if self._target_contract is None else self._target_contract
             expected = (first["sample_rate_hz"], tuple(first["channel_names"]), tuple(first["channel_types"]),
                         first["reference"], first["signal_unit"])
@@ -929,7 +1012,7 @@ class FittedEnsemble:
                     "unavailable_reason": expert.unavailable_reason, "unavailable_kind": expert.unavailable_kind})
                 continue
             filename = f"expert_{index:03d}." + ("pt" if expert.program.family == "trial" else
-                "json" if expert.program.signal_prior is not None else "npz")
+                "json" if expert.program.signal_prior is not None or expert.program.family == 'source_response' else "npz")
             path = directory / filename
             if expert.program.family == "trial":
                 expert.predictor.save(path, metadata_store=metadata_store)
@@ -1117,7 +1200,15 @@ class FittedEnsemble:
             content = path.read_bytes()
             if hashlib.sha256(content).hexdigest() != entry["model_file_sha256"]:
                 raise ValueError("frozen ensemble model bytes changed")
-            if program.family == "joint_flat":
+            if program.family == 'source_response':
+                from research.source_response_states import SourceInformedResponseModel
+                from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
+
+                if _joint_source_preparation is None:
+                    _joint_source_preparation = FrozenJointFlatSourcePreparation()
+                predictor = SourceInformedResponseModel.from_bytes(content, expected_sha256=entry['model_file_sha256'],
+                    source_preparation=_joint_source_preparation)
+            elif program.family == "joint_flat":
                 from transfer.joint_flat_model import JointFlatModel
                 from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
 
@@ -1241,7 +1332,7 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
     expert_programs = tuple(expert_programs)
     if calibration_strategy == FORWARD_BETA_STRATEGY or beta_uniform_prior is not None:
         raise ValueError("forward Beta calibration requires the original authorized CalibrationPrefix and compiler")
-    if any(spec.family == 'joint_flat' for spec in expert_programs):
+    if any(spec.family in {'joint_flat', 'source_response'} for spec in expert_programs):
         raise ValueError('joint-flat fitting requires the original record-aware CalibrationPrefix and its compiler')
     preparation = _source_preparation or ScopedSourceCheckpointPreparation()
     if calibration_strategy not in {"fixed", "grouped_temperature"} | POOL_STRATEGIES:
@@ -1320,7 +1411,16 @@ def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *
                 source_only=False, target_contract=None, source_preparation=None, prefix_compiler=None,
                 original_prefix=None):
     source_digest = checkpoint_digest = None
-    if spec.family == "joint_flat":
+    if spec.family == 'source_response':
+        from transfer.source_response_programme import fit_source_response
+
+        if not isinstance(source, FrozenJointFlatSource) or prefix_compiler is None or original_prefix is None:
+            raise TypeError('source response requires the actual original parameters and prefix issuer')
+        predictor = fit_source_response(source, original_prefix, prefix_compiler,
+            spec.source_response_program, spec.source_ref)
+        source_digest = checkpoint_digest = source.digest
+        offset = 0.
+    elif spec.family == "joint_flat":
         if not isinstance(source, FrozenJointFlatSource) or prefix_compiler is None or original_prefix is None:
             raise TypeError("joint expert requires its original frozen source and prefix issuer")
         predictor = JointFlatModel.fit_prefix(source, spec.joint_flat, compiler=prefix_compiler, prefix=original_prefix)
@@ -1399,8 +1499,7 @@ def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *
                "model_source_digest": source_digest, "fit_digest": fit_digest, "logit_offset": offset}
     if target_contract is not None:
         binding["target_contract"] = target_contract
-    predictor = (predictor.with_fit_binding(binding) if spec.family == "trial" else
-                 replace(predictor, provenance={**predictor.provenance, "ensemble_fit_binding": binding}))
+    predictor = _with_model_fit_binding(predictor, spec.family, binding)
     return _FittedExpert(spec, predictor, predictor.digest(), fit_digest, source_digest, offset)
 
 
@@ -1415,6 +1514,9 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
     prefix.validate()
     preparation = _source_preparation or ScopedSourceCheckpointPreparation()
     specs = tuple(expert_programs)
+    if any(spec.family == 'source_response' for spec in specs) and (
+            calibration_strategy != 'fixed' or any(spec.family != 'source_response' for spec in specs)):
+        raise ValueError('source response first programme requires its pure finite-family fixed roster')
     if tuple(spec.expert_id for spec in specs) != program.expert_ids:
         raise ValueError("prefix fit programs must match the complete frozen expert roster")
     if calibration_strategy not in {"fixed", "grouped_temperature", FORWARD_BETA_STRATEGY} | POOL_STRATEGIES:
@@ -1449,7 +1551,7 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
         elif spec.family == "trial" and not source_only and (data.n_epochs < 3 or set(np.unique(data.y)) != {0, 1}):
             reason = "insufficient_authorized_trial_classes_or_rows"
         cache_key = (_calibration_expert_fit_digest(spec, prefix.record(), sources[spec.expert_id].digest)
-            if spec.family == 'joint_flat' and spec.expert_id in sources and _prefix_fit_cache is not None else None)
+            if spec.family in {'joint_flat', 'source_response'} and spec.expert_id in sources and _prefix_fit_cache is not None else None)
         cached = None if cache_key is None else _prefix_fit_cache.get(cache_key)
         if cached is not None:
             if reason or not isinstance(cached, _FittedExpert) or cached.predictor is None:
@@ -1486,7 +1588,7 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
             inner_replay_context or {}), {'fixed': fitted})
     if _prefix_fit_cache is not None:
         for expert in experts:
-            if expert.program.family == 'joint_flat' and expert.predictor is not None:
+            if expert.program.family in {'joint_flat', 'source_response'} and expert.predictor is not None:
                 # Store the base producer before any OOF probability binding.
                 _prefix_fit_cache[expert.fit_digest] = expert
     if calibration_strategy == "fixed":
@@ -1855,6 +1957,9 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
                                     prefix_compiler=None, _prefix_fit_cache=None, _joint_history_captures=None,
                                     beta_uniform_prior=None):
     """Declared temperature programs share one actual all-C final expert fit."""
+    if any(spec.family == 'source_response' for spec in expert_programs) and (
+            tuple(strategies) != ('fixed',) or any(spec.family != 'source_response' for spec in expert_programs)):
+        raise ValueError('source response first programme requires its pure finite-family fixed roster')
     if (not strategies or len(set(strategies)) != len(strategies)
             or set(strategies) - ({"fixed", "grouped_temperature", FORWARD_BETA_STRATEGY} | POOL_STRATEGIES)):
         raise ValueError("prefix temperature programs must be explicit and distinct")

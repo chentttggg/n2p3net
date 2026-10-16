@@ -222,7 +222,7 @@ def _joint_sources_owner(row):
     if not row["source_checkpoints"]:
         return None
     programs = _request_source_programs(row)
-    if any(programs[name].family == "joint_flat" for name in row["source_checkpoints"]):
+    if any(programs[name].family in {"joint_flat", 'source_response'} for name in row["source_checkpoints"]):
         from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
 
         return FrozenJointFlatSourcePreparation()
@@ -238,7 +238,7 @@ def _sources(row, *, joint_source_preparation=None):
     sources = {}
     for name, receipt in row["source_checkpoints"].items():
         content = _artifact_bytes(receipt)
-        if programs[name].family == "joint_flat":
+        if programs[name].family in {"joint_flat", 'source_response'}:
             from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
 
             if joint_source_preparation is None:
@@ -290,7 +290,7 @@ def _prepare_history_capabilities(views, budgets, records):
     joint_records = []
     for directory, expected in records:
         record = _selection_node_manifest(directory, expected_record_sha256=expected)
-        if record["schema"] == "n2p3_joint_flat_prefix_inner_replay/1":
+        if record["schema"] in {"n2p3_joint_flat_prefix_inner_replay/1", 'n2p3_source_response_prefix_replay/1'}:
             joint_records.append((directory, record))
     if not joint_records:
         return (), ()
@@ -304,7 +304,7 @@ def _prepare_history_capabilities(views, budgets, records):
     original_views.update((semantic_sha256(view.record()), view) for view in views.decisions)
     capabilities, refusals = {}, {}
     for directory, record in joint_records:
-        for row in (*record["OOF"], *record["future"]):
+        for row in (*record.get("OOF", ()), *record["future"]):
             for permission in row["issued_history_permissions"].values():
                 digest, binding = permission["sha256"], permission["binding"]
                 if semantic_sha256(binding) != digest:
@@ -321,7 +321,7 @@ def _prepare_history_capabilities(views, budgets, records):
                 if cap.digest != digest or semantic_sha256(cap.binding) != semantic_sha256(binding):
                     raise ValueError("original compiler reissued a different C/P/T history permission")
                 capabilities[digest] = cap
-            for entry in row['captures'].values():
+            for entry in row.get('captures', {}).values():
                 if 'readset_transition' in entry:
                     from research.joint_flat_replay import _load_capture
                     from research.joint_readset_transition import reissue_joint_readset_record

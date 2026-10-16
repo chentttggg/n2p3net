@@ -68,6 +68,9 @@ class CalibrationProgramCandidate:
             raise ValueError("candidate specs must match its complete frozen ensemble roster")
         if self.strategy not in {"fixed", "grouped_temperature", FORWARD_BETA_STRATEGY} | POOL_STRATEGIES:
             raise ValueError("nested selection supports declared fixed/grouped-temperature programs only")
+        if any(spec.family == 'source_response' for spec in self.expert_programs) and (
+                self.strategy != 'fixed' or any(spec.family != 'source_response' for spec in self.expert_programs)):
+            raise ValueError('source response first nested programme requires its pure finite-family fixed roster')
         if self.strategy == FORWARD_BETA_STRATEGY:
             from transfer.beta_uniform_calibration import validate_beta_uniform_prior
 
@@ -511,7 +514,11 @@ class _PrefixFits:
         else:
             context.setdefault("requested_Ks", [prefix.budget])
             context.setdefault("requested_to_actual_K", {str(prefix.budget): prefix.budget})
-        if any(spec.family == 'joint_flat' for spec in candidate.expert_programs):
+        if any(spec.family == 'source_response' for spec in candidate.expert_programs):
+            from research.source_response_replay import SourceResponseReplayRecorder
+
+            recorder = SourceResponseReplayRecorder()
+        elif any(spec.family == 'joint_flat' for spec in candidate.expert_programs):
             from research.joint_flat_replay import JointFlatReplayRecorder
 
             recorder = JointFlatReplayRecorder(history_captures=self.joint_history_captures)
@@ -544,7 +551,7 @@ class _PrefixFits:
         if ("test_scope" not in context or "requested_decision_ids" not in context
                 or view.record_id not in context["requested_decision_ids"]):
             raise ValueError("nested prefix scoring requires its predeclared complete held/future scope")
-        if any(spec.family == 'joint_flat' for spec in candidate.expert_programs):
+        if any(spec.family in {'joint_flat', 'source_response'} for spec in candidate.expert_programs):
             shared = node['recorder'].score_future(node['programs'], view,
                 compiler=self.prefix_compiler, prefix=node['prefix'])
         else:
@@ -554,7 +561,7 @@ class _PrefixFits:
             scored = unavailable_prefix_expert_scores(node["prefix"].record(),
                 [spec.record() for spec in candidate.expert_programs], candidate.strategy,
                 scored.record(subject=view.participant_key), view)
-        if not any(spec.family == 'joint_flat' for spec in candidate.expert_programs):
+        if not any(spec.family in {'joint_flat', 'source_response'} for spec in candidate.expert_programs):
             node["recorder"].record_prefix_future_score(candidate.strategy, view=view, evidence=scored)
         value = node["programs"][candidate.strategy]
         scorer = EnsembleScorer(candidate.ensemble_program) if isinstance(value, ExpectedSubjectError) else value.scorer

@@ -306,7 +306,7 @@ class _SelectionReplayAdmission:
         self._admit_joint_source(_joint_source_preparation)
 
     def _admit_joint_source(self, preparation=None):
-        if preparation is None and any(spec["family"] == "joint_flat"
+        if preparation is None and any(spec["family"] in {"joint_flat", 'source_response'}
                 for candidate in self.graph["selection"]["candidates"] for spec in candidate["expert_programs"]):
             from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
 
@@ -385,7 +385,8 @@ def _load_admitted_selection(admission):
                                            _metadata_admission=admission._metadata_admission,
                                            _joint_source_preparation=admission._joint_source_preparation,
                                            _source_seed_admission=admission._source_seed_admission)
-        if package.record.get("schema") != "n2p3_joint_flat_prefix_inner_replay/1":
+        if package.record.get("schema") not in {
+                "n2p3_joint_flat_prefix_inner_replay/1", 'n2p3_source_response_prefix_replay/1'}:
             package.replay()
         records[node["fit_key"]] = package.record
         if node["fit_key"] == graph["selection"]["final_refit_key"]:
@@ -401,7 +402,8 @@ def _selection_node_manifest(directory, *, expected_record_sha256):
     if directory.is_symlink() or path.is_symlink():
         raise ValueError("selection node manifest path is a symlink")
     payload = json.loads(path.read_bytes())
-    if payload.get("record", {}).get("schema") != "n2p3_joint_flat_prefix_inner_replay/1":
+    if payload.get("record", {}).get("schema") not in {
+            "n2p3_joint_flat_prefix_inner_replay/1", 'n2p3_source_response_prefix_replay/1'}:
         return _manifest(directory, expected_record_sha256=expected_record_sha256)
     record = payload["record"]
     if semantic_sha256(record) != payload["record_sha256"] or payload["record_sha256"] != expected_record_sha256:
@@ -545,7 +547,8 @@ def replay_selection_chunk(requests, *, directory, parent_prefix, prefix_compile
         scope_owner, seed_admission = _PrefixScopeOwner(prefix_compiler), _SourceSeedAdmission()
         joint_source_preparation = _joint_source_preparation
         if joint_source_preparation is None and any(
-                spec["family"] == "joint_flat" for row in records for spec in row["candidate"]["expert_programs"]):
+                spec["family"] in {"joint_flat", 'source_response'}
+                for row in records for spec in row["candidate"]["expert_programs"]):
             from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
 
             joint_source_preparation = FrozenJointFlatSourcePreparation()

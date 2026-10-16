@@ -537,7 +537,7 @@ class JointFlatSourceCatalog:
 def resolve_joint_candidate_sources(expert_programs, source_bindings, catalog, *, target_contract,
         pipeline_pair=None):
     """Resolve just the joint subset; the established NN owner keeps its sources."""
-    joints = tuple(spec for spec in expert_programs if spec.family == "joint_flat")
+    joints = tuple(spec for spec in expert_programs if spec.family in {"joint_flat", 'source_response'})
     specs = {spec.expert_id: spec for spec in joints}
     if len(specs) != len(joints):
         raise ValueError("joint source resolver requires the complete unique expert roster")
@@ -546,6 +546,7 @@ def resolve_joint_candidate_sources(expert_programs, source_bindings, catalog, *
     if any(spec.source_checkpoint_role != SOURCE_ROLE for spec in specs.values()):
         raise ValueError("joint candidate source binding differs from its actual expert family role")
     resolved = {name: catalog.resolve(source_bindings[name], target_contract=target_contract,
-        exclusion_scope=spec.joint_flat.source_exclusion_scope, pipeline_pair=pipeline_pair)
+        exclusion_scope=(spec.source_ref.source_exclusion_scope if spec.family == 'source_response'
+                         else spec.joint_flat.source_exclusion_scope), pipeline_pair=pipeline_pair)
         for name, spec in specs.items()}
     return {name: row.source for name, row in resolved.items()}, {name: row.receipt for name, row in resolved.items()}

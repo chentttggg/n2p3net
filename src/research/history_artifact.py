@@ -229,6 +229,20 @@ def predict_finite_c_history(model, compiler, prefix, view, *, scoring_law=None)
         "scoring_law": selected, "capability": capability.binding, "prediction": prediction, "C_refits": 0, "noise_fits": 0}
 
 
+def source_response_candidate_evidence(parent, expert_id, compiler, prefix, view):
+    """The typed ensemble caller owns source/C identity and history conversion.
+
+    Persistence and prepared replay use source_response_replay and the existing
+    immutable prefix capsule; this caller creates no second posterior or raw copy.
+    """
+    experts = [expert for expert in parent._experts if expert.program.expert_id == expert_id]
+    if (len(experts) != 1 or experts[0].program.family != 'source_response'
+            or parent.participant_key != view.participant_key
+            or semantic_sha256(parent._target_contract) != semantic_sha256(prefix.target_contract)):
+        raise ValueError('source response history caller changed its actual parent, expert or target C authority')
+    return experts[0].score(view, history_context=(compiler, prefix))
+
+
 def finite_c_candidate_evidence(model, compiler, prefix, view, *, expert_id="finite_C_latent", scoring_law=None):
     from models.candidate_evidence import CandidateEvidence, CandidateExpertIdentity
 
