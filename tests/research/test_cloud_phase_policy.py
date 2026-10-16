@@ -52,6 +52,32 @@ def test_target_policy_counts_immutable_interop_in_the_total_cpu_budget():
     assert 4 * phase.cpu_threads + resources["coordinator_cpu_threads"] <= 25
 
 
+def test_explicit_cpu_target_policy_keeps_single_actor_and_parent_schedulable():
+    resources = resolve_source_resources(
+        {"cpu_budget": 3, "source_workers": 1, "target_workers": 1,
+         "target_native_threads_per_worker": 1, "evidence_scope": "software_correctness",
+         "evaluation_design": "independent_prefix", "host_memory_fraction": .85,
+         "source_worker_memory_gib": 2, "target_worker_memory_gib": 2,
+         "shared_staging_memory_gib": .25},
+        1, "cpu", cpu_count=32, free_host_bytes=4 * 2**30,
+    )
+    assert resources["source_workers"] == resources["target_workers"] == 1
+    phase = target_phase_resources(resources, "cpu")
+    ledger = _HostMemoryState(resources)
+    actor = ledger.reserve_phase("calibration", phase.cpu_threads, phase.memory_bytes,
+                                 0, "one-target", False)
+    assert actor is not None
+    ledger.release_phase(actor["token"])
+    # The real ordinary reader and original-input parent use native + one inter-op.
+    parent = ledger.reserve_phase("evaluation", phase.native_threads + 1, phase.memory_bytes,
+                                  0, "original-input-parent", False)
+    assert parent is not None, "the single actor must leave a schedulable original-input parent"
+    ledger.release_phase(parent["token"])
+    assert phase.native_threads == phase.interop_threads == 1
+    assert phase.cpu_threads == 2 and not phase.defer_gpu
+    assert ledger.record()["reserved_cpu_threads"] == resources["coordinator_cpu_threads"] == 1
+
+
 def test_gpu_actor_capacity_is_retained_until_retirement_and_cpu_tasks_remain_ready():
     resources = _resources()
     ledger = _HostMemoryState(resources)

@@ -342,12 +342,13 @@ class PhaseResources:
 
 
 def target_phase_resources(resources, device):
-    """Opt in CUDA targets to an explicit native/inter-op and lazy GPU policy."""
+    """Honor explicit target native/inter-op claims and activate CUDA lazily."""
     native = resources["native_threads_per_worker"]
     target_native = resources.get("target_native_threads_per_worker")
-    if str(device).startswith("cuda") and target_native is not None:
+    if target_native is not None:
         return PhaseResources("calibration", target_native + 1, resources["target_worker_memory_bytes"],
-                              target_native, str(device), interop_threads=1, defer_gpu=True)
+                              target_native, str(device), interop_threads=1,
+                              defer_gpu=str(device).startswith("cuda"))
     return PhaseResources("calibration", native, resources["target_worker_memory_bytes"], native, str(device))
 
 
