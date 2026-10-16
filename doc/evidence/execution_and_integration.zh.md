@@ -28,6 +28,8 @@ B11新OOF1/K68原模型、完整capture与559坐标/32配对概率函数已独�
 
 Generic原fit/capture复用已接通：新caller先证明漏传capture会误触采样，再验证forward/future recorder/selector三路径0新fit/采样、新consumer只做一次组件数学核验，最终单例12.451秒、退出0。五生产文件和新test经root/独审，18引用与9源before/after核回；NN路径保原None。真实H metadata计划保K500、7个OOF和7个future，fixed/forward-temperature/selector共21最终请求，原C500/C0/C68及OOF0/1定位齐全。实际公共DAG等原004进度与source freeze/locator刷新后统一调度，避免重复未完成节点，见[接线接受](../assets/research_resume_20261012/joint_generic_primitive_reuse_20261016.json)。
 
+独立快速λ数值模块已合入d65a618，root格式修正只移除EOF空行，实际4b冻结源与当前3856源AST相同并分列绑定。完整新fast64消费者按原prepared输入完成P32/F32，最大原QR积分差5.24e−10；两worker数值阶段76.800秒、平均1.533核、单worker峰297MB。原数值控制器OS1的partial保持，新writer从64份原结果零积分恢复并OS0/owned0，独审再以stdlib80位重归约。root核135件物理引用，[完整接受](../assets/research_resume_20261012/joint_fast_lambda_20261016.json)已落地。首次失败的展开code副本经193成员归档核验后用cmd逐项清理，原失败/source archive保持。
+
 
 ### 当前工作成果（2026-10-14）
 

@@ -2566,14 +2566,23 @@
       "actual_public_DAG": "not_launched"
     },
     "joint_fast_lambda": {
-      "status": "accepted_single_record_fixed_q_numerical_API",
+      "status": "accepted_numerical_API_and_complete_64_cell_fast_consumer",
       "root_delivery": {
         "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_fast_lambda_20261016.json",
-        "sha256": "1731da12bfed513ae57c1f33b8865ae24ff2195265e64bc0cc76604372a7213f",
-        "bytes": 2873
+        "sha256": "1f59ff7a8de47ff62fd7ada75f3effa0dda10b497da14a692f94dad62675c124",
+        "bytes": 6007
       },
-      "full_new_consumer": "ongoing",
+      "full_new_consumer": "accepted_64_cells_with_original_numeric_and_writer_roles",
       "integration_commit": "d65a618"
+    },
+    "joint_forward_beta": {
+      "status": "accepted_math_and_independent_review_full_optin_implementation_authorized",
+      "root_delivery": {
+        "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_forward_beta_design_20261016.json",
+        "sha256": "8352be22f3a16c0cbff00164d075a90b033ea215b0a04430e0b7d4eb0b34e2e3",
+        "bytes": 3709
+      },
+      "production": "ongoing"
     }
   }
 }

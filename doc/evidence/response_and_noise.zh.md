@@ -29,9 +29,13 @@ B11联合模型已在原Huebner记录的500个授权标签上完成采样。直�
 
 计算保持一个不随λ缩放的proper响应先验β和原physical flat漂移测度。令`m_H,q(λ)`为已积分β/漂移的原QR对数核，`x=logλ`，则`I_H,q=∫exp(((N_H+ν)/2)x−νexp(x)/2+m_H,q(exp(x)))dx`；`N_H`用原scalar Gaussian行数，flat行列式已包含在`m`中。whole law按`π_q I_PT,q`归一，绝对T密度还恢复原P积分与Gaussian/noise常数。该实际输入的64个积分已用保存小根的误差界证明logλ全域严格凹，各有唯一峰；三档容差的log积分逐位相同，最大source误差估计跨度为5.87e−5 nats，两端有解析Gamma质量上界。独立80位聚合与原数组身份均已核回。
 
-快速模块已实现预先消去漂移并分解响应矩阵，让每个λ点只计算标量有理项。single-record/fixed-q数值API经root及独审接受，15个区分性合同覆盖原矩阵/测度、弱/零方向、双峰、能量与source乘积下溢及typed溢出；旧失败与新成功消费者分别绑定，见[模块接受](../assets/research_resume_20261012/joint_fast_lambda_20261016.json)。完整新32候选/64积分消费者继续核实际调用与吞吐，原QR结果只作保存对照。多record扩展继续保持ONE global β，并按正确P边缘分布平均其余record的λ及未定候选；完整公共预测链沿各自新producer验收。
+快速模块已实现预先消去漂移并分解响应矩阵，让每个λ点只计算标量有理项。single-record/fixed-q数值API经root及独审接受，15个区分性合同覆盖原矩阵/测度、弱/零方向、双峰、能量与source乘积下溢及typed溢出；旧失败与新成功消费者分别绑定，见[模块接受](../assets/research_resume_20261012/joint_fast_lambda_20261016.json)。完整新32候选/64积分消费者已核实际调用与吞吐，原QR结果作为保存对照。多record扩展继续保持ONE global β，并按正确P边缘分布平均其余record的λ及未定候选；完整公共预测链沿各自新producer验收。
+
+完整新fast消费者现已接受64/64（P32/F32）：相对原保存QR最大log积分差5.24e−10，whole/fixed归一log概率差≤9.31e−10，原绝对density常数一致。数值阶段观测76.800秒，两个native1 worker实用平均1.533核，单worker峰值297283584B；最终writer零积分恢复耗时1.163秒并退出0。原控制器因JSON布尔写出失败的OS1、partial与全部数值cell保原身份。完整source/128份worker-received结果与80位归约独审均已核回；此计时只描述这批单record数值，不拼接成完整B11耗时倍率。
 
 实际第三条OOF/K136已保存并独立接受：559坐标、32个配对概率函数通过原政策，分子贡献ESS仍为1。总监仅解析三份已完成capture的metadata，确认OOF0/1/2各有一个真实record，q先验支持数分别为`[32]`、`[1,32]`、`[1,1,32]`；过去q已由原C标签固定。因此快速单record积分可在具名核验后扩展到这些非零K前向组，原采样/结果保持各自producer。后续行逐份核该条件，未来多record/未定过去q继续走完整条件设计。
+
+源码及独审还确认：当前C draws只用于P sampler的初始点；实际P law从原source prior与C/P完整likelihood重新构造，同record的C不重复计入。因此具备上述条件的新连续programme可直接由真实earlier-prefix/history权限积分，省去纯初始化用途的C/P抽样。当前依序核OOF1/2对应关系，再按新身份完成7条连续前向概率；旧有限programme继续其原实验。
 
 原shared `/3`保存root也已实现快速严格准入：用小因子见证核验原992维矩阵，误差界9.386e-12低于原3.150e-7政策，保留原root与producer。实际完整source codec加载4.254秒，其中root部分1.130秒；较早同输入加载的457.8秒中，452.3秒集中在该验证。新见证是consumer准入元数据，原模型的概率计算仍消费原矩阵。来源见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
 

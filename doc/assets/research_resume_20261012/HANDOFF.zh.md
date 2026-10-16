@@ -26,8 +26,8 @@ Shared AR实际31导×32点工厂3.814秒、峰值322MiB，误差证书1.6504e-1
 ## 正在推进
 
 - **B11同record完整链：**唯一原source NPZ/29MB codec保持。实际31导C500按原128预热/128draw×2链完成，622坐标独立重算满足原1.2/5/5政策。attempt003首个K0 OOF完整capture保原OS15与随后owned0，attempt004零重复采样复用原C500/OOF0并继续；OOF0/1/2已保存并逐行独审通过原政策。OOF0/2的A贡献ESS=1，OOF1约1.5；其余OOF/future、capsule/parent/wholegraph沿原实际程序继续，原history refusal完整保留。当前进入K204后续P/组件，科学PID27176/birth1792139035.673306已root实核活跃；科学状态以原实际log/新row为准。等价QR与私有verified-components缓存已集成`eee72b3`，004活体仍用自身冻结源码。
-- **B11连续积分已接受：**独立单record/K0/current-only的32q/64个P/PT积分完成，三角色OS0/owned0、0新fit/MCMC；source误差估计跨度≤5.87e−5nats、解析Gamma尾界、全域严格凹/唯一峰及80位聚合均独审通过。winner仍12、runner由13变4，最大pair logodds变化73.9175，absolute logdensity增加950.4577。root核75项保存SHA，[集中接受](joint_predictive_evidence_20261016.json)与[科学读数](../../evidence/response_and_noise.zh.md)已落地。`shared_ar_review`继续快速核；早期原型两项极端尺度反例与F积分分段消息保留，修复和独审通过后再生产接受。generic原fit/capture ABI已完成当前源码/单caller接受，21请求实际DAG尚未启动，不重跑旧32q或004活体。
-- **B00/B03高置信风险：**原C500授权内前两条OOF真答案分别9/24，预测12/11，NLL409.5816/610.5583，top概率均舍入1；首条连续积分真NLL470.3023。root已读原marker/两row的提取逻辑并核保存来源。[两条读数](joint_predictive_evidence_20261016.json)保2/7范围，`bi_continuation_review`独立审含uniform锚点的forward温度/ε新programme，先数学/反例/调用链，不改当前完整矩阵或以future选默认。
+- **B11连续积分已接受：**独立单record/K0/current-only的32q/64个P/PT积分完成，source/尾界/全域唯一峰及80位归约已独审；winner12、runner由13变4，最大pair logodds变化73.9175，absolute logdensity增加950.4577。[原连续law接受](joint_predictive_evidence_20261016.json)保持。新fast数值模块已集成d65a618/2f39663；完整fast64以76.800秒数值阶段完成，原QR最大积分差5.24e−10。原数值controllerOS1与新零积分writerOS0分列，[完整接受](joint_fast_lambda_20261016.json)经135引用核回。`shared_ar_review`现在推进依法发行的新7条连续OOF，OOF0复用，先核现OOF1/2；不重做旧QR/源拟合，不改004。generic21请求实际DAG仍按原进度统一调度。
+- **B00/B03高置信风险：**原C500授权内前两条OOF真答案9/24、预测12/11，NLL409.5816/610.5583；首条连续积分真NLL470.3023。[两条读数](joint_predictive_evidence_20261016.json)保2/7范围。显式prior的ε-only完整Beta后验设计已独审通过并由root授权完整生产纵向；新ABI为forward_beta_uniform/beta_uniform_prior、独立beta_calibration/beta_oof_record、旧温度fixed和旧base身份保持。bi owner持数学/ensemble/fitter，source owner持generic/selection/replay/parent，joint_review独审。合同在tmp/JOINT_FORWARD_PROBABILITY_CALIBRATION/IMPLEMENTATION_CONTRACT.md，[设计接受](joint_forward_beta_design_20261016.json)已保存。无默认prior/晋升策略更改，不拿future选默认。
 - **快速核适用范围已核：**root只解三份已完成capture的metadata，OOF0/1/2均一个真record，q prior支持为[32]/[1,32]/[1,1,32]，过去q已固定，具备单record/current-only连续积分前提。新快速模块接受后可按每行实际权限构建独立连续programme，0重P采样；未来2record/过去未定q另保完整条件积分。直观图为稳定交付目录的`lambda_support.png`，原实际端点/source manifest已绑定。
 - **BI原MAT01/57已接受：**01为108格、74目标fit/204更新；57为90格、59目标fit/168更新，42概率/48不可用。两个原三图内部重放和新parent/capsule/负例分别保存实际producer。57原OS1是列表/元组比较，`0a7def6`仅修该语义；新consumer与capsule均exit0/owned0，resident0→106496740→0B，0新fit/0重复旧内部重放。root已核22项交付引用，读数见[公共评估](../../evidence/public_evaluation.zh.md)，完整60epoch公共矩阵沿原队列执行。
 - **大图元数据：**01 K950原2056864994B图已自然转换并fresh load为47161151B，保90节点/24scope及原logical SHA；真实峰RSS797597696B，wall214.87秒。实际Manager预留1378000596B并完整归还，0 EEG/PT/模型打开、fit或数字replay。独审P2发布后receipt读取异常释放已以最小修复及两个真实Manager反例关闭，实际a904执行源码与最终b28修后源码分别保存。四个可重建token cache已按cmd逐项删除，释放340545788B；原大图/模型保原址。
@@ -55,6 +55,6 @@ Shared AR实际31导×32点工厂3.814秒、峰值322MiB，误差证书1.6504e-1
 
 1. 连接恢复后由云owner落地S4完整304/8parent final gate及原exit，然后直接继续已授权后五阶段；S5代码已接受。
 2. BI01/57开发链与紧凑图已接受；保原模型/失败/全部requested，接完整配方公共比较。
-3. B11保原C500/OOF0和新OOF1，消费者缓存已集成；连续λ32q已接受，推进快速核和条件多record扩展，并继续原OOF/future矩阵。
+3. B11保原C500和OOF0/1/2；fast64已完整接受，推进新single-record连续7条前向概率和条件多record设计，原有限矩阵继续。joint_flat另持root collapsed文件做P-only等价memo，不改004。
 4. typed数值/ensemble、graph/refusal、generic routing及真实H原数组准入已接受当前切片；下一步接真正generic公共DAG与完整coverage，各source/consumer保持独立身份。
 5. 按roadmap推进余下B00–B14，集成前核数学、调用链与针对性反例，更新本交接和四主题页。

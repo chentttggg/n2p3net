@@ -1,6 +1,6 @@
 {
   "schema": "n2p3_single_record_fast_lambda_root_acceptance/1",
-  "status": "accepted_single_record_fixed_q_numerical_API",
+  "status": "accepted_numerical_API_and_complete_64_cell_fast_consumer",
   "receipts": {
     "RUNTIME_BINDING.json": {
       "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/fast-kernel/RUNTIME_BINDING.json",
@@ -35,7 +35,7 @@
   "old_bitexact_capture_ABI_changed": false,
   "record_or_label_authority_granted": false,
   "multi_record_joint_integration": "separate_conditional_design",
-  "actual_new_full_32_candidate_consumer": "ongoing_in_separate_frozen_namespace",
+  "actual_new_full_32_candidate_consumer": "accepted_completed_numeric_plus_zero_integral_writer_composition",
   "root_numeric_replays_or_fits": 0,
   "point_error_scope": "source_backward_estimates_and_scalar_numerical_estimates_with_analytic_outer_tails",
   "integration_format_delta": {
@@ -43,5 +43,64 @@
     "current_module_sha256": "3856e55200778af02d37bb6d906896c956b339049cd0f386e6e43cde693fa318",
     "AST_identical": true,
     "change": "remove one extra trailing newline; accepted frozen execution source retained"
+  },
+  "full_consumer": {
+    "result": {
+      "path": "D:/BCI/artifacts/base-matrix-20261014/fast-lambda-continuous/full002-finalized/result.json",
+      "sha256": "86ce368e2aff525211dbdc4cd75377748c4c198f623991b61b7e941fbb183af2",
+      "bytes": 29663
+    },
+    "terminal": {
+      "path": "D:/BCI/artifacts/base-matrix-20261014/fast-lambda-continuous/full002-finalized/terminal.receipt.json",
+      "sha256": "6651b7d1bc60746c96f7f145d13b83793ae98fa4c61be61f394074f3f4915bb2",
+      "bytes": 2119
+    },
+    "review_receipts": {
+      "FAST_LAMBDA_FULL_CONSUMER_REDUCTION_REVIEW_20261016.json": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/fast-kernel/FAST_LAMBDA_FULL_CONSUMER_REDUCTION_REVIEW_20261016.json",
+        "sha256": "c7ad2002f1bc0d1c6aa6c663debdf8ad420e279c54aebe8325fa6614918a27ed",
+        "bytes": 25629
+      },
+      "FAST_LAMBDA_FULL_CONSUMER_REDUCTION_REVIEW_20261016.py": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/fast-kernel/FAST_LAMBDA_FULL_CONSUMER_REDUCTION_REVIEW_20261016.py",
+        "sha256": "8902def1f8dab59c0dad2afdef6845bdb15568560c6178f048619efaf324b874",
+        "bytes": 12516
+      },
+      "FAST_LAMBDA_FULL_CONSUMER_FINAL_REVIEW_20261016.md": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/fast-kernel/FAST_LAMBDA_FULL_CONSUMER_FINAL_REVIEW_20261016.md",
+        "sha256": "1d35f3d2e5d24f1cce51d23dc189c83ef538f46993527af9316a10457d56ca38",
+        "bytes": 5050
+      },
+      "HANDOFF.md": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/fast-kernel/HANDOFF.md",
+        "sha256": "fad53374d2f521411611c3ea00af71ca5ee2f4eb31af847aa2f64d12f418f888",
+        "bytes": 14532
+      }
+    },
+    "source_inputs_sha256": {
+      "prepared.json": "3bbab318215aaf965fe6af70efa55298f57a405899ff01ad1f5ca8d919a6f7c9",
+      "prepared.npz": "978d59d4b682829647dbf79de64a7ada2c824f2533eee719926fecf80582266a",
+      "result.json": "3cd2d6bdbc6ac56431312506f4c1278139f75dd6fc0acb51e888bb9f0cf2e487"
+    },
+    "requested_cells": 64,
+    "P_count": 32,
+    "F_count": 32,
+    "original_numeric_controller_exit": 1,
+    "zero_integral_writer_exit": 0,
+    "new_writer_integrals": 0,
+    "old_QR_integrals_recomputed": 0,
+    "source_or_target_fits": 0,
+    "MCMC_calls": 0,
+    "max_phase_logI_delta": 5.238689482212067e-10,
+    "max_whole_log_probability_delta": 9.313225746154785e-10,
+    "max_fixed_prior_log_probability_delta": 9.313225746154785e-10,
+    "absolute_tail_log_density": 6635691.106188277,
+    "max_integrated_source_span_nats": 0.0006906356429681182,
+    "numeric_observed_span_seconds": 76.7995913028717,
+    "span_definition": "process creation to final partial-file write; includes import/spawn; excludes exception traceback exit tail",
+    "actual_average_worker_cores": 1.5328043808951655,
+    "worker_peak_RSS_bytes_max": 297283584,
+    "writer_wall_seconds": 1.1633881000016117,
+    "root_verified_artifact_hashes": 135
   }
 }

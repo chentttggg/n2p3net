@@ -1,0 +1,68 @@
+{
+  "schema": "n2p3_joint_forward_beta_design_root_acceptance/1",
+  "status": "accepted_math_and_independent_review_full_optin_implementation_authorized",
+  "artifacts": {
+    "HANDOFF.md": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/HANDOFF.md",
+      "sha256": "d61571aa61fd5a7fa09b13899f6d0ea3443f12acc8587e9b980d1083f1d0a323",
+      "bytes": 18970
+    },
+    "prototype.py": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/prototype.py",
+      "sha256": "b1a42aa152da0f57d0644315f35758ed2b8024ecc4b27a2ed33480345db8ec00",
+      "bytes": 29589
+    },
+    "evidence_audit.json": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/evidence_audit.json",
+      "sha256": "be6076209140d0522528bb986d0d62ffc21146c2417fbed1f881eeaf6b3ccd89",
+      "bytes": 15940
+    },
+    "mathematical_checks.json": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/mathematical_checks.json",
+      "sha256": "393937a7550b7ed540eb888c99849d309d02c44b4f4eb56da9b416322eb21eb4",
+      "bytes": 9940
+    },
+    "independent_review.md": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/independent_review.md",
+      "sha256": "58a5bca414344b58ee725c73e6fed67a6de3f3403e7703c278b0775edd35da38",
+      "bytes": 9803
+    },
+    "independent_math.py": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/independent_math.py",
+      "sha256": "a6c28370c2083d0ad783f2dddfdb74b8e6fc4349387573612161c9f71576c42b",
+      "bytes": 10735
+    },
+    "independent_math.json": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/independent_math.json",
+      "sha256": "6ebd07859714c6abcfda7f2a950d80015df8f84ca4407e6d586f9a5678eaad7f",
+      "bytes": 6423
+    },
+    "independent_binding.json": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/independent_binding.json",
+      "sha256": "34b318610fd5a7da50a073b703c4308cf0847595cadded821c5bd4f83b3201a4",
+      "bytes": 1443
+    },
+    "design_binding.json": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/design_binding.json",
+      "sha256": "4def653ca322436d3d3f87b8c73e9ceb4bfe7deac88dd54ef4a5c08191b581ad",
+      "bytes": 3522
+    },
+    "IMPLEMENTATION_CONTRACT.md": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/IMPLEMENTATION_CONTRACT.md",
+      "sha256": "b4800bf4f60d924eaf1bacffaa892d353a24b74797fb4f7bb34dc3edd3706278",
+      "bytes": 5917
+    }
+  },
+  "root_review": "Read exact positive normalized Beta-mixture recursion, causal shared-training likelihood and leakage counterexample, one-selection likelihood count, proper-prior-once/full posterior/zero branches, evidence and uniform risk bounds, real CandidateEvidence tie/promotion counterexample, source/marker prefix scope, and complete nested/capsule/parent implementation contract.",
+  "implementation_strategy": "forward_beta_uniform",
+  "required_explicit_prior": "beta_uniform_prior={a,b}",
+  "new_default_prior": null,
+  "first_scope": "one_joint_expert_without_temperature_subset",
+  "true_empty_roster": "prior_only",
+  "nonempty_incomplete_roster": "typed_unavailable_with_full_requested_ledger",
+  "old_sampling_defaults_tie_and_promotion_policy_changed": false,
+  "source_target_fits_samplers_or_EEG_decodes_in_design": 0,
+  "design_completed_rows": 2,
+  "full_programme_requested_OOF_rows": 7,
+  "production_implementation": "ongoing_with_separate_probability_and_pipeline_owners"
+}
