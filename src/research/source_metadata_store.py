@@ -309,30 +309,39 @@ def admit_source_dependencies(descriptor, directory, *, store=None, admission=No
     return owner
 
 
-def collect_source_dependencies(directory, package_directories):
-    """Seal the complete numerical-package dependency union in its parent."""
+def collect_source_dependencies(directory, package_directories, *, include_joint_prefixes=False):
+    """Collect numerical dependencies, optionally including sealed joint transport.
+
+    Numerical/source loaders keep the default and independently verify typed
+    transport references. Whole-package export and parent closures explicitly
+    include joint prefix descriptors, including packages without an ensemble.
+    """
     import json
 
     from research.contracts import semantic_sha256
 
     references, store = {}, None
-    for package in package_directories:
-        path = Path(package) / "ensemble.json"
-        if not path.exists():
-            continue
-        payload = json.loads(path.read_bytes())
-        record = payload["record"]
-        if payload["record_sha256"] != semantic_sha256(record):
-            raise ValueError("source closure collection requires the actual sealed numerical package")
-        descriptor = record.get("source_metadata")
-        if descriptor is None:
-            continue
-        current = SourceMetadataStore(Path(package) / descriptor["directory"])
-        if store is not None and current.directory != store.directory:
-            raise ValueError("one package closure must use one actual complete source store")
-        store = current
-        for reference in descriptor["references"]:
-            references[semantic_sha256(reference)] = reference
+    manifests = ("ensemble.json", "prefix_inner_replay.json") if include_joint_prefixes else ("ensemble.json",)
+    for package in dict.fromkeys(Path(package) for package in package_directories):
+        for name in manifests:
+            path = package / name
+            if not path.exists():
+                continue
+            payload = json.loads(path.read_bytes())
+            record = payload["record"]
+            if name == "prefix_inner_replay.json" and record.get("schema") != "n2p3_joint_flat_prefix_inner_replay/1":
+                continue
+            if payload["record_sha256"] != semantic_sha256(record):
+                raise ValueError("source closure collection requires the actual sealed package")
+            descriptor = record.get("source_metadata")
+            if descriptor is None:
+                continue
+            current = SourceMetadataStore(package / descriptor["directory"])
+            if store is not None and current.directory != store.directory:
+                raise ValueError("one package closure must use one actual complete source store")
+            store = current
+            for reference in descriptor["references"]:
+                references[semantic_sha256(reference)] = reference
     return None if not references else source_dependency_descriptor(directory, store, references.values())
 
 
@@ -350,8 +359,9 @@ def export_source_package_closure(directory, destination):
     directory, destination = Path(directory).resolve(), Path(destination).resolve()
     if destination.is_relative_to(directory):
         raise ValueError("source closure export must have an independent destination")
-    packages = [path.parent for path in directory.rglob("ensemble.json")]
-    descriptor = collect_source_dependencies(directory, packages)
+    packages = {path.parent for name in ("ensemble.json", "prefix_inner_replay.json")
+                for path in directory.rglob(name)}
+    descriptor = collect_source_dependencies(directory, packages, include_joint_prefixes=True)
     roots = [directory]
     if descriptor is not None:
         roots.append((directory / descriptor["directory"]).resolve())
