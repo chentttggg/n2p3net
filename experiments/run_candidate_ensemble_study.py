@@ -1257,6 +1257,20 @@ def _prefix_replay_participant_anchor(task, plan, source, consumer_source, autho
     return replay
 
 
+def _validate_nested_prefix_prediction(prediction, evidence, selection_packages, output_name):
+    """Match a saved prediction to its independently replayed selection output."""
+    package = prediction.get("selection_package")
+    selected = selection_packages.get(package)
+    expected_package = f"source{prediction['source_seed']}_target{prediction['seed']}_K{prediction['K']}_selection"
+    if (package != expected_package or selected is None
+            or prediction.get("prefix_selection_graph_sha256") != selected["graph_sha256"]
+            or semantic_sha256(prediction.get("selected_candidate")) != semantic_sha256(selected["selection"]["selected_candidate"])
+            or semantic_sha256(evidence.record()) != semantic_sha256(selected["future"].get(evidence.decision_id))
+            or prediction["mixture"] != output_name
+            or prediction.get("saved_replay_exact") is not True):
+        raise ValueError("nested prefix prediction differs from actual loaded graph/expert probability programme")
+
+
 def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshots=None, replay_admission=None):
     """One numerical ingress for both complete and native-interrupted actors."""
     authority = _candidate_participant_authority(task, outcome, plan, source)
@@ -1490,16 +1504,8 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
                 or dict(zip(evidence.candidate_vocabulary, evidence.expected_event_counts, strict=True)) != coverage[key]):
             raise ValueError("candidate prediction differs from its prefit request or score source")
         if strategy == "nested_selection":
-            package = prediction.get("selection_package")
-            selected = selection_packages.get(package)
-            expected_package = f"source{prediction['source_seed']}_target{prediction['seed']}_K{prediction['K']}_selection"
-            if (package != expected_package or selected is None
-                    or prediction.get("prefix_selection_graph_sha256") != selected["graph_sha256"]
-                    or semantic_sha256(prediction.get("selected_candidate")) != semantic_sha256(selected["selection"]["selected_candidate"])
-                    or semantic_sha256(evidence.record()) != semantic_sha256(selected["future"].get(evidence.decision_id))
-                    or prediction["mixture"] != plan["prefix_selection"]["output_name"]
-                    or prediction.get("saved_replay_exact") is not True):
-                raise ValueError("nested prefix prediction differs from actual loaded graph/expert probability programme")
+            _validate_nested_prefix_prediction(prediction, evidence, selection_packages,
+                                               plan["prefix_selection"]["output_name"])
             identities.add(identity)
             prediction_by_identity[identity] = prediction
             continue
