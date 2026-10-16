@@ -2053,6 +2053,14 @@ class StructuredGaussianMarginalPair:
 
 
 @dataclass(frozen=True)
+class StructuredGaussianWholeIncrement:
+    """Ordinary full suffix density under one normalized actual C posterior."""
+
+    log_marginal: float
+    resolution: dict
+
+
+@dataclass(frozen=True)
 class GaussianQRPosteriorState:
     """Normalized joint proper/identified-flat posterior in its producer chart.
 
@@ -2377,31 +2385,9 @@ class StructuredGaussianMarginalProgram:
         n, cut, channels = len(self.samples), state.calibration_samples, self.samples.shape[1]
         if type(conditioning_samples) is not int or not cut < conditioning_samples < n:
             raise ValueError("future conditioning must follow C and leave an observed score tail")
-        if (self._raw_digest(design, cut)
-                != state.raw_prefix_digest or self._chart_digest()
-                != state.chart_digest or self._noise_digest() != state.noise_digest):
-            raise ValueError("continuation differs from actual C operands or its saved physical chart")
-        matrix, response, matrix_error, response_error = self._posterior_operands(design, design_source_error=design_source_error)
-        start, prefix_rows = cut*channels, (conditioning_samples-cut)*channels
-        matrix, response = matrix[start:], response[start:]
-        inverse = solve_triangular(state.precision_root, np.eye(len(state.precision_root)))
-        inverse_bound, inverse_norm = _inverse_root_geometry(state.precision_root)
-        mean = state.mean
-        image, centered = matrix@inverse, response-matrix@mean
-        # The loaded R/c define the component law. Solve/multiply errors are
-        # propagated through that law; C likelihood error enters mixture weights.
-        solve_error = float(np.linalg.norm(state.precision_root@mean-state.precision_response))
-        solve_error += _roundoff_gamma(len(mean))*float(np.linalg.norm(
-            np.abs(state.precision_root)@np.abs(mean)))
-        mean_error = inverse_norm*solve_error
-        columns = matrix_error.prefix_columns+matrix_error.tail_columns
-        source_columns = columns@inverse_bound
-        source_columns += _column_norms(_roundoff_gamma(len(mean))*(np.abs(matrix)@np.abs(inverse)))
-        source_columns += _column_norms(np.abs(matrix)@(inverse_bound-np.abs(inverse)))
-        data_error = response_error.prefix+response_error.tail+float(columns@np.abs(mean))
-        data_error += float(np.linalg.norm(matrix, ord=2))*mean_error
-        data_error += float(np.linalg.norm(_roundoff_gamma(len(mean)+1)*(
-            np.abs(response)+np.abs(matrix)@np.abs(mean))))
+        image, centered, source_columns, data_error = self._continued_operands(
+            design, state, design_source_error=design_source_error)
+        prefix_rows = (conditioning_samples-cut)*channels
         segment = _SegmentError(float(np.linalg.norm(source_columns)), float(np.linalg.norm(source_columns)),
                                  source_columns, source_columns)
         response_segment = _SegmentError(data_error, data_error)
@@ -2433,17 +2419,8 @@ class StructuredGaussianMarginalProgram:
             normalizer_error=normalizer_error, normalizer_magnitude=abs(normalizer))
         values, certificates = [], []
         for stop in (prefix_rows, len(centered)):
-            rhs, root, q, _ = _posterior_qr(image[:stop], centered[:stop], prior)
-            logwhite = (self._logwhite(cut+stop//channels)
-                        -self._logwhite(cut))
-            logwhite_error = (self._logwhite_error(cut+stop//channels)
-                +self._logwhite_error(cut)
-                +_roundoff_gamma(1)*(abs(self._logwhite(cut+stop//channels))
-                                     +abs(self._logwhite(cut))))
-            value, certificate = _absolute_marginal_resolution(image[:stop], centered[:stop],
-                prior, q, root, rhs, source_columns, data_error,
-                normalizer_error=logwhite_error+_roundoff_gamma(3)*stop*abs(float(np.log(2*np.pi))),
-                normalizer_magnitude=logwhite, coordinate_logabsdet=0.)
+            value, certificate = self._full_increment_potential(image[:stop], centered[:stop],
+                source_columns, data_error, calibration_samples=cut)
             values.append(value)
             certificates.append(certificate)
         density = -.5*(quadratic+logdet+normalizer)
@@ -2453,6 +2430,71 @@ class StructuredGaussianMarginalProgram:
              "measure": "normalized_actual_C_joint_posterior_ordinary_increment_density",
              "C_rows_reused_in_update": 0, "new_flat_dimensions": 0,
              "sample_mean_provided": False}, None, None)
+
+    def _continued_operands(self, design, state, *, design_source_error=None):
+        """Standardize the saved normalized C law and use only white suffix rows."""
+        if not isinstance(state, GaussianQRPosteriorState):
+            raise TypeError("continuation requires its actual saved C joint QR state")
+        cut, channels = state.calibration_samples, self.samples.shape[1]
+        if not cut < len(self.samples):
+            raise ValueError("ordinary continuation must leave actual observations after C")
+        if (self._raw_digest(design, cut)
+                != state.raw_prefix_digest or self._chart_digest()
+                != state.chart_digest or self._noise_digest() != state.noise_digest):
+            raise ValueError("continuation differs from actual C operands or its saved physical chart")
+        matrix, response, matrix_error, response_error = self._posterior_operands(design, design_source_error=design_source_error)
+        start = cut*channels
+        matrix, response = matrix[start:], response[start:]
+        inverse = solve_triangular(state.precision_root, np.eye(len(state.precision_root)))
+        inverse_bound, inverse_norm = _inverse_root_geometry(state.precision_root)
+        mean = state.mean
+        image, centered = matrix@inverse, response-matrix@mean
+        # The loaded R/c define the component law. Solve/multiply errors are
+        # propagated through that law; C likelihood error enters mixture weights.
+        solve_error = float(np.linalg.norm(state.precision_root@mean-state.precision_response))
+        solve_error += _roundoff_gamma(len(mean))*float(np.linalg.norm(
+            np.abs(state.precision_root)@np.abs(mean)))
+        mean_error = inverse_norm*solve_error
+        columns = matrix_error.prefix_columns+matrix_error.tail_columns
+        source_columns = columns@inverse_bound
+        source_columns += _column_norms(_roundoff_gamma(len(mean))*(np.abs(matrix)@np.abs(inverse)))
+        source_columns += _column_norms(np.abs(matrix)@(inverse_bound-np.abs(inverse)))
+        data_error = response_error.prefix+response_error.tail+float(columns@np.abs(mean))
+        data_error += float(np.linalg.norm(matrix, ord=2))*mean_error
+        data_error += float(np.linalg.norm(_roundoff_gamma(len(mean)+1)*(
+            np.abs(response)+np.abs(matrix)@np.abs(mean))))
+        return image, centered, source_columns, data_error
+
+    def _full_increment_potential(self, image, centered, source_columns, data_error, *, calibration_samples):
+        channels = self.samples.shape[1]
+        prior = np.eye(image.shape[1])
+        rhs, root, q, _ = _posterior_qr(image, centered, prior)
+        stop = len(centered)
+        final = calibration_samples+stop//channels
+        logwhite = self._logwhite(final)-self._logwhite(calibration_samples)
+        logwhite_error = (self._logwhite_error(final)+self._logwhite_error(calibration_samples)
+            +_roundoff_gamma(1)*(abs(self._logwhite(final))+abs(self._logwhite(calibration_samples))))
+        return _absolute_marginal_resolution(image, centered, prior, q, root, rhs,
+            source_columns, data_error,
+            normalizer_error=logwhite_error+_roundoff_gamma(3)*stop*abs(float(np.log(2*np.pi))),
+            normalizer_magnitude=logwhite, coordinate_logabsdet=0.)
+
+    def whole_increment(self, design, state, *, design_source_error=None):
+        """Integrate the complete F/C suffix without requiring a P/T ratio.
+
+        The normalized C posterior supplies one proper law. Its change to unit
+        coordinates already cancels the saved C precision determinant; no new
+        flat measure, source prior or C likelihood is introduced.
+        """
+        image, centered, columns, data_error = self._continued_operands(
+            design, state, design_source_error=design_source_error)
+        value, certificate = self._full_increment_potential(image, centered, columns,
+            data_error, calibration_samples=state.calibration_samples)
+        return StructuredGaussianWholeIncrement(value, freeze_metadata({"full": certificate,
+             "source_sha256": _IMPLEMENTATION_SHA256,
+             "measure": "normalized_actual_C_joint_posterior_ordinary_full_increment_density",
+             "C_rows_reused_in_update": 0, "new_flat_dimensions": 0,
+             "actual_increment_scalar_rows": len(centered)}))
 
     def evaluate(self, design, *, absolute_marginals=True, design_source_error=None, conditioning_samples=None):
         design = _array(design, "complete state design", 2)
