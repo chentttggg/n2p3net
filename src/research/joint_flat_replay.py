@@ -269,12 +269,111 @@ def _load_capture(path):
     return result
 
 
+def bind_completed_joint_primitive_locators(declarations, *, base_directory):
+    """Keep original primitive locators when a CLI plan is bound elsewhere."""
+    def bound(receipt):
+        return {**receipt, 'path': str((Path(base_directory) / receipt['path']).resolve())}
+    return {participant: {
+        'models': [{**row, 'ensemble': bound(row['ensemble'])} for row in declaration['models']],
+        'captures': [{**row, 'capture': bound(row['capture']), 'forward_row': bound(row['forward_row'])}
+                     for row in declaration['captures']]}
+        for participant, declaration in declarations.items()}
+
+
+def load_completed_joint_primitives(declaration, *, views, expert_programs, source_checkpoints,
+                                    prefix_fit_cache, history_captures, source_preparation, context):
+    """Join declared original C/P files to this live source/input issuer.
+
+    Saved bytes locate original producers. Current prefix/history authority and
+    the first captured score still use their existing numerical admission.
+    """
+    from transfer.ensemble_fit import _calibration_expert_fit_digest
+
+    def content(receipt):
+        path = Path(receipt['path'])
+        payload = path.read_bytes()
+        if len(payload) != receipt['bytes'] or hashlib.sha256(payload).hexdigest() != receipt['sha256']:
+            raise ValueError('completed joint primitive differs from its declared original bytes')
+        return path, payload
+
+    declared = {spec.expert_id: spec for spec in expert_programs if spec.family == 'joint_flat'}
+    models, model_rows = {}, []
+    for row in declaration['models']:
+        path, payload = content(row['ensemble'])
+        if path.name != 'ensemble.json':
+            raise ValueError('completed joint C primitive requires its original ensemble record')
+        fitted = FittedEnsemble._load_content(path.parent, payload, _joint_source_preparation=source_preparation)
+        prefix = views.prefix_compiler.compile(row['K'])
+        specs = tuple(expert.program for expert in fitted._experts)
+        if (fitted.temperature_record['strategy'] != 'fixed' or fitted.oof_probability_record is not None
+                or fitted.pool_oof_record is not None or not fitted.fit_available
+                or any(spec.family != 'joint_flat' or spec.expert_id not in declared
+                    or semantic_sha256(spec.record()) != semantic_sha256(declared[spec.expert_id].record()) for spec in specs)):
+            raise ValueError('completed joint C primitive must be its declared uncalibrated original programme')
+        sources = {spec.expert_id: source_checkpoints[spec.expert_id] for spec in specs}
+        primitive_context = {**context, 'requested_Ks': [prefix.budget],
+            'requested_to_actual_K': {str(prefix.budget): prefix.budget}}
+        _check_joint_authority(_authority_record(prefix, specs, fitted.scorer.program, sources,
+            primitive_context), {'fixed': fitted})
+        for expert in fitted._experts:
+            key = _calibration_expert_fit_digest(expert.program, prefix.record(), sources[expert.program.expert_id].digest)
+            if key != expert.fit_digest:
+                raise ValueError('completed joint C primitive changed its actual input/source fit key')
+            old = prefix_fit_cache.get(key)
+            if old is not None and old.model_digest != expert.model_digest:
+                raise ValueError('completed joint C declarations conflict for one actual fit')
+            prefix_fit_cache[key] = expert
+            model_key = prefix.budget, expert.program.expert_id
+            if model_key in models:
+                raise ValueError('completed joint C declarations repeat one original prefix/expert')
+            models[model_key] = expert
+            model_rows.append({'K': prefix.budget, 'expert_id': expert.program.expert_id,
+                'ensemble': row['ensemble'], 'fit_digest': key, 'model_sha256': expert.model_digest,
+                'original_numeric_producer': expert.predictor.provenance['numeric_producer']})
+    actual_views = {view.record_id: view for view in views.decisions}
+    for prefix in views.calibration.values():
+        actual_views.update((group.view.record_id, group.view) for group in prefix.complete_groups)
+    capture_rows = []
+    for row in declaration['captures']:
+        _, payload = content(row['capture'])
+        _, raw_row = content(row['forward_row'])
+        original = json.loads(raw_row)
+        expert = models[row['K'], row['expert_id']]
+        view = actual_views[row['held_record_id']]
+        prefix = views.prefix_compiler.compile(row['K'])
+        capture = _load_capture(io.BytesIO(payload))
+        stop = int(view.onsets[0]) + view.raw_scope[0] + expert.program.joint_flat.conditioning_samples
+        capability = views.prefix_compiler.record_read_scope(view, prefix=prefix, conditioning_stop=stop)
+        expert.predictor.validate_history_permission(view, capability)
+        saved = original['original_prediction_captures'][expert.program.expert_id]
+        if (original['status'] != 'scored' or original['earlier_actual_K'] != prefix.budget
+                or original['held_record_id'] != view.record_id
+                or original['expert_fit_digests'][expert.program.expert_id] != expert.fit_digest
+                or saved['capability_sha256'] != capability.digest
+                or saved['captured_P_measure_sha256'] != capture.digest
+                or capture.binding['input']['model_sha256'] != expert.model_digest
+                or capture.binding['input']['source_sha256'] != source_checkpoints[expert.program.expert_id].digest
+                or semantic_sha256(capture.binding['input']['history_capability']) != semantic_sha256(capability.binding)):
+            raise ValueError('completed joint P primitive changed its original C/model/history/held authority')
+        key = expert.model_digest, view.raw_input_digest, view.physical_support_digest
+        if key in history_captures and history_captures[key].digest != capture.digest:
+            raise ValueError('completed joint P declarations conflict for one actual model/history')
+        history_captures[key] = capture
+        capture_rows.append({'K': prefix.budget, 'expert_id': expert.program.expert_id,
+            'held_record_id': view.record_id, 'capture': row['capture'], 'forward_row': row['forward_row'],
+            'capture_sha256': capture.digest, 'capability_sha256': capability.digest,
+            'original_numeric_producer': capture.binding['input']['numeric_producer']})
+    return {'models': model_rows, 'captures': capture_rows,
+        'captured_components_admission': 'original_score_history_recomputes_and_checks_first_use_in_each_consumer'}
+
+
 class JointFlatReplayRecorder(InnerReplayRecorder):
     """Original fit call sink; no reconstruction of a numerical producer."""
-    def __init__(self):
+    def __init__(self, *, history_captures=None):
         super().__init__()
         self.joint_oof = []
         self.joint_future = []
+        self.history_captures = {} if history_captures is None else history_captures
 
     def record_joint_forward_oof(self, *, earlier, held, fitted, row, context, actual_captures, issued_capabilities,
                                  issued_refusals=None):
@@ -286,8 +385,14 @@ class JointFlatReplayRecorder(InnerReplayRecorder):
 
     def score_future(self, programs, view, *, compiler, prefix):
         captures, issued, refusals = {}, {}, {}
+        first = next((model for model in programs.values() if isinstance(model, FittedEnsemble)), None)
+        by_name = {} if first is None else {expert.program.expert_id: expert for expert in first._experts}
+        restored = {name: self.history_captures[key] for name, expert in by_name.items()
+            if (key := (expert.model_digest, view.raw_input_digest, view.physical_support_digest)) in self.history_captures}
         def remember(name, capability, capture):
             captures[name] = (capability, capture)
+            self.history_captures[(by_name[name].model_digest, view.raw_input_digest,
+                view.physical_support_digest)] = capture
         def remember_permission(name, capability):
             issued[name] = capability
         def remember_refusal(name, refusal):
@@ -297,7 +402,8 @@ class JointFlatReplayRecorder(InnerReplayRecorder):
         specs = self.prefix_fit_declaration['expert_programs']
         scored = _score_programs(programs, view, prefix=prefix, specs=specs,
             history_context=(compiler, prefix), history_recorder=remember,
-            history_capability_recorder=remember_permission, history_refusal_recorder=remember_refusal)
+            history_capability_recorder=remember_permission, history_refusal_recorder=remember_refusal,
+            captured_histories=restored or None)
         for strategy, evidence in scored.items():
             self.record_prefix_future_score(strategy, view=view, evidence=evidence)
         record = {'view': view, 'captures': captures, 'issued_capabilities': issued,

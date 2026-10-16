@@ -77,6 +77,11 @@ def _original_bound_plan(request, run):
     if expected.get("joint_source_catalog"):
         expected["joint_source_catalog"] = [{**entry, "path": str((parent / entry["path"]).resolve())}
                                             for entry in expected["joint_source_catalog"]]
+    if expected.get("joint_completed_primitives"):
+        from research.joint_flat_replay import bind_completed_joint_primitive_locators
+
+        expected["joint_completed_primitives"] = bind_completed_joint_primitive_locators(
+            expected["joint_completed_primitives"], base_directory=parent)
     path = run / "bound_plan.json"
     content = path.read_bytes()
     if json.loads(content) != expected:

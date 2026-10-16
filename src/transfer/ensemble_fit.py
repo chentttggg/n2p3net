@@ -1272,7 +1272,7 @@ def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *
 def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: EnsembleProgram, *,
                             source_checkpoints=None, device="cpu", calibration_strategy="fixed",
                             inner_replay_recorder=None, inner_replay_context=None, _source_preparation=None,
-                            prefix_compiler=None, _prefix_fit_cache=None):
+                            prefix_compiler=None, _prefix_fit_cache=None, _joint_history_captures=None):
     """Fit all legitimate prefix rows; complete C groups serve only temperature."""
     if not isinstance(prefix, CalibrationPrefix):
         raise TypeError("prefix fitting requires an authorized CalibrationPrefix")
@@ -1287,7 +1287,8 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
         return fit_calibration_prefix_programs(prefix, specs, program, strategies=(calibration_strategy,),
             source_checkpoints=source_checkpoints, device=device, inner_replay_recorder=inner_replay_recorder,
             inner_replay_context=inner_replay_context, _source_preparation=preparation,
-            prefix_compiler=prefix_compiler, _prefix_fit_cache=_prefix_fit_cache)[calibration_strategy]
+            prefix_compiler=prefix_compiler, _prefix_fit_cache=_prefix_fit_cache,
+            _joint_history_captures=_joint_history_captures)[calibration_strategy]
     if calibration_strategy == "grouped_temperature" and len(prefix.complete_groups) < 3:
         raise ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
             stage="temperature", detail="fewer than three complete C-only groups")
@@ -1358,7 +1359,8 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
                                   _fixed_fit_cache={} if inner_replay_recorder is not None else None,
                                   _producer_recorder=inner_replay_recorder,
                                   _producer_context=inner_replay_context, _source_preparation=preparation,
-                                  prefix_compiler=prefix_compiler, _prefix_fit_cache=_prefix_fit_cache)
+                                  prefix_compiler=prefix_compiler, _prefix_fit_cache=_prefix_fit_cache,
+                                  _joint_history_captures=_joint_history_captures)
     if inner_replay_recorder is not None:
         inner_replay_recorder.record_prefix_programs({"grouped_temperature": grouped}, prefix=prefix,
             expert_programs=specs, program=program, source_checkpoints=sources, context=inner_replay_context)
@@ -1456,12 +1458,12 @@ def _grouped_pool_calibration(fitted, calibration, expert_programs, source_check
 
 def _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids=None, *, prefix=None,
                          _fixed_fit_cache=None, _producer_recorder=None, _producer_context=None, _source_preparation=None,
-                         prefix_compiler=None, _prefix_fit_cache=None):
+                         prefix_compiler=None, _prefix_fit_cache=None, _joint_history_captures=None):
     if any(spec.family == "joint_flat" for spec in expert_programs):
         return _forward_joint_temperature(fitted, calibration, expert_programs, sources, device,
             prefix=prefix, prefix_compiler=prefix_compiler, temperature_expert_ids=temperature_expert_ids,
             producer_recorder=_producer_recorder, producer_context=_producer_context,
-            prefix_fit_cache=_prefix_fit_cache)
+            prefix_fit_cache=_prefix_fit_cache, history_captures=_joint_history_captures)
     program = fitted.scorer.program
     selected = program.expert_ids if temperature_expert_ids is None else tuple(temperature_expert_ids)
     if not selected or len(set(selected)) != len(selected) or not set(selected) <= set(program.expert_ids):
@@ -1549,7 +1551,8 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device, 
 
 
 def _forward_joint_temperature(fitted, calibration, expert_programs, sources, device, *, prefix,
-        prefix_compiler, temperature_expert_ids, producer_recorder, producer_context, prefix_fit_cache=None):
+        prefix_compiler, temperature_expert_ids, producer_recorder, producer_context, prefix_fit_cache=None,
+        history_captures=None):
     """All held C groups scored by earlier original C, including lawful K0."""
     if prefix_compiler is None or prefix is None:
         raise TypeError('forward joint OOF requires its original C prefix compiler')
@@ -1575,16 +1578,25 @@ def _forward_joint_temperature(fitted, calibration, expert_programs, sources, de
                 SubjectFailureCode.NUMERICAL_FAILURE, stage='forward_inner_fit', detail=f'{type(error).__name__}: {error}'))
         captures, issued, refusals = {}, {}, {}
         actual_captures = {}
-        def remember(name, capability, capture, captures=captures, actual_captures=actual_captures):
+        def remember(name, capability, capture, captures=captures, actual_captures=actual_captures,
+                     inner=inner, held=held):
             captures[name] = {'capability_sha256': capability.digest, 'captured_P_measure_sha256': capture.digest}
             actual_captures[name] = (capability, capture)
+            if history_captures is not None:
+                producer = next(expert for expert in inner._experts if expert.program.expert_id == name)
+                history_captures[(producer.model_digest, held.view.raw_input_digest,
+                    held.view.physical_support_digest)] = capture
         def remember_permission(name, capability, issued=issued):
             issued[name] = capability
         def remember_refusal(name, refusal, refusals=refusals):
             refusals[name] = refusal
         if fit_failure is None:
+            restored = {} if history_captures is None else {expert.program.expert_id: history_captures[key]
+                for expert in inner._experts if (key := (expert.model_digest, held.view.raw_input_digest,
+                    held.view.physical_support_digest)) in history_captures}
             scored = inner.score_experts(held.view, history_context=(prefix_compiler, earlier), history_recorder=remember,
-                history_capability_recorder=remember_permission, history_refusal_recorder=remember_refusal)
+                history_capability_recorder=remember_permission, history_refusal_recorder=remember_refusal,
+                captured_histories=restored or None)
         else:
             from research.prefix_inner_replay import unavailable_prefix_expert_scores
 
@@ -1654,7 +1666,7 @@ def _forward_joint_temperature(fitted, calibration, expert_programs, sources, de
 def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strategies,
                                     source_checkpoints=None, device="cpu", temperature_expert_ids=None,
                                     inner_replay_recorder=None, inner_replay_context=None, _source_preparation=None,
-                                    prefix_compiler=None, _prefix_fit_cache=None):
+                                    prefix_compiler=None, _prefix_fit_cache=None, _joint_history_captures=None):
     """Declared temperature programs share one actual all-C final expert fit."""
     if (not strategies or len(set(strategies)) != len(strategies)
             or set(strategies) - ({"fixed", "grouped_temperature"} | POOL_STRATEGIES)):
@@ -1673,7 +1685,8 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
     fixed = (fit_calibration_prefix(prefix, expert_programs, program, source_checkpoints=sources, device=device,
                                     inner_replay_recorder=inner_replay_recorder,
                                     inner_replay_context=inner_replay_context, _source_preparation=preparation,
-                                    prefix_compiler=prefix_compiler, _prefix_fit_cache=_prefix_fit_cache)
+                                    prefix_compiler=prefix_compiler, _prefix_fit_cache=_prefix_fit_cache,
+                                    _joint_history_captures=_joint_history_captures)
              if "fixed" in strategies or eligible else None)
     for strategy in strategies:
         if strategy == "fixed":
@@ -1704,7 +1717,8 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
                                                        _fixed_fit_cache=replay_cache,
                                                        _producer_recorder=inner_replay_recorder,
                                                        _producer_context=inner_replay_context, _source_preparation=preparation,
-                                                       prefix_compiler=prefix_compiler, _prefix_fit_cache=_prefix_fit_cache)
+                                                       prefix_compiler=prefix_compiler, _prefix_fit_cache=_prefix_fit_cache,
+                                                       _joint_history_captures=_joint_history_captures)
             except ExpectedSubjectError as error:
                 result[strategy] = error
             except (UnidentifiableFitError, np.linalg.LinAlgError) as error:

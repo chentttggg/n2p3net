@@ -775,7 +775,8 @@ def _subject_impl(row, plan, directory, expected_source, source_snapshots):
     return json.loads((directory / "result.json").read_bytes())
 
 
-def _run_prefix_selection_outputs(plan, directory, expected_source, views, paired_sources):
+def _run_prefix_selection_outputs(plan, directory, expected_source, views, paired_sources, *,
+                                  _prefix_fit_cache=None, _joint_history_captures=None):
     from research.calibration_selection import fit_nested_prefix_selection
     from research.prefix_selection_replay import replay_prefix_selection
 
@@ -796,7 +797,8 @@ def _run_prefix_selection_outputs(plan, directory, expected_source, views, paire
                 "test_scope": views.ledger["test_scope"], "requested_decision_ids": [view.record_id for view in views.decisions]}
             selected = fit_nested_prefix_selection(prefix, candidates, baseline_name=request["baseline_name"],
                 prefix_compiler=views.prefix_compiler, minimum_selection_rows=request["minimum_selection_rows"],
-                source_checkpoints=sources, device=plan["device"], context=context)
+                source_checkpoints=sources, device=plan["device"], context=context,
+                _prefix_fit_cache=_prefix_fit_cache, _joint_history_captures=_joint_history_captures)
             batch = []
             for view in views.decisions:
                 evidence = selected.score(view)
@@ -932,6 +934,18 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
             sources.update(joint_sources)
         paired_specs[source_seed] = specs
         paired_sources[source_seed], paired_controls[source_seed] = _matched_source_controls(specs, sources)
+    joint_fit_cache = {} if joint_history else None
+    joint_history_captures = {} if joint_history else None
+    joint_reuse = []
+    if joint_history and target_contract["participant_key"] in plan.get("joint_completed_primitives", {}):
+        from research.joint_flat_replay import load_completed_joint_primitives
+
+        declaration = plan["joint_completed_primitives"][target_contract["participant_key"]]
+        for source_seed, seed in plan["seed_pairs"]:
+            joint_reuse.append(load_completed_joint_primitives(declaration, views=views,
+                expert_programs=paired_specs[source_seed], source_checkpoints=paired_sources[source_seed],
+                prefix_fit_cache=joint_fit_cache, history_captures=joint_history_captures,
+                source_preparation=joint_preparation, context={"source_seed": source_seed, "target_seed": seed}))
     fit_requests = list(_expected_fit_roster(plan, views.ledger).values())
     ledger = _participant_ledger(row, plan, directory, expected_source, views.decisions,
                                 views.scoring_truth, views.ledger, fit_requests,
@@ -951,7 +965,7 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                 if joint_history:
                     from research.joint_flat_replay import JointFlatReplayRecorder
 
-                    recorder = JointFlatReplayRecorder()
+                    recorder = JointFlatReplayRecorder(history_captures=joint_history_captures)
                 else:
                     recorder = InnerReplayRecorder()
                 prediction_start = len(predictions)
@@ -969,7 +983,8 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                     strategies=base_strategies, source_checkpoints=sources, device=plan["device"],
                     temperature_expert_ids=plan.get("temperature_expert_ids"),
                     inner_replay_recorder=recorder, inner_replay_context=prefix_context,
-                    _source_preparation=source_preparation, prefix_compiler=views.prefix_compiler)
+                    _source_preparation=source_preparation, prefix_compiler=views.prefix_compiler,
+                    _prefix_fit_cache=joint_fit_cache, _joint_history_captures=joint_history_captures)
                 if not joint_history:
                     FittedEnsemble.save_programs(package, programs, participant_key=prefix.target_contract["participant_key"])
                 for strategy in base_strategies:
@@ -1051,12 +1066,14 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
     selection_fits = []
     if plan.get("prefix_selection") is not None:
         with cpu_thread_budget(plan["cpu_threads_per_worker"]):
-            extra, selection_fits = _run_prefix_selection_outputs(plan, directory, expected_source, views, paired_sources)
+            extra, selection_fits = _run_prefix_selection_outputs(plan, directory, expected_source, views, paired_sources,
+                _prefix_fit_cache=joint_fit_cache, _joint_history_captures=joint_history_captures)
         predictions.extend(extra)
     result = {"status": "completed", "predictions": predictions, "fits": fits, "selection_fits": selection_fits, **{key: ledger[key] for key in
         ("requested", "requested_to_actual_K", "budget_adjustments", "coverage", "candidate_vocabulary", "evidence_level", "participant_key", *(["requested_evidence_levels"] if "requested_evidence_levels" in ledger else []))}}
     if joint_history:
         result["joint_source_resolutions"] = ledger["joint_source_resolutions"]
+        result["joint_completed_primitives"] = joint_reuse
     atomic_write_json(directory / "result.json", result)
     atomic_write_json(directory / "progress.json", {"completed_prediction_cells": len(predictions), "status": "completed"})
     return json.loads((directory / "result.json").read_bytes())
@@ -1826,6 +1843,11 @@ class CandidateCloudProgramme:
             self.plan["joint_source_catalog"] = [{**entry,
                 "path": str((self.original_plan_path.parent / entry["path"]).resolve())}
                 for entry in self.plan["joint_source_catalog"]]
+        if self.plan.get("joint_completed_primitives"):
+            from research.joint_flat_replay import bind_completed_joint_primitive_locators
+
+            self.plan["joint_completed_primitives"] = bind_completed_joint_primitive_locators(
+                self.plan["joint_completed_primitives"], base_directory=self.original_plan_path.parent)
         self.source, self.normalized, self.admitted, self.admission_failures = None, None, {}, {}
         self.source_snapshots = {}
         self.recovery_binding = None
@@ -2487,6 +2509,14 @@ def _prepare_candidate_plan(plan_path, *, native_threads=None, load_sources=True
                 if (source_id not in entries
                         or entries[source_id][0]["exclusion"]["target_participant_key"] != participant):
                     raise ValueError("joint source entry differs from its declared excluded target participant")
+        completed = plan.get("joint_completed_primitives", {})
+        if set(completed) - set(bindings):
+            raise ValueError("completed joint primitives must identify an actual declared target participant")
+        if completed:
+            from research.joint_flat_replay import bind_completed_joint_primitive_locators
+
+            normalized["joint_completed_primitives"] = bind_completed_joint_primitive_locators(
+                completed, base_directory=plan_path.parent)
         for mixture in mixtures:
             if any(spec.expert_id in mixture.expert_ids for spec in joint_specs) and set(
                     plan.get("mixture_calibration_strategies", {}).get(mixture.name, strategies)) & POOL_STRATEGIES:

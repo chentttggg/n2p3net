@@ -1,0 +1,53 @@
+{
+  "schema": "n2p3_joint_generic_completed_primitive_root_acceptance/1",
+  "status": "accepted_source_and_distinguishing_caller",
+  "source_map": {
+    "path": "D:/BCI/artifacts/joint-source-catalog-revision/generic-public-dag/SOURCE_MAP.json",
+    "sha256": "0b67f11b799f2119bcb5f32a37936b2603e651498f41a661edaf65ab92a60977",
+    "bytes": 5007
+  },
+  "caller": {
+    "path": "D:/BCI/artifacts/joint-source-catalog-revision/generic-public-dag/CALLER_VERIFICATION.json",
+    "sha256": "8845e468b19e4804679c409bf9aa0196fe5b33567443203eead0605b1cff8c6b",
+    "bytes": 3209
+  },
+  "plan_verification": {
+    "path": "D:/BCI/artifacts/joint-source-catalog-revision/generic-public-dag/PLAN_VERIFICATION.json",
+    "sha256": "7a089d1ef844cc6ea79b68e8c08cfb3c89da801980e9b8952cce94e25c60de3b",
+    "bytes": 22733
+  },
+  "plan": {
+    "path": "D:/BCI/artifacts/joint-source-catalog-revision/generic-public-dag/plan.json",
+    "sha256": "879bf9e64034c59cb199910910fa05abe58aeb88f977f70bd6e5b8ce7c6a0ce6",
+    "bytes": 14400
+  },
+  "handoff": {
+    "path": "D:/BCI/artifacts/joint-source-catalog-revision/generic-public-dag/HANDOFF.zh.md",
+    "sha256": "907022caa992cf4fd71b6773bb418e041e0fc0c3959a6f7c9190da977088bed8",
+    "bytes": 6831
+  },
+  "requested_final_predictions": 21,
+  "root_verified_physical_references": 18,
+  "stable_caller_sources": 9,
+  "caller_result": {
+    "original_models": 2,
+    "original_P_captures": 1,
+    "original_capture_sha256": "6b81a25971ceea5a545b480fd5f7900a34b0da91beb4817c456e7d9525a20e60",
+    "first_consumer_component_recomputations": 1,
+    "deliberately_blocked_missing_capture_sampler_attempts": 1,
+    "new_fit_or_sampler_calls_on_three_reuse_paths": 0,
+    "paths": [
+      "forward",
+      "future_recorder",
+      "selector_prefix_fits"
+    ]
+  },
+  "root_review": "Read the five production-file diff, original fixed-model/capture byte loaders and complete actual prefix/source/target/history checks, exact first mathematical replay, same-run fit/capture propagation through forward/future/selector and ordinary-NN None boundary, and one shared relative-locator normalizer across CLI/bound/recovery. Independent review has no required fixes; final narrow caller receipt and source map verified without repeating green numerical checks.",
+  "actual_public_generic_DAG": "not_launched",
+  "launch_dependencies": [
+    "refresh source freeze and original completed model/capture locators",
+    "coordinate with original actual004 to preserve each unfinished node and avoid duplicate fits or sampling"
+  ],
+  "root_new_public_fits_or_sampler_calls": 0,
+  "root_EEG_codec_or_model_decodes": 0
+}

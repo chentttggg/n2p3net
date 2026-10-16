@@ -450,13 +450,14 @@ def fit_nested_calibration_selection(calibration, candidates, *, baseline_name, 
 class _PrefixFits:
     """Same-run whole prefix programmes, each with its real inner recorder."""
 
-    def __init__(self, sources, device, context, compiler, *, prefix_fit_cache=None):
+    def __init__(self, sources, device, context, compiler, *, prefix_fit_cache=None, joint_history_captures=None):
         from research.prefix_inner_replay import _PrefixScopeOwner
         from transfer.ensemble_fit import ScopedSourceCheckpointPreparation
 
         self.sources, self.device, self.context = sources, device, dict(context)
         self.prefix_compiler = compiler
         self.prefix_fit_cache = {} if prefix_fit_cache is None else prefix_fit_cache
+        self.joint_history_captures = {} if joint_history_captures is None else joint_history_captures
         self.preparation = ScopedSourceCheckpointPreparation()
         self.scope_owner = _PrefixScopeOwner(compiler)
         self.nodes, self.uses, self.score_rows = {}, {}, {}
@@ -486,14 +487,15 @@ class _PrefixFits:
         if any(spec.family == 'joint_flat' for spec in candidate.expert_programs):
             from research.joint_flat_replay import JointFlatReplayRecorder
 
-            recorder = JointFlatReplayRecorder()
+            recorder = JointFlatReplayRecorder(history_captures=self.joint_history_captures)
         else:
             recorder = InnerReplayRecorder()
         programs = fit_calibration_prefix_programs(prefix, candidate.expert_programs, candidate.ensemble_program,
             strategies=(candidate.strategy,), source_checkpoints=sources, device=self.device,
             temperature_expert_ids=candidate.temperature_expert_ids,
             inner_replay_recorder=recorder, inner_replay_context=context, _source_preparation=self.preparation,
-            prefix_compiler=self.prefix_compiler, _prefix_fit_cache=self.prefix_fit_cache)
+            prefix_compiler=self.prefix_compiler, _prefix_fit_cache=self.prefix_fit_cache,
+            _joint_history_captures=self.joint_history_captures)
         self.fit_calls += 1
         self.nodes[key] = {"prefix": prefix, "candidate": candidate, "programs": programs,
             "sources": sources, "recorder": recorder, "context": context}
@@ -645,7 +647,7 @@ class FittedPrefixSelection:
 
 def fit_nested_prefix_selection(prefix, candidates, *, baseline_name, prefix_compiler,
                                 minimum_selection_rows, source_checkpoints=None, device="cpu", context=None,
-                                _prefix_fit_cache=None):
+                                _prefix_fit_cache=None, _joint_history_captures=None):
     """Run A(P) completely outside h/v, then refit selected A on all actual C.
 
     Each A retains the accepted single-prefix final fit and its explicitly
@@ -670,7 +672,8 @@ def fit_nested_prefix_selection(prefix, candidates, *, baseline_name, prefix_com
         tuple(spec for candidate in candidates for spec in candidate.expert_programs))
     if set(sources) - {spec.expert_id for candidate in candidates for spec in candidate.expert_programs}:
         raise ValueError("prefix selector received an undeclared source expert")
-    fits = _PrefixFits(sources, device, context or {}, prefix_compiler, prefix_fit_cache=_prefix_fit_cache)
+    fits = _PrefixFits(sources, device, context or {}, prefix_compiler, prefix_fit_cache=_prefix_fit_cache,
+                       joint_history_captures=_joint_history_captures)
     outer_rows, evidence = [], []
     for held in prefix.complete_groups:
         training = prefix_compiler.before_group(prefix, held)
