@@ -37,5 +37,11 @@
   "multi_record_joint_integration": "separate_conditional_design",
   "actual_new_full_32_candidate_consumer": "ongoing_in_separate_frozen_namespace",
   "root_numeric_replays_or_fits": 0,
-  "point_error_scope": "source_backward_estimates_and_scalar_numerical_estimates_with_analytic_outer_tails"
+  "point_error_scope": "source_backward_estimates_and_scalar_numerical_estimates_with_analytic_outer_tails",
+  "integration_format_delta": {
+    "executed_module_sha256": "4b2bb5e640d877657a19ace6802c47d20f6d0fce2e09ef32a388a97bb2e0c332",
+    "current_module_sha256": "3856e55200778af02d37bb6d906896c956b339049cd0f386e6e43cde693fa318",
+    "AST_identical": true,
+    "change": "remove one extra trailing newline; accepted frozen execution source retained"
+  }
 }

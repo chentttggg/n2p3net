@@ -2569,10 +2569,11 @@
       "status": "accepted_single_record_fixed_q_numerical_API",
       "root_delivery": {
         "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_fast_lambda_20261016.json",
-        "sha256": "c09c52033b0dd8063ac5b0f2c59a790a0712115eef64dab3148a2094ad1c2ffd",
-        "bytes": 2515
+        "sha256": "1731da12bfed513ae57c1f33b8865ae24ff2195265e64bc0cc76604372a7213f",
+        "bytes": 2873
       },
-      "full_new_consumer": "ongoing"
+      "full_new_consumer": "ongoing",
+      "integration_commit": "d65a618"
     }
   }
 }

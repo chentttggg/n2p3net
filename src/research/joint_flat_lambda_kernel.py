@@ -534,4 +534,3 @@ def integrate_single_record_precision(kernel, *, raw_scalar_rows, nu, envelope,
         'raw_scalar_rows': raw_scalar_rows, 'proper_dimension': kernel.proper_dimension,
         'physical_flat_dimension': kernel.flat_dimension, 'degrees_of_freedom': nu,
         'measure_constant_included': False}
-
