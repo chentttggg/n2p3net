@@ -123,6 +123,9 @@ def test_seed_admission_decodes_actual_checkpoint_once_and_rejects_another_seed(
     admission = _SourceSeedAdmission()
     expected = _check_seeds((spec,), sources, {"source_seed": 4, "target_seed": 9}, admission=admission)
     assert _check_seeds((spec,), sources, {"source_seed": 4, "target_seed": 9}, admission=admission) == expected
+    copied = FrozenSourceCheckpoint(bytes(bytearray(b"first")))
+    assert copied.content is not sources["source"].content
+    assert _check_seeds((spec,), {"source": copied}, {"source_seed": 4, "target_seed": 9}, admission=admission) == expected
     assert reads == [b"first"]
     with pytest.raises(ValueError, match="source seed"):
         _check_seeds((spec,), {"source": FrozenSourceCheckpoint(b"second")},
@@ -171,3 +174,67 @@ def test_legacy_scanner_keeps_escape_unicode_and_whitespace_across_block_boundar
     receipt["sha256"] = 'f' * 64
     with pytest.raises(ValueError, match="original external seal"):
         b''.join(_legacy_minified_chunks(receipt))
+
+
+def test_prepared_store_copies_complete_scopes_from_original_locator_once(tmp_path):
+    import hashlib
+
+    from research.selection_graph_store import (
+        SelectionGraphStore,
+        prepare_selection_graph_store,
+        save_selection_graph,
+    )
+
+    graph = graph_fixture()
+    original = tmp_path / "original" / "prefix_selection.json"
+    save_selection_graph(original, graph)
+    before = original.read_bytes()
+    receipt = {"path": str(original.resolve()), "sha256": hashlib.sha256(before).hexdigest(), "bytes": len(before)}
+    destination = tmp_path / "prepared" / "graph.json"
+    owned, imported = prepare_selection_graph_store(receipt, destination,
+        expected_graph_sha256=semantic_sha256(graph))
+    assert owned.graph == graph and len(owned.scope_receipts) == 1
+    owned.close()
+    with pytest.raises(RuntimeError, match="closed"):
+        _ = owned.graph
+    assert original.read_bytes() == before and imported["consumer_store"]["path"] == str(destination.resolve())
+    # The prepared compact graph owns its complete scope pool, not relative
+    # sidecars accidentally still borrowed from the original package directory.
+    next((original.parent / "graph_scopes").iterdir()).unlink()
+    assert SelectionGraphStore(destination).graph == graph
+
+
+@pytest.mark.parametrize("failure", ("header_receipt", "cache_receipt"))
+def test_post_publication_receipt_failure_releases_actual_resident_lease(tmp_path, monkeypatch, failure):
+    import multiprocessing
+    from pathlib import Path
+
+    from research import selection_graph_store as owner
+    from research.source_execution import SourceInputAdmission
+
+    graph = graph_fixture()
+    source, destination = tmp_path / "original" / "graph.json", tmp_path / "prepared" / "graph.json"
+    owner.save_selection_graph(source, graph)
+    before = source.read_bytes()
+    receipt = {"path": str(source.resolve()), **owner._artifact(source)}
+    actual_artifact = owner._artifact
+    target = destination if failure == "header_receipt" else destination.with_name("graph.legacy-minified.json")
+
+    def receipt_failure(path):
+        if Path(path) == target.resolve():
+            raise OSError("post-publication receipt read failed")
+        return actual_artifact(path)
+
+    with multiprocessing.Manager() as manager:
+        admission = SourceInputAdmission(manager, capacity_bytes=64 * 2**20, load_workers=1)
+        prepared, _ = owner.prepare_selection_graph_store(receipt, tmp_path / "positive" / "graph.json",
+            expected_graph_sha256=semantic_sha256(graph), input_admission=admission)
+        assert admission.record()["resident_input_bytes"] > 0
+        prepared.close()
+        assert admission.record()["resident_input_bytes"] == 0
+        monkeypatch.setattr(owner, "_artifact", receipt_failure)
+        with pytest.raises(OSError, match="post-publication receipt"):
+            owner.prepare_selection_graph_store(receipt, destination,
+                expected_graph_sha256=semantic_sha256(graph), input_admission=admission)
+        assert admission.record()["resident_input_bytes"] == 0
+    assert source.read_bytes() == before and destination.exists() and target.exists()

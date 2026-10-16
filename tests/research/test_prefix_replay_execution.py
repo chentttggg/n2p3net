@@ -99,7 +99,9 @@ def old_case(tmp_path_factory, request):
     root = tmp_path_factory.mktemp("real-prefix-execution")
     repository = Path(__file__).resolve().parents[2]
     frozen = root / "original_ensemble_views.py"
-    frozen.write_bytes(subprocess.check_output(["git", "show", "c432d3d:src/transfer/ensemble_views.py"],
+    # This historical producer owns record-aware fit receipts required by the
+    # current fitter; its bytes still differ from the consuming compiler.
+    frozen.write_bytes(subprocess.check_output(["git", "show", "8e1d8ca:src/transfer/ensemble_views.py"],
         cwd=repository))
     environment = {**os.environ, "PYTHONPATH": os.pathsep.join([str(repository / "src"), str(repository)]),
         "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1"}
@@ -311,6 +313,41 @@ def test_actual_preparation_accepts_canonical_tuple_equivalent_original_request(
     assert semantic_sha256(expected) == semantic_sha256(request)
     admitted = owner.read_prefix_preparation(runtime["prep_task"], runtime["prep_outcome"], expected)
     assert semantic_sha256(admitted) == semantic_sha256(original)
+
+
+@pytest.mark.parametrize("mutation", ("physical_seal", "logical_seal", "scope_roster", "original_path", "original_bytes"))
+def test_prepared_graph_owner_rejects_changed_transport_or_original_binding(tmp_path, mutation):
+    from research.selection_graph_store import prepare_selection_graph_store, save_selection_graph
+
+    graph = {"schema": "n2p3_whole_prefix_selection_replay/1",
+        "selection": {"parent_scope": {"actual_K": 0, "input": {"budget": 0}}}, "nodes": []}
+    source = tmp_path / "participant" / "selection" / "prefix_selection.json"
+    save_selection_graph(source, graph)
+    destination = tmp_path / "prepared" / "graph.json"
+    prepared, imported = prepare_selection_graph_store(owner.artifact_receipt(source), destination,
+        expected_graph_sha256=semantic_sha256(graph))
+    job = {"graph": imported["consumer_store"], "logical_graph_sha256": prepared.graph_sha256,
+        "selection_sha256": prepared.selection_sha256, "graph_scope_files": list(prepared.scope_receipts),
+        "graph_import": owner.artifact_receipt(destination.with_suffix(".import.json"))}
+    prepared.close()
+    original = {"package": "selection", "graph_sha256": semantic_sha256(graph),
+        "files": [{**owner.artifact_receipt(source), "path": "selection/prefix_selection.json"}]}
+    # A fresh ingress succeeds without ever reopening the expanded source graph.
+    with owner._prepared_graph_owner(job, original, source.parent.parent) as restored:
+        assert semantic_sha256(restored.graph) == original["graph_sha256"]
+    if mutation == "physical_seal":
+        job["graph"]["sha256"] = "f" * 64
+    elif mutation == "logical_seal":
+        job["logical_graph_sha256"] = "f" * 64
+    elif mutation == "scope_roster":
+        job["graph_scope_files"] = []
+    else:
+        imported["original"]["path" if mutation == "original_path" else "sha256"] = (
+            str(tmp_path / "unrelated" / "prefix_selection.json") if mutation == "original_path" else "f" * 64)
+        destination.with_suffix(".import.json").write_text(json.dumps(imported), encoding="utf-8")
+        job["graph_import"] = owner.artifact_receipt(destination.with_suffix(".import.json"))
+    with pytest.raises(ValueError):
+        owner._prepared_graph_owner(job, original, source.parent.parent)
 
 
 @pytest.mark.parametrize("field", ["request_sha256", "capsule_sha256", "producer_source_sha256"])

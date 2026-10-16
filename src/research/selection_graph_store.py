@@ -137,8 +137,8 @@ def _legacy_minified_chunks(receipt):
         raise ValueError("legacy graph raw bytes differ from the original external seal")
 
 
-def import_legacy_selection_graph(source_receipt, destination, *, expected_graph_sha256,
-                                 expected_selection_sha256=None, input_admission=None):
+def prepare_selection_graph_store(source_receipt, destination, *, expected_graph_sha256,
+                                  expected_selection_sha256=None, input_admission=None):
     """Create a separate consumer store without decoding the expanded original.
 
     Call only after the original writer is retired. Its real retirement/source
@@ -173,21 +173,47 @@ def import_legacy_selection_graph(source_receipt, destination, *, expected_graph
     elif reservation > available_host_memory_bytes():
         raise MemoryError("legacy minified graph exceeds currently available host memory")
     try:
-        owned = SelectionGraphStore(cache, expected_graph_sha256=expected_graph_sha256,
+        # Sidecar locators, if the source already uses codec2, belong to its
+        # original directory. The token cache is a separate physical artifact.
+        owned = SelectionGraphStore.from_bytes(cache.read_bytes(), directory=source.parent,
+            expected_graph_sha256=expected_graph_sha256,
             expected_selection_sha256=expected_selection_sha256)
         selection_sha256 = owned.selection_sha256
         save_selection_graph(destination, owned.graph, input_admission=input_admission)
+        prepared = SelectionGraphStore.from_record(owned.graph, directory=destination.parent,
+            expected_graph_sha256=expected_graph_sha256, expected_selection_sha256=selection_sha256)
+        encoded = destination.read_bytes()  # Small codec envelope, never expanded scope values.
+        payload = _decode(encoded)
+        prepared._storage_sha256 = hashlib.sha256(encoded).hexdigest()
+        prepared._scope_receipts = freeze_metadata([{"path": str(destination.parent / row["path"]),
+            "sha256": row["sha256"], "bytes": row["bytes"]} for row in payload["scopes"].values()])
+        prepared._resident_lease = lease
         del owned
-    finally:
+    except BaseException:
         if lease is not None:
             lease.release_unused()
-    record = {"schema": "n2p3_legacy_selection_graph_import/1", "original": dict(source_receipt),
-        "consumer_store": {"path": str(destination), **_artifact(destination)},
-        "token_cache": {"path": str(cache), **_artifact(cache)},
-        "logical_graph_sha256": expected_graph_sha256, "selection_sha256": selection_sha256,
-        "decode_input_reservation_bytes": reservation, "new_fits": 0, "EEG_PT_decodes": 0,
-        "role": "derived metadata storage; original graph and numeric producers unchanged"}
-    atomic_write_json_stream(destination.with_suffix(".import.json"), record, input_admission=input_admission)
+        raise
+    try:
+        record = {"schema": "n2p3_legacy_selection_graph_import/1", "original": dict(source_receipt),
+            "consumer_store": {"path": str(destination), **_artifact(destination)},
+            "token_cache": {"path": str(cache), **_artifact(cache)},
+            "logical_graph_sha256": expected_graph_sha256, "selection_sha256": selection_sha256,
+            "decode_input_reservation_bytes": reservation, "new_fits": 0, "EEG_PT_decodes": 0,
+            "role": "derived metadata storage; original graph and numeric producers unchanged"}
+        atomic_write_json_stream(destination.with_suffix(".import.json"), record, input_admission=input_admission)
+    except BaseException:
+        prepared.close()
+        raise
+    return prepared, record
+
+
+def import_legacy_selection_graph(source_receipt, destination, *, expected_graph_sha256,
+                                 expected_selection_sha256=None, input_admission=None):
+    """Persist an independent store and return only its transportable facts."""
+    owner, record = prepare_selection_graph_store(source_receipt, destination,
+        expected_graph_sha256=expected_graph_sha256, expected_selection_sha256=expected_selection_sha256,
+        input_admission=input_admission)
+    owner.close()
     return record
 
 
@@ -199,6 +225,7 @@ class SelectionGraphStore:
         if path.is_symlink():
             raise ValueError("nested prefix graph path is a symlink")
         self._path = path.resolve()
+        self._resident_lease = None
         content = path.read_bytes()
         self._admit_content(content, expected_graph_sha256, expected_selection_sha256)
 
@@ -208,6 +235,7 @@ class SelectionGraphStore:
             raise TypeError("prepared graph requires actual bytes and its external logical seal")
         owner = cls.__new__(cls)
         owner._path = Path(directory).resolve() / "prefix_selection.json"
+        owner._resident_lease = None
         owner._admit_content(content, expected_graph_sha256, expected_selection_sha256)
         return owner
 
@@ -220,6 +248,7 @@ class SelectionGraphStore:
             raise TypeError("prepared graph requires actual record fields, not an admission flag")
         owner = cls.__new__(cls)
         owner._path = Path(directory).resolve() / "prefix_selection.json"
+        owner._resident_lease = None
         owner._storage_sha256, owner._scope_receipts = None, ()
         owner._admit_graph(freeze_metadata(graph), expected_graph_sha256,
             expected_graph_sha256, expected_selection_sha256)
@@ -240,6 +269,8 @@ class SelectionGraphStore:
 
     @property
     def graph(self):
+        if self._graph is None:
+            raise RuntimeError("selection graph owner is closed")
         return self._graph
 
     @property
@@ -257,6 +288,18 @@ class SelectionGraphStore:
     @property
     def scope_receipts(self):
         return self._scope_receipts
+
+    def close(self):
+        self._graph = None
+        if self._resident_lease is not None:
+            self._resident_lease.release_unused()
+            self._resident_lease = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
 
     def _admit_content(self, content, expected_graph_sha256, expected_selection_sha256):
         payload = _decode(content)

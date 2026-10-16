@@ -19,7 +19,7 @@ from pathlib import Path
 from research.contracts import canonical_json_bytes, semantic_sha256
 
 SCHEMA = "n2p3_prefix_replay_execution/2"
-PREPARATION_SCHEMA = "n2p3_prefix_replay_preparation/1"
+PREPARATION_SCHEMA = "n2p3_prefix_replay_preparation/2"
 RESULT_SCHEMA = "n2p3_prefix_replay_execution_result/2"
 ADMISSION_SCHEMA = "n2p3_prefix_replay_execution_admission/2"
 GRAPH_PHASE_MEMORY_BYTES = 8 * 2**30
@@ -28,7 +28,9 @@ _EXECUTED_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _CONSUMER_PATHS = (
     "src/research/prefix_replay_execution.py", "src/research/prefix_selection_replay.py",
     "src/research/prefix_inner_replay.py", "src/research/prefix_replay_inputs.py",
-    "src/transfer/ensemble_views.py",
+    "src/transfer/ensemble_views.py", "src/research/selection_graph_store.py",
+    "src/research/frozen_metadata.py", "src/research/execution.py",
+    "src/research/calibration_selection.py", "src/research/contracts.py",
 )
 
 
@@ -231,6 +233,31 @@ def _graph_budgets(graph):
     return budgets
 
 
+def _prepared_graph_owner(job, original, participant_directory):
+    """Reopen one sealed compact store, independently of original graph bytes."""
+    from research.selection_graph_store import SelectionGraphStore
+
+    if job["logical_graph_sha256"] != original["graph_sha256"]:
+        raise ValueError("prepared selection store changed the original logical graph seal")
+    imported = json.loads(_artifact_bytes(job["graph_import"]))
+    graph_name = original["package"] + "/prefix_selection.json"
+    source = next(row for row in original["files"] if row["path"] == graph_name)
+    if (imported["schema"] != "n2p3_legacy_selection_graph_import/1"
+            or Path(imported["original"]["path"]).resolve() != Path(participant_directory).resolve() / graph_name
+            or imported["original"]["sha256"] != source["sha256"]
+            or imported["original"]["bytes"] != source["bytes"]
+            or imported["consumer_store"] != job["graph"]
+            or imported["logical_graph_sha256"] != original["graph_sha256"]
+            or imported["selection_sha256"] != job["selection_sha256"]):
+        raise ValueError("prepared selection graph lost its original byte/logical binding")
+    graph = SelectionGraphStore.from_bytes(_artifact_bytes(job["graph"]),
+        directory=Path(job["graph"]["path"]).resolve().parent,
+        expected_graph_sha256=original["graph_sha256"], expected_selection_sha256=job["selection_sha256"])
+    if semantic_sha256(graph.scope_receipts) != semantic_sha256(job["graph_scope_files"]):
+        raise ValueError("prepared selection graph changed its complete scope dependency roster")
+    return graph
+
+
 def _selection_metadata(selection):
     return {key: selection[key] for key in ("candidates", "baseline", "minimum_selection_rows",
         "source_checkpoint_sha256", "selected_candidate", "final_refit_key") } | {
@@ -286,6 +313,7 @@ def _frozen_preparation(arguments):
     from data.epochs import parse_preprocessing_spec
     from research.prefix_replay_inputs import export_prepared_views
     from research.prefix_selection_replay import _SelectionReplayAdmission
+    from research.selection_graph_store import prepare_selection_graph_store
     from train.runtime import configure_spawned_worker_threads, cpu_thread_budget
 
     inputs = request["input_request"]
@@ -306,28 +334,26 @@ def _frozen_preparation(arguments):
             files = _saved_byte_contract(request, row, graph=True)
             graph_name = row["package"] + "/prefix_selection.json"
             original = files[graph_name]
-            payload = json.loads(_artifact_bytes({**original,
-                "path": str(Path(request["participant_directory"]).resolve() / graph_name)}))
-            if payload["record_sha256"] != row["graph_sha256"]:
-                raise ValueError("prefix replay original graph semantic seal changed")
-            canonical = canonical_json_bytes(payload["record"])
-            del payload
-            admitted = _SelectionReplayAdmission.from_prepared_graph(directory, canonical,
+            path = output / ("graph_" + row["graph_sha256"] + ".json")
+            store, imported = prepare_selection_graph_store({**original,
+                "path": str(Path(request["participant_directory"]).resolve() / graph_name)}, path,
                 expected_graph_sha256=row["graph_sha256"])
-            _verify_package_files(request, row, already_read=(graph_name,))
-            graph = admitted.graph
-            budgets.update(_graph_budgets(graph))
-            plan = admitted.prepare_replay(prefix=views.prefix_compiler.compile(row["original_request"]["K"]),
-                prefix_compiler=views.prefix_compiler, future_views=views.decisions, source_checkpoints=_sources(row))
-            if hashlib.sha256(canonical).hexdigest() != row["graph_sha256"]:
-                raise ValueError("prepared canonical graph differs from the original external graph seal")
-            path = output / ("canonical_" + row["graph_sha256"] + ".json")
-            with path.open("xb") as stream:
-                stream.write(canonical)
-            jobs.append({"package": row["package"], "graph": artifact_receipt(path),
-                "selection_sha256": semantic_sha256(graph["selection"]), "node_requests": plan.node_requests,
-                "original_request": row["original_request"]})
-            del plan, admitted, graph, canonical
+            try:
+                admitted = _SelectionReplayAdmission.from_prepared_graph(directory, store,
+                    expected_graph_sha256=row["graph_sha256"])
+                _verify_package_files(request, row, already_read=(graph_name,))
+                graph = admitted.graph
+                budgets.update(_graph_budgets(graph))
+                plan = admitted.prepare_replay(prefix=views.prefix_compiler.compile(row["original_request"]["K"]),
+                    prefix_compiler=views.prefix_compiler, future_views=views.decisions, source_checkpoints=_sources(row))
+                jobs.append({"package": row["package"], "graph": imported["consumer_store"],
+                    "logical_graph_sha256": store.graph_sha256, "graph_scope_files": list(store.scope_receipts),
+                    "graph_import": artifact_receipt(path.with_suffix(".import.json")),
+                    "selection_sha256": store.selection_sha256, "node_requests": plan.node_requests,
+                    "original_request": row["original_request"]})
+                del plan, admitted, graph
+            finally:
+                store.close()
         pending, complete = list(budgets), set()
         while pending:
             budget = pending.pop()
@@ -377,7 +403,8 @@ def read_prefix_preparation(task, outcome, expected_request):
     if len(jobs) != len(manifest["selection_jobs"]) or set(jobs) != set(expected):
         raise ValueError("prefix preparation lost the complete original selection package roster")
     for name, row in jobs.items():
-        if (row["graph"]["sha256"] != expected[name]["graph_sha256"]
+        if (row["logical_graph_sha256"] != expected[name]["graph_sha256"]
+                or Path(row["graph"]["path"]).resolve() != Path(task.output).resolve() / ("graph_" + row["logical_graph_sha256"] + ".json")
                 or semantic_sha256(row["original_request"]) != semantic_sha256(expected[name]["original_request"])
                 or not row["node_requests"]
                 or any(node["request"]["graph_sha256"] != expected[name]["graph_sha256"]
@@ -496,7 +523,7 @@ def selection_reducer_adapter(arguments):
     _validate_request(request)
     _worker_native_threads(request, ordinary=False)
     row = _roster(request, "selection")[job["package"]]
-    if job["graph"]["sha256"] != row["graph_sha256"]:
+    if job["logical_graph_sha256"] != row["graph_sha256"]:
         raise ValueError("prefix selection reducer lost its original external graph seal")
     results, seen = [], set()
     for task, outcome in arguments["node_outcomes"]:
@@ -511,8 +538,9 @@ def selection_reducer_adapter(arguments):
         results.extend(record["node_results"])
     with cpu_thread_budget(1), _borrow(arguments) as borrowed:
         _require_input_binding(arguments, borrowed.receipt)
+        store = _prepared_graph_owner(job, row, request["participant_directory"])
         admitted = _SelectionReplayAdmission.from_prepared_graph(
-            _package(request["participant_directory"], row["package"]), _artifact_bytes(job["graph"]),
+            _package(request["participant_directory"], row["package"]), store,
             expected_graph_sha256=row["graph_sha256"], expected_selection_sha256=job["selection_sha256"])
         plan = admitted.prepare_replay(prefix=borrowed.views.prefix_compiler.compile(row["original_request"]["K"]),
             prefix_compiler=borrowed.views.prefix_compiler, future_views=borrowed.views.decisions,

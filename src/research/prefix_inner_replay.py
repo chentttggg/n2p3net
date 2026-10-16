@@ -222,7 +222,13 @@ class _PrefixScopeOwner:
         actual = self.compiler.assert_original_prefix(prefix)
         # Budget is not an authority key: validate exact original object,
         # metadata/array headers and immutable backing before any cached use.
-        ownership = self.compiler._prefix_ownership[actual.budget]
+        ownership = getattr(self.compiler, "_prefix_ownership", {}).get(actual.budget)
+        if ownership is None:
+            # Historical frozen compilers predate immutable geometry admission.
+            # Recompute their full numerical identity on every access instead of
+            # authorizing a cache by K or by object identity alone.
+            scope = freeze_metadata({"actual_K": actual.budget, "input": prefix_input_identity(actual)})
+            return self._scopes.setdefault(semantic_sha256(scope), scope)
         ownership.assert_unchanged(actual)
         cached = self._objects.get(id(actual))
         if cached is not None:
@@ -237,20 +243,22 @@ class _SourceSeedAdmission:
     """Actual checkpoint bytes/seed admitted once in this private invocation."""
 
     def __init__(self):
-        self._sources = {}
+        self._objects, self._sources = {}, {}
 
     def source(self, source):
         from transfer.checkpoint import load_checkpoint_payload
 
         if not isinstance(source, FrozenSourceCheckpoint):
             raise TypeError("source seed admission requires immutable checkpoint bytes")
-        cached = self._sources.get(id(source.content))
+        original = self._objects.get(id(source.content))
+        digest = source.digest if original is None else original[1]
+        self._objects[id(source.content)] = source.content, digest
+        cached = self._sources.get(digest)
         if cached is None:
             payload = load_checkpoint_payload(io.BytesIO(source.content))
-            record = {"digest": source.digest, "seed": payload.get("training_contract", {}).get("seed")}
-            cached = source.content, record
-            self._sources[id(source.content)] = cached
-        return dict(cached[1])
+            cached = {"digest": digest, "seed": payload.get("training_contract", {}).get("seed")}
+            self._sources[digest] = cached
+        return dict(cached)
 
 
 def future_input_identity(view):
