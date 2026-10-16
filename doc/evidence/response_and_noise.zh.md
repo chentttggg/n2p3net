@@ -14,6 +14,8 @@ B11联合模型已在原Huebner记录的500个授权标签上完成采样。直�
 
 独立积分完成原K0单record、完整32候选的64项P/PT积分。λ表示噪声精度，越大表示噪声方差越小。原前段P保留样本的λ范围为0.6676–0.6900；完整P+T积分的主要贡献位于0.7451–0.7475。直观上，后段观测把主要权重推到了原抽样范围之外，因此检查已有样本的分链/子集一致性还需要配合连续支持审计。
 
+[贡献范围直观图](D:/BCI/artifacts/research-deliveries/joint-predictive-integration/lambda_support.png)对照原256样本范围、连续P与P+T的32候选峰值范围；图、底层端点表及来源manifest保存在同一稳定交付目录。
+
 | 读数 | 原有限样本 | 连续积分 |
 |---|---:|---:|
 | 第一候选 | position:12 | position:12 |
@@ -28,6 +30,8 @@ B11联合模型已在原Huebner记录的500个授权标签上完成采样。直�
 计算保持一个不随λ缩放的proper响应先验β和原physical flat漂移测度。令`m_H,q(λ)`为已积分β/漂移的原QR对数核，`x=logλ`，则`I_H,q=∫exp(((N_H+ν)/2)x−νexp(x)/2+m_H,q(exp(x)))dx`；`N_H`用原scalar Gaussian行数，flat行列式已包含在`m`中。whole law按`π_q I_PT,q`归一，绝对T密度还恢复原P积分与Gaussian/noise常数。该实际输入的64个积分已用保存小根的误差界证明logλ全域严格凹，各有唯一峰；三档容差的log积分逐位相同，最大source误差估计跨度为5.87e−5 nats，两端有解析Gamma质量上界。独立80位聚合与原数组身份均已核回。
 
 下一实现预先消去漂移并分解响应矩阵，让每个λ点只计算标量有理项。多record扩展继续保持ONE global β，并按正确P边缘分布平均其余record的λ及未定候选；完整公共预测链沿各自新producer验收。
+
+实际第三条OOF/K136已保存并独立接受：559坐标、32个配对概率函数通过原政策，分子贡献ESS仍为1。总监仅解析三份已完成capture的metadata，确认OOF0/1/2各有一个真实record，q先验支持数分别为`[32]`、`[1,32]`、`[1,1,32]`；过去q已由原C标签固定。因此快速单record积分可在具名核验后扩展到这些非零K前向组，原采样/结果保持各自producer。后续行逐份核该条件，未来多record/未定过去q继续走完整条件设计。
 
 原shared `/3`保存root也已实现快速严格准入：用小因子见证核验原992维矩阵，误差界9.386e-12低于原3.150e-7政策，保留原root与producer。实际完整source codec加载4.254秒，其中root部分1.130秒；较早同输入加载的457.8秒中，452.3秒集中在该验证。新见证是consumer准入元数据，原模型的概率计算仍消费原矩阵。来源见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
 

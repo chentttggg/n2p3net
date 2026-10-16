@@ -257,5 +257,107 @@
     ],
     "OOF0_continuous_true_NLL": 470.3022740976885,
     "next": "independent_forward_joint_temperature_uniform_risk_design_using_only_C"
+  },
+  "OOF2": {
+    "status": "accepted_original_finite_empirical_programme",
+    "receipts": [
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_COMPLETED_FORWARD_002_AUDIT.json",
+        "sha256": "6b1fdd243219f2a94b48ce3db4be867b57f1f434c9baaa831df2ac8019439b22",
+        "bytes": 1983
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FORWARD_002_FUNCTIONAL_AUDIT.json",
+        "sha256": "88b4c39bdfd8be711603a39436c404dd9db1c677f7387d6ac8fde0db6108d437",
+        "bytes": 4731
+      }
+    ],
+    "capture_digest": "d64179a434048d249016f30b95f896c1c6a178dedff1549859ad10c96e9646f1",
+    "coordinate_max_rhat_min_bulk_min_tail": [
+      1.0661288330756444,
+      46.22263758344255,
+      62.29481470299656
+    ],
+    "functional_max_rhat_min_bulk_min_tail": [
+      1.0066413171845785,
+      216.28964752200454,
+      205.01916949280283
+    ],
+    "max_paired_batch_mcse": 4.7214228579505865e-23,
+    "A_contribution_ESS_min_max": [
+      1.0,
+      1.0
+    ]
+  },
+  "completed_OOF_single_record_continuous_applicability": [
+    {
+      "ordinal": 0,
+      "capture": {
+        "path": "D:/BCI/worktrees/joint-flat-ensemble/tmp/joint_flat_actual31/attempt_004_result/forward_progress/000/joint-flat-source.npz",
+        "sha256": "a0a90cca84fabdbffc4e80f2d13d2f9263e42af5bd86f1c543d5ee934b62a439",
+        "bytes": 1185092
+      },
+      "P_original_record_ids": [
+        "Huebner2017:1:session:0:run:0"
+      ],
+      "current_axis": 0,
+      "axis_prior_support_counts": [
+        32
+      ],
+      "single_record_current_only_eligible": true
+    },
+    {
+      "ordinal": 1,
+      "capture": {
+        "path": "D:/BCI/worktrees/joint-flat-ensemble/tmp/joint_flat_actual31/attempt_004_result/forward_progress/001/joint-flat-source.npz",
+        "sha256": "2e956b68326980f7b2d41b47de328b5ef050e3fa64cb639cecb97c37dd341c07",
+        "bytes": 1193173
+      },
+      "P_original_record_ids": [
+        "Huebner2017:1:session:0:run:0"
+      ],
+      "current_axis": 1,
+      "axis_prior_support_counts": [
+        1,
+        32
+      ],
+      "single_record_current_only_eligible": true
+    },
+    {
+      "ordinal": 2,
+      "capture": {
+        "path": "D:/BCI/worktrees/joint-flat-ensemble/tmp/joint_flat_actual31/attempt_004_result/forward_progress/002/joint-flat-source.npz",
+        "sha256": "dc337cbf8ab6b68d672b6cfd334ac1d9448751af7acaeadd3ab5c039b8afad0b",
+        "bytes": 1194383
+      },
+      "P_original_record_ids": [
+        "Huebner2017:1:session:0:run:0"
+      ],
+      "current_axis": 2,
+      "axis_prior_support_counts": [
+        1,
+        1,
+        32
+      ],
+      "single_record_current_only_eligible": true
+    }
+  ],
+  "lambda_support_figure": {
+    "manifest": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/lambda_support.manifest.json",
+      "sha256": "20f087c8dae43bb285b5d4531fae9b716d70fd8b94c2d21a46c283ad57051d28",
+      "bytes": 1637
+    },
+    "png": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/lambda_support.png",
+      "sha256": "323310e089e18d743a6e2808bef050161955dbb847c0559d95f2e695020f50dc",
+      "bytes": 116228
+    },
+    "svg": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/lambda_support.svg",
+      "sha256": "562d8127e0c7f85c58057b9e7c49e4d9ac911ec4c65a3f1bb8e35f25f0e4db3d",
+      "bytes": 98840
+    },
+    "manually_viewed": true
   }
 }
