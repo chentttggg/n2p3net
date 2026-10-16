@@ -2530,6 +2530,31 @@
         106496740,
         0
       ]
+    },
+    "joint_predictive_evidence": {
+      "status": "accepted_empirical_OOF1_and_separate_single_record_continuous_audit",
+      "root_delivery": {
+        "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_predictive_evidence_20261016.json",
+        "sha256": "95e961aa4d01723b44d84e1a8681122b3515795ae1c95bd7d8f347ed25f042a8",
+        "bytes": 9847
+      },
+      "remaining_public_programme": "ongoing",
+      "original_finite_programme_retained": true
+    },
+    "joint_history_score_cache": {
+      "status": "accepted_root_source_and_independent_review",
+      "delivery": {
+        "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_history_score_cache_20261016.json",
+        "sha256": "1e0ca33edd8d03f74837187e8dc0574d215910021417b9a8f4c8c8ffd9655a68",
+        "bytes": 6735
+      },
+      "root_verified_artifact_references": 13,
+      "contracts": 4,
+      "actual_saved_old_capture_replays": 2,
+      "component_calls": 1,
+      "root_review": "Read full pure-QR delta and complete model hook, authority/current view/P/T/capture/consumer/native key, original-byte admission, fresh summary/diagnostics, immutable bounded LRU, explicit NPZ and current worker serialization boundary; read four distinguishing contracts and old saved-producer consumer. No open required fixes.",
+      "original_actual004_source_unchanged": true,
+      "integration_commit": "eee72b3"
     }
   }
 }

@@ -26,6 +26,8 @@ B07 `research.multichannel_c_latent`新增明确外部固定参数的finite C pr
 
 `research.joint_source_catalog`独立持有原continuous source导出与当前目标绑定。Huebner原数组准入通过注册factory和`CalibrationPrefixCompiler.from_dataset_source(...).compile(K)`恢复实际C；该入口只编译所需prefix，完整future views由公共目标准备路径持有。live原数据owner授予本次public consumer准入，JSON描述记录保留来源；新进程重新取得实际owner。joint确定性source的seed为null，MCMC链seed由sampling合同单独保存。NN的`SourceSeedCatalog`及多seed合同保持各自语义。
 
+`JointFlatModel.score_history`在完整原权限、实际C/P/T、model/input/capture及consumer/native核验之后，才使用实例私有的verified-components LRU；首次仍重算原数学并byte-match，命中只复用不可变logweights/logdensity，summary/diagnostics/capture逐次新建。8MiB/16项上限独立于科学state，显式NPZ/digest不携带缓存，load/replace从空缓存开始。实际跨worker边界传递plan、artifact与JSON/NPZ，模型在worker内重建。
+
 `ResponseDictionarySpec("bspline", duration, k, endpoint)`编译固定cubic/open-clamped/uniform字典，free或hard-value消费同ambient与interior selector。原`dictionary_artifact`唯一owner的 `/3`核exact rational表达，Gaussian/cosine仍 `/2`；同五数组进入已有prior/geometry/continuous/ensemble/OOF与保存链。cubic非零shift/width及off-grid导数尚unsupported，零状态直接消费保存native矩阵。
 
 `FittedEnsemble.oof_probability_record`持有原grouped温度循环实际返回的完整C-only概率、inner producer identities及final program关联；原ensemble包保存该immutable记录，模型既有fit-binding锚定OOF digest与OOF前base数值身份。fixed/grouped共享同一final专家tuple；actual K与完整OOF标签剂量分开。完整组nested研究入口可显式使用`InnerReplayRecorder`保存同一次run的实际inner模型和评分并零拟合重放；不从final模型回推原inner评分，不将全C OOF改称nested选择。

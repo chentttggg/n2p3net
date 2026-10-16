@@ -1,0 +1,194 @@
+{
+  "schema": "n2p3_joint_predictive_evidence_root_acceptance/1",
+  "status": "accepted_empirical_OOF1_and_separate_single_record_continuous_audit",
+  "receipts": {
+    "JOINT_FLAT_COMPLETED_FORWARD_001_AUDIT.py": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_COMPLETED_FORWARD_AUDIT.py",
+      "sha256": "4d116109af239577ac54eb0f4699a6234f765439b5a89b82637fe6af40c1d9da",
+      "bytes": 8961
+    },
+    "JOINT_FLAT_COMPLETED_FORWARD_001_AUDIT.json": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_COMPLETED_FORWARD_001_AUDIT.json",
+      "sha256": "54b5026a6361cb841fd87c81f18cee4e988bda81afde38b2187e6d5d674e9981",
+      "bytes": 2043
+    },
+    "JOINT_FLAT_FORWARD_001_FUNCTIONAL_AUDIT.py": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FORWARD_FUNCTIONAL_AUDIT.py",
+      "sha256": "00a22bc0619eade5a2524f202a37425a8bc3875f41a86dab9652e2543661a6af",
+      "bytes": 4189
+    },
+    "JOINT_FLAT_FORWARD_001_FUNCTIONAL_AUDIT.json": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FORWARD_001_FUNCTIONAL_AUDIT.json",
+      "sha256": "a22715dbfdd0ceb5452b17f62b480d23e89ef1a86d7496d5d163369b59b8ba4a",
+      "bytes": 4644
+    },
+    "JOINT_FLAT_LOG_LAMBDA_PREPARED_AUDIT.py": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_LOG_LAMBDA_PREPARED_AUDIT.py",
+      "sha256": "59e8bc279fc8fc53af632f296c391bbcde24341cc6f419b74406ae71bb2542b6",
+      "bytes": 5327
+    },
+    "JOINT_FLAT_LOG_LAMBDA_PREPARED_AUDIT.json": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_LOG_LAMBDA_PREPARED_AUDIT.json",
+      "sha256": "e7cc486d55b2479179796ad4a72a14a63fc0dac29ffd3cee8eb12b8e4eddb42c",
+      "bytes": 2401
+    },
+    "JOINT_FLAT_LOG_LAMBDA_RESULT_AUDIT.py": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_LOG_LAMBDA_RESULT_AUDIT.py",
+      "sha256": "26cb9f96822648123b4f6fde4fbd088990bfad913f9e61382246367a7bb6a5bc",
+      "bytes": 13099
+    },
+    "JOINT_FLAT_LOG_LAMBDA_RESULT_AUDIT.json": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_LOG_LAMBDA_RESULT_AUDIT.json",
+      "sha256": "efbd250b5d4e2a7205bf72134fd4e4ac34eab0c4740aad56534a0d30b4d3e5e8",
+      "bytes": 14541
+    },
+    "JOINT_FLAT_LOG_LAMBDA_CONCAVITY_BOUND.py": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_LOG_LAMBDA_CONCAVITY_BOUND.py",
+      "sha256": "c90f0c8ab45e74fc322ecec317d7adfa75f46c305486da62584fcdaf91b41e13",
+      "bytes": 6293
+    },
+    "JOINT_FLAT_LOG_LAMBDA_CONCAVITY_BOUND.json": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_LOG_LAMBDA_CONCAVITY_BOUND.json",
+      "sha256": "146061d425d53d4d591c1767df6507bc39070f4f7891276e8b8a2042f3564737",
+      "bytes": 38042
+    },
+    "JOINT_FLAT_LOG_LAMBDA_FORMULA_ORACLE.py": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_LOG_LAMBDA_FORMULA_ORACLE.py",
+      "sha256": "be4a733afd4342cefeca1e33e58d4de77759551ac3dd94322a1c7404d1fdef2e",
+      "bytes": 8124
+    },
+    "JOINT_FLAT_LOG_LAMBDA_FORMULA_ORACLE.json": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_LOG_LAMBDA_FORMULA_ORACLE.json",
+      "sha256": "7c08d90b0c39e21ced40ec5e7cd0b89465b0580710a2a5a92be09b27988fcff1",
+      "bytes": 1750
+    },
+    "JOINT_FLAT_OOF0_SUBSET_STRESS.py": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_OOF0_SUBSET_STRESS.py",
+      "sha256": "9344944aaabe78bbe09c0e953fc647c158daf30574de0e6175806a8c6bbf0cb8",
+      "bytes": 5100
+    },
+    "JOINT_FLAT_OOF0_SUBSET_STRESS.json": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_OOF0_SUBSET_STRESS.json",
+      "sha256": "e399704fa9d3e4e077dc35f23aed7c87ce7ebcd783cc486d43e2621ea55198fc",
+      "bytes": 20578
+    },
+    "terminal.receipt.json": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/terminal.receipt.json",
+      "sha256": "e50080d888b9b37a2a73e67004f827a45c72f271573f94f3828d5d9752c23e36",
+      "bytes": 1625
+    },
+    "comparison.tsv": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/comparison.tsv",
+      "sha256": "b32baeeef336aa09b57ca39561e6ceb4b6c451e2b2c9fbf79e6fa43fab6b0f05",
+      "bytes": 11693
+    },
+    "result.json": {
+      "path": "D:/BCI/worktrees/joint-flat-ensemble/tmp/joint_flat_actual31/log_lambda_OOF0/result.json",
+      "sha256": "3cd2d6bdbc6ac56431312506f4c1278139f75dd6fc0acb51e888bb9f0cf2e487",
+      "bytes": 704021
+    },
+    "comparison.json": {
+      "path": "D:/BCI/worktrees/joint-flat-ensemble/tmp/joint_flat_actual31/log_lambda_OOF0/comparison.json",
+      "sha256": "621c1248f4ea8d7b4c70ea6380f87fe1a7ab9d2e940cd6a354a206bd3505f170",
+      "bytes": 534295
+    },
+    "prepared.json": {
+      "path": "D:/BCI/worktrees/joint-flat-ensemble/tmp/joint_flat_actual31/log_lambda_OOF0/prepared.json",
+      "sha256": "3bbab318215aaf965fe6af70efa55298f57a405899ff01ad1f5ca8d919a6f7c9",
+      "bytes": 177858
+    },
+    "prepared.npz": {
+      "path": "D:/BCI/worktrees/joint-flat-ensemble/tmp/joint_flat_actual31/log_lambda_OOF0/prepared.npz",
+      "sha256": "978d59d4b682829647dbf79de64a7ada2c824f2533eee719926fecf80582266a",
+      "bytes": 1444586
+    },
+    "prepare.receipt.json": {
+      "path": "D:/BCI/worktrees/joint-flat-ensemble/tmp/joint_flat_actual31/log_lambda_OOF0/prepare.receipt.json",
+      "sha256": "a857321053dddf59b0d1ed270d53a865a8d9bcd3632afa8f3e2b2a93eb2c3719",
+      "bytes": 901
+    },
+    "joint_flat_log_lambda_actual.py": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/joint_flat_log_lambda_actual.py",
+      "sha256": "793391fc7d3e6c54f51e4e591910e9aa2da9fddc05cea089bc5a9cbb5e0b51b1",
+      "bytes": 23243
+    },
+    "joint_flat_log_lambda_core.py": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/joint_flat_log_lambda_core.py",
+      "sha256": "6b6dba9675a11626d09685433c6f019478254d027d8ec738ed5783b29ad5ad5c",
+      "bytes": 9063
+    },
+    "joint_flat_log_lambda_worker.py": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/joint_flat_log_lambda_worker.py",
+      "sha256": "96e2ceb2c6b5c690560769ef7764955c0c1c15254a61720c2bdfadc7f4dc0fac",
+      "bytes": 6400
+    }
+  },
+  "root_verified_saved_artifact_hashes": 75,
+  "root_numeric_model_EEG_or_graph_loads": 0,
+  "root_new_fits_or_sampler_calls": 0,
+  "original_finite_programme_retained": true,
+  "OOF1": {
+    "earlier_K": 68,
+    "capture_digest": "e6f2c240d84b767766ea03765274171f48c6f2c9515e326ee94bcf5fe9bcc233",
+    "raw_scalar_rows": [
+      843324
+    ],
+    "global_beta_width": 496,
+    "coefficient_width": 558,
+    "record_precision_count": 1,
+    "current_q_support": 32,
+    "coordinate_max_rhat_min_bulk_min_tail": [
+      1.0710718543982245,
+      36.916679028927526,
+      58.17757173557518
+    ],
+    "functional_max_rhat_min_bulk_min_tail": [
+      0.9997286492992484,
+      234.4804875707989,
+      250.01020357523376
+    ],
+    "max_paired_batch_mcse": 0.02905144123040178,
+    "A_contribution_ESS_min_max": [
+      1.4662518477666533,
+      1.5300263154304092
+    ],
+    "acceptance_scope": "original_finite_empirical_programme_with_original_policy"
+  },
+  "single_record_continuous_audit": {
+    "scope": "original_single_record_K0_current_only_whole_observed_current_q",
+    "requested_candidates": 32,
+    "P_F_integrals": 64,
+    "all_global_log_lambda_modes_unique": true,
+    "strict_concavity_bound": {
+      "P": {
+        "maximum_drift_residual_energy_upper": 86766.95994491862,
+        "minimum_strict_concavity_margin_lower": 79614.90767726234
+      },
+      "F": {
+        "maximum_drift_residual_energy_upper": 861939.0753058214,
+        "minimum_strict_concavity_margin_lower": 50904.82933056223
+      }
+    },
+    "max_integrated_source_span_nats": 5.865725688636303e-05,
+    "least_remote_analytic_tail_log_relative_bound": -7699.590162763619,
+    "three_tolerance_max_log_integral_change": 0.0,
+    "continuous_top": "position:12",
+    "continuous_second": "position:4",
+    "finite_top": "position:12",
+    "finite_second": "position:13",
+    "continuous_top_two_logodds": 164.65568173746578,
+    "finite_same_pair_logodds": 145.04146068382397,
+    "max_pairwise_logodds_change": 73.91750739489362,
+    "continuous_absolute_tail_log_density": 6635691.106188278,
+    "finite_absolute_tail_log_density": 6634740.648482706,
+    "absolute_tail_log_density_change": 950.4577055711842,
+    "prior": "one_proper_beta_prior_unscaled_by_lambda_and_original_physical_flat_measure",
+    "numerical_evidence": "source_column_error_estimates_and_adaptive_quadrature_convergence_with_analytic_outer_tails"
+  },
+  "root_review": "Read the raw N and one-prior/flat formula, actual preparation/constant assembly, kernel and Gamma tails, full result and saved-root global concavity witness. Verified the complete requested denominator and separate original/consumer identities. Original P/C sampling and finite results retain their producers.",
+  "ongoing": [
+    "actual31 remaining OOF and future, capsule/parent/full nested graph",
+    "generic run-scoped original-fit and history-capture reuse wiring",
+    "fast spectral continuous-lambda kernel and conditional multi-record extension"
+  ]
+}

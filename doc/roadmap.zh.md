@@ -47,7 +47,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
 | B09 空间 | physical effect/exact结构、compact长record rowspace、source group forecast与真实source/OOF/ensemble；immutable producer旧包零fit回放 | 公共跨布局与reference效能、d-prime/variance不确定性、joint MLE；Pz4保原范围 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |
-| B11 动态/稳健 | noise-only Gamma、proper与同record flat联合尺度；原raw有效行数、prefix漂移后验direct QR；实际source/C issuer、typed ensemble/generic routing、history/refusal及/2原包重放；真实H C68数据准入 | actual31完整OOF/future/wholegraph、finite Gamma连续预测精度、动态state及完整公共效能 |
+| B11 动态/稳健 | noise-only Gamma、proper与同record flat联合尺度；实际source/C issuer、typed ensemble/generic routing、history/refusal及/2原包重放；真实H C68准入、actual31 C500/前两个OOF、单record/K0完整连续λ对照及全域唯一峰 | actual31剩余OOF/future/wholegraph、快速连续λ核与条件多record扩展、动态state及完整公共效能 |
 | B12 公共流程 | 完整C/test/K0/requested与原BI/BNCI/entry005/P1读数；新seed source四fold闭合；Huebner32-choice原marker/clock与BI2014a MAT label-K方向经真实字段审阅 | 当前完整目标矩阵；record-aware通用compiler/Huebner adapter与BI新MAT输入/caller/model/capsule；BI2015a真实stimulus日志；新公共配对与泛化 |
 | B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
 | B14 工程/吞吐 | B12同resource owner/完整账；旧完整candidate恢复、source prepared与共享评分实测云候选，纯CPU尾三拓扑读数；source cache/shared current-view scoring及conditional公共白化已合入并完成相关复核 | 统一新source实际25CPU/4GPU能力及ready工作路由，完整矩阵吞吐、跨host整包和新study owner边界 |

@@ -22,6 +22,10 @@ MAT57已完成90格（42概率/48不可用）、原59次目标fit/168更新及�
 
 B11实际31导C500用原128 burnin/128 draws×2 chains完成，622坐标由独立直接自协方差重算，最大Rhat1.0413、最小bulk/tail ESS52.14/98.97，满足原1.2/5/5政策。完整新程序已消费与原C500逐字节相同的模型，继续OOF、future和whole nested graph。云owner已实际观察S4完整恢复退出0、6080请求、8原fit复用、0新fit和CPU峰24.89核；连接中断前已读原exit，最终304任务/8parent逐项绑定待恢复连接后落地。S5只供尚未开始的后五阶段。
 
+B11新OOF1/K68原模型、完整capture与559坐标/32配对概率函数已独立接受，原C500/OOF0强制复用。另一个独立单record/K0连续λ审计完成64项P/PT积分，三个实际角色均退出0且所属进程为0，0新fit/采样；完整32候选、原先验/测度/常数、source误差、解析尾界与全域唯一峰证明已核回。root再核75项保存SHA，结论与下一快速核见[响应与噪声](response_and_noise.zh.md#连续噪声尺度积分已完成的单记录对照)及[接受绑定](../assets/research_resume_20261012/joint_predictive_evidence_20261016.json)。当前generic入口正在接通原fit/capture共享复用，actual004沿原冻结源码继续。
+
+`eee72b3`已集成等价unweighted QR memo及每模型私有verified-components LRU。第一次消费原capture时真实计算并逐byte核原组件，后续相同consumer/native/input/capture复用不可变数组；每次仍完整核权限、编译P/T operands并重建summary/诊断。缓存8MiB/16项有界，NPZ、digest、load与replace保原状态语义。四项区分性合同及旧保存producer的新consumer实际通过，小样例首验证0.4250秒、命中0.0966秒，两次仅一遍组件计算；这是小输入测量。源码、返回capture及producer关系见[缓存绑定](../assets/research_resume_20261012/joint_history_score_cache_20261016.json)。
+
 
 ### 当前工作成果（2026-10-14）
 
