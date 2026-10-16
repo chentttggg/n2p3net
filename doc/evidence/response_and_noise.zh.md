@@ -47,6 +47,8 @@ B11联合模型已在原Huebner记录的500个授权标签上完成采样。直�
 
 七份预测全部封存后，原issuer才以C500授权恢复7个完整组的476标签和第二record的24个partial标签。两种连续law的argmax诊断均为0/7，whole/fixed平均NLL为319.3663/318.6237，Brier约1.999888。准确积分已经给出清楚的模型开发信号：原source→target的响应与噪声匹配、候选排序及概率校准需要联合推进。后续有限delay/width研究将固定原basis/β坐标和noise，对照平均shape、完整矩匹配Gaussian与有限state；概率校准采用逐题只看此前结果的程序。
 
+响应形状新切片已完成科学推导和两个基础模块。每个selection可有预声明的非负额外delay与正width，四臂区分原模板、平均波形、同全一二阶矩Gaussian和完整finite law；同能量并不自动有同容量。矩控制令`β=μ+Fu`、`A=diag(sqrtπ)−πsqrtπᵀ`，局部factor为`A⊗[F,μ]`；全selection共享原β，新增selection只追加其独立局部prior。该控制匹配均值/协方差和Gaussian容量代理，非Gaussian的高阶关系由finite臂保留。唯一law正规化、全矩factor、compact收缩及原native阵列的具名off-grid延拓均获root/独审接受；新正误差长求和反例已修复，记录在[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)的`source_informed_finite_response`。原source参数、Gaussian ηK噪声、physical漂移测度、C0/history和保存引擎正在接入。
+
 原shared `/3`保存root也已实现快速严格准入：用小因子见证核验原992维矩阵，误差界9.386e-12低于原3.150e-7政策，保留原root与producer。实际完整source codec加载4.254秒，其中root部分1.130秒；较早同输入加载的457.8秒中，452.3秒集中在该验证。新见证是consumer准入元数据，原模型的概率计算仍消费原矩阵。来源见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
 
 ## Shared PARCOR平稳启动因子的显式入口

@@ -2636,7 +2636,83 @@
       "legacy_basis_native_coordinates_preserved": true,
       "source_only_whole_C0_branch": "required",
       "full_nested_capsule_parent": "next_integration_after_engine",
-      "new_public_fits_or_labels_in_science": 0
+      "new_public_fits_or_labels_in_science": 0,
+      "foundational_law_continuation_controls": {
+        "status": "accepted_root_source_and_independent_review",
+        "artifacts": {
+          "finite-law-native.executed-code.zip": {
+            "path": "D:/BCI/artifacts/research-deliveries/source-response-states/foundation/finite-law-native.executed-code.zip",
+            "sha256": "a0c0df12b02756422031048849a881c4fb1253eacf9e6f92a4f2fc80a3c86935",
+            "bytes": 14649
+          },
+          "B07_RESPONSE_OWNERS_BINDING_V2.json": {
+            "path": "D:/BCI/artifacts/research-deliveries/source-response-states/foundation/B07_RESPONSE_OWNERS_BINDING_V2.json",
+            "sha256": "ccac69d5b3854bf5323ec0bb6443dfd2723ab8070a6b9cf2ed09144daeeb0660",
+            "bytes": 3934
+          },
+          "B07_RESPONSE_OWNERS_HANDOFF.md": {
+            "path": "D:/BCI/artifacts/research-deliveries/source-response-states/foundation/B07_RESPONSE_OWNERS_HANDOFF.md",
+            "sha256": "21fe7257a293e30aa43eab5406f60b43d933033cd02c98316bbb3ce3ea5f5d3e",
+            "bytes": 7393
+          },
+          "B07_SOURCE_INFORMED_INDEPENDENT_REVIEW.md": {
+            "path": "D:/BCI/artifacts/research-deliveries/source-response-states/foundation/B07_SOURCE_INFORMED_INDEPENDENT_REVIEW.md",
+            "sha256": "d65cbd19a2851f486dcfc50216cd93b8e72b6081e56a8a65f9b1c0f2a659f7bb",
+            "bytes": 5954
+          },
+          "B07_SOURCE_INFORMED_INDEPENDENT_ORACLE.py": {
+            "path": "D:/BCI/artifacts/research-deliveries/source-response-states/foundation/B07_SOURCE_INFORMED_INDEPENDENT_ORACLE.py",
+            "sha256": "a9a7848acce99e08fb467a737dd7cde925b280ef533567fcea7fc52d784083f2",
+            "bytes": 12007
+          },
+          "B07_SOURCE_INFORMED_INDEPENDENT_ORACLE.json": {
+            "path": "D:/BCI/artifacts/research-deliveries/source-response-states/foundation/B07_SOURCE_INFORMED_INDEPENDENT_ORACLE.json",
+            "sha256": "c887bfe4a39589e89eb5df4377be3b52a138a71a94fadbec26b173ce75a9f9a6",
+            "bytes": 4919
+          },
+          "B07_LAW_NATIVE_FINAL_INDEPENDENT_REVIEW_20261016.md": {
+            "path": "D:/BCI/artifacts/research-deliveries/source-response-states/foundation/B07_LAW_NATIVE_FINAL_INDEPENDENT_REVIEW_20261016.md",
+            "sha256": "06e354d4e5ba8f09655aaa9a4e719c94a512f7de9982b3321f5d2eb6ae8f9e01",
+            "bytes": 5602
+          },
+          "B07_POSITIVE_ERROR_SUM_FIXED_INDEPENDENT_PROBE_20261016.py": {
+            "path": "D:/BCI/artifacts/research-deliveries/source-response-states/foundation/B07_POSITIVE_ERROR_SUM_FIXED_INDEPENDENT_PROBE_20261016.py",
+            "sha256": "369f457e4f2da080f00be7e831112fe3557f787f30ed3a4d7d69cb14dd205a60",
+            "bytes": 1955
+          },
+          "B07_POSITIVE_ERROR_SUM_FIXED_INDEPENDENT_PROBE_20261016.json": {
+            "path": "D:/BCI/artifacts/research-deliveries/source-response-states/foundation/B07_POSITIVE_ERROR_SUM_FIXED_INDEPENDENT_PROBE_20261016.json",
+            "sha256": "cea59643e75c474d0fbfd3f4e965218300f0161f9954eaa33d1a6004a30ca05e",
+            "bytes": 1511
+          }
+        },
+        "root_verified_source_binding_references": 9,
+        "source_files": {
+          "src/research/finite_response_law.py": {
+            "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\finite_response_law.py",
+            "sha256": "f9d10f9e961dd2f851d91ce56e2083fcbecd54385fba5a50da57803e139a6be3"
+          },
+          "src/transfer/native_response_dictionary.py": {
+            "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\native_response_dictionary.py",
+            "sha256": "33e4fcce48b3c83dd20557ce488d625a6e7e39cc11082ad677162b4197e8e22e"
+          },
+          "tests/research/test_finite_response_law.py": {
+            "path": "D:\\BCI\\worktrees\\research-director\\tests\\research\\test_finite_response_law.py",
+            "sha256": "f4569d69afb274c5a75a69a895a11c599be50e5daa067bbe92a9bbfb6abffefe"
+          },
+          "tests/transfer/test_native_response_dictionary.py": {
+            "path": "D:\\BCI\\worktrees\\research-director\\tests\\transfer\\test_native_response_dictionary.py",
+            "sha256": "6b8f12f3947907b2d2c43873bdb8d5ac467907ebd501eba08e034e65296a6dd9"
+          }
+        },
+        "exact_source_code_archive_members": 4,
+        "original_new_implementation_cases": 19,
+        "final_affected_positive_error_cases": 4,
+        "public_EEG_or_truth_reads": 0,
+        "new_source_or_target_fits": 0,
+        "new_sampler_or_lambda_integrals": 0,
+        "source_response_engine_central_and_full_pipeline": "separate_ongoing"
+      }
     }
   }
 }
