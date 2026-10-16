@@ -1,0 +1,161 @@
+{
+  "schema": "n2p3_source_storage_candidate_delivery/1",
+  "recorded_date": "2026-10-16",
+  "worktree": "D:\\BCI\\worktrees\\source-lineage-storage",
+  "candidate_base_commit": "7902059",
+  "serial_owner_commit": "7902059",
+  "scope": "complete NN source storage, per-ingress cache and public candidate dependency lifecycle",
+  "current_files": {
+    "src/research/source_metadata_store.py": {
+      "path": "D:\\BCI\\worktrees\\source-lineage-storage\\src\\research\\source_metadata_store.py",
+      "sha256": "fd3ced3868010897c804fd845c458960097286d0f91ad23dc133a8e38f911fe2",
+      "bytes": 19825
+    },
+    "src/transfer/checkpoint.py": {
+      "path": "D:\\BCI\\worktrees\\source-lineage-storage\\src\\transfer\\checkpoint.py",
+      "sha256": "34b632d1afb52c8a0843507ceb23b3680d860a6e25b0cb70f06a97ff46ac3a91",
+      "bytes": 56634
+    },
+    "src/transfer/ensemble_fit.py": {
+      "path": "D:\\BCI\\worktrees\\source-lineage-storage\\src\\transfer\\ensemble_fit.py",
+      "sha256": "b0fdad260f9586c28f1320272aeebd9594d7f664c05f52bef0771d44e127dd4f",
+      "bytes": 98343
+    },
+    "src/research/prefix_inner_replay.py": {
+      "path": "D:\\BCI\\worktrees\\source-lineage-storage\\src\\research\\prefix_inner_replay.py",
+      "sha256": "a09c640da760f4d79921c4041d1028224abb62c2a61e48dc4dc2444e4463c59c",
+      "bytes": 59451
+    },
+    "src/research/prefix_selection_replay.py": {
+      "path": "D:\\BCI\\worktrees\\source-lineage-storage\\src\\research\\prefix_selection_replay.py",
+      "sha256": "46ee9a453ffce3ffd32da244d3228dbe57534865621131c9b4538a93f6ed54a0",
+      "bytes": 38671
+    },
+    "experiments/run_candidate_ensemble_study.py": {
+      "path": "D:\\BCI\\worktrees\\source-lineage-storage\\experiments\\run_candidate_ensemble_study.py",
+      "sha256": "5fd308c4d40fd987ee5426943f9bf67ee7330cccf07cf6632a96387a3d452d80",
+      "bytes": 171868
+    },
+    "experiments/run_erp_comparator.py": {
+      "path": "D:\\BCI\\worktrees\\source-lineage-storage\\experiments\\run_erp_comparator.py",
+      "sha256": "da623f86c0ed26fbc96310a9c764ed557a49a3fcd2e30996267ddcde2392df0a",
+      "bytes": 80755
+    },
+    "experiments/run_source_training_chain.py": {
+      "path": "D:\\BCI\\worktrees\\source-lineage-storage\\experiments\\run_source_training_chain.py",
+      "sha256": "362c96fcd622d9c46989f224fe2d217189fd5e7d0c83ca3c7340aaf5dd9b65bc",
+      "bytes": 149664
+    },
+    "tests/transfer/test_source_metadata_store.py": {
+      "path": "D:\\BCI\\worktrees\\source-lineage-storage\\tests\\transfer\\test_source_metadata_store.py",
+      "sha256": "7c7ce130cd384f63ef9fc0e199e6ba8b73a74d40179941454d2ec960b67eff99",
+      "bytes": 16656
+    },
+    "tests/research/test_source_storage_prefix.py": {
+      "path": "D:\\BCI\\worktrees\\source-lineage-storage\\tests\\research\\test_source_storage_prefix.py",
+      "sha256": "c67df6ed6460a104a9faf8ed17324694bdf8e68a0e061d0e60f3abc31288a23c",
+      "bytes": 10552
+    }
+  },
+  "current_receipts": {
+    "serial-owner-resume-01.xml": {
+      "path": "D:\\BCI\\artifacts\\source-lineage-storage-validation\\serial-owner-resume-01.xml",
+      "sha256": "1f4943306973e1bd27f9ed837e45a8de69873bfb39c4c30412f8ebe0e6297d9d",
+      "bytes": 712
+    },
+    "serial-owner-final-code-01.xml": {
+      "path": "D:\\BCI\\artifacts\\source-lineage-storage-validation\\serial-owner-final-code-01.xml",
+      "sha256": "3eee506686b043abe2d2b824ec08d63d992eb3ad5f4de4225651eac77244abc3",
+      "bytes": 401
+    },
+    "candidate-final-source-resume-02.xml": {
+      "path": "D:\\BCI\\artifacts\\source-lineage-storage-validation\\candidate-final-source-resume-02.xml",
+      "sha256": "5591598276121a9501946134aab043e4b1fadfcafe3fdef944e84e7b699c8514",
+      "bytes": 395
+    },
+    "candidate-parent-resume-01.binding.json": {
+      "path": "D:\\BCI\\artifacts\\source-lineage-storage-validation\\candidate-parent-resume-01.binding.json",
+      "sha256": "ae3e6214c735163f99d286eb944bbabe1b9842aa576c65c17ec8a4b893aa2633",
+      "bytes": 2998
+    }
+  },
+  "current_validation": [
+    {
+      "receipt": "serial-owner-resume-01.xml",
+      "actual_OS_exit": 0,
+      "passed": 3,
+      "scope": "failed serial fixture repaired; original scoped guard and actual binary parent lifecycle",
+      "checkpoint_source_sha256": "b44f0764170ef37d77576fba1922ff0b19352a3babf08412698422fbfc817118",
+      "subsequent_change": "unused target assignment removed; three diagnostics renamed; final new case rerun"
+    },
+    {
+      "receipt": "serial-owner-final-code-01.xml",
+      "actual_OS_exit": 0,
+      "passed": 1,
+      "scope": "final checkpoint owner bytes; source-only shared state with fresh trunks/BN/statistics"
+    },
+    {
+      "receipt": "candidate-final-source-resume-02.xml",
+      "actual_OS_exit": 0,
+      "passed": 1,
+      "scope": "actual finalize rejects same-size changed source bytes and missing source blob"
+    },
+    {
+      "receipt": "candidate-parent-resume-01.binding.json",
+      "actual_OS_exit": 0,
+      "scope": "retained original candidate full parent replay and four fresh public load objects; original bytes unchanged",
+      "source_admissions": 1,
+      "target_bindings": 4,
+      "scientific_fits": 0,
+      "subsequent_change": "final source seal check moved after replay-pool retirement; dedicated finalization case passed separately"
+    }
+  ],
+  "historical_intermediate_receipts": {
+    "candidate-shared-01.xml": {
+      "path": "D:\\BCI\\artifacts\\source-lineage-storage-validation\\candidate-shared-01.xml",
+      "sha256": "024f127abdb2ca10cffb993b99db739390ca5f01b97a15fdb2f145f97178bab1",
+      "bytes": 402
+    },
+    "prefix-storage-final.xml": {
+      "path": "D:\\BCI\\artifacts\\source-lineage-storage-validation\\prefix-storage-final.xml",
+      "sha256": "780e79ab49d32a49991b55574acb45701e77e24982f6b6609f4d471b2eeea04d",
+      "bytes": 1031
+    },
+    "candidate-closure-final.xml": {
+      "path": "D:\\BCI\\artifacts\\source-lineage-storage-validation\\candidate-closure-final.xml",
+      "sha256": "4178351f31e3fc920ff3bddcb678b83f1052f9f6434e5cf976b7b307017dc924",
+      "bytes": 715
+    },
+    "target-bind-final2.xml": {
+      "path": "D:\\BCI\\artifacts\\source-lineage-storage-validation\\target-bind-final2.xml",
+      "sha256": "63cdf2ad8a635ffc42133520ad4a3ae67235ea83765a7bd274d93f372914f95c",
+      "bytes": 556
+    }
+  },
+  "historical_receipt_rule": "Original code/producer and seals retained; these are not re-signed as final-code suite results.",
+  "original_large_storage_probe": {
+    "path": "D:\\BCI\\artifacts\\source-lineage-storage-validation\\original-source-probe-03\\STORAGE_PROBE.binding.json",
+    "sha256": "df0557221439081b763c4a2607be659325376082eafe721c058e39f2c3226404",
+    "bytes": 2168
+  },
+  "large_probe_rule": "Original 67 MB source, original producer reconstruction and metrics unchanged; no repeat large probe.",
+  "interfaces": {
+    "shared_source_store": "SourceMetadataStore(directory); public actor explicitly owns source_metadata_scope",
+    "ensemble_shared_schema": "n2p3_fitted_candidate_ensemble/4; scientific /2 or /3 retained separately",
+    "independent_export": "FittedEnsemble.export_standalone or export_source_package_closure preserves complete original dependencies",
+    "NN_admission": "Private _SourceMetadataAdmission per actual ingress; each independent public load rehashes and validates original source/target",
+    "joint_source_load": "FittedEnsemble.load/load_programs(..., _joint_source_preparation=None); lazy JointFlatModel.load(..., source_preparation=owner)",
+    "joint_source_owner": "transfer.joint_flat_programme.FrozenJointFlatSourcePreparation; independent of NN metadata store"
+  },
+  "integration_remaining": [
+    "Root merges current H native_records/fit_receipts and BI graph scope hunks by ownership.",
+    "B11 author merges specialized JointFlatPackageAdmission delegation and consumes forwarded private joint source owner.",
+    "B11 actual codec/save/load/graph/capsule/parent validation remains separately owned; no joint fit or NPZ authority is claimed here."
+  ],
+  "static_validation": {
+    "ruff": "passed on all ten affected code/test files",
+    "git_diff_check": "passed"
+  },
+  "new_training": false,
+  "new_cloud_execution": false
+}

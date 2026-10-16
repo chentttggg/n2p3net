@@ -450,7 +450,8 @@ def unavailable_prefix_expert_scores(prefix_record, spec_records, strategy, fail
             else "fit_failure") for spec in spec_records}
 
 
-def _load_inner_roster(directory, record, loaded, authority, *, calibration_groups=None):
+def _load_inner_roster(directory, record, loaded, authority, *, calibration_groups=None, _metadata_admission=None,
+                       _joint_source_preparation=None):
     producers = record["inner_producers"]
     keys = [row["fit_key"] for row in producers]
     if len(set(keys)) != len(keys):
@@ -479,7 +480,8 @@ def _load_inner_roster(directory, record, loaded, authority, *, calibration_grou
         ensemble_content = (path / "ensemble.json").read_bytes()
         if hashlib.sha256(ensemble_content).hexdigest() != producer["package_sha256"]:
             raise ValueError("prefix inner producer package changed")
-        model = FittedEnsemble._load_content(path, ensemble_content)
+        model = FittedEnsemble._load_content(path, ensemble_content, _metadata_admission=_metadata_admission,
+                                             _joint_source_preparation=_joint_source_preparation)
         models[producer["fit_key"]] = model
         if semantic_sha256(_final_identity(model)) != semantic_sha256(producer["model_identity"]):
             raise ValueError("prefix inner producer numerical identity changed")
@@ -742,6 +744,12 @@ def persist_prefix_inner_replay(prefix, programs, directory, *, recorder=None,
         "ensemble_json_sha256": None if not (directory / "ensemble.json").exists() else _sha256(directory / "ensemble.json"),
         "temperature_programs_json_sha256": _sha256(package_manifest),
     }
+    from research.source_metadata_store import collect_source_dependencies
+
+    source_dependencies = collect_source_dependencies(directory,
+        [directory, *(directory / row["package"] for row in inner_records if row["package"] is not None)])
+    if source_dependencies is not None:
+        package_hashes["source_metadata_sha256"] = semantic_sha256(source_dependencies)
     declarations = {name: _fit_record(value, participant_key=prefix.target_contract["participant_key"])
                     for name, value in recorder.prefix_programs.items()}
     record = {
@@ -775,6 +783,8 @@ def persist_prefix_inner_replay(prefix, programs, directory, *, recorder=None,
         "truth_free_future_replay": True,
         "public_scope": "software_bounded_calibration_development",
     }
+    if source_dependencies is not None:
+        record["source_metadata"] = source_dependencies
     atomic_write_json(directory / "prefix_inner_replay.json", {
         "record": record, "record_sha256": semantic_sha256(record),
     })
@@ -789,9 +799,28 @@ class _PrefixPackageAdmission:
     not supplied by a caller, and a fresh ingress always rereads saved bytes.
     """
 
-    def __init__(self, directory, *, expected_record_sha256=None):
+    def __init__(self, directory, *, expected_record_sha256=None, metadata_store=None, _metadata_admission=None,
+                 _joint_source_preparation=None):
         self.directory = Path(directory)
         self.record = _manifest(self.directory, expected_record_sha256=expected_record_sha256)
+        self._joint_source_preparation = _joint_source_preparation
+        if self._joint_source_preparation is None and any(
+            spec["family"] == "joint_flat" for spec in self.record["expert_programs"]
+        ):
+            from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
+
+            self._joint_source_preparation = FrozenJointFlatSourcePreparation()
+        from research.source_metadata_store import (
+            _SourceMetadataAdmission,
+            admit_source_dependencies,
+        )
+
+        descriptor = self.record.get("source_metadata")
+        self._metadata_admission = (_metadata_admission or _SourceMetadataAdmission(store=metadata_store)
+            if descriptor is None else admit_source_dependencies(descriptor, self.directory,
+                store=metadata_store, admission=_metadata_admission))
+        if descriptor is not None and self.record["package_hashes"].get("source_metadata_sha256") != semantic_sha256(descriptor):
+            raise ValueError("prefix package changed its complete source dependency seal")
         if ((self.directory / "ensemble.json").is_symlink()
                 or (self.directory / "temperature_programs.json").is_symlink()):
             raise ValueError("prefix numerical package manifest path is a symlink")
@@ -799,7 +828,14 @@ class _PrefixPackageAdmission:
                 and not (self.directory / "ensemble.json").exists()):
             raise ValueError("prefix ensemble package differs from captured numerical package")
         temperature, self.programs = FittedEnsemble._admit_programs(
-            self.directory, package_hashes=self.record["package_hashes"])
+            self.directory, package_hashes=self.record["package_hashes"], _metadata_admission=self._metadata_admission,
+            _joint_source_preparation=self._joint_source_preparation)
+        packages = [self.directory, *(self.directory / row["package"] for row in self.record["inner_producers"]
+                                      if row["package"] is not None)]
+        from research.source_metadata_store import collect_source_dependencies
+
+        if semantic_sha256(collect_source_dependencies(self.directory, packages)) != semantic_sha256(descriptor):
+            raise ValueError("prefix source closure differs from its actual numerical producers")
         self._admit_declarations(temperature["programs"])
 
     def _admit_declarations(self, actual_programs):
@@ -870,7 +906,9 @@ def _replay_admitted_prefix(admission, *, prefix=None, future_views=None,
         groups = {}
     exact_checks = 0
     for _, row, model in _load_inner_roster(directory, record, loaded, authority,
-                                          calibration_groups=groups if prefix is not None else None):
+                                          calibration_groups=groups if prefix is not None else None,
+                                          _metadata_admission=admission._metadata_admission,
+                                          _joint_source_preparation=admission._joint_source_preparation):
         if prefix is not None:
             held = groups[row["held_record_id"]]
             score = {name: item.record() for name, item in model.score_experts(held.view).items()}
@@ -924,9 +962,12 @@ def _replay_admitted_prefix(admission, *, prefix=None, future_views=None,
 
 def replay_prefix_inner_replay(directory, *, prefix=None, future_views=None,
                                source_checkpoints=None, context=None, expected_record_sha256=None,
-                               device=None, atol=0.0, rtol=0.0):
+                               device=None, atol=0.0, rtol=0.0, _metadata_admission=None,
+                               _joint_source_preparation=None):
     """Admit saved state once and replay every actual requested observation."""
-    admission = _PrefixPackageAdmission(directory, expected_record_sha256=expected_record_sha256)
+    admission = _PrefixPackageAdmission(directory, expected_record_sha256=expected_record_sha256,
+                                        _metadata_admission=_metadata_admission,
+                                        _joint_source_preparation=_joint_source_preparation)
     return admission.replay(prefix=prefix, future_views=future_views, source_checkpoints=source_checkpoints,
                             context=context, device=device, atol=atol, rtol=rtol)
 

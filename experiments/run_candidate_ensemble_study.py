@@ -933,10 +933,13 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
     return json.loads((directory / "result.json").read_bytes())
 
 
-def _subject(row, plan, directory, expected_source, source_snapshots):
+def _subject(row, plan, directory, expected_source, source_snapshots, *, metadata_directory=None):
     directory = Path(directory)
+    from research.source_metadata_store import SourceMetadataStore, source_metadata_scope
+
     try:
-        return _subject_impl(row, plan, directory, expected_source, source_snapshots)
+        with source_metadata_scope(SourceMetadataStore(metadata_directory or directory.parent / "source_metadata")):
+            return _subject_impl(row, plan, directory, expected_source, source_snapshots)
     except BaseException as error:
         if _WORKER_ABORT is not None:
             _WORKER_ABORT.set()
@@ -959,11 +962,12 @@ def candidate_participant_adapter(arguments):
     owner = current_input_admission()
     writer = owner.artifact_directory(output, arguments["output_estimate_bytes"]) if owner is not None else nullcontext()
     with writer:
-        run_study(plan_path, output, _actor_index=arguments["record_index"], _native_threads=native)
+        run_study(plan_path, output, _actor_index=arguments["record_index"], _native_threads=native,
+                  _metadata_directory=arguments.get("metadata_directory"))
     return str(output / f"participant_{arguments['record_index']:03d}" / "result.json")
 
 
-def candidate_tasks(plan_path, output, resources, *, dependencies=(), task_prefix="candidate"):
+def candidate_tasks(plan_path, output, resources, *, dependencies=(), task_prefix="candidate", metadata_directory=None):
     from research.cloud_execution import CloudTask, target_phase_resources
 
     plan_path, output = Path(plan_path).resolve(), Path(output).resolve()
@@ -971,7 +975,8 @@ def candidate_tasks(plan_path, output, resources, *, dependencies=(), task_prefi
     return [CloudTask(f"{task_prefix}:{index:03d}",
         "experiments.run_candidate_ensemble_study:candidate_participant_adapter",
         {"plan": str(plan_path), "output": str(output / "participant_groups" / f"participant_{index:03d}"),
-         "record_index": index, "output_estimate_bytes": min(2**30, resources["target_worker_memory_bytes"])},
+         "record_index": index, "metadata_directory": str(metadata_directory or output / "source_metadata"),
+         "output_estimate_bytes": min(2**30, resources["target_worker_memory_bytes"])},
         str(output / "participant_groups" / f"participant_{index:03d}"),
         target_phase_resources(resources, plan.get("device", "cpu")), tuple(dependencies))
         for index in range(len(plan["records"]))]
@@ -1055,7 +1060,7 @@ def candidate_participant_admission_adapter(arguments):
 
 
 def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, source_snapshots=None,
-                                     replay_admission=None):
+                                     replay_admission=None, _metadata_admission=None, _joint_source_preparation=None):
     from research.prefix_selection_replay import _SelectionReplayAdmission
 
     expected = _prefix_selection_requests(plan, scopes)
@@ -1115,7 +1120,9 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, 
             for receipt in seal["files"]:
                 if _file_receipt(directory / receipt["path"], directory) != receipt:
                     raise ValueError("nested prefix model/graph byte seal changed")
-            graph_owner = _SelectionReplayAdmission(package, expected_graph_sha256=seal["graph_sha256"])
+            graph_owner = _SelectionReplayAdmission(package, expected_graph_sha256=seal["graph_sha256"],
+                                                     _metadata_admission=_metadata_admission,
+                                                     _joint_source_preparation=_joint_source_preparation)
             selection = graph_owner.graph["selection"]
             selection_digest = semantic_sha256(selection)
         else:
@@ -1248,13 +1255,30 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
     if authority is None:
         return None
     group, index, directory, expected_path, ledger, scopes = authority
+    from research.source_metadata_store import (
+        _SourceMetadataAdmission,
+        admit_source_dependencies,
+        collect_source_dependencies,
+    )
+
+    metadata_admission = _SourceMetadataAdmission()
+    joint_source_preparation = None
+    if any(spec["family"] == "joint_flat" for spec in plan["experts"]):
+        from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
+
+        joint_source_preparation = FrozenJointFlatSourcePreparation()
+    dependencies = collect_source_dependencies(directory,
+        [path.parent for path in directory.rglob("ensemble.json")])
+    if dependencies is not None:
+        admit_source_dependencies(dependencies, directory, admission=metadata_admission)
     if replay_admission is not None:
         from research.prefix_replay_execution import CompletedParticipantReplay
 
         if not isinstance(replay_admission, CompletedParticipantReplay):
             raise TypeError("candidate admission requires the actual private completed replay owner")
     selection_packages, selection_fits, selection_started, selection_failed = _admit_prefix_selection_packages(
-        directory, group, plan, scopes, ledger, source_snapshots=source_snapshots, replay_admission=replay_admission)
+        directory, group, plan, scopes, ledger, source_snapshots=source_snapshots, replay_admission=replay_admission,
+        _metadata_admission=metadata_admission, _joint_source_preparation=joint_source_preparation)
     if semantic_sha256(ledger["pipeline_requests"]) != semantic_sha256(
             _resolved_pipeline_requests(plan, index, ledger["requested"], scopes)):
         raise ValueError("candidate prefit request ledger omits or changes declared pipeline requests")
@@ -1372,7 +1396,8 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
             prefix_digest = semantic_sha256(prefix_record)
             if delivered is None:
                 replay_prefix_inner_replay(package, context=expected_context,
-                    expected_record_sha256=prefix_digest, device=plan["device"])
+                    expected_record_sha256=prefix_digest, device=plan["device"],
+                    _metadata_admission=metadata_admission, _joint_source_preparation=joint_source_preparation)
             elif (delivered["record_sha256"] != prefix_digest
                     or semantic_sha256(delivered["future_rows"]) != semantic_sha256(prefix_record["future_score_rows"])):
                 raise ValueError("candidate private prefix admission changed captured future probabilities")
@@ -1557,15 +1582,41 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
                 or len(identities) != len(applicable) or not fit_complete):
             raise ValueError("completed candidate result differs from its sealed requests or predictions")
         result.update(persisted)
+    # Keep the original dependency facts after the independent numerical gate;
+    # finalization rechecks these same bytes without retaining decoded sources.
+    source_artifacts = ({} if dependencies is None else {
+        reference["checkpoint_sha256"]: {
+            "path": str((directory / dependencies["directory"] / (reference["checkpoint_sha256"] + ".pt")).resolve()),
+            "sha256": reference["checkpoint_sha256"], "bytes": reference["checkpoint_bytes"]}
+        for reference in dependencies["references"]})
+    result["source_metadata_artifacts"] = [source_artifacts[key] for key in sorted(source_artifacts)]
     return result
+
+
+def _verify_candidate_source_artifacts(participants):
+    """Retain each independently admitted original blob through finalization."""
+    admitted = {}
+    for participant in participants:
+        for artifact in participant.get("source_metadata_artifacts", ()):
+            path = Path(artifact["path"])
+            if str(path) in admitted:
+                if admitted[str(path)] != artifact:
+                    raise ValueError("candidate source consumers disagree on their original blob")
+                continue
+            receipt = _file_receipt(path, path.parent)
+            if receipt["sha256"] != artifact["sha256"] or receipt["bytes"] != artifact["bytes"]:
+                raise ValueError("admitted candidate source bytes changed before programme finalization")
+            admitted[str(path)] = artifact
 
 
 class CandidateCloudProgramme:
     """Scientific consumer hooks; the caller owns the single CloudExecutor."""
 
-    def __init__(self, plan_path, output, resources, *, task_prefix, dependencies, input_admission=None):
+    def __init__(self, plan_path, output, resources, *, task_prefix, dependencies, input_admission=None,
+                 metadata_directory=None):
         self.original_plan_path = Path(plan_path).resolve()
         self.output, self.resources = Path(output).resolve(), resources
+        self.metadata_directory = Path(metadata_directory or self.output / "source_metadata").resolve()
         self.task_prefix, self.dependencies = task_prefix, tuple(dependencies)
         self.input_admission = input_admission
         self.base_plan = json.loads(self.original_plan_path.read_bytes())
@@ -1602,7 +1653,8 @@ class CandidateCloudProgramme:
             "base_plan_sha256": _file_receipt(self.original_plan_path, self.original_plan_path.parent)["sha256"],
             "requests": [request for index in range(len(self.plan["records"])) for request in _pipeline_requests(self.plan, index)]}, input_admission)
         _write_candidate_json(self.plan_path, self.plan, input_admission)
-        self.tasks = candidate_tasks(self.plan_path, self.output, resources, dependencies=self.dependencies, task_prefix=task_prefix)
+        self.tasks = candidate_tasks(self.plan_path, self.output, resources, dependencies=self.dependencies,
+                                     task_prefix=task_prefix, metadata_directory=self.metadata_directory)
         self.task_roster = tuple(self.tasks)
         self.execution_workers = (resources["max_cache_group_processes"] if self.replay_enabled
             else resources["target_workers"])
@@ -2043,6 +2095,7 @@ class CandidateCloudProgramme:
             elif self.replay_pool.record()["resident_preparations"] or self.replay_pool.record()["pending_preparations"]:
                 raise ValueError("candidate replay cleanup requires its actual settled CloudRun")
             self.preparation_failures.update(self.replay_pool.failures)
+        _verify_candidate_source_artifacts(self.admitted.values())
         outcomes = [results.get(task.task_id) or CloudResult(task.task_id, "not_started", failure={
             "type": "UnpublishedReplayTask", "stage": "artifact_admission",
             "message": "task construction or callback ACK failed before actual executor publication"}) for task in self.tasks]
@@ -2122,9 +2175,9 @@ class CandidateCloudProgramme:
 
 
 def build_candidate_cloud_tasks(plan_path, output, resources, *, source_seed_catalog=None, source_snapshot=None,
-                                task_prefix="candidate", dependencies=(), input_admission=None):
+                                task_prefix="candidate", dependencies=(), input_admission=None, metadata_directory=None):
     programme = CandidateCloudProgramme(plan_path, output, resources, task_prefix=task_prefix, dependencies=dependencies,
-                                        input_admission=input_admission)
+                                        input_admission=input_admission, metadata_directory=metadata_directory)
     needs_source = any(value["family"] == "trial" and value["recipe"]["initialization"] == "source"
                        for value in programme.plan["experts"])
     ready_source = source_seed_catalog is not None or not needs_source or programme.plan.get("source_seed_catalog")
@@ -2270,7 +2323,7 @@ def _candidate_source_declaration(row):
 
 
 def run_study(plan_path: str | Path, output: str | Path, *, _actor_index=None, _native_threads=None,
-              execution="cloud"):
+              execution="cloud", _metadata_directory=None):
     """Standalone cloud execution, or the explicit in-process scientific seam."""
     if execution not in {"cloud", "inline"}:
         raise ValueError("candidate execution must be cloud or inline")
@@ -2298,10 +2351,12 @@ def run_study(plan_path: str | Path, output: str | Path, *, _actor_index=None, _
     try:
         if _actor_index is not None:
             row = plan["records"][_actor_index]
-            return _subject(row, plan, output / f"participant_{_actor_index:03d}", source, snapshots)
+            return _subject(row, plan, output / f"participant_{_actor_index:03d}", source, snapshots,
+                            metadata_directory=_metadata_directory)
         if execution == "inline":
             for index, row in enumerate(plan["records"]):
-                completed.append(_subject(row, plan, output / f"participant_{index:03d}", source, snapshots))
+                completed.append(_subject(row, plan, output / f"participant_{index:03d}", source, snapshots,
+                    metadata_directory=_metadata_directory or output / "source_metadata"))
             if _executing_source() != source:
                 raise ValueError("candidate execution source changed during the programme")
             return _finalize_candidate_report(plan, source, completed, output)

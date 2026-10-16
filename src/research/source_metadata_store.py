@@ -8,6 +8,8 @@ from __future__ import annotations
 import hashlib
 import io
 import os
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 from uuid import uuid4
 
@@ -15,6 +17,21 @@ from research.frozen_metadata import freeze_metadata, plain_metadata
 
 SOURCE_CONTRACT_REF_SCHEMA = "n2p3_source_contract_reference/1"
 SOURCE_STORE_SCHEMA = "n2p3_complete_source_store/1"
+_SOURCE_WRITER = ContextVar("complete_source_metadata_writer", default=None)
+
+
+def current_source_metadata_store():
+    return _SOURCE_WRITER.get()
+
+
+@contextmanager
+def source_metadata_scope(store):
+    """Choose shared storage only inside the actual scientific writer scope."""
+    token = _SOURCE_WRITER.set(store)
+    try:
+        yield
+    finally:
+        _SOURCE_WRITER.reset(token)
 
 
 def source_contract_reference(content, training_contract_digest, target_binding, evidence_scope):
@@ -254,3 +271,123 @@ def expand_source_semantics(record, admission, *, require_references=False):
     if isinstance(record, list):
         return [expand_source_semantics(value, admission, require_references=require_references) for value in record]
     return record
+
+
+def source_dependency_descriptor(directory, store, references):
+    """Relative locators keep a complete run and its source directory relocatable."""
+    from research.contracts import semantic_sha256
+
+    unique = {semantic_sha256(reference): plain_metadata(freeze_metadata(reference)) for reference in references}
+    return {"schema": SOURCE_STORE_SCHEMA,
+            "directory": Path(os.path.relpath(store.directory, Path(directory).resolve())).as_posix(),
+            "references": [unique[key] for key in sorted(unique)]}
+
+
+def admit_source_dependencies(descriptor, directory, *, store=None, admission=None):
+    if (set(descriptor) != {"schema", "directory", "references"}
+            or descriptor["schema"] != SOURCE_STORE_SCHEMA
+            or not isinstance(descriptor["directory"], str) or Path(descriptor["directory"]).is_absolute()
+            or not isinstance(descriptor["references"], list) or not descriptor["references"]):
+        raise ValueError("package lacks its complete explicit source dependency closure")
+    actual_store = SourceMetadataStore(Path(directory) / descriptor["directory"])
+    if store is not None and actual_store.directory != store.directory:
+        raise ValueError("source dependency store differs from its actual package locator")
+    owner = admission or _SourceMetadataAdmission(store=actual_store)
+    if owner._store is None:
+        owner._store = actual_store
+    elif owner._store.directory != actual_store.directory:
+        raise ValueError("one source admission cannot change its actual package store")
+    from research.contracts import semantic_sha256
+
+    keys = set()
+    for reference in descriptor["references"]:
+        key = semantic_sha256(reference)
+        if key in keys:
+            raise ValueError("package repeats its source authority dependency")
+        keys.add(key)
+        owner.resolve(reference)
+    return owner
+
+
+def collect_source_dependencies(directory, package_directories):
+    """Seal the complete numerical-package dependency union in its parent."""
+    import json
+
+    from research.contracts import semantic_sha256
+
+    references, store = {}, None
+    for package in package_directories:
+        path = Path(package) / "ensemble.json"
+        if not path.exists():
+            continue
+        payload = json.loads(path.read_bytes())
+        record = payload["record"]
+        if payload["record_sha256"] != semantic_sha256(record):
+            raise ValueError("source closure collection requires the actual sealed numerical package")
+        descriptor = record.get("source_metadata")
+        if descriptor is None:
+            continue
+        current = SourceMetadataStore(Path(package) / descriptor["directory"])
+        if store is not None and current.directory != store.directory:
+            raise ValueError("one package closure must use one actual complete source store")
+        store = current
+        for reference in descriptor["references"]:
+            references[semantic_sha256(reference)] = reference
+    return None if not references else source_dependency_descriptor(directory, store, references.values())
+
+
+def export_source_package_closure(directory, destination):
+    """Copy a package/graph plus complete shared sources with original seals.
+
+    Preserve all relative locators and file bytes. The returned entry is inside
+    the exported closure and can be loaded without the original run or checkout.
+    """
+    import shutil
+
+    from research.execution import atomic_write_json
+    from research.source_execution import current_input_admission
+
+    directory, destination = Path(directory).resolve(), Path(destination).resolve()
+    if destination.is_relative_to(directory):
+        raise ValueError("source closure export must have an independent destination")
+    packages = [path.parent for path in directory.rglob("ensemble.json")]
+    descriptor = collect_source_dependencies(directory, packages)
+    roots = [directory]
+    if descriptor is not None:
+        roots.append((directory / descriptor["directory"]).resolve())
+    common = Path(os.path.commonpath(roots))
+    files = {}
+    for path in directory.rglob("*"):
+        if path.is_file():
+            if path.is_symlink():
+                raise ValueError("package closure requires original regular artifacts")
+            files[path.relative_to(common)] = path
+    if descriptor is not None:
+        admission = admit_source_dependencies(descriptor, directory)
+        store = SourceMetadataStore(directory / descriptor["directory"])
+        for reference in descriptor["references"]:
+            path = store.directory / (reference["checkpoint_sha256"] + ".pt")
+            if hashlib.sha256(admission.content(reference)).hexdigest() != reference["checkpoint_sha256"]:
+                raise ValueError("source closure differs from its admitted original bytes")
+            files[path.relative_to(common)] = path
+    destination.mkdir(parents=True, exist_ok=False)
+    owner = current_input_admission()
+    from contextlib import nullcontext
+
+    receipts = {}
+    source_seals = ({} if descriptor is None else {
+        (store.directory / (reference["checkpoint_sha256"] + ".pt")).relative_to(common): reference["checkpoint_sha256"]
+        for reference in descriptor["references"]})
+    with owner.artifact_directory(destination, sum(path.stat().st_size for path in files.values()) + 2**20) if owner else nullcontext():
+        for relative, source in files.items():
+            target = destination / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, target)
+            receipts[relative.as_posix()] = {"sha256": hashlib.sha256(target.read_bytes()).hexdigest(),
+                                            "bytes": target.stat().st_size}
+            if relative in source_seals and receipts[relative.as_posix()]["sha256"] != source_seals[relative]:
+                raise ValueError("source closure changed while its original bytes were copied")
+        entry = destination / directory.relative_to(common)
+        atomic_write_json(destination / "source_closure.json", {"schema": "n2p3_source_package_closure/1",
+            "entry": entry.relative_to(destination).as_posix(), "files": receipts})
+    return entry

@@ -681,10 +681,14 @@ class FittedEnsemble:
     def score(self, view: PredictionDecisionView):
         return self.scorer.score(self.score_experts(view))
 
-    def save(self, directory: str | Path):
+    def save(self, directory: str | Path, *, metadata_store=None):
+        from research.source_metadata_store import current_source_metadata_store
+
+        metadata_store = metadata_store or current_source_metadata_store()
         directory = Path(directory)
         directory.mkdir(parents=True, exist_ok=False)
         entries = []
+        source_references = []
         for index, expert in enumerate(self._experts):
             if expert.predictor is None:
                 entries.append({"program": expert.program.record(), "model": None,
@@ -695,7 +699,12 @@ class FittedEnsemble:
             filename = f"expert_{index:03d}." + ("pt" if expert.program.family == "trial" else
                 "json" if expert.program.signal_prior is not None else "npz")
             path = directory / filename
-            expert.predictor.save(path)
+            if expert.program.family == "trial":
+                expert.predictor.save(path, metadata_store=metadata_store)
+                if metadata_store is not None and expert.predictor.source_contract_reference is not None:
+                    source_references.append(expert.predictor.source_contract_reference)
+            else:
+                expert.predictor.save(path)
             entries.append({"program": expert.program.record(), "model": filename,
                 "model_file_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                 "model_digest": expert.model_digest, "fit_digest": expert.fit_digest,
@@ -712,11 +721,24 @@ class FittedEnsemble:
             record["pool_calibration"] = self.scorer.pool_calibration
         if self.pool_oof_record is not None:
             record["pool_OOF_probability"] = self.pool_oof_record
+        if source_references:
+            from research.source_metadata_store import source_dependency_descriptor
+
+            record["source_metadata"] = source_dependency_descriptor(directory, metadata_store, source_references)
+            record["scientific_schema"] = record["schema"]
+            record["schema"] = "n2p3_fitted_candidate_ensemble/4"
         atomic_write_json(directory / "ensemble.json", {"record": record, "record_sha256": semantic_sha256(record)})
         return directory
 
+    def export_standalone(self, directory):
+        """Write complete numerical/source dependencies in an independent package."""
+        from research.source_metadata_store import source_metadata_scope
+
+        with source_metadata_scope(None):
+            return self.save(directory)
+
     @classmethod
-    def save_programs(cls, directory, programs, *, participant_key):
+    def save_programs(cls, directory, programs, *, participant_key, metadata_store=None):
         """One numerical package, with separate declared probability programs."""
         directory = Path(directory)
         fitted = next((value for value in programs.values() if isinstance(value, cls)), None)
@@ -724,7 +746,7 @@ class FittedEnsemble:
             directory.mkdir(parents=True, exist_ok=False)
             base_digest = None
         else:
-            fitted.save(directory)
+            fitted.save(directory, metadata_store=metadata_store)
             base_digest = hashlib.sha256((directory / "ensemble.json").read_bytes()).hexdigest()
         records = {}
         for name, value in programs.items():
@@ -752,11 +774,13 @@ class FittedEnsemble:
         return directory
 
     @classmethod
-    def load_programs(cls, directory):
-        return cls._admit_programs(directory)[1]
+    def load_programs(cls, directory, *, metadata_store=None, _joint_source_preparation=None):
+        return cls._admit_programs(directory, metadata_store=metadata_store,
+                                   _joint_source_preparation=_joint_source_preparation)[1]
 
     @classmethod
-    def _admit_programs(cls, directory, *, package_hashes=None):
+    def _admit_programs(cls, directory, *, package_hashes=None, metadata_store=None, _metadata_admission=None,
+                        _joint_source_preparation=None):
         """Read one exact package once; keep decoded states inside this ingress."""
         directory = Path(directory)
         temperature_content = (directory / "temperature_programs.json").read_bytes()
@@ -791,7 +815,9 @@ class FittedEnsemble:
             raise ValueError("prefix ensemble package differs from captured numerical package")
         if ensemble_digest != record["base_package_sha256"]:
             raise ValueError("temperature programs differ from their actual final model package")
-        fitted = cls._load_content(directory, ensemble_content)
+        fitted = cls._load_content(directory, ensemble_content, metadata_store=metadata_store,
+                                   _metadata_admission=_metadata_admission,
+                                   _joint_source_preparation=_joint_source_preparation)
         if record["participant_key"] != fitted.participant_key:
             raise ValueError("temperature program participant differs from actual final model package")
         return record, {name: cls(EnsembleScorer(fitted.scorer.program, value.get("pool_calibration")), fitted._experts, fitted._training_receipts,
@@ -800,20 +826,41 @@ class FittedEnsemble:
             for name, value in record["programs"].items() if value["status"] == "completed"}
 
     @classmethod
-    def load(cls, directory: str | Path):
+    def load(cls, directory: str | Path, *, metadata_store=None, _joint_source_preparation=None):
         directory = Path(directory)
-        return cls._load_content(directory, (directory / "ensemble.json").read_bytes())
+        return cls._load_content(directory, (directory / "ensemble.json").read_bytes(), metadata_store=metadata_store,
+                                 _joint_source_preparation=_joint_source_preparation)
 
     @classmethod
-    def _load_content(cls, directory, content):
+    def _load_content(cls, directory, content, *, metadata_store=None, _metadata_admission=None,
+                      _joint_source_preparation=None):
         """Lower the same bytes whose outer package identity was admitted."""
         payload = json.loads(content)
         record = payload["record"]
-        if semantic_sha256(record) != payload["record_sha256"] or record["schema"] not in {FITTED_ENSEMBLE_SCHEMA, "n2p3_fitted_candidate_ensemble/3"}:
+        if semantic_sha256(record) != payload["record_sha256"] or record["schema"] not in {
+            FITTED_ENSEMBLE_SCHEMA, "n2p3_fitted_candidate_ensemble/3", "n2p3_fitted_candidate_ensemble/4"
+        }:
             raise ValueError("frozen ensemble manifest changed or has an unsupported schema")
-        if (record["schema"] == "n2p3_fitted_candidate_ensemble/3") != ("pool_OOF_probability" in record):
+        from research.source_metadata_store import (
+            _SourceMetadataAdmission,
+            admit_source_dependencies,
+        )
+
+        if record["schema"] == "n2p3_fitted_candidate_ensemble/4":
+            metadata_admission = admit_source_dependencies(record["source_metadata"], directory,
+                store=metadata_store, admission=_metadata_admission)
+            scientific_schema = record["scientific_schema"]
+            if scientific_schema not in {FITTED_ENSEMBLE_SCHEMA, "n2p3_fitted_candidate_ensemble/3"}:
+                raise ValueError("source-reference package changed its original scientific schema")
+        else:
+            if "source_metadata" in record or "scientific_schema" in record:
+                raise ValueError("legacy ensemble cannot claim shared source dependencies")
+            metadata_admission = _metadata_admission or _SourceMetadataAdmission(store=metadata_store)
+            scientific_schema = record["schema"]
+        if (scientific_schema == "n2p3_fitted_candidate_ensemble/3") != ("pool_OOF_probability" in record):
             raise ValueError("pool probability state requires its explicit model schema")
         experts = []
+        actual_source_references = set()
         for entry in record["experts"]:
             program = CalibrationExpertProgram.from_record(entry["program"])
             if entry["model"] is None:
@@ -826,9 +873,31 @@ class FittedEnsemble:
             content = path.read_bytes()
             if hashlib.sha256(content).hexdigest() != entry["model_file_sha256"]:
                 raise ValueError("frozen ensemble model bytes changed")
-            predictor = (FrozenTrialPredictor.load(io.BytesIO(content)) if program.family == "trial"
-                         else SpatialDecisionModel.load(io.BytesIO(content)) if program.signal_prior is not None
-                         else ContinuousDecisionModel.load(io.BytesIO(content)))
+            if program.family == "joint_flat":
+                from transfer.joint_flat_model import JointFlatModel
+                from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
+
+                if _joint_source_preparation is None:
+                    _joint_source_preparation = FrozenJointFlatSourcePreparation()
+                predictor = JointFlatModel.load(io.BytesIO(content), source_preparation=_joint_source_preparation)
+            else:
+                predictor = (FrozenTrialPredictor._load_with_admission(io.BytesIO(content), metadata_admission) if program.family == "trial"
+                             else SpatialDecisionModel.load(io.BytesIO(content)) if program.signal_prior is not None
+                             else ContinuousDecisionModel.load(io.BytesIO(content)))
+            if program.family == "trial" and predictor.source_contract_reference is not None:
+                reference = predictor.source_contract_reference
+                if entry["source_digest"] != reference["checkpoint_sha256"]:
+                    raise ValueError("source-only expert origin differs from its complete source dependency")
+                from data.identity import DatasetIdentityTable
+                from research.frozen_metadata import plain_metadata
+
+                target = plain_metadata(reference["target_binding"])
+                identity = DatasetIdentityTable.from_payload(target["identity"])
+                expected_targets = ({record["target_contract"]["participant_key"]} if "target_contract" in record
+                    else {receipt["participant_key"] for receipt in record["training_receipts"]})
+                if expected_targets != {identity.record_for(target["subject"]).authority_key()}:
+                    raise ValueError("source dependency target differs from the actual ensemble fit authority")
+                actual_source_references.add(semantic_sha256(reference))
             if predictor.digest() != entry["model_digest"]:
                 raise ValueError("frozen ensemble model state differs from its declared identity")
             binding = _model_fit_binding(predictor, program.family)
@@ -862,6 +931,10 @@ class FittedEnsemble:
                 raise ValueError("frozen ensemble recipe and fit authority differ from the actual model")
             experts.append(_FittedExpert(program, predictor, entry["model_digest"], entry["fit_digest"],
                                          entry["source_digest"], entry["logit_offset"]))
+        if record["schema"] == "n2p3_fitted_candidate_ensemble/4" and actual_source_references != {
+            semantic_sha256(reference) for reference in record["source_metadata"]["references"]
+        }:
+            raise ValueError("source dependency closure differs from the actual numerical experts")
         return cls(EnsembleScorer(EnsembleProgram.from_record(record["program"]), record.get("pool_calibration")), experts,
                    record["training_receipts"], record["temperature_calibration"],
                    target_contract=record.get("target_contract"),

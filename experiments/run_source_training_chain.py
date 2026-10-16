@@ -928,7 +928,7 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                     )
                 programme = builder(declaration["plan"], declaration["output"], resources,
                     task_prefix=f"consumer-{declaration['name']}", dependencies=(group_ids[index],),
-                    input_admission=input_admission)
+                    input_admission=input_admission, metadata_directory=output / "source_metadata")
                 consumers[declaration["name"]] = (index, programme)
                 report["consumers"].append({**declaration, "status": "waiting_source",
                     "source_dependency": group_ids[index], "requested_tasks": [task.task_id for task in programme.tasks]})
