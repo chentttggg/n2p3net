@@ -1,0 +1,159 @@
+{
+  "schema": "n2p3_completed_worktree_retirement/1",
+  "status": "removed_after_root_recovery_verification",
+  "worktree": "D:/BCI/worktrees/artifact-budget-integration",
+  "retained_head": "4f395903a7fb6dbc7d7139963bcc332c0f737132",
+  "retained_branch": "codex/artifact-budget-integration",
+  "integrated_commit": "987e3f2",
+  "root_actual_manager_combination_commit": "46732ee",
+  "recovery_files": [
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/ARTIFACT_BUDGET_IMPLEMENTATION_HANDOFF.md",
+      "bytes": 4452,
+      "sha256": "d3776658cac676a61129a83e8b1e9b99d904fb77c99e1e4c4ead0e02d1fbbba2",
+      "recovery": "D:/BCI/artifacts/research-deliveries/worktree-recovery/artifact-budget-integration/ARTIFACT_BUDGET_IMPLEMENTATION_HANDOFF.md"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery.code-only.tar.gz",
+      "bytes": 78875,
+      "sha256": "5f0fc5ad22b0a0d370c69cde46079066da49dff71772803e443fde02f916d849",
+      "recovery": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/CODE_MANIFEST.json",
+      "bytes": 6062,
+      "sha256": "e3c7cba81b643900603a55b275d1bbb7ddf5b2cf00476734113e7e13b720a579",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/CODE_MANIFEST.json"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/README.md",
+      "bytes": 5913,
+      "sha256": "8f4a1015811442c00c375003407bcfdb885298873f260298fda348703a381887",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/README.md"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/benchmark_manager_owner.py",
+      "bytes": 16394,
+      "sha256": "746a42483fa181ebc60af813af1d550efe4719d1c5f218399199df398ca2bf64",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/benchmark_manager_owner.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/checks/test_artifact_owner_throughput_contract.py",
+      "bytes": 17752,
+      "sha256": "c5ebc8075a4794777b03d645af5c6b585ccadfa26b74ea6c5a258fe630aee021",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/checks/test_artifact_owner_throughput_contract.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/export_linux_delivery.py",
+      "bytes": 4498,
+      "sha256": "e5dfb67d808683979606f1570cbf129cfc260437def8dfb41bfa5af47972c06a",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/export_linux_delivery.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/producers/baseline/src/research/__init__.py",
+      "bytes": 1107,
+      "sha256": "7a1135226c495c3de27a41ae977da1b04fdc10f9d5caf304f6a55b313fff34be",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/producers/baseline/src/research/__init__.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/producers/baseline/src/research/contracts.py",
+      "bytes": 25689,
+      "sha256": "40b5dd1fd80c03a1a9661cf03ef0b1852a7baa2e11bd82671ce037d164c9f775",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/producers/baseline/src/research/contracts.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/producers/baseline/src/research/execution.py",
+      "bytes": 6014,
+      "sha256": "ba008501965e5636a1d6f878b371df5e25a56d87d36fa2c4ff910dacfc6765df",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/producers/baseline/src/research/execution.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/producers/baseline/src/research/frozen_metadata.py",
+      "bytes": 4424,
+      "sha256": "e44cb8880fcf103cd8ab3710ef118018311346979a5017b094b705511a1a37fb",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/producers/baseline/src/research/frozen_metadata.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/producers/baseline/src/research/source_execution.py",
+      "bytes": 62610,
+      "sha256": "38b4fd9d618734ea75f8a0dbe0612c69cef22a083e0d287289817828cbf1bb31",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/producers/baseline/src/research/source_execution.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/producers/repaired/src/research/__init__.py",
+      "bytes": 1107,
+      "sha256": "7a1135226c495c3de27a41ae977da1b04fdc10f9d5caf304f6a55b313fff34be",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/producers/repaired/src/research/__init__.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/producers/repaired/src/research/contracts.py",
+      "bytes": 25689,
+      "sha256": "40b5dd1fd80c03a1a9661cf03ef0b1852a7baa2e11bd82671ce037d164c9f775",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/producers/repaired/src/research/contracts.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/producers/repaired/src/research/execution.py",
+      "bytes": 6014,
+      "sha256": "ba008501965e5636a1d6f878b371df5e25a56d87d36fa2c4ff910dacfc6765df",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/producers/repaired/src/research/execution.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/producers/repaired/src/research/frozen_metadata.py",
+      "bytes": 4424,
+      "sha256": "e44cb8880fcf103cd8ab3710ef118018311346979a5017b094b705511a1a37fb",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/producers/repaired/src/research/frozen_metadata.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/producers/repaired/src/research/source_execution.py",
+      "bytes": 68283,
+      "sha256": "b67b10514649823b47732980d389ab95b739f7b43913bbd1c4db8a2f07cdd2ec",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/producers/repaired/src/research/source_execution.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/resources/_common.py",
+      "bytes": 6068,
+      "sha256": "cefeb42d44648b5636053cd3d3d4e08723b4e07df27daa8c8ca1e235d596ca42",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/resources/_common.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/resources/detect_resources.py",
+      "bytes": 59840,
+      "sha256": "f6063f23acb9fb2f57263e015c0bfcd07dda2088f5317481e723e2c538174945",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/resources/detect_resources.py"
+    },
+    {
+      "original": "D:/BCI/worktrees/artifact-budget-integration/tmp/linux_manager_delivery/run_linux_delivery.py",
+      "bytes": 10162,
+      "sha256": "58bb13cc8d12d43f77b26ffb9169b1dce8b8834e3286aaf211d20983575bbf76",
+      "recovery_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+      "member": "linux_manager_delivery/run_linux_delivery.py"
+    }
+  ],
+  "new_exact_recovery_copy_bytes": 4452,
+  "cache_bytes_to_discard": 314201,
+  "active_path_references": 0,
+  "cloud_delivery_uses_external_stable_archive": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+  "original_tests_and_reviews": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/verification; root/tmp/ARTIFACT_BUDGET_THROUGHPUT_*_REVIEW.md",
+  "deletion_method": "cmd.exe git worktree remove",
+  "actual_cmd": "git worktree remove D:\\BCI\\worktrees\\artifact-budget-integration",
+  "actual_cmd_exit": 0,
+  "worktree_exists_after": false,
+  "git_registration_exists_after": false
+}

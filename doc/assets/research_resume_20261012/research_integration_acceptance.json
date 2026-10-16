@@ -2168,7 +2168,8 @@
         "scope": "actual SyncManager process; shared source publish, prefix package save and exact independent replay; final pool equals surviving bytes"
       },
       "linux_manager_links_fuse": "delivery in preparation; no repaired-code timing ratio claimed",
-      "old_f6_candidate": "rejected; historical writer timing remains attached to old source"
+      "old_f6_candidate": "rejected; historical writer timing remains attached to old source",
+      "linux_delivery": "artifact_owner_linux_delivery_20261016.json"
     },
     "shared_stationary_factor": {
       "author_commits": [
@@ -2245,8 +2246,9 @@
       "method": "cmd.exe git worktree remove",
       "source_storage": "source_storage_worktree_retirement_20261016.json",
       "shared_stationary_factor": "../shared_stationary_factor_20261016/worktree_retirement.json",
-      "removed_worktrees": 2,
-      "source_commits_and_necessary_payloads_preserved": true
+      "removed_worktrees": 3,
+      "source_commits_and_necessary_payloads_preserved": true,
+      "artifact_budget": "artifact_budget_worktree_retirement_20261016.json"
     }
   }
 }

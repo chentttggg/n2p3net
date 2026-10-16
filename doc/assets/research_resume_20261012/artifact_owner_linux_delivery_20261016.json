@@ -1,0 +1,21 @@
+{
+  "schema": "n2p3_artifact_owner_linux_delivery_review/1",
+  "status": "root_source_review_accepted_for_linux_execution",
+  "archive": {
+    "path": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/linux_manager_delivery.code-only.tar.gz",
+    "bytes": 78875,
+    "sha256": "5f0fc5ad22b0a0d370c69cde46079066da49dff71772803e443fde02f916d849"
+  },
+  "code_members": 17,
+  "reviewed_scripts": [
+    "benchmark_manager_owner.py",
+    "run_linux_delivery.py"
+  ],
+  "review": "real spawned Manager and four spawned writers; identical baseline/repair imports; independent liveness gate excluded from matched timing; original PhaseResources/production locks unchanged; per-task retirement and actual byte accounting; FUSE-only fresh namespace; actual process/child exits and RSS",
+  "baseline_commit": "5e21317639e5df4bf820c2b9b1a579ad08d5a413",
+  "repaired_commit": "987e3f2f517ec3306a1d797cddf2d614d8084121",
+  "local_combination": "46732ee real Manager source-storage/prefix exact replay",
+  "new_training_or_model_load": 0,
+  "cloud_execution_owner": "01a10b0f-c672-7e73-8449-4ebdaf6fc5eb",
+  "status_linux_execution": "ready_for_unique_cloud_owner"
+}

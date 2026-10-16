@@ -36,7 +36,7 @@ Shared AR实际31导×32点工厂3.814秒、峰值322MiB，误差证书1.6504e-1
 - 原[10月14日机器检查点](pause_checkpoint_20261014.json)及51成员代码小档案保持；恢复时五作者树37个WIP文件逐SHA相同。原代码档案为 `D:/BCI/artifacts/research-deliveries/research-pause-code-20261014.zip`，429281B、SHA62307bb8…。
 - 当前接受身份按[整合绑定](research_integration_acceptance.json)的`resume_20261016`及各原binding读取。旧验收只解释自己的实际源码，活动HEAD由Git解析。
 - 完成树先保提交和必要恢复映射，核无当前进程依赖，再用cmd删除；批量失败逐个处理。不能因cmd工具拒绝改用其他shell绕过。shared-factor一次误用PowerShell清理旧派生包已在其[清理回执](../shared_stationary_factor_20261016/cleanup.json)如实记录，之后停止该代理清理。
-- Source存储及shared-factor两棵完工树已由root核恢复件、Git和进程引用后通过cmd移除；原提交及必要数值载荷保留。恢复映射见[source存储](source_storage_worktree_retirement_20261016.json)和[shared-factor](../shared_stationary_factor_20261016/worktree_retirement.json)，已有1587份持久模型/结果只引用原址。
+- Source存储、shared-factor及产物预算三棵完工树已由root核恢复件、Git和进程引用后通过cmd移除；原提交及必要数值载荷保留。恢复映射见[source存储](source_storage_worktree_retirement_20261016.json)、[shared-factor](../shared_stationary_factor_20261016/worktree_retirement.json)和[产物预算](artifact_budget_worktree_retirement_20261016.json)，已有1587份持久模型/结果只引用原址。Linux代码包已移到独立稳定artifact路径并交唯一云owner，见[交付](artifact_owner_linux_delivery_20261016.json)。
 - 全部科学结论集中于[校准与选择](../../evidence/calibration_and_selection.zh.md)、[响应与噪声](../../evidence/response_and_noise.zh.md)、[公共评估](../../evidence/public_evaluation.zh.md)、[执行与集成](../../evidence/execution_and_integration.zh.md)。六指南维护使用合同；原模型、数据、结果及必要失败证据保原来源。
 
 ## 下一步集成顺序
