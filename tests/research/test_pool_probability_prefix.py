@@ -137,7 +137,9 @@ def test_nested_probability_candidate_has_two_group_warmup_and_public_parent_rep
     assert result["status"] == "completed"
     participant = result["participants"][0]
     graph_path = tmp_path / "run/participant_000/source0_target21_K800_selection/prefix_selection.json"
-    selected = json.loads(graph_path.read_bytes())["record"]["selection"]
+    from research.selection_graph_store import SelectionGraphStore
+
+    selected = SelectionGraphStore(graph_path).graph["selection"]
     assert selected["final_selection"]["minimum_training_groups"] == 2
     assert len(selected["final_selection"]["requested_held_record_ids"]) == 4
     assert selected["final_refit_scope"]["actual_K"] == 800

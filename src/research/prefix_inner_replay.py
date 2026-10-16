@@ -206,6 +206,53 @@ def prefix_input_identity(prefix: CalibrationPrefix) -> dict[str, Any]:
     return result
 
 
+class _PrefixScopeOwner:
+    """Complete scope identities from one actual immutable compiler ingress."""
+
+    def __init__(self, compiler):
+        from transfer.ensemble_views import CalibrationPrefixCompiler
+
+        if not isinstance(compiler, CalibrationPrefixCompiler):
+            raise TypeError("scope owner requires the original prefix compiler")
+        self.compiler, self._objects, self._scopes = compiler, {}, {}
+
+    def scope(self, prefix):
+        from research.frozen_metadata import freeze_metadata
+
+        actual = self.compiler.assert_original_prefix(prefix)
+        # Budget is not an authority key: validate exact original object,
+        # metadata/array headers and immutable backing before any cached use.
+        ownership = self.compiler._prefix_ownership[actual.budget]
+        ownership.assert_unchanged(actual)
+        cached = self._objects.get(id(actual))
+        if cached is not None:
+            return cached[1]
+        scope = freeze_metadata({"actual_K": actual.budget, "input": prefix_input_identity(actual)})
+        scope = self._scopes.setdefault(semantic_sha256(scope), scope)
+        self._objects[id(actual)] = actual, scope
+        return scope
+
+
+class _SourceSeedAdmission:
+    """Actual checkpoint bytes/seed admitted once in this private invocation."""
+
+    def __init__(self):
+        self._sources = {}
+
+    def source(self, source):
+        from transfer.checkpoint import load_checkpoint_payload
+
+        if not isinstance(source, FrozenSourceCheckpoint):
+            raise TypeError("source seed admission requires immutable checkpoint bytes")
+        cached = self._sources.get(id(source.content))
+        if cached is None:
+            payload = load_checkpoint_payload(io.BytesIO(source.content))
+            record = {"digest": source.digest, "seed": payload.get("training_contract", {}).get("seed")}
+            cached = source.content, record
+            self._sources[id(source.content)] = cached
+        return dict(cached[1])
+
+
 def future_input_identity(view):
     if not isinstance(view, PredictionDecisionView):
         raise TypeError("prefix future replay requires a truth-free PredictionDecisionView")
@@ -255,19 +302,19 @@ def _check_aliases(prefix, context):
     return aliases, None if mapping is None else {str(k): int(v) for k, v in mapping.items()}
 
 
-def _check_seeds(specs, sources, context):
-    from transfer.checkpoint import load_checkpoint_payload
-
+def _check_seeds(specs, sources, context, *, admission=None):
     target_seed, source_seed = context.get("target_seed"), context.get("source_seed")
     if target_seed is not None and any(spec.recipe is not None and spec.recipe.seed != target_seed for spec in specs):
         raise ValueError("prefix target seed differs from the actual recipe seed")
     actual = {}
+    owner = _SourceSeedAdmission() if admission is None else admission
+    if not isinstance(owner, _SourceSeedAdmission):
+        raise TypeError("prefix seed check requires its private actual source admission")
     for name, source in sources.items():
-        payload = load_checkpoint_payload(io.BytesIO(source.content))
-        seed = payload.get("training_contract", {}).get("seed")
-        if source_seed is not None and seed != source_seed:
+        record = owner.source(source)
+        if source_seed is not None and record["seed"] != source_seed:
             raise ValueError("prefix source seed differs from the actual checkpoint seed")
-        actual[name] = {"digest": source.digest, "seed": seed}
+        actual[name] = record
     return actual
 
 
@@ -663,7 +710,7 @@ def _recursive_close(left, right, *, atol=0.0, rtol=0.0, path="root"):
 
 def persist_prefix_inner_replay(prefix, programs, directory, *, recorder=None,
                                 expert_programs=None, program=None, source_checkpoints=None,
-                                context=None, device="cpu"):
+                                context=None, device="cpu", _source_seed_admission=None):
     """Persist a captured prefix fit and all grouped-temperature inner models."""
     if not isinstance(prefix, CalibrationPrefix):
         raise TypeError("prefix replay requires an authorized CalibrationPrefix")
@@ -693,7 +740,7 @@ def persist_prefix_inner_replay(prefix, programs, directory, *, recorder=None,
     if semantic_sha256(prefix_input_identity(prefix)) != semantic_sha256(declaration["input_identity"]):
         raise ValueError("prefix inputs changed after the captured original fit")
     aliases, alias_map = _check_aliases(prefix, context)
-    actual_source_seeds = _check_seeds(expert_programs, sources, context)
+    actual_source_seeds = _check_seeds(expert_programs, sources, context, admission=_source_seed_admission)
     directory = Path(directory)
     package_manifest = directory / "temperature_programs.json"
     if not package_manifest.exists():
@@ -800,9 +847,15 @@ class _PrefixPackageAdmission:
     """
 
     def __init__(self, directory, *, expected_record_sha256=None, metadata_store=None, _metadata_admission=None,
-                 _joint_source_preparation=None):
+                 _joint_source_preparation=None, _source_seed_admission=None, _scope_owner=None):
+        if _scope_owner is not None and not isinstance(_scope_owner, _PrefixScopeOwner):
+            raise TypeError("prefix package requires its actual private scope owner")
+        if _source_seed_admission is not None and not isinstance(_source_seed_admission, _SourceSeedAdmission):
+            raise TypeError("prefix package requires its actual checkpoint seed admission")
         self.directory = Path(directory)
         self.record = _manifest(self.directory, expected_record_sha256=expected_record_sha256)
+        self._source_seed_admission = _source_seed_admission
+        self._scope_owner = _scope_owner
         self._joint_source_preparation = _joint_source_preparation
         if self._joint_source_preparation is None and any(
             spec["family"] == "joint_flat" for spec in self.record["expert_programs"]
@@ -888,7 +941,8 @@ def _replay_admitted_prefix(admission, *, prefix=None, future_views=None,
     if device is not None and str(device) != record["device"]:
         raise ValueError("prefix replay device differs from captured fit")
     if prefix is not None:
-        actual = prefix_input_identity(prefix)
+        actual = (prefix_input_identity(prefix) if admission._scope_owner is None
+                  else admission._scope_owner.scope(prefix)["input"])
         if semantic_sha256(actual) != semantic_sha256(record["prefix_input"]):
             raise ValueError("prefix replay raw/sample/label/scope identity changed")
         if prefix.budget != record["actual_K"]:
@@ -899,7 +953,7 @@ def _replay_admitted_prefix(admission, *, prefix=None, future_views=None,
             raise ValueError("prefix native fitter operands differ from freshly compiled original input owner")
         if _source_roles(specs, sources) != record["source_checkpoint_roles"]:
             raise ValueError("prefix replay source checkpoint role or digest changed")
-        if _check_seeds(specs, sources, record["fit_context"]) != record["actual_source_seeds"]:
+        if _check_seeds(specs, sources, record["fit_context"], admission=admission._source_seed_admission) != record["actual_source_seeds"]:
             raise ValueError("prefix replay actual source checkpoint seed changed")
         groups = {group.view.record_id: group for group in prefix.complete_groups}
     else:

@@ -6,6 +6,7 @@ External containers are snapshotted; only this owner's frozen nodes are shared.
 from __future__ import annotations
 
 import hashlib
+import json
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -70,15 +71,32 @@ class FrozenMetadata(dict):
 
     def semantic_digest(self):
         if self._semantic_digest is None:
-            from research.contracts import _encode_canonical_tree
-
-            # A nested contract needs its digest, while a model envelope needs
-            # complete reusable bytes. Do not retain a second large byte copy
-            # when this node is only consumed through its validated digest.
-            encoded = (self._canonical_bytes if self._canonical_bytes is not None
-                       else _encode_canonical_tree(self.canonical_tree()))
-            self._semantic_digest = hashlib.sha256(encoded).hexdigest()
+            digest = hashlib.sha256()
+            if self._canonical_bytes is not None:
+                digest.update(self._canonical_bytes)
+            else:
+                for chunk in canonical_chunks(self):
+                    digest.update(chunk)
+            self._semantic_digest = digest.hexdigest()
         return self._semantic_digest
+
+
+def canonical_chunks(value):
+    """Encode the same canonical JSON in bounded chunks, sharing frozen children."""
+    from research.contracts import _canonical_value
+
+    owned = freeze_metadata(value)
+    canonical = owned.canonical_tree() if isinstance(owned, FrozenMetadata) else _canonical_value(owned)
+    encoder = json.JSONEncoder(sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False)
+    pending, size = [], 0
+    for chunk in encoder.iterencode(canonical):
+        pending.append(chunk)
+        size += len(chunk)
+        if size >= 65536:
+            yield "".join(pending).encode("ascii")
+            pending, size = [], 0
+    if pending:
+        yield "".join(pending).encode("ascii")
 
 
 def freeze_metadata(value):

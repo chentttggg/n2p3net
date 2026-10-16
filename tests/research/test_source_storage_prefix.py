@@ -10,8 +10,10 @@ import pytest
 import torch
 
 from research.contracts import semantic_sha256
+from research.frozen_metadata import plain_metadata
 from research.nested_selection_replay import InnerReplayRecorder
 from research.prefix_inner_replay import _PrefixPackageAdmission, persist_prefix_inner_replay
+from research.selection_graph_store import SelectionGraphStore
 from research.source_execution import (
     SourceInputAdmission,
     current_input_admission,
@@ -153,8 +155,8 @@ def test_selection_graph_source_closure_is_sealed_and_fresh_loadable(tmp_path):
         graph_dir = tmp_path / "graph"
         with source_metadata_scope(store):
             selection.save(graph_dir)
-        payload = json.loads((graph_dir / "prefix_selection.json").read_bytes())
-        assert payload["record"]["source_metadata"]["references"]
+        graph = SelectionGraphStore(graph_dir / "prefix_selection.json").graph
+        assert graph["source_metadata"]["references"]
         original = _SelectionReplayAdmission(graph_dir, expected_graph_sha256=selection.graph_sha256)
         assert original._metadata_admission.source_admissions == 1
         assert original.load().record == selection.record
@@ -163,9 +165,9 @@ def test_selection_graph_source_closure_is_sealed_and_fresh_loadable(tmp_path):
         shutil.rmtree(store.directory)
         restored = _SelectionReplayAdmission(isolated, expected_graph_sha256=selection.graph_sha256)
         assert restored.load().record == selection.record
-        changed = json.loads((isolated / "prefix_selection.json").read_bytes())
-        changed["record"].pop("source_metadata")
-        changed["record_sha256"] = semantic_sha256(changed["record"])
+        record = plain_metadata(SelectionGraphStore(isolated / "prefix_selection.json").graph)
+        record.pop("source_metadata")
+        changed = {"record": record, "record_sha256": semantic_sha256(record)}
         (isolated / "prefix_selection.json").write_text(json.dumps(changed), encoding="utf-8")
         with pytest.raises(ValueError, match="source closure"):
             _SelectionReplayAdmission(isolated)

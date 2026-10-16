@@ -8,6 +8,8 @@ import torch
 
 from research import prefix_selection_replay as owner
 from research.contracts import semantic_sha256
+from research.frozen_metadata import plain_metadata
+from research.selection_graph_store import SelectionGraphStore
 from tests.support.prefix_replay import create_prefix_replay_graph
 from train.runtime import cpu_thread_budget
 
@@ -146,7 +148,7 @@ def test_chunk_rejects_resigned_original_record_against_external_node_seal(compl
 def test_final_reduction_keeps_fresh_loaded_model_relationship(completed_chunks, actual_graph_case, monkeypatch):
     plan, results = completed_chunks
     directory, views, future, graph_sha256, _ = actual_graph_case
-    graph = json.loads((directory / "prefix_selection.json").read_bytes())["record"]
+    graph = plain_metadata(SelectionGraphStore(directory / "prefix_selection.json").graph)
     graph["selection"]["final_producer_sha256"] = "f" * 64
     admitted = owner._SelectionReplayAdmission.from_prepared_graph(directory, graph,
         expected_graph_sha256=semantic_sha256(graph))
@@ -222,16 +224,21 @@ def test_prepared_plan_owns_original_graph_across_async_caller_mutation(actual_g
     requests = plan.node_requests
     with cpu_thread_budget(1):
         before = plan.finish_replay(results)
-        admitted.graph["selection"]["baseline"] = "caller-mutation"
-        admitted.graph["selection"]["outer_metrics"]["requested_participant_count"] += 1
-        admitted.graph["selection"]["candidates"].clear()
-        admitted.graph["nodes"].reverse()
+        assert plan._graph is admitted.graph
+        with pytest.raises(TypeError, match="frozen"):
+            admitted.graph["selection"]["baseline"] = "caller-mutation"
+        with pytest.raises(TypeError, match="frozen"):
+            admitted.graph["selection"]["outer_metrics"]["requested_participant_count"] += 1
+        with pytest.raises(AttributeError):
+            admitted.graph["selection"]["candidates"].clear()
+        with pytest.raises(AttributeError):
+            admitted.graph["nodes"].reverse()
         assert plan.node_requests == requests
         assert plan.finish_replay(results) == before
 
 
 def test_prepared_graph_uses_external_exact_seal_without_reopening_original(tmp_path, monkeypatch):
-    graph = {"schema": owner.SCHEMA, "selection": {"source": "original"}, "nodes": []}
+    graph = {"schema": owner.SCHEMA, "selection": {"source": "original", "candidates": []}, "nodes": []}
     digest = semantic_sha256(graph)
 
     def no_original_read(path):
@@ -240,8 +247,8 @@ def test_prepared_graph_uses_external_exact_seal_without_reopening_original(tmp_
     monkeypatch.setattr(Path, "read_bytes", no_original_read)
     admitted = owner._SelectionReplayAdmission.from_prepared_graph(tmp_path, graph,
         expected_graph_sha256=digest)
-    assert admitted.graph == graph and admitted.graph_sha256 == digest
-    changed = {**graph, "selection": {"source": "another"}}
+    assert semantic_sha256(admitted.graph) == semantic_sha256(graph) and admitted.graph_sha256 == digest
+    changed = {**graph, "selection": {"source": "another", "candidates": []}}
     with pytest.raises(ValueError, match="graph"):
         owner._SelectionReplayAdmission.from_prepared_graph(tmp_path, changed,
             expected_graph_sha256=digest)
@@ -256,7 +263,7 @@ def test_prepared_graph_requires_the_external_seal(tmp_path):
 
 @pytest.mark.parametrize("source_kind", ["dict", "canonical_bytes"])
 def test_prepared_graph_owns_a_private_snapshot_after_caller_mutation(tmp_path, source_kind):
-    graph = {"schema": owner.SCHEMA, "selection": {"source": "original"},
+    graph = {"schema": owner.SCHEMA, "selection": {"source": "original", "candidates": []},
         "nodes": [{"scope": {"actual_K": 0}}]}
     digest = semantic_sha256(graph)
     source = (graph if source_kind == "dict" else

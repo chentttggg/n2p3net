@@ -446,22 +446,24 @@ def fit_nested_calibration_selection(calibration, candidates, *, baseline_name, 
 class _PrefixFits:
     """Same-run whole prefix programmes, each with its real inner recorder."""
 
-    def __init__(self, sources, device, context):
+    def __init__(self, sources, device, context, compiler):
+        from research.prefix_inner_replay import _PrefixScopeOwner
         from transfer.ensemble_fit import ScopedSourceCheckpointPreparation
 
         self.sources, self.device, self.context = sources, device, dict(context)
         self.preparation = ScopedSourceCheckpointPreparation()
+        self.scope_owner = _PrefixScopeOwner(compiler)
         self.nodes, self.uses, self.score_rows = {}, {}, {}
         self.fit_calls = self.cache_hits = 0
 
     def fit(self, prefix, candidate, *, held=None, use):
         from research.nested_selection_replay import InnerReplayRecorder
-        from research.prefix_inner_replay import prefix_input_identity
         from transfer.ensemble_fit import fit_calibration_prefix_programs
 
         sources = {name: self.sources[name] for name in candidate.ensemble_program.expert_ids if name in self.sources}
-        key = semantic_sha256({"prefix": prefix_input_identity(prefix), "candidate": candidate.record(),
+        key = semantic_sha256(freeze_metadata({"prefix": self.scope_owner.scope(prefix)["input"], "candidate": candidate.record(),
             "sources": {name: source.digest for name, source in sources.items()}, "device": str(self.device)})
+        )
         self.uses.setdefault(key, []).append(dict(use))
         if key in self.nodes:
             self.cache_hits += 1
@@ -534,13 +536,13 @@ def _select_prefix_program(prefix, candidates, baseline_name, compiler, fits, mi
     admitted, excluded, scope_rows = [], [], []
     for held in groups:
         training = compiler.before_group(prefix, held)
-        row = {"held_record_id": held.view.record_id, "training_scope": _prefix_selection_scope(training)}
+        row = {"held_record_id": held.view.record_id, "training_scope": fits.scope_owner.scope(training)}
         scope_rows.append(row)
         if len(training.complete_groups) < required:
             excluded.append({**row, "status": "structural_warmup", "minimum_training_groups": required})
         else:
             admitted.append((held, training))
-    record = {"training_scope": _prefix_selection_scope(prefix),
+    record = {"training_scope": fits.scope_owner.scope(prefix),
         "minimum_selection_rows": minimum_rows, "minimum_training_groups": required,
         "requested_held_record_ids": [held.view.record_id for held, _ in admitted],
         "structural_scope_rows": scope_rows, "structural_warmup_rows": excluded, "candidate_selection_rows": {}}
@@ -561,7 +563,7 @@ def _select_prefix_program(prefix, candidates, baseline_name, compiler, fits, mi
             value = fits.score(key, held.view)
             evidence.append(value)
             rows.append({"held_record_id": held.view.record_id, "fit_key": key,
-                "training_scope": _prefix_selection_scope(training), "evidence": value.record(),
+                "training_scope": fits.scope_owner.scope(training), "evidence": value.record(),
                 "fit_program_completed": not isinstance(fitted, ExpectedSubjectError),
                 "status": "scored" if value.probability_available else "unavailable"})
         metrics[candidate.name] = _metrics(tuple(held for held, _ in admitted), evidence)
@@ -649,7 +651,7 @@ def fit_nested_prefix_selection(prefix, candidates, *, baseline_name, prefix_com
         else FrozenSourceCheckpoint.from_path(value) for name, value in source_checkpoints.items()}
     if set(sources) - {spec.expert_id for candidate in candidates for spec in candidate.expert_programs}:
         raise ValueError("prefix selector received an undeclared source expert")
-    fits = _PrefixFits(sources, device, context or {})
+    fits = _PrefixFits(sources, device, context or {}, prefix_compiler)
     outer_rows, evidence = [], []
     for held in prefix.complete_groups:
         training = prefix_compiler.before_group(prefix, held)
@@ -660,7 +662,7 @@ def fit_nested_prefix_selection(prefix, candidates, *, baseline_name, prefix_com
         value = fits.score(key, held.view)
         evidence.append(value)
         outer_rows.append({"held_record_id": held.view.record_id, "selected_candidate": selected.record(),
-            "selection": selection, "refit_scope": _prefix_selection_scope(training), "refit_key": key,
+            "selection": selection, "refit_scope": fits.scope_owner.scope(training), "refit_key": key,
             "fit_program_completed": not isinstance(fitted, ExpectedSubjectError),
             "status": "scored" if value.probability_available else "unavailable",
             "evidence": value.record()})
@@ -668,13 +670,13 @@ def fit_nested_prefix_selection(prefix, candidates, *, baseline_name, prefix_com
         prefix_compiler, fits, minimum_selection_rows)
     final, key = fits.fit(prefix, selected, use={"phase": "prefix_final_refit"})
     record = {"schema": "n2p3_strict_nested_prefix_selection/1", "evidence_scope": "calibration_development",
-        "participant_key": prefix.target_contract["participant_key"], "parent_scope": _prefix_selection_scope(prefix),
+        "participant_key": prefix.target_contract["participant_key"], "parent_scope": fits.scope_owner.scope(prefix),
         "candidates": [candidate.record() for candidate in candidates], "baseline": baseline_name,
         "minimum_selection_rows": minimum_selection_rows, "source_checkpoint_sha256": {name: source.digest for name, source in sources.items()},
         "outer_requested": [group.record() for group in prefix.complete_groups], "outer_rows": outer_rows,
         "outer_metrics": None if not evidence else _metrics(prefix.complete_groups, evidence).record(),
         "final_selection": selection, "selected_candidate": selected.record(), "final_refit_key": key,
-        "final_refit_scope": _prefix_selection_scope(prefix),
+        "final_refit_scope": fits.scope_owner.scope(prefix),
         "final_producer_sha256": None if isinstance(final, ExpectedSubjectError) else semantic_sha256(_final_identity(final)),
         "final_failure": final.record(subject=prefix.target_contract["participant_key"]) if isinstance(final, ExpectedSubjectError) else None,
         "fit_calls": fits.fit_calls, "exact_prefix_cache_hits": fits.cache_hits,

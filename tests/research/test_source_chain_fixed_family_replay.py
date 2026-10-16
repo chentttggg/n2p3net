@@ -182,7 +182,9 @@ def test_actual_source_chain_four_family_replay_keeps_original_source_and_comple
     assert source["training_contract"]["objective"]["source_program_config"]["declared"] == expected
     assert report["completed_physical_fit_count"] == report["completed_logical_fit_count"] == 2
     directory = tmp_path / "candidate/participant_groups/participant_000/participant_000"
-    graph = _sealed(directory / "source11_target21_K800_selection/prefix_selection.json")
+    from research.selection_graph_store import SelectionGraphStore
+
+    graph = SelectionGraphStore(directory / "source11_target21_K800_selection/prefix_selection.json").graph
     selection = graph["selection"]
     names = {"source_nn_fixed", "scratch_nn_fixed", "source_nn_xdawn_fixed", "scratch_nn_xdawn_fixed"}
     assert {node["candidate"]["name"] for node in graph["nodes"]} == names

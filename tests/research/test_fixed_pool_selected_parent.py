@@ -51,7 +51,9 @@ def test_predeclared_fixed_tail_final_future_and_public_parent(tmp_path, tmp_pat
     assert any(row["evidence"]["log_probability"] is not None for row in selected)
     assert all(row["saved_replay_exact"] for row in selected)
     directory = tmp_path / "run/participant_000"
-    graph = json.loads((directory / "source0_target21_K800_selection/prefix_selection.json").read_bytes())["record"]
+    from research.selection_graph_store import SelectionGraphStore
+
+    graph = SelectionGraphStore(directory / "source0_target21_K800_selection/prefix_selection.json").graph
     selection = graph["selection"]
     assert selection["selected_candidate"]["strategy"] == POOL_STRATEGY
     assert selection["final_selection"]["minimum_training_groups"] == 2

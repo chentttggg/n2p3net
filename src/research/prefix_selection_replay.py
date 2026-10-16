@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 
@@ -16,16 +15,20 @@ from research.calibration_selection import (
     select_calibration_candidate,
 )
 from research.contracts import canonical_json_bytes, semantic_sha256
-from research.execution import ExpectedSubjectError, atomic_write_json
+from research.execution import ExpectedSubjectError
+from research.frozen_metadata import plain_metadata
 from research.prefix_inner_replay import (
     _manifest,
     _normalise_sources,
     _PrefixPackageAdmission,
+    _PrefixScopeOwner,
     _recursive_close,
+    _SourceSeedAdmission,
     future_input_identity,
     persist_prefix_inner_replay,
     prefix_input_identity,
 )
+from research.selection_graph_store import SelectionGraphStore, save_selection_graph
 from train.runtime import cpu_thread_budget
 from transfer.noise_model import freeze_metadata
 
@@ -39,16 +42,13 @@ def _failure(value):
 
 
 def _load_graph(directory, expected_selection_sha256=None, expected_graph_sha256=None):
-    directory = Path(directory)
-    path = directory / "prefix_selection.json"
-    if path.is_symlink():
-        raise ValueError("nested prefix graph path is a symlink")
-    payload = json.loads(path.read_bytes())
-    return _admit_graph_record(payload["record"], payload["record_sha256"],
-        expected_selection_sha256=expected_selection_sha256, expected_graph_sha256=expected_graph_sha256)
+    store = SelectionGraphStore(Path(directory) / "prefix_selection.json",
+        expected_graph_sha256=expected_graph_sha256, expected_selection_sha256=expected_selection_sha256)
+    return store.graph, store.graph_sha256
 
 
 def _admit_graph_record(graph, record_sha256, *, expected_selection_sha256=None, expected_graph_sha256=None):
+    graph = freeze_metadata(graph)
     digest = semantic_sha256(graph)
     if (graph.get("schema") != SCHEMA or digest != record_sha256
             or expected_graph_sha256 is not None and digest != expected_graph_sha256
@@ -257,14 +257,15 @@ def persist_prefix_selection(selection, directory):
         raise ValueError("nested prefix final object differs from same-run refit")
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=False)
-    nodes = []
+    nodes, seeds = [], _SourceSeedAdmission()
     for key, node in sorted(fits.nodes.items()):
         path = directory / "models" / key
         persist_prefix_inner_replay(node["prefix"], node["programs"], path,
-            recorder=node["recorder"], source_checkpoints=node["sources"], context=node["context"], device=fits.device)
+            recorder=node["recorder"], source_checkpoints=node["sources"], context=node["context"], device=fits.device,
+            _source_seed_admission=seeds)
         nodes.append({"fit_key": key, "package": f"models/{key}",
             "candidate": node["candidate"].record(),
-            "scope": {"actual_K": node["prefix"].budget, "input": prefix_input_identity(node["prefix"])},
+            "scope": fits.scope_owner.scope(node["prefix"]),
             "uses": fits.uses[key], "prefix_receipt_sha256": node["recorder"].prefix_receipt_sha256})
     graph = {"schema": SCHEMA, "selection": selection.record, "nodes": nodes,
         "same_run_producers": True, "zero_fit_replay": True}
@@ -274,8 +275,9 @@ def persist_prefix_selection(selection, directory):
         [package.parent for package in directory.rglob("ensemble.json")])
     if dependencies is not None:
         graph["source_metadata"] = dependencies
-    atomic_write_json(directory / "prefix_selection.json", {"record": graph, "record_sha256": semantic_sha256(graph)})
+    graph = freeze_metadata(graph)
     selection.graph_sha256 = semantic_sha256(graph)
+    save_selection_graph(directory / "prefix_selection.json", graph)
     return directory
 
 
@@ -297,6 +299,7 @@ class _SelectionReplayAdmission:
                  metadata_store=None, _metadata_admission=None, _joint_source_preparation=None):
         self.directory = Path(directory)
         self.graph, self.graph_sha256 = _load_graph(self.directory, expected_selection_sha256, expected_graph_sha256)
+        self._source_seed_admission = _SourceSeedAdmission()
         self._admit_source_closure(metadata_store=metadata_store, admission=_metadata_admission)
         self._admit_joint_source(_joint_source_preparation)
 
@@ -315,7 +318,7 @@ class _SelectionReplayAdmission:
             collect_source_dependencies,
         )
 
-        descriptor = self.graph.get("source_metadata")
+        descriptor = plain_metadata(self.graph.get("source_metadata"))
         actual = collect_source_dependencies(self.directory,
             [package.parent for package in self.directory.rglob("ensemble.json")])
         if semantic_sha256(actual) != semantic_sha256(descriptor):
@@ -330,13 +333,20 @@ class _SelectionReplayAdmission:
         """Open a private graph snapshot from the original canonical seal."""
         if expected_graph_sha256 is None:
             raise ValueError("prepared graph requires its external original seal")
-        content = graph if isinstance(graph, bytes) else canonical_json_bytes(graph)
-        if hashlib.sha256(content).hexdigest() != expected_graph_sha256:
-            raise ValueError("prepared graph differs from its external original seal")
-        graph, digest = _admit_graph_record(json.loads(content), expected_graph_sha256,
-            expected_selection_sha256=expected_selection_sha256, expected_graph_sha256=expected_graph_sha256)
+        if isinstance(graph, SelectionGraphStore):
+            store = graph
+            if (store.graph_sha256 != expected_graph_sha256 or expected_selection_sha256 is not None
+                    and store.selection_sha256 != expected_selection_sha256):
+                raise ValueError("prepared graph differs from its external original seal")
+        elif isinstance(graph, bytes):
+            store = SelectionGraphStore.from_bytes(graph, directory=directory,
+                expected_graph_sha256=expected_graph_sha256, expected_selection_sha256=expected_selection_sha256)
+        else:
+            store = SelectionGraphStore.from_record(graph, directory=directory,
+                expected_graph_sha256=expected_graph_sha256, expected_selection_sha256=expected_selection_sha256)
         admission = cls.__new__(cls)
-        admission.directory, admission.graph, admission.graph_sha256 = Path(directory), graph, digest
+        admission.directory, admission.graph, admission.graph_sha256 = Path(directory), store.graph, store.graph_sha256
+        admission._source_seed_admission = _SourceSeedAdmission()
         admission._admit_source_closure(admission=_metadata_admission)
         admission._admit_joint_source(_joint_source_preparation)
         return admission
@@ -370,7 +380,8 @@ def _load_admitted_selection(admission):
         path = _node_path(directory, node)
         package = _PrefixPackageAdmission(path, expected_record_sha256=node["prefix_receipt_sha256"],
                                            _metadata_admission=admission._metadata_admission,
-                                           _joint_source_preparation=admission._joint_source_preparation)
+                                           _joint_source_preparation=admission._joint_source_preparation,
+                                           _source_seed_admission=admission._source_seed_admission)
         package.replay()
         records[node["fit_key"]] = package.record
         if node["fit_key"] == graph["selection"]["final_refit_key"]:
@@ -379,9 +390,10 @@ def _load_admitted_selection(admission):
     return _loaded_final_selection(graph, records[graph["selection"]["final_refit_key"]], final_programs)
 
 
-def _original_parent(prefix, prefix_compiler):
+def _original_parent(prefix, prefix_compiler, scope_owner=None):
     prefix_compiler.assert_original_prefix(prefix)
-    return semantic_sha256(prefix_input_identity(prefix))
+    identity = prefix_input_identity(prefix) if scope_owner is None else scope_owner.scope(prefix)["input"]
+    return semantic_sha256(identity)
 
 
 def _seal_node_request(record):
@@ -445,12 +457,13 @@ def _saved_replay_result(record, request):
 
 def _replay_selection_node(envelope, *, directory, parent_prefix, prefix_compiler,
                            future_views, source_checkpoints, source_sha256, parent_sha256,
-                           _metadata_admission=None, _joint_source_preparation=None):
+                           _metadata_admission=None, _joint_source_preparation=None,
+                           _scope_owner=None, _source_seed_admission=None):
     request = _read_node_request(envelope)
     if request["parent_input_sha256"] != parent_sha256:
         raise ValueError("selection node request changed its original parent scope")
     current = prefix_compiler.compile(request["actual_K"])
-    identity = prefix_input_identity(current)
+    identity = prefix_input_identity(current) if _scope_owner is None else _scope_owner.scope(current)["input"]
     if (semantic_sha256(identity) != request["prefix_input_sha256"]
             or semantic_sha256({"actual_K": current.budget, "input": identity}) != request["scope_sha256"]):
         raise ValueError("selection node request changed its actual compiled scope")
@@ -469,7 +482,8 @@ def _replay_selection_node(envelope, *, directory, parent_prefix, prefix_compile
     path = _node_path(directory, request)
     package = _PrefixPackageAdmission(path, expected_record_sha256=request["prefix_receipt_sha256"],
                                      _metadata_admission=_metadata_admission,
-                                     _joint_source_preparation=_joint_source_preparation)
+                                     _joint_source_preparation=_joint_source_preparation,
+                                     _source_seed_admission=_source_seed_admission, _scope_owner=_scope_owner)
     record = package.record
     if (semantic_sha256(record["prefix_input"]) != request["prefix_input_sha256"]
             or semantic_sha256(record["expert_programs"]) != semantic_sha256(candidate.record()["expert_programs"])
@@ -508,18 +522,20 @@ def replay_selection_chunk(requests, *, directory, parent_prefix, prefix_compile
         from research.source_metadata_store import _SourceMetadataAdmission
 
         metadata_admission = _SourceMetadataAdmission()
+        scope_owner, seed_admission = _PrefixScopeOwner(prefix_compiler), _SourceSeedAdmission()
         joint_source_preparation = None
         if any(spec["family"] == "joint_flat" for row in records for spec in row["candidate"]["expert_programs"]):
             from transfer.joint_flat_programme import FrozenJointFlatSourcePreparation
 
             joint_source_preparation = FrozenJointFlatSourcePreparation()
-        parent_sha256 = _original_parent(parent_prefix, prefix_compiler)
+        parent_sha256 = _original_parent(parent_prefix, prefix_compiler, scope_owner)
         future_views, sources = tuple(future_views), _normalise_sources(source_checkpoints)
         source_sha256 = {name: source.digest for name, source in sources.items()}
         return [_replay_selection_node(request, directory=directory, parent_prefix=parent_prefix,
             prefix_compiler=prefix_compiler, future_views=future_views, source_checkpoints=sources,
             source_sha256=source_sha256, parent_sha256=parent_sha256,
-            _metadata_admission=metadata_admission, _joint_source_preparation=joint_source_preparation)[0]
+            _metadata_admission=metadata_admission, _joint_source_preparation=joint_source_preparation,
+            _scope_owner=scope_owner, _source_seed_admission=seed_admission)[0]
             for request in requests]
 
 
@@ -530,11 +546,13 @@ class SelectionReplayPlan:
         self._graph, self._directory = freeze_metadata(admission.graph), admission.directory
         self._metadata_admission = admission._metadata_admission
         self._joint_source_preparation = admission._joint_source_preparation
+        self._scope_owner = _PrefixScopeOwner(prefix_compiler)
+        self._source_seed_admission = admission._source_seed_admission
         self._prefix, self._compiler = prefix, prefix_compiler
         self._future_views = tuple(future_views)
         self._sources = _normalise_sources(source_checkpoints)
         self._source_sha256 = {name: source.digest for name, source in self._sources.items()}
-        parent_sha256 = _original_parent(prefix, prefix_compiler)
+        parent_sha256 = _original_parent(prefix, prefix_compiler, self._scope_owner)
         selection = self._graph["selection"]
         if parent_sha256 != semantic_sha256(selection["parent_scope"]["input"]):
             raise ValueError("nested prefix replay original parent observations/labels changed")
@@ -610,7 +628,7 @@ class SelectionReplayPlan:
             records[key], results[key] = record, result["replay"]
         graph, selection = self._graph, self._graph["selection"]
         _audit_graph(graph, records)
-        _audit_replayed_policy(graph, self._prefix, self._compiler)
+        _audit_replayed_policy(graph, self._prefix, self._compiler, scope_owner=self._scope_owner)
         final_key = selection["final_refit_key"]
         final_programs = self._serial_final_programs
         if final_programs is None:
@@ -618,7 +636,8 @@ class SelectionReplayPlan:
             final_package = _PrefixPackageAdmission(_node_path(self._directory, node),
                 expected_record_sha256=node["prefix_receipt_sha256"],
                 _metadata_admission=self._metadata_admission,
-                _joint_source_preparation=self._joint_source_preparation)
+                _joint_source_preparation=self._joint_source_preparation,
+                _source_seed_admission=self._source_seed_admission)
             final_programs = final_package.programs
         _loaded_final_selection(graph, records[final_key], final_programs)
         summary = {"status": "replayed", "actual_K": self._prefix.budget, "producer_count": len(graph["nodes"]),
@@ -628,7 +647,7 @@ class SelectionReplayPlan:
         return json.loads(canonical_json_bytes(summary))
 
 
-def _audit_replayed_policy(graph, prefix, prefix_compiler):
+def _audit_replayed_policy(graph, prefix, prefix_compiler, *, scope_owner=None):
     parent_groups = {group.view.record_id: group for group in prefix.complete_groups}
     selection = graph["selection"]
     # Recompute the actual policy on the same saved h probabilities/truths.
@@ -637,7 +656,8 @@ def _audit_replayed_policy(graph, prefix, prefix_compiler):
     for trace in traces:
         for row in trace["structural_scope_rows"]:
             actual = prefix_compiler.before_group(prefix, parent_groups[row["held_record_id"]])
-            if semantic_sha256(prefix_input_identity(actual)) != semantic_sha256(row["training_scope"]["input"]):
+            identity = prefix_input_identity(actual) if scope_owner is None else scope_owner.scope(actual)["input"]
+            if semantic_sha256(identity) != semantic_sha256(row["training_scope"]["input"]):
                 raise ValueError("nested prefix structural scope differs from original owner compilation")
         if not trace["candidate_selection_rows"]:
             continue
@@ -662,7 +682,8 @@ def _replay_admitted_selection(admission, *, prefix, prefix_compiler, future_vie
                 source_checkpoints=plan._sources, source_sha256=plan._source_sha256,
                 parent_sha256=envelope["request"]["parent_input_sha256"],
                 _metadata_admission=admission._metadata_admission,
-                _joint_source_preparation=admission._joint_source_preparation)
+                _joint_source_preparation=admission._joint_source_preparation,
+                _scope_owner=plan._scope_owner, _source_seed_admission=admission._source_seed_admission)
             results.append(result)
             plan._serial_records[envelope["request"]["fit_key"]] = package.record
             if envelope["request"]["final"]:

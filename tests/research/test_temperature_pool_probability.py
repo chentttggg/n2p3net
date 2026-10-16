@@ -189,7 +189,9 @@ def test_predeclared_temperature_tail_final_future_and_parent_reject_changed_pro
     assert all(row["selected_candidate"]["strategy"] == TEMPERATURE_POOL_STRATEGY for row in selected)
     assert any(row["evidence"]["log_probability"] is not None for row in selected)
     directory = tmp_path / "run/participant_000"
-    graph = json.loads((directory / "source0_target21_K800_selection/prefix_selection.json").read_bytes())["record"]
+    from research.selection_graph_store import SelectionGraphStore
+
+    graph = SelectionGraphStore(directory / "source0_target21_K800_selection/prefix_selection.json").graph
     assert graph["selection"]["final_selection"]["minimum_training_groups"] == 4
     normalized = json.loads((tmp_path / "run/plan.json").read_bytes())
     source = json.loads((tmp_path / "run/executed_source.json").read_bytes())

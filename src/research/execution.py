@@ -83,6 +83,64 @@ def atomic_write_json(path: str | Path, payload: Mapping[str, Any], *, input_adm
     return target
 
 
+def atomic_write_json_stream(path: str | Path, payload: Mapping[str, Any], *, input_admission=None) -> Path:
+    """Count immutable JSON before byte admission, then atomically stream it."""
+    from research.frozen_metadata import freeze_metadata
+
+    owned = freeze_metadata(payload)
+    encoder = json.JSONEncoder(ensure_ascii=False, indent=2, allow_nan=False)
+
+    def chunks():
+        pending, size = [], 0
+        for chunk in encoder.iterencode(owned):
+            pending.append(chunk)
+            size += len(chunk)
+            if size >= 65536:
+                yield "".join(pending).encode("utf-8")
+                pending, size = [], 0
+        yield ("".join(pending) + "\n").encode("utf-8")
+
+    # This first bounded pass also rejects non-finite/unsupported values before
+    # obtaining a reservation or creating the temporary artifact.
+    nbytes = sum(len(chunk) for chunk in chunks())
+    return _atomic_write_stream(path, chunks, nbytes, input_admission=input_admission)
+
+
+def _atomic_write_stream(path, chunks, nbytes, *, input_admission=None):
+    """Publish a counted stream; callers retain ownership of its actual bytes."""
+    target = Path(path)
+    temporary = target.with_name(f".{target.name}.{uuid4().hex}.tmp")
+    if input_admission is None:
+        from research.source_execution import current_input_admission
+
+        input_admission = current_input_admission()
+    allocation = (input_admission.artifact_writer(target, nbytes, temporary_paths=(temporary,))
+                  if input_admission is not None else nullcontext())
+    with allocation:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with temporary.open("wb") as stream:
+                written = 0
+                for chunk in chunks():
+                    written += stream.write(chunk)
+                if written != nbytes:
+                    raise ValueError("streamed JSON bytes differ from the admitted immutable count")
+                stream.flush()
+                os.fsync(stream.fileno())
+            for attempt in range(7):
+                try:
+                    temporary.replace(target)
+                    break
+                except PermissionError:
+                    if attempt == 6:
+                        raise
+                    time.sleep(0.01 * 2**attempt)
+        except BaseException:
+            temporary.unlink(missing_ok=True)
+            raise
+    return target
+
+
 def publish_exclusive(path: str | Path, write) -> Path:
     """Publish a new immutable artifact without replacing an existing file."""
 

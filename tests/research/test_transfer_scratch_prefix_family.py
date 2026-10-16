@@ -222,7 +222,9 @@ def test_actual_family_cli_fits_all_programmes_and_replays_graph_parent(actual_c
     graphs = {}
     for budget in (200, 800):
         package = directory / f"source11_target21_K{budget}_selection"
-        graph = json.loads((package / "prefix_selection.json").read_bytes())["record"]
+        from research.selection_graph_store import SelectionGraphStore
+
+        graph = SelectionGraphStore(package / "prefix_selection.json").graph
         graphs[budget] = graph
         record = graph["selection"]
         assert record["final_refit_scope"]["actual_K"] == budget
