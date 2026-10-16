@@ -39,7 +39,11 @@ B11联合模型已在原Huebner记录的500个授权标签上完成采样。直�
 
 第五条OOF/K272自然完成并获独立接受：3190861个原scalar行，559坐标及32配对概率函数通过原政策，分子贡献ESS仍为1。旧审计的质量误差阈值1e−12在此过紧；独立80位计算保留实际2.60e−12均值偏差，并证明逐state正规化最多扰动whole log概率2.31e−10，低于既定1e−8归约容差。新审计使用该关系接纳原字节，模型、采样和概率均未改写。后续两行、future与完整图继续。
 
-源码及独审还确认：当前C draws只用于P sampler的初始点；实际P law从原source prior与C/P完整likelihood重新构造，同record的C不重复计入。因此具备上述条件的新连续programme可直接由真实earlier-prefix/history权限积分，省去纯初始化用途的C/P抽样。当前依序核OOF1/2对应关系，再按新身份完成7条连续前向概率；旧有限programme继续其原实验。
+源码及独审还确认：当前C draws只用于P sampler的初始点；实际P law从原source prior与C/P完整likelihood重新构造，同record的C不重复计入。因此具备上述条件的新连续programme可直接由真实earlier-prefix/history权限积分，省去纯初始化用途的C/P抽样。七条新连续前向概率沿这些真实权限完成，旧有限programme继续其原实验。
+
+完整7条连续前向程序现已完成并独立接受，K依次为0/68/136/204/272/340/408。共448个逻辑P/F项：首条64项精确复用，后六条384项按完整root/误差/来源去重后实际积分204次，0新fit/采样。全部新数值阶段退出0，whole/fixed归一log概率误差估计最大0.01448/0.02033 nats；独立80位归约最大差2.94e−10。新六行两次数值阶段累计242.26秒，原输入准备另计，来源见[完整7行接受](../assets/research_resume_20261012/joint_fast_lambda_20261016.json)。
+
+七份预测全部封存后，原issuer才以C500授权恢复7个完整组的476标签和第二record的24个partial标签。两种连续law的argmax诊断均为0/7，whole/fixed平均NLL为319.3663/318.6237，Brier约1.999888。准确积分已经给出清楚的模型开发信号：原source→target的响应与噪声匹配、候选排序及概率校准需要联合推进。后续有限delay/width研究将固定原basis/β坐标和noise，对照平均shape、完整矩匹配Gaussian与有限state；概率校准采用逐题只看此前结果的程序。
 
 原shared `/3`保存root也已实现快速严格准入：用小因子见证核验原992维矩阵，误差界9.386e-12低于原3.150e-7政策，保留原root与producer。实际完整source codec加载4.254秒，其中root部分1.130秒；较早同输入加载的457.8秒中，452.3秒集中在该验证。新见证是consumer准入元数据，原模型的概率计算仍消费原矩阵。来源见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
 

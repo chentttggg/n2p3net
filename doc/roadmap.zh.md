@@ -2,7 +2,7 @@
 
 base完整source矩阵已以seed20261014和原f3f32f8闭合：四fold各选轮及fresh refit，成功最终程序4、对应8次成功fit。原三个模型逐原字节复用，Huebner补集selected14/refit完成；原aggregate exit1和失败曝光保留，新tail exit0/owned0/transientlease0。SourceSeedCatalog→validate_source_procedure四键真实通过，root核原3+新1、合同/计划/退出与事故绑定。目标队列由云owner按BNCI→BI2014a→BI2015a→Huebner推进，见[执行主题页](evidence/execution_and_integration.zh.md)。
 
-BNCI binary首个完整目标面板已完成：160请求、128评分、32个K0协议不可用、120原目标fit，最终writer窄修后零新fit恢复。源NN相对matched scratch的AUC差为K200/800/2000的+0.039162/+0.010828/+0.007023；低剂量固定NN+xDAWN池的概率退化进入C-only校准/整程序选择研究。新candidate已由唯一云窗口推进，其余既定阶段保持完整requested。Huebner/BI原输入与共享C compiler、inner/capsule/parent接口已集成`527e1c1/5e2e32f/8e1d8ca`；13人metadata原成员已核，H最后session819请求固定。当前可执行集合为B11剩余同record完整链、原fit/capture复用的generic公共DAG与快速连续积分核；BI原MAT两个软件纵向已闭合，完整配方公共比较沿原队列推进。source metadata共享存储与独立load准入已接受，各任务按单owner接口集成。
+BNCI binary首个完整目标面板已完成：160请求、128评分、32个K0协议不可用、120原目标fit，最终writer窄修后零新fit恢复。源NN相对matched scratch的AUC差为K200/800/2000的+0.039162/+0.010828/+0.007023；低剂量固定NN+xDAWN池的概率退化进入C-only校准/整程序选择研究。新candidate已由唯一云窗口推进，其余既定阶段保持完整requested。Huebner/BI原输入与共享C compiler、inner/capsule/parent接口已集成`527e1c1/5e2e32f/8e1d8ca`；13人metadata原成员已核，H最后session819请求固定。当前可执行集合为B11剩余同record完整链、原fit/capture复用的generic公共DAG、source-informed有限响应state及其四臂控制；连续7行与因果Beta校准已接受。BI原MAT两个软件纵向已闭合，完整配方公共比较沿原队列推进。source metadata共享存储与独立load准入已接受，各任务按单owner接口集成。
 
 当前优先推进迁移异质性和高置信错误校准。原candidate完整6080请求零fit恢复已由云owner读到退出0；最终逐项绑定和后五阶段待云连接恢复。科研侧BI01的108格、MAT57的90格均完成原拟合/内部重放、完整parent正验、概率篡改负例、真实capsule与resident归还；两个一epoch开发样例后续接完整60epoch公共比较。B11实际31导C500已满足原采样政策，原模型与完成的P draws沿独立consumer继续完整OOF/future/wholegraph。四fixed程序仍按预声明baseline、tie与选择行数执行，低剂量只用合法更早组，K0保持原源能力和全部requested。
 
@@ -47,7 +47,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
 | B09 空间 | physical effect/exact结构、compact长record rowspace、source group forecast与真实source/OOF/ensemble；immutable producer旧包零fit回放 | 公共跨布局与reference效能、d-prime/variance不确定性、joint MLE；Pz4保原范围 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |
-| B11 动态/稳健 | noise-only Gamma、proper与同record flat联合尺度；实际source/C issuer、typed ensemble/generic routing、history/refusal及/2原包重放；真实H C68准入、actual31 C500/前五个OOF、单record/K0完整连续λ对照、快速核完整64格及全域唯一峰 | actual31剩余OOF/future/wholegraph、独立完整7行连续OOF与条件多record扩展、动态state及完整公共效能 |
+| B11 动态/稳健 | noise-only Gamma、proper与同record flat联合尺度；实际source/C issuer、typed ensemble/generic routing、history/refusal及/2原包重放；真实H C68准入、actual31 C500/前五个OOF、快速核与独立完整7行连续OOF、原K0全域唯一峰 | actual31剩余OOF/future/wholegraph、条件多record连续扩展、响应/噪声匹配、动态state及完整公共效能 |
 | B12 公共流程 | 完整C/test/K0/requested与原BI/BNCI/entry005/P1读数；新seed source四fold闭合；H13人metadata/819请求、record-aware compiler与原adapter；BI原MAT01/57完整开发parent/capsule/负例 | 当前完整目标矩阵；H joint真实generic DAG/coverage；BI完整配方公共比较；BI2015a真实stimulus日志；新公共配对与泛化 |
 | B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
 | B14 工程/吞吐 | B12同resource owner/完整账；旧完整candidate恢复、source prepared与共享评分实测云候选，纯CPU尾三拓扑读数；source cache/shared current-view scoring及conditional公共白化已合入并完成相关复核 | 统一新source实际25CPU/4GPU能力及ready工作路由，完整矩阵吞吐、跨host整包和新study owner边界 |

@@ -176,5 +176,172 @@
     "regenerable_fixture_cleanup_bytes": 8086935,
     "default_prior_or_tie_promotion_policy_changed": false
   },
-  "implementation_truth_authority": "Original issuer-authorized C-prefix labels are retained for fit/replay; hidden future truth is excluded from prediction, and outer held/later labels from each outer learner."
+  "implementation_truth_authority": "Original issuer-authorized C-prefix labels are retained for fit/replay; hidden future truth is excluded from prediction, and outer held/later labels from each outer learner.",
+  "causal_continuous_seven_row_consumer": {
+    "status": "accepted_root_and_independent_source_and_actual_result_review",
+    "artifacts": {
+      "continuous_beta_consumer.py": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/continuous-seven/continuous_beta_consumer.py",
+        "sha256": "8be6df50cb7c83fa9d5b51cf3c3c83ba5a9ef3411fbbfe81e479832e8b100120",
+        "bytes": 30951
+      },
+      "test_continuous_beta_consumer.py": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/continuous-seven/test_continuous_beta_consumer.py",
+        "sha256": "8372b0989ea04208b8af99ad70c95921bab29ece96bef9699012a5884862cf80",
+        "bytes": 18045
+      },
+      "continuous_beta_review_binding.json": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/continuous-seven/continuous_beta_review_binding.json",
+        "sha256": "651b65d321711e6c3c97c9b2b3be8ec77df5fd281605d75d937bee99fe0c06ab",
+        "bytes": 93880
+      },
+      "continuous_beta_actual_001.json": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/continuous-seven/continuous_beta_actual_001.json",
+        "sha256": "c4f126477cea69a1410f325bd6f7b573389023f3bef73afdea86e850af028648",
+        "bytes": 673074
+      },
+      "continuous_beta_actual_001.terminal.json": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/continuous-seven/continuous_beta_actual_001.terminal.json",
+        "sha256": "895bc738594ad05f2fe137530ee45af02422d27c5bf44fbb066371e29d2184b7",
+        "bytes": 44160
+      },
+      "continuous_beta_actual_001_runner.py": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/continuous-seven/continuous_beta_actual_001_runner.py",
+        "sha256": "e6fecf91f347c23f5dadcdde6f90b136f7d9853738ab44f7a40f51ae4596963d",
+        "bytes": 5635
+      },
+      "continuous_beta_actual_001.log": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/continuous-seven/continuous_beta_actual_001.log",
+        "sha256": "bbf422c8cd119a1c7678a5d565ca537f606bda99ef80eb24d2815d877ca68fc6",
+        "bytes": 1106
+      },
+      "CONTINUOUS_BETA_CONSUMER_CODE_INDEPENDENT_REVIEW_20261016.md": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/continuous-seven/CONTINUOUS_BETA_CONSUMER_CODE_INDEPENDENT_REVIEW_20261016.md",
+        "sha256": "788677c3a64c5819037bc0753c804a5a963e57aed44ebf03bb1dc45f9ff37638",
+        "bytes": 4564
+      },
+      "CONTINUOUS_BETA_ACTUAL_INDEPENDENT_REVIEW_20261016.md": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/continuous-seven/CONTINUOUS_BETA_ACTUAL_INDEPENDENT_REVIEW_20261016.md",
+        "sha256": "852f3f74c1ac19c928370ce980de83b77d8e405b442208e5c4aaaecee25d1557",
+        "bytes": 4330
+      },
+      "CONTINUOUS_BETA_ACTUAL_INDEPENDENT_AUDIT_20261016.py": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/continuous-seven/CONTINUOUS_BETA_ACTUAL_INDEPENDENT_AUDIT_20261016.py",
+        "sha256": "e1eddddd88a15f0bbbd6674839ef647d915feddabb6cf0ccd5ec842a80633a72",
+        "bytes": 6469
+      },
+      "CONTINUOUS_BETA_ACTUAL_INDEPENDENT_AUDIT_20261016.json": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/continuous-seven/CONTINUOUS_BETA_ACTUAL_INDEPENDENT_AUDIT_20261016.json",
+        "sha256": "7abb6317f05459511ab987674a129247b2de770ee11445584a9b1e86f5e2b71c",
+        "bytes": 2699
+      },
+      "executed-probability-consumer.code-only.zip": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/continuous-seven/executed-probability-consumer.code-only.zip",
+        "sha256": "9169eb4d75d68b56c64d464947a7781d9fb0ed81069a1bc0ac33b225200cfe71",
+        "bytes": 64672
+      }
+    },
+    "code_archive_members": 13,
+    "configuration_name": "explicit_development_Beta_1_1",
+    "prior": {
+      "a": 1.0,
+      "b": 1.0
+    },
+    "requested_rows": 7,
+    "evaluation_scope": "original_C500_forward_development_not_independent_future",
+    "actual_OS_exit": 0,
+    "owned_after_exit": 0,
+    "terminal_wall_seconds": 8.131534814834595,
+    "peak_RSS_bytes": 331808768,
+    "new_source_or_target_fits": 0,
+    "new_sampler_calls": 0,
+    "new_lambda_integrals": 0,
+    "original_producers_modified": false,
+    "independent_Decimal80_prediction_max_delta": 3.612e-16,
+    "independent_full_state_log_max_delta": 3.954e-13,
+    "arms": {
+      "fixed_prior": {
+        "metrics": {
+          "calibrated": {
+            "hits": 0,
+            "mean_Brier": 1.0570724638193805,
+            "mean_NLL": 3.76279898018256,
+            "operational_available": 7,
+            "probability_available": 7,
+            "requested": 7,
+            "sum_NLL": 26.33959286127792,
+            "ties": 0
+          },
+          "raw": {
+            "hits": 0,
+            "mean_Brier": 1.9998881422027353,
+            "mean_NLL": 318.6237276032451,
+            "operational_available": 7,
+            "probability_available": 7,
+            "requested": 7,
+            "sum_NLL": 2230.3660932227153,
+            "ties": 0
+          }
+        },
+        "posterior_before_n": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "final_n": 7,
+        "final_mean_epsilon": 0.8888888888888888,
+        "mean_NLL_numerical_error_estimate": 0.04591240801229829,
+        "maximum_calibrated_candidate_log_probability_error_estimate": 0.12466442160184298,
+        "final_posterior_log_density_ratio_error_estimate": 0.14457333040183065
+      },
+      "whole": {
+        "metrics": {
+          "calibrated": {
+            "hits": 0,
+            "mean_Brier": 1.057072463648187,
+            "mean_NLL": 3.76279898018256,
+            "operational_available": 7,
+            "probability_available": 7,
+            "requested": 7,
+            "sum_NLL": 26.33959286127792,
+            "ties": 0
+          },
+          "raw": {
+            "hits": 0,
+            "mean_Brier": 1.9998881379228972,
+            "mean_NLL": 319.3663275692607,
+            "operational_available": 7,
+            "probability_available": 7,
+            "requested": 7,
+            "sum_NLL": 2235.564292984825,
+            "ties": 0
+          }
+        },
+        "posterior_before_n": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "final_n": 7,
+        "final_mean_epsilon": 0.8888888888888888,
+        "mean_NLL_numerical_error_estimate": 0.035145473893192246,
+        "maximum_calibrated_candidate_log_probability_error_estimate": 0.09309755544373406,
+        "final_posterior_log_density_ratio_error_estimate": 0.10715863749750146
+      }
+    },
+    "uniform_32_probability_reference": {
+      "NLL": 3.4657359027997265,
+      "Brier": 0.96875
+    },
+    "original_raw_forecast_point_error_policy_nats": 0.1,
+    "calibrated_numerical_error_policy": "conditional_propagation_recorded_separately_not_claimed_below_original_raw_gate"
+  }
 }

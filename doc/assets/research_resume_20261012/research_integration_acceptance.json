@@ -2311,10 +2311,11 @@
     },
     "ongoing": [
       "B11 actual004 remaining OOF/future and complete graph; original C500/OOF0 retained",
-      "complete new seven-row continuous OOF from original earlier-C authority",
+      "source-informed finite response law and four matched response controls: production implementation",
       "actual generic public DAG sharing preserved primitive fits/captures",
       "cloud reopening: saved S4 304/8parent final gate then remaining five stages",
-      "B00-B14 programme"
+      "B00-B14 programme",
+      "named original/current live issuer readset transition for preserved C/P primitives; full capsule and actual parent integration"
     ],
     "completed_tree_cleanup": {
       "method": "cmd.exe git worktree remove",
@@ -2573,25 +2574,67 @@
       "actual_public_DAG": "not_launched"
     },
     "joint_fast_lambda": {
-      "status": "accepted_numerical_API_and_complete_64_cell_fast_consumer",
+      "status": "accepted_complete_single_record_seven_forward_programme",
       "root_delivery": {
         "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_fast_lambda_20261016.json",
-        "sha256": "1f59ff7a8de47ff62fd7ada75f3effa0dda10b497da14a692f94dad62675c124",
-        "bytes": 6007
+        "sha256": "7897b18b1a5e59066af11961ebd5a176af1e1342511988dbb3602433972b4933",
+        "bytes": 10913
       },
       "full_new_consumer": "accepted_64_cells_with_original_numeric_and_writer_roles",
-      "integration_commit": "d65a618"
+      "integration_commit": "d65a618",
+      "complete_forward_rows": 7,
+      "new_unique_integrals": 204,
+      "raw_argmax_diagnostic_hits": 0,
+      "original_finite_programme_accepted_rows": 5
     },
     "joint_forward_beta": {
       "status": "accepted_math_and_complete_optin_production_pipeline",
       "root_delivery": {
         "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_forward_beta_design_20261016.json",
-        "sha256": "636e6d460034665b32a10c0de069adba4b61b8de56c887732553ed740cee33ed",
-        "bytes": 9340
+        "sha256": "4419f158a2bd3aeec2e6badcd22915ab280a40e6300aa20463a5486164b3b77d",
+        "bytes": 16689
       },
       "production": "accepted_complete_optin_pipeline",
       "actual_public_programme": "separate_pending_numerical_execution",
-      "integration_commit": "12fb6a2"
+      "integration_commit": "12fb6a2",
+      "causal_continuous_seven_row_consumer": "accepted_all_seven_prior_only_then_causal_updates_and_final_state_for_future",
+      "development_hits_raw_and_calibrated": [
+        0,
+        0
+      ],
+      "development_mean_NLL_raw_and_calibrated": [
+        319.3663275692607,
+        3.76279898018256
+      ]
+    },
+    "source_informed_finite_response": {
+      "status": "science_and_independent_mathematics_accepted_production_in_progress",
+      "science_binding": {
+        "path": "D:/BCI/worktrees/research-director/tmp/B07_SOURCE_INFORMED_RESPONSE_STATES/science_binding.json",
+        "sha256": "de3bcb41229745b9dff67b521d8cddcc1a9fc43466d64510004346914a398879",
+        "bytes": 4247
+      },
+      "independent_review": {
+        "path": "D:/BCI/worktrees/research-director/tmp/B07_SOURCE_INFORMED_INDEPENDENT_REVIEW.md",
+        "sha256": "d65cbd19a2851f486dcfc50216cd93b8e72b6081e56a8a65f9b1c0f2a659f7bb",
+        "bytes": 5954
+      },
+      "owners": {
+        "source_model_engine": "bi_continuation_review",
+        "finite_law_continuation_controls": "shared_ar_review"
+      },
+      "initial_scope": "single_record_original_BNCI_issuer_source_gaussian_lambda_one",
+      "response_controls": [
+        "nominal",
+        "deterministic_mean_shape",
+        "Gaussian_full_moment_control",
+        "finite_shape"
+      ],
+      "source_prior_once": true,
+      "legacy_basis_native_coordinates_preserved": true,
+      "source_only_whole_C0_branch": "required",
+      "full_nested_capsule_parent": "next_integration_after_engine",
+      "new_public_fits_or_labels_in_science": 0
     }
   }
 }

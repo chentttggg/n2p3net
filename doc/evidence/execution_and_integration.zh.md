@@ -34,6 +34,8 @@ Generic原fit/capture复用已接通：新caller先证明漏传capture会误触�
 
 显式proper Beta的前向概率程序已完成数学、fit/score、save/load、generic候选、完整nested选择及真实capsule/parent接线。最后一个区分性软件纵向以4个outer和1个future通过，重放0新fit/采样；一致重签的C标签和raw OOF分别由原fit身份、原数值重放拒绝。21个实际执行文件before=after，20个涉及生产模块与277成员代码档案逐SHA对应，exact test单独保留。旧fixed/温度候选、原模型与P captures各持原身份；新Beta(1,1)仅为显式开发配置。实际H的K500/7future/21最终请求计划已通过代码/元数据准入，实际执行前复用所有已完成primitive并刷新冻结源。三份旧软件fixture展开已按cmd逐项清理，释放8086935B；最后纵向和必要失败凭证保留，接受见[校准实施](../assets/research_resume_20261012/joint_forward_beta_design_20261016.json)。
 
+独立连续程序已完成C内7行、448逻辑P/F项（首64精确复用，新384项去重为204实际积分）；root及独审核360物理引用、189冻结源与实际原issuer后封签评价。新的因果Beta消费者从n0至n6逐题评分，最后n7只作future状态。完整7/7、0tie、0/7命中保持，whole平均NLL319.3663→3.7628、Brier1.999888→1.057072；均匀概率参照更低。消费者实际OS0/owned0、8.132秒、峰RSS331808768B，0新fit/采样/积分。source、terminal、外部准入pin和独立80位复算已保D盘稳定目录；[接受manifest](../assets/research_resume_20261012/joint_forward_beta_design_20261016.json)分列原forecast误差门与校准后的条件传播估计。
+
 
 ### 当前工作成果（2026-10-14）
 

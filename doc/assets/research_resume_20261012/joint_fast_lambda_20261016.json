@@ -102,5 +102,120 @@
     "worker_peak_RSS_bytes_max": 297283584,
     "writer_wall_seconds": 1.1633881000016117,
     "root_verified_artifact_hashes": 135
+  },
+  "complete_seven_forward_programme": {
+    "status": "accepted_root_and_independent_review",
+    "artifacts": {
+      "CONTINUOUS_PREQUENTIAL_SEVEN_INDEPENDENT_REVIEW_20261016.md": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/continuous-seven/CONTINUOUS_PREQUENTIAL_SEVEN_INDEPENDENT_REVIEW_20261016.md",
+        "sha256": "1c710f0e92f454e7491b96d38bb468ae2d8d7cbb68af01321ef7b4031f71e185",
+        "bytes": 5457
+      },
+      "CONTINUOUS_PREQUENTIAL_INDEPENDENT_REDUCTION_20261016.py": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/continuous-seven/CONTINUOUS_PREQUENTIAL_INDEPENDENT_REDUCTION_20261016.py",
+        "sha256": "fdf3388a530e28607dddc34eebb10d10d4a6b9cdbe6653a5ce14d4feb73ef756",
+        "bytes": 8808
+      },
+      "CONTINUOUS_PREQUENTIAL_INDEPENDENT_REDUCTION_20261016.json": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/continuous-seven/CONTINUOUS_PREQUENTIAL_INDEPENDENT_REDUCTION_20261016.json",
+        "sha256": "f56426b0a0298d23e16220e89c79686d386a040ca6681c3d7640d41d7c938beb",
+        "bytes": 3129
+      },
+      "programme_binding.json": {
+        "path": "D:/BCI/artifacts/base-matrix-20261014/fast-lambda-continuous/oof-seven-001/programme_binding.json",
+        "sha256": "90d186d15770da52a4d2285ddefd63b602e3a1eda9de93b4ede7608d02dec09a",
+        "bytes": 99259
+      },
+      "forecasts.sealed.json": {
+        "path": "D:/BCI/artifacts/base-matrix-20261014/fast-lambda-continuous/oof-seven-001/forecasts.sealed.json",
+        "sha256": "aae2322039ad3cb0ca84d47cbdf288f5c3fecc4b0e93426a5d0fc33f19b8af5b",
+        "bytes": 1043
+      },
+      "evaluation.json": {
+        "path": "D:/BCI/artifacts/base-matrix-20261014/fast-lambda-continuous/oof-seven-001/evaluation.json",
+        "sha256": "c89d6300c871a1e4322069718880863d8effad80ddfef2e6cfbe6ab851206e63",
+        "bytes": 590062
+      },
+      "evaluation.terminal.json": {
+        "path": "D:/BCI/artifacts/base-matrix-20261014/fast-lambda-continuous/oof-seven-001/evaluation.terminal.json",
+        "sha256": "5e3f80f91a96223305f081918b1653328cc8a74a0f0af50bc12f7e0603a3851d",
+        "bytes": 1225
+      },
+      "numerical_1_2.terminal.json": {
+        "path": "D:/BCI/artifacts/base-matrix-20261014/fast-lambda-continuous/oof-seven-001/numerical_1_2.terminal.json",
+        "sha256": "3c537e735bcd61a4f7200d5228a4d143d8f2171d0788f9b3e523c1b78e238fd3",
+        "bytes": 1205
+      },
+      "numerical_3_4_5_6.terminal.json": {
+        "path": "D:/BCI/artifacts/base-matrix-20261014/fast-lambda-continuous/oof-seven-001/numerical_3_4_5_6.terminal.json",
+        "sha256": "7f04e8398d542f6aa542219c027bef495db8935707a44bf154a14d184017a326",
+        "bytes": 1230
+      }
+    },
+    "root_verified_physical_references": 360,
+    "frozen_reader_runtime_modules": 189,
+    "complete_ordered_rows": 7,
+    "earlier_K": [
+      0,
+      68,
+      136,
+      204,
+      272,
+      340,
+      408
+    ],
+    "logical_P_F_cells": 448,
+    "OOF0_exact_reused_logical_cells": 64,
+    "new_logical_P_F_cells": 384,
+    "new_unique_integrals": 204,
+    "new_source_fits": 0,
+    "new_target_fits": 0,
+    "new_C_or_P_sampler_calls": 0,
+    "candidate_normalized_log_probability_error_estimates_max": {
+      "whole": 0.014479692942319553,
+      "fixed_prior": 0.02032751968853985
+    },
+    "declared_error_policy_nats": 0.1,
+    "independent_Decimal80_reduction_max_delta": 2.934e-10,
+    "actual_original_C500_truth_evaluation": {
+      "status": "OS0_owned0_after_complete_forecast_seal",
+      "prefix_identity": "c5d0c08753a915c22c421c8b8c318655b0b0a68c7c026e20d33c9c7b1715338d",
+      "authorized_labels": 500,
+      "complete_group_labels": 476,
+      "retained_partial_labels": 24,
+      "complete_groups": 7,
+      "native_record_scopes": {
+        "Huebner2017:1:session:0:run:0": [
+          0,
+          171569
+        ],
+        "Huebner2017:1:session:0:run:1": [
+          0,
+          7872
+        ]
+      },
+      "summary_argmax_diagnostic": {
+        "fixed_prior": {
+          "argmax_hits_diagnostic": 0,
+          "denominator": 7,
+          "mean_Brier": 1.9998881422027353,
+          "mean_NLL": 318.6237276032451
+        },
+        "whole": {
+          "argmax_hits_diagnostic": 0,
+          "denominator": 7,
+          "mean_Brier": 1.9998881379228972,
+          "mean_NLL": 319.3663275692607
+        }
+      },
+      "independent_future_predictions": 0
+    },
+    "original_preparation_001_exit": 1,
+    "retained_roots_recovery_new_large_QR_or_raw_reads": 0,
+    "numerical_stage_terminal_seconds": [
+      78.90696760000719,
+      163.35372809999535
+    ],
+    "science_next": "causal Beta probability evaluation and source/target response ranking mechanisms"
   }
 }

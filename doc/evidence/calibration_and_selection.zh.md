@@ -12,7 +12,17 @@ Joint程序已完成的前两条C内forward OOF显示高置信错答：K0把真p
 
 实际小型软件纵向完成4个outer组和1个future：fixed、旧前向温度、新Beta三个候选都进入nested选择，n0与n4的整后验保存/加载、原issuer的capsule打开和真实parent数值重放均通过，重放新增fit/采样为0。把C标签、权限和后验一起重签，会被原数值模型的fit身份拒绝；把raw OOF与全部后验/保存记录一致重签，虽可正常加载，仍会在原C/P数值重放中被识别。root核21个实际执行文件、277成员代码档案中的20个涉及模块及独立审阅，验证这条链确实依赖原输入和原预测。真实完整7行及独立future比较继续沿各自programme执行。
 
-这一具名条件模型给出`q(y)≥a/[J(a+b+n)]`。例如显式Beta(1,1)、n=7、J=32时，单次后验预测NLL至多log288，最大候选概率至多257/288；相对uniform的完整prequential累计logloss至多多log8。参数先验由新programme声明，概率/动作/tie和晋升仍由原owner评价。当前两个C内诊断行的回代读数与完整7行/独立future结果分别保存，模型与概率选择都沿完整requested比较。
+这一具名条件模型给出`q(y)≥a/[J(a+b+n)]`。例如显式Beta(1,1)、n=7、J=32时，单次后验预测NLL至多log288，最大候选概率至多257/288；相对uniform的完整prequential累计logloss至多多log8。参数先验由新programme声明，概率/动作/tie和晋升仍由原owner评价。早期两个C内诊断读数、完整7行因果读数与后续独立future各保自己的来源，模型与概率选择沿完整requested比较。
+
+完整7行连续预测及其因果Beta消费者现已接受。第i题使用此前i题的完整后验评分，之后才纳入当前真值；评分的n为0至6，最后n7状态仅保存供future使用。全部真值来自原C500授权，预测先完整封存，actual evaluator随后恢复7个完整组476标签和第二record的24个partial标签。两个连续law都保全7/7概率与动作、0tie、0/7命中。下表为whole law；fixed-prior原NLL为318.6237，校准结果相同。
+
+| 概率程序 | 平均NLL | Brier |
+|---|---:|---:|
+| 原连续预测 | 319.3663 | 1.999888 |
+| 具名Beta(1,1)，只用此前结果校准 | 3.7628 | 1.057072 |
+| 32候选均匀概率参照 | 3.4657 | 0.968750 |
+
+NLL是给真答案的概率过低时产生的惩罚。校准让错误的最高置信度由首题约51.56%逐步降到末题15.23%，最终`Eε=8/9`；它学会了为备选保留质量。当前候选排序需要响应模型改进，下一有限delay/width研究会在同source prior和noise下检验这一点。原模型、全部预测、逐题后验及9个实际概率/指标owner保持原身份；独立80位正混合oracle逐步复算14条向量、整后验和n7，最大概率差3.62e−16。新消费者8.13秒、0新fit/采样/λ积分，完整源码和实际读数见[因果7行接受](../assets/research_resume_20261012/joint_forward_beta_design_20261016.json)。
 
 binary候选的排名量固定为fit前requested正负样本对的成功credit；任一输出缺失的pair记0，分母保持`n+×n−`。完整输出等于原AUC，删除输出只能丢失非负credit。可用子集ROC AUC作诊断单列，同风险先保coverage。legacy CE固定共同校准class cost与requested验证mass，完整输出才参与排名；BrainSync继续保全部真实45-flash block，缺失及tie为miss。普通/QC/EOG产品与公共E3共原fit/refit owner，保存支持、评分和final选择关系。两个实际source候选的新旧对照中，full-C参数、独立预测及保存加载逐bit一致；最终入口关系核查随集成源码绑定。
 
