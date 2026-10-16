@@ -2123,7 +2123,7 @@
   },
   "resume_20261016": {
     "reviewed_integration_head": "46732ee84c70806078bc593c89481b8d7dee1002",
-    "status": "accepted_individual_software_slices",
+    "status": "paused_at_explicit_user_request_20261017",
     "concurrency_limit_including_root": 6,
     "source_sha256": {
       "src/research/source_execution.py": "b67b10514649823b47732980d389ab95b739f7b43913bbd1c4db8a2f07cdd2ec",
@@ -3128,7 +3128,7 @@
         "new_fit_score_QR_sampler_calls": 0
       },
       "generic_master": {
-        "status": "whole_running_conditional_prepared_on_hold_after_user_priority_update",
+        "status": "whole_OS_suspended_in_memory_at_user_request_conditional_not_started",
         "master": {
           "path": "D:/BCI/artifacts/source-response-generic/plans/MASTER.json",
           "bytes": 8127,
@@ -3184,7 +3184,11 @@
         "whole_launcher_pid": 43204,
         "whole_actual_fit_actor_pid": 45564,
         "monitor_sampling_gap_seconds": 119.798788,
-        "monitor_gap_preserved": true
+        "monitor_gap_preserved": true,
+        "whole_complete_acceptance": false,
+        "conditional_started": false,
+        "pause_checkpoint": "D:/BCI/artifacts/source-response-generic/PAUSE_CHECKPOINT.json",
+        "resume_only_same_original_processes": true
       },
       "current_research_priority": {
         "product_task": "adult_BrainSync_nine_choice",

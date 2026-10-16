@@ -1,0 +1,192 @@
+{
+  "schema": "n2p3_research_director_pause/2",
+  "status": "paused_at_explicit_user_request",
+  "recorded_at": "2026-10-17T00:10:04.497283+08:00",
+  "request": "暂停一下",
+  "goal": "full_123_wishes_B00_B14_preserved",
+  "concurrency_limit_including_root": 6,
+  "research_worktree": "D:/BCI/worktrees/research-director",
+  "accepted_code_and_guidance_HEAD": "0f663b83e76815f0825fab6f107358d9a158cc07",
+  "pre_checkpoint_git_status": "M  doc/README.md\nM  doc/assets/research_resume_20261012/HANDOFF.zh.md\nA  doc/assets/research_resume_20261012/pause_checkpoint_current.json\nM  doc/assets/research_resume_20261012/research_integration_acceptance.json\n",
+  "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+  "research_priority": "general_candidate_mathematics_with_final_adult_BrainSync_nine_choice_primary",
+  "source_freeze": {
+    "actual_200_source_bytes_match_before": true,
+    "original_generic_source_HEAD": "a42f0a2",
+    "archive": {
+      "path": "D:/BCI/artifacts/source-response-generic/EXECUTED_SOURCE.code-only.tar.gz",
+      "bytes": 1231947,
+      "sha256": "07d26e7dd63baa0b9403a38bfc76d45dbce6517a7ff9d2a99d56583526f06894"
+    }
+  },
+  "verified_suspended_processes": [
+    {
+      "pid": 39788,
+      "create_time": 1792166117.3142807,
+      "status": "running",
+      "cpu_seconds": 0.484375,
+      "cpu_unchanged_1s": true,
+      "rss_bytes": 11694080
+    },
+    {
+      "pid": 45564,
+      "create_time": 1792166118.006626,
+      "status": "running",
+      "cpu_seconds": 512.859375,
+      "cpu_unchanged_1s": true,
+      "rss_bytes": 521089024
+    },
+    {
+      "pid": 40188,
+      "create_time": 1792166101.8168128,
+      "status": "running",
+      "cpu_seconds": 7.578125,
+      "cpu_unchanged_1s": true,
+      "rss_bytes": 12144640
+    },
+    {
+      "pid": 33600,
+      "create_time": 1792166101.7909355,
+      "status": "stopped",
+      "cpu_seconds": 0.03125,
+      "cpu_unchanged_1s": true,
+      "rss_bytes": 7155712
+    },
+    {
+      "pid": 43204,
+      "create_time": 1792166101.7696557,
+      "status": "running",
+      "cpu_seconds": 0.0,
+      "cpu_unchanged_1s": true,
+      "rss_bytes": 3891200
+    },
+    {
+      "pid": 20372,
+      "create_time": 1792166231.9555311,
+      "status": "stopped",
+      "cpu_seconds": 39.578125,
+      "cpu_unchanged_1s": true,
+      "rss_bytes": 17522688
+    },
+    {
+      "pid": 27176,
+      "create_time": 1792139035.673306,
+      "status": "stopped",
+      "cpu_seconds": 26748.578125,
+      "cpu_unchanged_1s": true,
+      "rss_bytes": 110239744
+    }
+  ],
+  "pause_mode": "same_live_process_memory_preserved_no_kill_restart_or_refit",
+  "in_memory_state_requires_original_processes_to_remain_alive": true,
+  "generic_whole": {
+    "checkpoint": {
+      "path": "D:/BCI/artifacts/source-response-generic/PAUSE_CHECKPOINT.json",
+      "bytes": 12076,
+      "sha256": "8912d468366a39cf1570d2986876a26d2a11c3fb4d163ae6c00d2933fc663541"
+    },
+    "resume_script": {
+      "path": "D:/BCI/artifacts/source-response-generic/RESUME_WHOLE.py",
+      "bytes": 4680,
+      "sha256": "19623a0b6af46a9784286b4a265dc18be31b61d45d6c9b70e5e311c11f00a5eb"
+    },
+    "controller": 40188,
+    "in_flight_actor": 45564,
+    "saved_fit_receipt_complete": false,
+    "C_state": "in_original_suspended_worker_memory",
+    "whole_requested_outputs": 170,
+    "full_five_stage_acceptance": "pending",
+    "conditional": "prepared_not_started_hold_after_user_nine_choice_priority_update",
+    "observer_gap_seconds": 119.79878830909729,
+    "original_observer_gap_preserved": true
+  },
+  "original_finite_actual004": {
+    "checkpoint": {
+      "path": "D:/BCI/worktrees/joint-flat-ensemble/tmp/joint_flat_actual31/attempt_004.user_pause_20261017.json",
+      "bytes": 24353,
+      "sha256": "8021e6a81ffe6bc64db7ba531cf7f7299f976197e7fe294743ffcd79458b2607"
+    },
+    "scientific_pid": 27176,
+    "phase": "future4_components_after_saved_P015",
+    "OOF_accepted": 7,
+    "future_completed": 4,
+    "future_requested": 7,
+    "future_outcomes": {
+      "0": "embargo",
+      "1": "capture_intrinsic_accepted",
+      "2": "original_mixing_refusal",
+      "3": "capture_intrinsic_accepted"
+    },
+    "final_model_wrapper_and_parent": "pending_original_final_package"
+  },
+  "frontier_draft": {
+    "directory": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft",
+    "handoff": {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft/HANDOFF.md",
+      "bytes": 12703,
+      "sha256": "d2febc529799e361c2e5367409b0a0a2543e6f612f374d0641e251643863ddb1"
+    },
+    "source_map": {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft/SOURCE_MAP.json",
+      "bytes": 2333,
+      "sha256": "ec6688b65902eee5f0d623ce2c72884116c9316f8390d2cef99fb9151dd241e0"
+    },
+    "source_files": [
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft/conditional_response_frontier.py",
+        "bytes": 19673,
+        "sha256": "4263e166492e5cd3d43d5b93f9ce928d784d61dd4a08dd34f1dc1b882a84d72b"
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft/independent_frontier_oracle.py",
+        "bytes": 21010,
+        "sha256": "042cb99f31822ac51106c39d879769d7ee5e8eeb81f1ee6445041cd9d6a37dfe"
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft/generic_membership_oracle.py",
+        "bytes": 10049,
+        "sha256": "9d8d57d47a05247ab067fe6add9e2b667ef862c4d823c273e22541094c4bbb89"
+      }
+    ],
+    "independent_review": {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft/INDEPENDENT_REVIEW.md",
+      "bytes": 11043,
+      "sha256": "70f4adcfd0faab6c72c2c8eb0c8f0bf264dbd267e21c61ebd0830121863d0e88"
+    },
+    "original_oracle": {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft/ORACLE_RESULT.json",
+      "bytes": 2976,
+      "sha256": "db6533fac2f063e992b7a12aae1138d1e3aca663b8771451e0b3fcbd649afb35"
+    },
+    "generic_J_oracle": {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft/GENERIC_MEMBERSHIP_RESULT.json",
+      "bytes": 4194,
+      "sha256": "340c44df1b267fa8bfdc7a34d9fb2d74351bde238f0d596b726d2b4f0de5a3ee"
+    },
+    "independent_counterexamples": {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft/INDEPENDENT_COUNTEREXAMPLES.json",
+      "bytes": 1062,
+      "sha256": "5868203908867afcf56518626ce55bffcdfdf22ef139baf097776cc41726c50e"
+    },
+    "product45_schedule": {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft/REVIEW_PRODUCT_PROTOCOL_SCHEDULE.json",
+      "bytes": 9362,
+      "sha256": "63eee5664a7bae805f70d96c7cd806a55760f82de45b1ea0720f54a8d013b832"
+    },
+    "product45_oracle": "not_created_or_started",
+    "active_repository_integration": false,
+    "continuous_integration_and_quantitative_error": "next_independent_mathematical_slice",
+    "owned_running_subprocesses": 0
+  },
+  "cloud": {
+    "state": "off_no_SSH",
+    "ownership": "other_chat"
+  },
+  "resume_order": [
+    "Verify original PID births, paused source bytes and current user authorization before resuming.",
+    "Resume same whole process tree using its prepared script, retain original C fit; keep conditional on hold.",
+    "Resume original actual004 PID27176 with saved NtResumeProcess method; preserve original draws and policy.",
+    "Continue general-J method from external draft and nine-choice 45-flash protocol; do not rerun green cases.",
+    "Integrate draft only after actual source freeze is released and root reviews final mathematical logic."
+  ]
+}

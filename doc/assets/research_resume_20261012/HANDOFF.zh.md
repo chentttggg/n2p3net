@@ -1,6 +1,8 @@
 # 科研总监交接
 
-用户已于2026-10-16恢复科研。当前科研树为 `D:/BCI/worktrees/research-director`，分支 `codex/research-director-resume-20261013`。本窗口临时最多6并发，含总监；云端由另一窗口独占执行。整个123项愿望/B00–B14计划继续，日常采用一个完整source→target seed，大版本采用三个。
+用户已于2026-10-17要求“暂停一下”，科研当前暂停。当前科研树为 `D:/BCI/worktrees/research-director`，分支 `codex/research-director-resume-20261013`。机器恢复入口为[当前暂停检查点](pause_checkpoint_current.json)。本窗口临时最多6并发，含总监；云端由另一窗口独占执行。整个123项愿望/B00–B14范围保留，日常采用一个完整source→target seed，大版本采用三个。
+
+暂停保留两个实际进程现场：原finite actual004的27176停在future4组件计算；generic whole的40188/45564及其owned树停在尚未保存的C计算。恢复须核原PID/birth和原源码后继续同进程，避免重复拟合。whole的170输出/五stage尚待完成，conditional仍未启动。通用frontier外部草案已封3份Python与实际7类/泛J/独审反例，主产品45flash目前仅有synthetic公共protocol schedule，oracle未启动；连续积分、量化误差与实际产品raw权限接线为下一数学切片。所有科研子代理已停止推进。
 
 最新优先级：最终成人九选一，主科研采用一般J/actual membership与真实时间/观测合同的统一数学；避免围绕BNCI36、toy shape数或局部数值门优化。当前whole generic已启动，按原计划自然收齐170输出与五stage；conditional保prepared暂不启动。通用frontier草案在D外部code-only目录，主验收补真实九候选membership/重标号及跨J/校准量/噪声/历史的同公式关系。产品输入issuer、七EEG/独立EOG与只读个人包接点同步审阅，活动src在whole终态前冻结。
 
