@@ -5,11 +5,13 @@ import json
 import os
 import subprocess
 import sys
+import time
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
+import psutil
 import pytest
 
 from research.contracts import semantic_sha256
@@ -55,6 +57,7 @@ def test_bi_mat_actual_quartet_saved_capsule_and_zero_fit_parent(tmp_path, monke
         open_prepared_inputs,
         read_scoring_truth,
     )
+    from research.source_execution import SourceInputAdmission, _SourceInputState
     from transfer import ensemble_fit as fit_owner
     from transfer.ensemble_views import prepare_dataset_independent_prefixes
 
@@ -131,7 +134,14 @@ def test_bi_mat_actual_quartet_saved_capsule_and_zero_fit_parent(tmp_path, monke
     assert all(row["evidence"]["evidence_level"] == expected_levels[row["evidence"]["decision_id"]]
                for row in selected)
     directory = tmp_path / "run/participant_000"
-    graph = json.loads((directory / f"source{seed}_target{seed}_K{actual_K}_selection/prefix_selection.json").read_bytes())["record"]
+    from research.selection_graph_store import SelectionGraphStore
+
+    package = f"source{seed}_target{seed}_K{actual_K}_selection"
+    saved = runner._read_sealed_record(directory / "selection_fit_receipts" / f"{package}.saved.json")
+    replayed = runner._read_sealed_record(directory / "selection_fit_receipts" / f"{package}.replayed.json")
+    graph = SelectionGraphStore(directory / package / "prefix_selection.json",
+        expected_graph_sha256=saved["graph_sha256"],
+        expected_selection_sha256=replayed["selection_sha256"]).graph
     assert {node["candidate"]["name"] for node in graph["nodes"]} == {
         "source_nn_fixed", "scratch_nn_fixed", "source_nn_xdawn_fixed", "scratch_nn_xdawn_fixed"}
 
@@ -180,27 +190,56 @@ with cpu_thread_budget(1):
     descriptor = export_prepared_views(views, profiles, Path(control['output']), request)
 assert not psutil.Process().children(recursive=True)
 Path(control['output']).joinpath('actual-preparation.json').write_text(json.dumps({
-    'descriptor': descriptor, 'pid': os.getpid(), 'new_fits': 0, 'active_children': 0}), encoding='utf-8')
+    'descriptor': descriptor, 'pid': os.getpid(), 'birth': psutil.Process().create_time(),
+    'new_fits': 0, 'active_children': 0}), encoding='utf-8')
 """, encoding="utf-8")
     environment = {**os.environ, "OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"}
-    completed = subprocess.run([sys.executable, str(producer), str(control)], env=environment, check=True)
+    command = [sys.executable, str(producer), str(control)]
+    process = subprocess.Popen(command, env=environment)
+    owner = psutil.Process(process.pid)
+    observed = {}
+    while process.poll() is None:
+        try:
+            children = [owner, *owner.children(recursive=True)]
+        except psutil.Error:
+            children = [owner]
+        for child in children:
+            try:
+                observed[child.pid, child.create_time()] = child
+            except psutil.Error:
+                pass
+        time.sleep(.05)
+    returncode = process.wait()
+    active_owned = []
+    for (pid, birth), child in observed.items():
+        try:
+            if child.is_running() and child.create_time() == birth:
+                active_owned.append({"pid": pid, "birth": birth})
+        except psutil.Error:
+            pass
     preparation = json.loads((tmp_path / "capsule/actual-preparation.json").read_bytes())
     capsule = preparation["descriptor"]
-    assert completed.returncode == 0 and preparation["new_fits"] == preparation["active_children"] == 0
-
-    class Lease:
-        def release_unused(self):
-            pass
-
-    class Admission:
-        def try_resident_input(self, nbytes):
-            return Lease()
-
-    outcome = CloudResult(request["preparation_task_id"], "completed", value=capsule, worker={
-        "alive": False, "exit_code": completed.returncode,
-        "process_tree_retirement": {"active_owned_processes_after_exit": preparation["active_children"]}})
+    assert returncode == 0 and preparation["new_fits"] == preparation["active_children"] == 0
+    assert not active_owned and (preparation["pid"], preparation["birth"]) in observed
+    capsule_path = Path(capsule["path"])
+    document = json.loads(capsule_path.read_bytes())
+    resident_bytes = (capsule_path.parent / document["blob"]["name"]).stat().st_size + capsule_path.stat().st_size
+    admission = SourceInputAdmission(SimpleNamespace(SourceInputState=_SourceInputState),
+                                     capacity_bytes=resident_bytes, load_workers=1)
+    assert admission.record()["resident_input_bytes"] == 0
+    assert admission.record()["free_staging_bytes"] == resident_bytes
+    capsule_outcome = CloudResult(request["preparation_task_id"], "completed", value=capsule, worker={
+        "backend": "observed_local_software_capsule", "executor": "local subprocess; no CloudExecutor",
+        "alive": False, "exit_code": returncode, "command": command,
+        "scientific_child": {"pid": preparation["pid"], "birth": preparation["birth"]},
+        "driver_sha256": hashlib.sha256(producer.read_bytes()).hexdigest(),
+        "control_sha256": hashlib.sha256(control.read_bytes()).hexdigest(),
+        "process_tree_retirement": {"active_owned_processes_after_exit": len(active_owned)}})
     holder = PrefixReplayInputHolder.from_prepared(capsule, request_sha=semantic_sha256(request),
-        prep_outcome=outcome, admission=Admission())
+        prep_outcome=capsule_outcome, admission=admission)
+    assert holder is not None
+    assert admission.record()["resident_input_bytes"] == resident_bytes
+    assert admission.record()["free_staging_bytes"] == 0
     try:
         with cpu_thread_budget(1), open_prepared_inputs(holder.descriptor, expected_request_sha=semantic_sha256(request),
                 expected_capsule_sha=capsule["sha256"]) as borrowed:
@@ -215,6 +254,8 @@ Path(control['output']).joinpath('actual-preparation.json').write_text(json.dump
                                      future_views=borrowed.views.decisions) == views.scoring_truth
     finally:
         holder.close()
+    assert admission.record()["resident_input_bytes"] == 0
+    assert admission.record()["free_staging_bytes"] == resident_bytes
     (tmp_path / "BI_label_K_readout.json").write_text(json.dumps({"status": admitted["status"],
         "requested": len(participant["requested"]), "predictions": len(participant["predictions"]),
         "requested_to_actual_K": participant["requested_to_actual_K"], "actual_software_expert_fit_calls": len(fits),
