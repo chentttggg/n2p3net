@@ -1001,6 +1001,8 @@ def candidate_participant_admission_adapter(arguments):
     """An independent zero-fit numerical ingress, under the shared CPU owner."""
     import os
 
+    import torch
+
     from research.cloud_execution import CloudResult
     from research.prefix_recovery import preserve_prefix_producer_output
     from research.source_execution import current_input_admission
@@ -1021,6 +1023,10 @@ def candidate_participant_admission_adapter(arguments):
         raise ValueError("candidate admission consumer or original producer identity changed")
     original = _admission_task_descriptor(request["producer_task"])
     outcome = CloudResult(**request["fit_outcome"])
+    if (int(os.environ["OMP_NUM_THREADS"]) != original.resources.native_threads
+            or torch.get_num_threads() != original.resources.native_threads
+            or torch.get_num_interop_threads() != 1):
+        raise ValueError("candidate numerical admission must retain its original producer native programme")
     if _participant_metadata_receipts(original) != request["participant_metadata"]:
         raise ValueError("candidate admission original participant metadata changed before replay")
     replay = None
@@ -1224,6 +1230,8 @@ def _prefix_replay_participant_anchor(task, plan, source, consumer_source, autho
         ordinary.append({"package": request["package"], "prefix_record_sha256": semantic_sha256(prefix),
             "original_request": request, "context": context, "files": seal["files"], "saved_seal": artifact_receipt(path)})
     replay = {"schema": REPLAY_SCHEMA, "preparation_task_id": preparation_id, "participant_directory": str(directory),
+        "producer_ledger": artifact_receipt(directory / "request_ledger.json"),
+        "ordinary_native_threads": ledger["native_threads"],
         "mat": {"path": str(mat_path), "sha256": ledger["record"]["sha256"], "bytes": mat_path.stat().st_size},
         "scopes": {"path": str((directory / "scopes.json").resolve()), "sha256": ledger["scopes_sha256"],
                    "bytes": (directory / "scopes.json").stat().st_size},
@@ -1646,9 +1654,11 @@ class CandidateCloudProgramme:
         self.replay_enabled = self.plan.get("evaluation_design") == "independent_prefix" and input_admission is not None
         if self.replay_enabled:
             from research.prefix_replay_dispatch import PrefixReplayInputPool
+            from research.prefix_replay_execution import validate_replay_reader_resources
 
             self.replay_pool = PrefixReplayInputPool(input_admission,
-                release_backing_aliases=self._release_replay_backing_aliases)
+                release_backing_aliases=self._release_replay_backing_aliases,
+                validate_reader=validate_replay_reader_resources)
         _write_candidate_json(self.output / "consumer_requests.json", {"schema": "n2p3_candidate_consumer_requests/1",
             "base_plan_sha256": _file_receipt(self.original_plan_path, self.original_plan_path.parent)["sha256"],
             "requests": [request for index in range(len(self.plan["records"])) for request in _pipeline_requests(self.plan, index)]}, input_admission)
@@ -1677,7 +1687,6 @@ class CandidateCloudProgramme:
         return self.tasks
 
     def _recover_participants(self):
-        from research.cloud_execution import CloudResult, PhaseResources
         from research.prefix_recovery import load_prefix_recovery
 
         producer = load_prefix_recovery(self.normalized, self.source, output=self.output, consumer_root=ROOT)
@@ -1686,12 +1695,10 @@ class CandidateCloudProgramme:
         original_context = self._write_admission_context("original", producer.plan, producer.source)
         recovery_tasks = []
         for participant in producer.participants:
-            current = self.task_roster[participant.record_index]
-            original = replace(current, output=str(participant.group),
-                resources=PhaseResources("calibration", participant.native_threads,
-                    current.resources.memory_bytes, participant.native_threads, producer.plan["device"]))
-            outcome = CloudResult(original.task_id, "completed",
-                str(participant.group / f"participant_{participant.record_index:03d}" / "result.json"))
+            original, outcome = participant.task, participant.outcome
+            if original.task_id != self.task_roster[participant.record_index].task_id:
+                raise ValueError("prefix recovery producer task differs from its original logical roster")
+            self.fit_outcomes[original.task_id] = outcome
             if self.replay_enabled:
                 recovery_tasks.append(self._make_replay_preparation(original, outcome, original_context,
                     producer.plan, producer.source, "original_producer_independent_worker_replay",
@@ -1702,6 +1709,10 @@ class CandidateCloudProgramme:
                     dependencies=self.dependencies))
         recovered = set(producer.binding["reused_record_indexes"])
         self.tasks = recovery_tasks + [task for task in self.task_roster if task.arguments["record_index"] not in recovered]
+        if self.plan["prefix_recovery"].get("mode") == "all_fits_zero_fit" and (
+                recovered != set(range(len(self.task_roster)))
+                or any(task.adapter.endswith(":candidate_participant_adapter") for task in self.tasks)):
+            raise ValueError("all-fit prefix recovery must schedule zero new scientific fit actors")
         self.execution_workers = self.resources["max_cache_group_processes"]
         _write_candidate_json(self.output / "prefix_recovery_binding.json", self.recovery_binding, self.input_admission)
         self._write_admission_progress()
@@ -1728,7 +1739,9 @@ class CandidateCloudProgramme:
             "experiments.run_candidate_ensemble_study:candidate_participant_admission_adapter",
             {"plan": str(self.plan_path), "output": str(directory), "context": context, "request": request,
              "output_estimate_bytes": min(2**26, self.resources["target_worker_memory_bytes"])}, str(directory),
-            PhaseResources("evaluation", 1, self.resources["target_worker_memory_bytes"], 1, "cpu"), tuple(dependencies))
+            PhaseResources("evaluation", producer_task.resources.native_threads + 1,
+                self.resources["target_worker_memory_bytes"], producer_task.resources.native_threads,
+                "cpu", interop_threads=1), tuple(dependencies))
         self.evaluation_tasks[task.task_id] = task
         return task
 
@@ -1798,7 +1811,7 @@ class CandidateCloudProgramme:
             {"request": request, "output": str(self.output / "replay_groups" / f"participant_{index:03d}" / "prepare"),
              "output_estimate_bytes": max(2**26, sum(receipt["bytes"] for row in selection for receipt in row["files"]))},
             str(self.output / "replay_groups" / f"participant_{index:03d}" / "prepare"),
-            PhaseResources("evaluation", 1, self._replay_memory(graph=True), 1, "cpu"), tuple(dependencies))
+            PhaseResources("evaluation", 2, self._replay_memory(graph=True), 1, "cpu", interop_threads=1), tuple(dependencies))
         self.replay_states[prep_id] = {"logical_id": logical_id, "producer_task": producer_task,
             "fit_outcome": fit_outcome, "context": context, "plan": plan, "source": source, "role": role,
             "request": request, "tasks": {}, "worker_outcomes": {}, "reducer_outcomes": {}, "reducers": {}}
@@ -1807,12 +1820,15 @@ class CandidateCloudProgramme:
 
     def _replay_task(self, state, task_id, adapter, arguments, *, graph=False, dependencies=()):
         from research.cloud_execution import CloudTask, PhaseResources
+        from research.prefix_replay_execution import replay_native_threads
 
+        native = replay_native_threads(state["request"], ordinary=adapter.startswith("ordinary_"))
         directory = self.output / "replay_groups" / f"participant_{state['producer_task'].arguments['record_index']:03d}" / task_id.rsplit(":", 1)[-1]
         return CloudTask(task_id, "research.prefix_replay_execution:" + adapter,
             {**state["reader_arguments"], **arguments, "output": str(directory),
              "output_estimate_bytes": 2**26}, str(directory),
-            PhaseResources("evaluation", 1, self._replay_memory(graph=graph), 1, "cpu"), tuple(dependencies))
+            PhaseResources("evaluation", native + 1, self._replay_memory(graph=graph), native,
+                "cpu", interop_threads=1), tuple(dependencies))
 
     def _initial_replay_readers(self, preparation_id, holder):
         state = self.replay_states[preparation_id]
@@ -2330,6 +2346,8 @@ def run_study(plan_path: str | Path, output: str | Path, *, _actor_index=None, _
     plan_path, output = Path(plan_path).resolve(), Path(output).resolve()
     original_plan = json.loads(plan_path.read_bytes())
     declaration = original_plan.get("prefix_recovery")
+    if declaration is not None and declaration.get("mode") == "all_fits_zero_fit" and _actor_index is not None:
+        raise ValueError("all-fit prefix recovery forbids every new scientific fit actor")
     if declaration is not None and (execution != "cloud" or _actor_index in {
             row["record_index"] for row in declaration["participants"]}):
         raise ValueError("prefix recovery fits only remaining original participants through the shared cloud owner")

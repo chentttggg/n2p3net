@@ -18,10 +18,10 @@ from pathlib import Path
 
 from research.contracts import canonical_json_bytes, semantic_sha256
 
-SCHEMA = "n2p3_prefix_replay_execution/1"
+SCHEMA = "n2p3_prefix_replay_execution/2"
 PREPARATION_SCHEMA = "n2p3_prefix_replay_preparation/1"
-RESULT_SCHEMA = "n2p3_prefix_replay_execution_result/1"
-ADMISSION_SCHEMA = "n2p3_prefix_replay_execution_admission/1"
+RESULT_SCHEMA = "n2p3_prefix_replay_execution_result/2"
+ADMISSION_SCHEMA = "n2p3_prefix_replay_execution_admission/2"
 GRAPH_PHASE_MEMORY_BYTES = 8 * 2**30
 _ROOT = Path(__file__).resolve().parents[2]
 _EXECUTED_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
@@ -124,6 +124,15 @@ def _validate_request(request):
     if request["schema"] != SCHEMA:
         raise ValueError("unsupported prefix replay execution request")
     identity = _consumer_identity(request)
+    ledger = _read_sealed(request["producer_ledger"])
+    if (Path(request["producer_ledger"]["path"]).resolve()
+            != Path(request["participant_directory"]).resolve() / "request_ledger.json"
+            or ledger["execution_source"] != request["producer_source"]
+            or ledger["record"]["sha256"] != request["mat"]["sha256"]
+            or ledger["scopes_sha256"] != request["scopes"]["sha256"]
+            or ledger["participant_key"] != request["input_request"]["participant_key"]
+            or ledger["native_threads"] != replay_native_threads(request, ordinary=True)):
+        raise ValueError("prefix replay native programme differs from its original source-bound ledger")
     old = request["producer_module"]
     inputs = request["input_request"]
     if (request["producer_source"].get("src/transfer/ensemble_views.py") != old["sha256"]
@@ -137,6 +146,51 @@ def _validate_request(request):
     _roster(request, "selection")
     _roster(request, "ordinary")
     return identity
+
+
+def replay_native_threads(request, *, ordinary):
+    """Ordinary scores retain the producer context; selection owns native1."""
+    native = request["ordinary_native_threads"]
+    if type(native) is not int or native < 1:
+        raise ValueError("ordinary prefix replay requires the original positive native thread count")
+    return native if ordinary else 1
+
+
+def _require_native_resources(task, request, *, ordinary):
+    native = replay_native_threads(request, ordinary=ordinary)
+    if (task.resources.phase != "evaluation" or task.resources.device != "cpu"
+            or task.resources.native_threads != native
+            or task.resources.interop_threads != 1 or task.resources.cpu_threads != native + 1):
+        raise ValueError("prefix replay task resources differ from its original native programme")
+
+
+def validate_replay_reader_resources(task):
+    """Scientific reader roles own numeric policy; the input pool owns leases."""
+    adapters = {__name__ + ":" + name: ordinary for name, ordinary in (
+        ("ordinary_prefix_replay_adapter", True), ("ordinary_reducer_adapter", True),
+        ("selection_chunk_adapter", False), ("selection_reducer_adapter", False))}
+    if task.adapter in adapters:
+        _require_native_resources(task, task.arguments["request"], ordinary=adapters[task.adapter])
+    elif task.adapter == "experiments.run_candidate_ensemble_study:candidate_participant_admission_adapter":
+        request = task.arguments["replay_request"]
+        original = task.arguments["request"]["producer_task"]["resources"]
+        if original["native_threads"] != replay_native_threads(request, ordinary=True):
+            raise ValueError("prefix replay parent differs from its original producer native programme")
+        _require_native_resources(task, request, ordinary=True)
+    else:
+        raise ValueError("shared prefix replay reader has no declared scientific adapter role")
+
+
+def _worker_native_threads(request, *, ordinary):
+    import torch
+
+    native = replay_native_threads(request, ordinary=ordinary)
+    if any(os.environ.get(name) != str(native)
+           for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS")):
+        raise ValueError("prefix replay worker environment differs from its original native programme")
+    if torch.get_num_threads() != native or torch.get_num_interop_threads() != 1:
+        raise ValueError("prefix replay worker numeric pools differ from its declared native/inter-op programme")
+    return native
 
 
 def _sources(row):
@@ -188,6 +242,7 @@ def prefix_replay_prepare_adapter(arguments):
     """Run the actual frozen compiler in a fresh owned child, once per MAT."""
     request, output = arguments["request"], Path(arguments["output"]).resolve()
     _validate_request(request)
+    _worker_native_threads(request, ordinary=False)
     _artifact_bytes(request["producer_module"])
     if artifact_receipt(request["mat"]["path"]) != request["mat"]:
         raise ValueError("prefix replay original MAT bytes changed")
@@ -231,10 +286,11 @@ def _frozen_preparation(arguments):
     from data.epochs import parse_preprocessing_spec
     from research.prefix_replay_inputs import export_prepared_views
     from research.prefix_selection_replay import _SelectionReplayAdmission
-    from train.runtime import cpu_thread_budget
+    from train.runtime import configure_spawned_worker_threads, cpu_thread_budget
 
     inputs = request["input_request"]
     profiles = tuple(module.SelectionEpochProfile.from_record(row) for row in inputs["profiles"])
+    configure_spawned_worker_threads(1, interop_threads=1)
     with cpu_thread_budget(1):
         declaration = inputs.get("dataset_source", {"path": request["mat"]["path"], "sha256": inputs["original_source_sha256"]})
         views = module.prepare_dataset_independent_prefixes(declaration,
@@ -297,6 +353,7 @@ def _frozen_preparation(arguments):
 def read_prefix_preparation(task, outcome, expected_request):
     """Read small actual returned facts; root alone adopts and owns the holder."""
     _require_retired(task, outcome, adapter="prefix_replay_prepare_adapter")
+    _require_native_resources(task, expected_request, ordinary=False)
     _validate_request(expected_request)
     if (semantic_sha256(task.arguments["request"]) != semantic_sha256(expected_request)
             or set(outcome.value) != {"capsule", "preparation"}
@@ -351,6 +408,7 @@ def _result(arguments, record):
         output.mkdir(parents=True, exist_ok=False)
         return _sealed(output / "replay.json", {"schema": RESULT_SCHEMA,
             "request_sha256": semantic_sha256(request), "consumer_identity": _consumer_identity(request),
+            "interop_threads": 1,
             **record})
 
 
@@ -360,6 +418,7 @@ def selection_chunk_adapter(arguments):
 
     request = arguments["request"]
     _validate_request(request)
+    _worker_native_threads(request, ordinary=False)
     row = _roster(request, "selection")[arguments["package"]]
     with _borrow(arguments) as borrowed:
         _require_input_binding(arguments, borrowed.receipt)
@@ -369,6 +428,7 @@ def selection_chunk_adapter(arguments):
             prefix_compiler=borrowed.views.prefix_compiler, future_views=borrowed.views.decisions,
             source_checkpoints=_sources(row))
         return _result(arguments, {"kind": "selection_chunk", "package": row["package"],
+            "native_threads": 1,
             "node_requests_sha256": semantic_sha256(arguments["node_requests"]),
             "input_consumer": borrowed.receipt, "node_results": results})
 
@@ -380,8 +440,9 @@ def ordinary_prefix_replay_adapter(arguments):
 
     request = arguments["request"]
     _validate_request(request)
+    native = _worker_native_threads(request, ordinary=True)
     row = _roster(request, "ordinary")[arguments["package"]]
-    with cpu_thread_budget(1), _borrow(arguments) as borrowed:
+    with cpu_thread_budget(native), _borrow(arguments) as borrowed:
         _require_input_binding(arguments, borrowed.receipt)
         _saved_byte_contract(request, row)
         _verify_package_files(request, row)
@@ -393,11 +454,12 @@ def ordinary_prefix_replay_adapter(arguments):
         return _result(arguments, {"kind": "ordinary", "package": row["package"],
             "prefix_record_sha256": row["prefix_record_sha256"], "replay": replay,
             "captured_fit_device": package.record["device"], "replay_device": "cpu",
-            "native_threads": 1, "atol": 0.0, "rtol": 0.0, "input_consumer": borrowed.receipt})
+            "native_threads": native, "atol": 0.0, "rtol": 0.0, "input_consumer": borrowed.receipt})
 
 
 def _admit_worker(task, outcome, request, *, adapter, kind, package):
     _require_retired(task, outcome, adapter=adapter)
+    _require_native_resources(task, request, ordinary=kind == "ordinary")
     if (semantic_sha256(task.arguments["request"]) != semantic_sha256(request)
             or task.arguments["package"] != package
             or Path(outcome.value["path"]).resolve() != Path(task.output).resolve() / "replay.json"):
@@ -405,7 +467,9 @@ def _admit_worker(task, outcome, request, *, adapter, kind, package):
     record = _read_sealed(outcome.value)
     if (record["schema"] != RESULT_SCHEMA or record["kind"] != kind or record["package"] != package
             or record["request_sha256"] != semantic_sha256(request)
-            or record["consumer_identity"] != _consumer_identity(request)):
+            or record["consumer_identity"] != _consumer_identity(request)
+            or record["interop_threads"] != 1
+            or record["native_threads"] != replay_native_threads(request, ordinary=kind == "ordinary")):
         raise ValueError("prefix replay worker artifact differs from its actual bound consumer/request")
     _require_input_binding(task.arguments, record["input_consumer"])
     return record
@@ -417,6 +481,7 @@ def _admission(arguments, record):
         output.mkdir(parents=True, exist_ok=False)
         return _sealed(output / "admission.json", {"schema": ADMISSION_SCHEMA,
             "request_sha256": semantic_sha256(request), "consumer_identity": _consumer_identity(request),
+            "interop_threads": 1,
             "producer_source_digest": semantic_sha256(request["producer_source"]),
             "consumer_source_digest": semantic_sha256(request["consumer_source"]),
             "scopes": request["scopes"], **record})
@@ -429,6 +494,7 @@ def selection_reducer_adapter(arguments):
 
     request, job = arguments["request"], arguments["job"]
     _validate_request(request)
+    _worker_native_threads(request, ordinary=False)
     row = _roster(request, "selection")[job["package"]]
     if job["graph"]["sha256"] != row["graph_sha256"]:
         raise ValueError("prefix selection reducer lost its original external graph seal")
@@ -464,6 +530,7 @@ def selection_reducer_adapter(arguments):
                 or semantic_sha256(original_summary["final_refit_scope"]) != semantic_sha256(selected["final_refit_scope"])):
             raise ValueError("prefix selection reducer differs from the original sealed replay summary")
         return _admission(arguments, {"kind": "selection", "package": row["package"],
+            "native_threads": 1,
             "graph_sha256": row["graph_sha256"], "selection_sha256": job["selection_sha256"],
             "selection": _selection_metadata(selected), "summary": summary,
             "byte_seal_files": row["files"], "original_summary": original_summary,
@@ -479,16 +546,17 @@ def ordinary_reducer_adapter(arguments):
 
     request = arguments["request"]
     _validate_request(request)
+    native = _worker_native_threads(request, ordinary=True)
     row = _roster(request, "ordinary")[arguments["package"]]
     task, outcome = arguments["ordinary_outcome"]
     record = _admit_worker(task, outcome, request, adapter="ordinary_prefix_replay_adapter",
         kind="ordinary", package=row["package"])
     _require_input_binding(arguments, record["input_consumer"])
     if (record["prefix_record_sha256"] != row["prefix_record_sha256"]
-            or record["replay_device"] != "cpu" or record["native_threads"] != 1
+            or record["replay_device"] != "cpu" or record["native_threads"] != native
             or record["atol"] != 0.0 or record["rtol"] != 0.0):
         raise ValueError("ordinary prefix reducer changed its original exact CPU replay programme")
-    with cpu_thread_budget(1), _borrow(arguments) as borrowed:
+    with cpu_thread_budget(native), _borrow(arguments) as borrowed:
         _require_input_binding(arguments, borrowed.receipt)
         original = _manifest(_package(request["participant_directory"], row["package"]),
             expected_record_sha256=row["prefix_record_sha256"])
@@ -499,6 +567,7 @@ def ordinary_reducer_adapter(arguments):
             for view in borrowed.views.decisions]
         _recursive_close(record["replay"], _saved_replay_result(original, {"views": views}))
         return _admission(arguments, {"kind": "ordinary", "package": row["package"],
+            "native_threads": native,
             "record_sha256": row["prefix_record_sha256"], "future_rows": original["future_score_rows"],
             "byte_seal_files": row["files"], "summary": record["replay"], "input_consumer": borrowed.receipt})
 
@@ -517,6 +586,7 @@ class CompletedParticipantReplay:
         for task, outcome in reducer_outcomes:
             kind = "selection" if task.adapter.endswith(":selection_reducer_adapter") else "ordinary"
             _require_retired(task, outcome, adapter=kind + "_reducer_adapter")
+            _require_native_resources(task, request, ordinary=kind == "ordinary")
             package = task.arguments["job"]["package"] if kind == "selection" else task.arguments["package"]
             key = kind, package
             if key not in expected or key in results or task.task_id in seen:
@@ -528,6 +598,8 @@ class CompletedParticipantReplay:
             if (record["schema"] != ADMISSION_SCHEMA or record["kind"] != kind or record["package"] != package
                     or record["request_sha256"] != semantic_sha256(request)
                     or record["consumer_identity"] != _consumer_identity(request)
+                    or record["interop_threads"] != 1
+                    or record["native_threads"] != replay_native_threads(request, ordinary=kind == "ordinary")
                     or record["producer_source_digest"] != semantic_sha256(request["producer_source"])
                     or record["consumer_source_digest"] != semantic_sha256(request["consumer_source"])
                     or record["scopes"] != request["scopes"]

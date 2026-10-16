@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 import experiments.run_candidate_ensemble_study as runner
-from research.cloud_execution import CloudExecutor, CloudResult, CloudTask, PhaseResources
+from research.cloud_execution import CloudExecutor, CloudTask, PhaseResources
 from research.source_execution import (
     HostMemoryAdmission,
     SourceInputAdmission,
@@ -65,7 +65,8 @@ def completed_metadata_actor(arguments):
 def recovery_plan(original_prefix_run, tmp_path):
     _, plan, original, _, _, declaration = original_prefix_run
     path = tmp_path / "plan.json"
-    current = {**plan, "prefix_recovery": declaration, "workers": 2, "cpu_budget": 3,
+    native = plan["cpu_threads_per_worker"]
+    current = {**plan, "prefix_recovery": declaration, "workers": 2, "cpu_budget": max(4, 2*native+2),
         "source_workers": 2, "target_workers": 2, "source_worker_memory_gib": .625,
         "target_worker_memory_gib": .625, "shared_staging_memory_gib": .0625,
         "prefix_replay_graph_memory_gib": .625, "prefix_replay_worker_memory_gib": .625}
@@ -74,9 +75,14 @@ def recovery_plan(original_prefix_run, tmp_path):
     return path, original, resources
 
 
+@pytest.mark.parametrize("native_threads", (1, 4))
 def test_actual_recovery_dag_keeps_original_readonly_and_starts_fresh_without_replay_barrier(
-    original_prefix_run, tmp_path,
+    original_prefix_run, tmp_path, native_threads,
 ):
+    if native_threads != 1:
+        producer_root = tmp_path / "original-native4"
+        producer_root.mkdir()
+        original_prefix_run = completed_prefix_producer(producer_root, native_threads=native_threads)
     path, original, resources = recovery_plan(original_prefix_run, tmp_path)
     before = (original.output / "result.json").read_bytes()
     observed = []
@@ -93,11 +99,22 @@ def test_actual_recovery_dag_keeps_original_readonly_and_starts_fresh_without_re
         assert inputs.record()["resident_input_bytes"] == 0
     assert report["status"] == "completed", report.get("execution_failures")
     assert report["decision_denominator_complete"] and {row["record_index"] for row in report["participants"]} == {0, 1}
-    assert len(report["fit_execution"]) == 1
+    assert len(report["fit_execution"]) == 2
+    assert report["fit_execution"]["candidate:000"]["worker"]["exit_code"] == 0
     assert report["participant_execution"]["0"]["role"] == "original_producer_independent_worker_replay"
     assert any(all(task.task_id in snapshot["running"] for task in initial) for snapshot in observed)
     assert (original.output / "result.json").read_bytes() == before
     assert all(result.worker is not None and result.worker["exit_code"] == 0 for result in executed.results.values())
+    if native_threads == 4:
+        roles = {task.adapter.rsplit(":", 1)[-1]: task.resources for task in programme.tasks
+                 if task.resources.phase == "evaluation"}
+        assert roles["ordinary_prefix_replay_adapter"].native_threads == 4
+        assert roles["ordinary_prefix_replay_adapter"].cpu_threads == 5
+        assert roles["selection_chunk_adapter"].native_threads == 1
+        assert roles["selection_chunk_adapter"].cpu_threads == 2
+        assert roles["candidate_participant_admission_adapter"].native_threads == 4
+        assert roles["candidate_participant_admission_adapter"].interop_threads == 1
+        assert roles["candidate_participant_admission_adapter"].cpu_threads == 5
 
 
 def test_real_shared_owner_starts_fresh_fit_before_original_replay_completes_and_admits_both(
@@ -115,7 +132,8 @@ def test_real_shared_owner_starts_fresh_fit_before_original_replay_completes_and
         # Keep the explicit legacy worker admission compatibility path beside
         # the default shared replay DAG exercised above.
         programme = runner.build_candidate_cloud_tasks(path, tmp_path / "run", resources)
-        assert not programme.admitted and programme.execution_workers == 2
+        assert not programme.admitted and programme.execution_workers == resources["max_cache_group_processes"]
+        assert programme.execution_workers >= 2
         assert len(programme.tasks) == 2 and not list(programme.output.glob("recovered_participant_*.json"))
         marker, waiting = tmp_path / "fresh.started", tmp_path / "replay.waiting"
         tasks = []
@@ -132,7 +150,7 @@ def test_real_shared_owner_starts_fresh_fit_before_original_replay_completes_and
     assert marker.exists() and waiting.exists() and executed.status == "completed"
     assert len(executed.results) == 3 and report["status"] == "completed" and report["decision_denominator_complete"]
     assert {row["record_index"] for row in report["participants"]} == {0, 1}
-    assert len(report["fit_execution"]) == 1 and len(report["admission_execution"]) == 2
+    assert len(report["fit_execution"]) == 2 and len(report["admission_execution"]) == 2
     assert report["participant_execution"]["0"]["role"] == "original_producer_independent_worker_replay"
     assert any(len(row["running"]) == 2 for row in observed)
     assert final_resources["reserved_cpu_threads"] == resources["coordinator_cpu_threads"]
@@ -173,12 +191,16 @@ def test_admission_ipc_digest_rejects_resealed_receipt_tampering(original_prefix
     path, _, resources = recovery_plan(original_prefix_run, tmp_path)
     programme = runner.build_candidate_cloud_tasks(path, tmp_path / "run", resources)
     task = next(task for task in programme.tasks if task.resources.phase == "evaluation")
-    receipt = runner.candidate_participant_admission_adapter(task.arguments)
+    with get_context("spawn").Manager() as manager:
+        admission = HostMemoryAdmission(manager, resources)
+        executed = CloudExecutor(admission, max_workers=1, diagnostic_directory=programme.output / "diagnostics",
+            identity={"scope": "software_correctness"}, poll_seconds=.02).run((task,))
+    outcome = executed.results[task.task_id]
+    assert outcome.status == "completed", outcome.failure
     target = Path(task.output) / "admission.json"
     record = runner._read_sealed_record(target)
     record["participant"]["requested"] = []
     runner._sealed_record(target, record)
-    outcome = CloudResult(task.task_id, "completed", receipt)
     with pytest.raises(ValueError, match="return digest"):
         programme.on_finished(outcome)
     assert not programme.admitted
@@ -261,13 +283,14 @@ def test_initial_old_and_fresh_ready_tasks_share_the_declared_phase_owner(origin
     programme = runner.build_candidate_cloud_tasks(path, tmp_path / "run", resources)
     replay = next(task for task in programme.tasks if task.resources.phase == "evaluation")
     fresh = next(task for task in programme.tasks if task.resources.phase == "calibration")
-    assert replay.resources.device == "cpu" and replay.resources.cpu_threads == replay.resources.native_threads == 1
+    assert replay.resources.device == "cpu" and replay.resources.native_threads == replay.resources.interop_threads == 1
+    assert replay.resources.cpu_threads == 2
     assert replay.arguments["request"]["producer_task"]["arguments"]["record_index"] == 0
     assert fresh.arguments["record_index"] == 1 and not fresh.depends_on
     assert not programme.admitted and not (programme.output / "result.json").exists()
 
 
-def test_existing_owner_admits_four_cpu_replays_and_four_gpu_capable_fits_within_cpu25():
+def test_existing_owner_admits_two_cpu_replays_and_four_gpu_capable_fits_within_cpu25():
     """Transaction feasibility; this does not allocate GPU or claim utilization."""
     resources = {"cpu_budget": 25, "coordinator_cpu_threads": 1, "host_memory_budget_bytes": 48 * 2**30,
         "shared_staging_memory_bytes": 8 * 2**30, "source_workers": 4, "target_workers": 4,
@@ -277,12 +300,12 @@ def test_existing_owner_admits_four_cpu_replays_and_four_gpu_capable_fits_within
         admission = HostMemoryAdmission(manager, resources)
         claims = [admission.reserve_phase("calibration", cpu_threads=5, memory_bytes=4 * 2**30,
             gpu_workers=0, task_id=f"fresh:{index}", gpu_capable=True) for index in range(4)]
-        claims += [admission.reserve_phase("evaluation", cpu_threads=1, memory_bytes=4 * 2**30,
-            gpu_workers=0, task_id=f"replay:{index}", gpu_capable=False) for index in range(4)]
+        claims += [admission.reserve_phase("evaluation", cpu_threads=2, memory_bytes=4 * 2**30,
+            gpu_workers=0, task_id=f"replay:{index}", gpu_capable=False) for index in range(2)]
         assert all(claim is not None for claim in claims)
         actual = admission.record()
         assert actual["reserved_cpu_threads"] == 25 and actual["gpu_capable_calibration_actors"] == 4
-        assert actual["evaluation_groups"] == actual["calibration_groups"] == 4
+        assert actual["evaluation_groups"] == 2 and actual["calibration_groups"] == 4
         for claim in claims:
             admission.release_phase(claim)
         assert admission.record()["reserved_cpu_threads"] == 1

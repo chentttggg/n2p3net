@@ -137,3 +137,13 @@ tests/transfer/test_requested_calibration_scoring.py text eol=lf
 src/research/shared_stationary_factor.py text eol=lf
 tests/research/test_shared_stationary_factor.py text eol=lf
 scripts/benchmark_shared_stationary_factor.py text eol=lf
+
+# Preserve reviewed native replay producer bytes across platforms.
+src/research/prefix_recovery.py text eol=lf
+src/research/prefix_replay_execution.py text eol=lf
+src/research/prefix_replay_dispatch.py text eol=lf
+tests/research/test_prefix_recovery_scheduling.py text eol=lf
+tests/research/test_prefix_replay_execution.py text eol=lf
+tests/research/test_prefix_replay_dispatch.py text eol=lf
+tests/research/test_prefix_recovery_provenance.py text eol=lf
+tests/support/prefix_recovery.py text eol=lf

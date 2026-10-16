@@ -20,7 +20,8 @@ from research.source_execution import HostMemoryAdmission, SourceInputAdmission
 
 _BUILD_OLD_CASE = '''
 import hashlib, importlib.util, json, pathlib, sys
-root, original = map(pathlib.Path, sys.argv[1:])
+root, original = map(pathlib.Path, sys.argv[1:3])
+native = int(sys.argv[3])
 spec = importlib.util.spec_from_file_location("transfer.ensemble_views", original)
 module = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = module
@@ -64,18 +65,19 @@ with cpu_thread_budget(1):
         "exact_score_checks":replay["exact_score_checks"], "selected_candidate":selection.record["selected_candidate"],
         "final_refit_scope":selection.record["final_refit_scope"]}
     (root/"original_summary.json").write_text(json.dumps({"record":summary,"record_sha256":semantic_sha256(summary)}),encoding="utf-8")
-    recorder = InnerReplayRecorder()
-    programs = fit_calibration_prefix_programs(views.calibration[400], experts, program,
-        strategies=("fixed","grouped_temperature"), inner_replay_recorder=recorder,
-        inner_replay_context=context)
-    for view in views.decisions:
-        for strategy, value in FittedEnsemble.score_programs(programs,view).items():
-            if isinstance(value,ExpectedSubjectError):
-                value = unavailable_prefix_expert_scores(views.calibration[400].record(),
-                    [x.record() for x in experts], strategy, value.record(subject=view.participant_key), view)
-            recorder.record_prefix_future_score(strategy,view=view,evidence=value)
-    persist_prefix_inner_replay(views.calibration[400],programs,participant/"ordinary",recorder=recorder,
-        context=context)
+    with cpu_thread_budget(native):
+        recorder = InnerReplayRecorder()
+        programs = fit_calibration_prefix_programs(views.calibration[400], experts, program,
+            strategies=("fixed","grouped_temperature"), inner_replay_recorder=recorder,
+            inner_replay_context=context)
+        for view in views.decisions:
+            for strategy, value in FittedEnsemble.score_programs(programs,view).items():
+                if isinstance(value,ExpectedSubjectError):
+                    value = unavailable_prefix_expert_scores(views.calibration[400].record(),
+                        [x.record() for x in experts], strategy, value.record(subject=view.participant_key), view)
+                recorder.record_prefix_future_score(strategy,view=view,evidence=value)
+        persist_prefix_inner_replay(views.calibration[400],programs,participant/"ordinary",recorder=recorder,
+            context=context)
     (root/"scopes.json").write_text(json.dumps(views.ledger),encoding="utf-8")
     record = json.loads((participant/"ordinary"/"prefix_inner_replay.json").read_bytes())
     prefix = views.calibration[400]
@@ -91,8 +93,9 @@ with cpu_thread_budget(1):
 '''
 
 
-@pytest.fixture(scope="module")
-def old_case(tmp_path_factory):
+@pytest.fixture(scope="module", params=(1, 4))
+def old_case(tmp_path_factory, request):
+    native = request.param
     root = tmp_path_factory.mktemp("real-prefix-execution")
     repository = Path(__file__).resolve().parents[2]
     frozen = root / "original_ensemble_views.py"
@@ -100,7 +103,7 @@ def old_case(tmp_path_factory):
         cwd=repository))
     environment = {**os.environ, "PYTHONPATH": os.pathsep.join([str(repository / "src"), str(repository)]),
         "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1"}
-    subprocess.run([sys.executable, "-B", "-c", _BUILD_OLD_CASE, str(root), str(frozen)],
+    subprocess.run([sys.executable, "-B", "-c", _BUILD_OLD_CASE, str(root), str(frozen), str(native)],
         cwd=repository, env=environment, check=True)
     facts = json.loads((root / "old_case.json").read_bytes())
     consumer = {name: owner.artifact_receipt(repository / name)["sha256"] for name in owner._CONSUMER_PATHS}
@@ -114,7 +117,13 @@ def old_case(tmp_path_factory):
         if name == "selection":
             seal["graph_sha256"] = facts["graph_sha256"]
         saved_seals[name] = owner._sealed(root / (name + ".saved.json"), seal)
+    ledger = owner._sealed(root / "participant" / "request_ledger.json", {
+        "native_threads": native, "execution_source": producer,
+        "record": {"sha256": owner.artifact_receipt(facts["mat"])["sha256"]},
+        "scopes_sha256": owner.artifact_receipt(root / "scopes.json")["sha256"],
+        "participant_key": facts["input_request"]["participant_key"]})
     request = {"schema": owner.SCHEMA, "preparation_task_id": "prepare-real-old",
+        "producer_ledger": ledger, "ordinary_native_threads": native,
         "participant_directory": str(root / "participant"), "producer_module": owner.artifact_receipt(frozen),
         "mat": owner.artifact_receipt(facts["mat"]), "scopes": owner.artifact_receipt(root / "scopes.json"),
         "input_request": facts["input_request"], "producer_source": producer, "consumer_source": consumer,
@@ -130,9 +139,10 @@ def old_case(tmp_path_factory):
 
 def _task(root, task_id, adapter, arguments, dependencies=()):
     output = root / task_id
+    native = owner.replay_native_threads(arguments["request"], ordinary=adapter.startswith("ordinary_"))
     return CloudTask(task_id, "research.prefix_replay_execution:" + adapter,
         {**arguments, "output": str(output), "output_estimate_bytes": 2**28}, str(output),
-        PhaseResources("evaluation", 2, 2**30, 1, "cpu", interop_threads=1), tuple(dependencies))
+        PhaseResources("evaluation", native + 1, 2**30, native, "cpu", interop_threads=1), tuple(dependencies))
 
 
 @pytest.fixture(scope="module")
@@ -140,7 +150,7 @@ def executed(old_case):
     root, request = old_case
     manager = multiprocessing.Manager()
     resources = {"host_memory_budget_bytes": 4 * 2**30, "shared_staging_memory_bytes": 2**30,
-        "cpu_budget": 5, "coordinator_cpu_threads": 1, "gpu_slots": 4, "source_workers": 2,
+        "cpu_budget": 9, "coordinator_cpu_threads": 1, "gpu_slots": 4, "source_workers": 2,
         "target_workers": 2, "native_threads_per_worker": 1,
         "source_worker_memory_bytes": 2**30, "target_worker_memory_bytes": 2**30}
     inputs = SourceInputAdmission(manager, capacity_bytes=2**30, load_workers=2)
@@ -200,11 +210,18 @@ def test_actual_old_compiler_cloud_chunks_and_private_admission_close_the_origin
     assert selected["input_consumer"]["future_truth_present"] is False
     assert ordinary["input_consumer"]["future_truth_present"] is False
     assert all(outcome.worker["exit_code"] == 0 and not outcome.worker["alive"] for _, outcome in actual)
+    assert ordinary["native_threads"] == request["ordinary_native_threads"]
+    assert selected["native_threads"] == 1
+    assert ordinary["interop_threads"] == selected["interop_threads"] == 1
+    for task, _ in actual:
+        expected = 1 if "selection_reducer" in task.adapter else request["ordinary_native_threads"]
+        assert task.resources.native_threads == expected and task.resources.cpu_threads == expected + 1
+        assert task.resources.interop_threads == 1
     assert admission.record()["reserved_cpu_threads"] == 1
     assert inputs.record()["resident_input_bytes"] > 0
 
 
-@pytest.mark.parametrize("mutation", ["missing", "duplicate", "exit", "tree", "mapping", "request", "artifact"])
+@pytest.mark.parametrize("mutation", ["missing", "duplicate", "exit", "tree", "mapping", "request", "artifact", "native"])
 def test_completed_admission_rejects_incomplete_or_unrelated_actual_facts(executed, mutation):
     request, _, _, actual, _, _, _ = executed
     facts = [(task, replace(outcome, worker=dict(outcome.worker))) for task, outcome in actual]
@@ -220,10 +237,39 @@ def test_completed_admission_rejects_incomplete_or_unrelated_actual_facts(execut
         facts[0] = facts[0][0], {"status": "completed", "accepted": True}
     elif mutation == "request":
         request = {**request, "participant_directory": str(Path(request["participant_directory"]).parent)}
+    elif mutation == "native":
+        task, outcome = facts[-1]
+        facts[-1] = replace(task, resources=replace(task.resources, native_threads=2, cpu_threads=3)), outcome
     else:
         facts[0][1].value = {**facts[0][1].value, "sha256": "f" * 64}
     with pytest.raises((ValueError, TypeError)):
         owner.CompletedParticipantReplay.from_reduced(request, facts)
+
+
+def test_request_cannot_relabel_the_original_native_programme(old_case):
+    _, request = old_case
+    altered = {**request, "ordinary_native_threads": 2}
+    with pytest.raises(ValueError, match="original source-bound ledger"):
+        owner._validate_request(altered)
+
+
+@pytest.mark.parametrize("mutation", ("native", "interop"))
+def test_actual_worker_rejects_a_mismatched_numeric_programme(executed, mutation):
+    _, _, _, _, _, _, runtime = executed
+    task = _task(runtime["root"], "wrong-ordinary-" + mutation, "ordinary_prefix_replay_adapter",
+        {**runtime["common"], "package": "ordinary"})
+    if mutation == "native":
+        task = replace(task, resources=replace(task.resources, cpu_threads=3, native_threads=2))
+        expected = "worker environment"
+    else:
+        task = replace(task, resources=replace(task.resources,
+            cpu_threads=task.resources.native_threads + 2, interop_threads=2))
+        expected = "numeric pools"
+    result = runtime["executor"].run((task,)).results[task.task_id]
+    assert result.status == "failed" and expected in result.failure["message"]
+    assert result.worker["exit_code"] == 0 and result.worker["alive"] is False
+    assert result.worker["process_tree_retirement"]["active_owned_processes_after_exit"] == 0
+    assert not (Path(task.output) / "replay.json").exists()
 
 
 def test_completed_result_cannot_mutate_another_private_ingress(executed):

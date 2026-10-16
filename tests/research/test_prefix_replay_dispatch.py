@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+from dataclasses import replace
 from multiprocessing import get_context
 from pathlib import Path
 
@@ -30,6 +31,13 @@ def reader_adapter(arguments):
 
     with open_prepared_inputs(arguments["inputs"], expected_request_sha=arguments["request_sha"],
                               expected_capsule_sha=arguments["capsule_sha"]) as borrowed:
+        if "expected_native" in arguments:
+            import torch
+
+            assert all(os.environ[name] == str(arguments["expected_native"])
+                       for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"))
+            assert torch.get_num_threads() == arguments["expected_native"]
+            assert torch.get_num_interop_threads() == arguments["expected_interop"]
         assert borrowed.views.scoring_truth == {}
         value = float(borrowed.views.calibration[200].raw.samples.sum())
         if arguments.get("native_exit"):
@@ -62,13 +70,14 @@ def _two_preparations(prepared, root):
 
 
 def _run(prepared, root, *, native_exit=False, adoption_error=False, corrupt_pending=False, dynamic=False,
-         release_aliases=False):
+         release_aliases=False, reader_native=1, reader_interop=None, validate_reader=None):
     from research.prefix_replay_dispatch import PrefixReplayInputPool
 
     tasks, requests, capacity = _two_preparations(prepared, root)
     resources = {"host_memory_budget_bytes": 4 * 2**30, "shared_staging_memory_bytes": capacity,
         "source_worker_memory_bytes": 2**30, "target_worker_memory_bytes": 2**30,
-        "source_workers": 1, "target_workers": 1, "gpu_slots": 1, "cpu_budget": 3 if dynamic else 2,
+        "source_workers": 1, "target_workers": 1, "gpu_slots": 1,
+        "cpu_budget": 1 + reader_native + (reader_interop or int(dynamic)),
         "coordinator_cpu_threads": 1, "native_threads_per_worker": 1}
     events, staged_tasks, aliases = [], {}, {}
     with get_context("spawn").Manager() as manager:
@@ -85,6 +94,8 @@ def _run(prepared, root, *, native_exit=False, adoption_error=False, corrupt_pen
             events.append((task_id + ":aliases_released", capacity, {}))
 
         options = {"release_backing_aliases": release_backing_aliases} if release_aliases else {}
+        if validate_reader is not None:
+            options["validate_reader"] = validate_reader
         pool = PrefixReplayInputPool(inputs, **options)
         later = {}
 
@@ -98,8 +109,11 @@ def _run(prepared, root, *, native_exit=False, adoption_error=False, corrupt_pen
             aliases[task_id] = descriptor
             common = {"inputs": descriptor, "request_sha": semantic_sha256(requests[task_id]),
                       "capsule_sha": tasks[int(task_id[-3:])].arguments["artifact"]["sha256"]}
-            phase = PhaseResources("evaluation", 2, 2**30, 1, interop_threads=1) if dynamic else (
-                PhaseResources("evaluation", 1, 2**30, 1))
+            interop = reader_interop if reader_interop is not None else (1 if dynamic else None)
+            phase = PhaseResources("evaluation", reader_native + (interop or 0), 2**30,
+                reader_native, interop_threads=interop)
+            if reader_native != 1:
+                common.update(expected_native=reader_native, expected_interop=interop)
             reader = CloudTask(task_id + ":reader", f"{__name__}:reader_adapter",
                 {**common, "native_exit": native_exit and task_id.endswith("000")},
                 str(root / (task_id.replace(":", "_") + "_reader")), phase)
@@ -140,6 +154,7 @@ def _run(prepared, root, *, native_exit=False, adoption_error=False, corrupt_pen
             poll_seconds=.02).run(tasks, on_finished=callback)
         pool.retire_after_run(run)
         final = inputs.record()
+        final["phase_admission"] = admission.record()
     return run, events, final, staged_tasks, capacity
 
 
@@ -203,3 +218,72 @@ def test_task_aliases_are_released_before_pending_inputs_take_the_same_budget(pr
     assert all("payload" not in task.arguments["inputs"]
                and not isinstance(task.arguments["inputs"].get("capsule"), bytes) for task in tasks.values())
     assert final["free_staging_bytes"] == capacity and final["resident_input_bytes"] == 0
+
+
+def test_actual_native4_readers_and_dynamic_reducers_keep_their_scientific_owner_and_retire(prepared, tmp_path):
+    validated = []
+
+    def validate(task):
+        assert task.resources.native_threads == 4 and task.resources.interop_threads == 1
+        assert task.resources.cpu_threads == 5
+        validated.append(task.task_id)
+
+    run, _, final, staged, capacity = _run(prepared, tmp_path, dynamic=True,
+        reader_native=4, reader_interop=1, validate_reader=validate)
+    assert run.status == "completed" and len(run.results) == 6
+    assert set(validated) == set(staged) and len(validated) == 4
+    assert all(task.resources.native_threads == 4 and task.resources.cpu_threads == 5 for task in staged.values())
+    assert final["resident_input_bytes"] == 0 and final["free_staging_bytes"] == capacity
+    assert final["phase_admission"]["reserved_cpu_threads"] == 1
+    assert final["phase_admission"]["evaluation_groups"] == 0
+    assert all(outcome.worker["exit_code"] == 0 and outcome.worker["alive"] is False
+        and outcome.worker["process_tree_retirement"]["active_owned_processes_after_exit"] == 0
+        for outcome in run.results.values())
+
+
+def test_scientific_owner_rejection_releases_actual_adopted_inputs_before_any_reader_launch(prepared, tmp_path):
+    rejected = []
+
+    def validate(task):
+        rejected.append(task.task_id)
+        raise ValueError("scientific owner rejected this declared reader")
+
+    run, _, final, _, capacity = _run(prepared, tmp_path, reader_native=4, reader_interop=1,
+        validate_reader=validate)
+    assert len(rejected) == 2 and run.status == "failed" and len(run.results) == 2
+    assert all(outcome.worker["exit_code"] == 0 and outcome.failure["stage"] == "artifact_admission"
+        and "scientific owner rejected" in outcome.failure["message"] for outcome in run.results.values())
+    assert final["resident_input_bytes"] == 0 and final["free_staging_bytes"] == capacity
+    assert final["phase_admission"]["reserved_cpu_threads"] == 1
+    assert final["phase_admission"]["evaluation_groups"] == 0
+
+
+@pytest.mark.parametrize("native,interop,cpu", [(4, 1, 4), (4, 1, 6), (0, 1, 1),
+    (True, 1, 2), (4, 0, 4), (4, False, 4), (4, -1, 3), (4, 1, True)])
+def test_generic_pool_rejects_invalid_native_interop_or_cpu_accounting_before_owner(native, interop, cpu):
+    from research.prefix_replay_dispatch import PrefixReplayInputPool
+
+    validated = []
+    pool = PrefixReplayInputPool(None, validate_reader=lambda task: validated.append(task.task_id))
+    task = CloudTask("reader", f"{__name__}:reader_adapter", {}, "unused",
+        PhaseResources("evaluation", cpu, 2**30, native, "cpu", interop_threads=interop))
+    with pytest.raises(ValueError, match="CPU evaluation"):
+        pool._reader_tasks((task,))
+    assert not validated and not pool.record()["active_readers"]
+
+
+@pytest.mark.parametrize("mutation", ["gpu", "phase", "duplicate"])
+def test_generic_pool_retains_cpu_phase_and_unique_frontier_contract_before_owner(mutation):
+    from research.prefix_replay_dispatch import PrefixReplayInputPool
+
+    validated = []
+    pool = PrefixReplayInputPool(None, validate_reader=lambda task: validated.append(task.task_id))
+    task = CloudTask("reader", f"{__name__}:reader_adapter", {}, "unused",
+        PhaseResources("evaluation", 5, 2**30, 4, "cpu", interop_threads=1))
+    if mutation == "gpu":
+        task = replace(task, resources=replace(task.resources, device="cuda:0"))
+    elif mutation == "phase":
+        task = replace(task, resources=replace(task.resources, phase="calibration"))
+    with pytest.raises(ValueError):
+        pool._reader_tasks((task, task) if mutation == "duplicate" else (task,))
+    assert not validated and not pool.record()["active_readers"]

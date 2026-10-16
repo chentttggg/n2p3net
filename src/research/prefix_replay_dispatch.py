@@ -53,9 +53,10 @@ def _retired_reader(outcome):
 class PrefixReplayInputPool:
     """One parent owner; all methods run on the CloudExecutor callback thread."""
 
-    def __init__(self, input_admission, *, release_backing_aliases=None):
+    def __init__(self, input_admission, *, release_backing_aliases=None, validate_reader=None):
         self._admission = input_admission
         self._release_backing_aliases = release_backing_aliases
+        self._validate_reader = validate_reader
         self._pending, self._groups, self._readers, self._observed = {}, {}, {}, {}
         self._task_ids = set()
         self.failures = {}
@@ -81,10 +82,16 @@ class PrefixReplayInputPool:
         if len(set(ids)) != len(ids) or set(ids) & self._task_ids:
             raise ValueError("shared replay input tasks repeat a reader identity")
         if any(task.resources.phase != "evaluation" or task.resources.device != "cpu"
-               or task.resources.native_threads != 1
-               or task.resources.interop_threads not in (None, 1)
-               or task.resources.cpu_threads != 1 + (task.resources.interop_threads or 0) for task in tasks):
-            raise ValueError("shared replay readers require the native1 CPU evaluation programme")
+               or type(task.resources.native_threads) is not int or task.resources.native_threads < 1
+               or task.resources.interop_threads is not None and (
+                   type(task.resources.interop_threads) is not int or task.resources.interop_threads < 1)
+               or type(task.resources.cpu_threads) is not int
+               or task.resources.cpu_threads != task.resources.native_threads
+                   + (task.resources.interop_threads or 0) for task in tasks):
+            raise ValueError("shared replay readers require a fully accounted CPU evaluation programme")
+        if self._validate_reader is not None:
+            for task in tasks:
+                self._validate_reader(task)
         return tasks, ids
 
     def add_readers(self, preparation_task_id, tasks):
