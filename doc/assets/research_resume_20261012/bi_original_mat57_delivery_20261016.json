@@ -1,0 +1,315 @@
+{
+  "schema": "n2p3_BI_original_MAT57_root_acceptance/1",
+  "status": "accepted_completed_phase_composition",
+  "MAT57_closure": {
+    "path": "D:/BCI/artifacts/research-deliveries/bi2014a/original-mat57/ORIGINAL_MAT57_CLOSURE.json",
+    "sha256": "f860cb24ee0286b3f3f4883f89acb5491a53568352d4ebee9c8e245d859e0035",
+    "bytes": 8703
+  },
+  "MAT57_accepted_probability_audit": {
+    "path": "D:/BCI/artifacts/research-deliveries/bi2014a/original-mat57/MAT57_FINAL_SAVED_EVIDENCE_AUDIT_20261016.json",
+    "sha256": "dd75e4adda843235e4d08cab7076c5dd774cadf22c16a755245b4f5732411e90",
+    "bytes": 7371
+  },
+  "handoff": {
+    "path": "D:/BCI/artifacts/research-deliveries/bi2014a/original-mat57/BI_ORIGINAL_MAT01_MAT57_FINAL_HANDOFF_20261016.md",
+    "sha256": "cb8270e10a6a233135c6f82a59f6c8f68dbfc691759dfacfc9bde3827f3ea0a1",
+    "bytes": 6495
+  },
+  "final_author_delivery": {
+    "path": "D:/BCI/artifacts/research-deliveries/bi2014a/original-mat57/BI_ORIGINAL_MAT01_MAT57_FINAL_DELIVERY_20261016.json",
+    "sha256": "656b154f7e95771e075d3cae0d696ce1d203bdce413c2f9ccc05739c198045d6",
+    "bytes": 8519
+  },
+  "root_verified_unique_delivery_references": 22,
+  "requested_cells": 90,
+  "probability_cells": 42,
+  "typed_unavailable_cells": 48,
+  "requested_decisions": 5,
+  "requested_to_actual_K": {
+    "0": 0,
+    "48": 48,
+    "2000": 1163
+  },
+  "original_target_fits": 59,
+  "original_optimizer_steps": 168,
+  "original_source_fits": 0,
+  "original_same_run_exact_reuse": 57,
+  "original_internal_graph_replays": 3,
+  "original_actor_exit": 1,
+  "reader_repair_commit": "0a7def657ccd79aadf86cef0e5d3ea0d85bf2d63",
+  "new_consumer_exit": 0,
+  "proper_capsule_exit": 0,
+  "active_owned_processes_after_exit": 0,
+  "peak_consumer_tree_rss_bytes": 2039308288,
+  "resident_input_bytes": [
+    0,
+    106496740,
+    0
+  ],
+  "new_target_fits": 0,
+  "new_source_fits": 0,
+  "new_optimizer_steps": 0,
+  "repeated_original_internal_replay_stage_invocations": 0,
+  "root_numeric_replays": 0,
+  "root_model_graph_or_EEG_decodes": 0,
+  "review": "Root read the canonical metadata comparison, original closure, full parent and capsule terminal bindings, actual isolated/resealed log-probability rejection, saved-evidence auditor and all 22 delivery references. The saved-evidence audit independently recomputed 42 vectors and 18 arm/K summaries to 1e-12. Original producer failure and new zero-fit consumer success retain separate identities.",
+  "readout": [
+    {
+      "K": 0,
+      "strategy": "fixed",
+      "mixture": "scratch_nn_fixed",
+      "requested": 5,
+      "probability": 0,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "not_available": 5
+      },
+      "conditional_NLL": null,
+      "conditional_Brier": null
+    },
+    {
+      "K": 0,
+      "strategy": "fixed",
+      "mixture": "scratch_nn_xdawn_fixed",
+      "requested": 5,
+      "probability": 0,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "not_available": 5
+      },
+      "conditional_NLL": null,
+      "conditional_Brier": null
+    },
+    {
+      "K": 0,
+      "strategy": "fixed",
+      "mixture": "source_nn_fixed",
+      "requested": 5,
+      "probability": 3,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2
+      },
+      "conditional_NLL": 3.2882892739187177,
+      "conditional_Brier": 0.9565204634939533
+    },
+    {
+      "K": 0,
+      "strategy": "fixed",
+      "mixture": "source_nn_xdawn_fixed",
+      "requested": 5,
+      "probability": 0,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2,
+        "not_available": 3
+      },
+      "conditional_NLL": null,
+      "conditional_Brier": null
+    },
+    {
+      "K": 0,
+      "strategy": "fixed",
+      "mixture": "waveform_control_fixed",
+      "requested": 5,
+      "probability": 0,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "not_available": 5
+      },
+      "conditional_NLL": null,
+      "conditional_Brier": null
+    },
+    {
+      "K": 0,
+      "strategy": "nested_selection",
+      "mixture": "BI-fixed-quartet-selected",
+      "requested": 5,
+      "probability": 3,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2
+      },
+      "conditional_NLL": 3.2882892739187177,
+      "conditional_Brier": 0.9565204634939533
+    },
+    {
+      "K": 48,
+      "strategy": "fixed",
+      "mixture": "scratch_nn_fixed",
+      "requested": 5,
+      "probability": 3,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2
+      },
+      "conditional_NLL": 4.4177013086583505,
+      "conditional_Brier": 1.0634697795531542
+    },
+    {
+      "K": 48,
+      "strategy": "fixed",
+      "mixture": "scratch_nn_xdawn_fixed",
+      "requested": 5,
+      "probability": 3,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2
+      },
+      "conditional_NLL": 5.110848489218296,
+      "conditional_Brier": 1.2274229801342826
+    },
+    {
+      "K": 48,
+      "strategy": "fixed",
+      "mixture": "source_nn_fixed",
+      "requested": 5,
+      "probability": 3,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2
+      },
+      "conditional_NLL": 3.85670637252225,
+      "conditional_Brier": 1.0156386150259291
+    },
+    {
+      "K": 48,
+      "strategy": "fixed",
+      "mixture": "source_nn_xdawn_fixed",
+      "requested": 5,
+      "probability": 3,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2
+      },
+      "conditional_NLL": 4.549853553082195,
+      "conditional_Brier": 1.2138828873692837
+    },
+    {
+      "K": 48,
+      "strategy": "fixed",
+      "mixture": "waveform_control_fixed",
+      "requested": 5,
+      "probability": 3,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2
+      },
+      "conditional_NLL": 15.144668915481859,
+      "conditional_Brier": 1.7552245279725402
+    },
+    {
+      "K": 48,
+      "strategy": "nested_selection",
+      "mixture": "BI-fixed-quartet-selected",
+      "requested": 5,
+      "probability": 3,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2
+      },
+      "conditional_NLL": 3.85670637252225,
+      "conditional_Brier": 1.0156386150259291
+    },
+    {
+      "K": 1163,
+      "strategy": "fixed",
+      "mixture": "scratch_nn_fixed",
+      "requested": 5,
+      "probability": 3,
+      "correct": 1,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2
+      },
+      "conditional_NLL": 3.2256311377234055,
+      "conditional_Brier": 0.9490937683155435
+    },
+    {
+      "K": 1163,
+      "strategy": "fixed",
+      "mixture": "scratch_nn_xdawn_fixed",
+      "requested": 5,
+      "probability": 3,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2
+      },
+      "conditional_NLL": 2.082017519608442,
+      "conditional_Brier": 0.8694871398575965
+    },
+    {
+      "K": 1163,
+      "strategy": "fixed",
+      "mixture": "source_nn_fixed",
+      "requested": 5,
+      "probability": 3,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2
+      },
+      "conditional_NLL": 3.5359329091230305,
+      "conditional_Brier": 0.9696658111956978
+    },
+    {
+      "K": 1163,
+      "strategy": "fixed",
+      "mixture": "source_nn_xdawn_fixed",
+      "requested": 5,
+      "probability": 3,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2
+      },
+      "conditional_NLL": 2.231084899373554,
+      "conditional_Brier": 0.8778114081041771
+    },
+    {
+      "K": 1163,
+      "strategy": "fixed",
+      "mixture": "waveform_control_fixed",
+      "requested": 5,
+      "probability": 3,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2
+      },
+      "conditional_NLL": 3.7623475424699158,
+      "conditional_Brier": 0.9779730916206159
+    },
+    {
+      "K": 1163,
+      "strategy": "nested_selection",
+      "mixture": "BI-fixed-quartet-selected",
+      "requested": 5,
+      "probability": 3,
+      "correct": 0,
+      "tie": 0,
+      "unavailable": {
+        "incomplete": 2
+      },
+      "conditional_NLL": 2.231084899373554,
+      "conditional_Brier": 0.8778114081041771
+    }
+  ],
+  "scientific_role": "predeclared_one_epoch_original_MAT_development_example",
+  "next_public_comparison": "original_full_60_epoch_matrix",
+  "author_tree_retirement": "retain_original_absolute_source_declarations_and_artifacts_until_recovery_mapping_is_complete"
+}

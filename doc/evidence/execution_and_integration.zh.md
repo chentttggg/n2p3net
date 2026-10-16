@@ -16,6 +16,10 @@ Source共享闭包、并发产物预算、显式shared AR因子和原保存root�
 
 BI原MAT01的108格已完成：74次目标primitive fit、204次AdamW更新、0source fit，三个graph内部精确重放及独立parent正验通过。proper child、真实resident账本和最后概率篡改负例各退出0，111681500B完整申请并归还，最终关系由正常parent与focused consumer共用。原reader15和observer1保原身份。graph-store/2两切片已接受：真实prepare→chunk/ordinary4→reducer→parent链闭合，原2056864994B图转成47161151B，90节点/24scope/原logical SHA保持，转换峰RSS797597696B、wall214.87秒，0新fit/数值replay。独审异常lease修复通过两个真实Manager反例；cmd逐项退休340545788B可重建token cache，原图/模型保留。来源见[图存储接受](../assets/research_resume_20261012/graph_storage_delivery_20261016.json)。
 
+MAT57已完成90格（42概率/48不可用）、原59次目标fit/168更新及三图内部重放。原actor的parent列表/元组比较失败保OS1；`0a7def6`只改该语义比较，新656文件consumer完成首次完整parent、focused概率负例与proper capsule，实际退出0且所属进程为0。真实resident为0→106496740→0B，consumer整树峰值2039308288B；没有新增fit或重复原内部重放。原654文件producer与新consumer分别绑定，[root接受](../assets/research_resume_20261012/bi_original_mat57_delivery_20261016.json)保存22引用核验及独立42向量/18组归约。
+
+`267a50e`已集成typed joint source、原history/refusal、generic候选routing及混合NN源闭包。真实H source准入进一步完成：原participant2/C68的数组SHA、source law、拟合证据和target排除合同保持；使用`CalibrationPrefixCompiler.from_dataset_source(...).compile(K)`后，统计native读取18→6，全部位于原[0,19947)，不消费的future读取12→0。真实factory仍逐字节校验原BDF；live owner、public catalog、thin resolver与伪owner拒绝均通过，0新增fit/MCMC。原source的software身份、新原数组准入身份及新consumer各自保存，详见[joint整合绑定](../assets/research_resume_20261012/joint_generic_integration_20261016.json)。
+
 B11实际31导C500用原128 burnin/128 draws×2 chains完成，622坐标由独立直接自协方差重算，最大Rhat1.0413、最小bulk/tail ESS52.14/98.97，满足原1.2/5/5政策。完整新程序已消费与原C500逐字节相同的模型，继续OOF、future和whole nested graph。云owner已实际观察S4完整恢复退出0、6080请求、8原fit复用、0新fit和CPU峰24.89核；连接中断前已读原exit，最终304任务/8parent逐项绑定待恢复连接后落地。S5只供尚未开始的后五阶段。
 
 

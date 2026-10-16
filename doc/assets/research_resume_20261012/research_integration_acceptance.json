@@ -2310,10 +2310,12 @@
       }
     },
     "ongoing": [
-      "BI57 full compact-runtime programme from fixed9407235 freeze",
-      "B11 exact QR memo and concentration/sensitivity of saved OOF components",
-      "typed B11 numeric/ensemble/replay and joint catalog integration, then generic public original-data source admission",
-      "cloud reopening: fetch existing S4 full304/8parent final join, then remaining five stages",
+      "MAT57 fixed zero-fit consumer first full parent, focused negative and true-ledger capsule",
+      "B11 actual004 remaining OOF/future and full nested graph; original C500/OOF0 reused",
+      "memo exact integration and private validated-score cache to remove repeated verified components",
+      "actual H-array live source admission from the fixed original roster",
+      "independent one-dimensional log-precision integral pilot with full-domain and tail coverage",
+      "cloud reopening: existing S4 304/8parent final gate then remaining five stages",
       "B00-B14 programme"
     ],
     "completed_tree_cleanup": {
@@ -2333,7 +2335,10 @@
       "3beed9e",
       "f1a36a6",
       "be35c57",
-      "9407235"
+      "9407235",
+      "0a7def6",
+      "6831503",
+      "267a50e"
     ],
     "saved_root_admission": {
       "integrated_commit": "def8182",
@@ -2437,6 +2442,94 @@
       "new_fits": 0,
       "numeric_replays": 0,
       "cleanup_bytes": 340545788
+    },
+    "joint_generic_integration": {
+      "status": "accepted_source_and_focused_software_slices",
+      "root_delivery": {
+        "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_generic_integration_20261016.json",
+        "sha256": "bf83a1f972c61aeeef5fe9b41176db060fe97cdd0dbdb4e36a7b6c7f42578559",
+        "bytes": 7678
+      },
+      "integration_commit": "267a50e",
+      "full_public_acceptance": "ongoing",
+      "actual_original_H_source_admission": {
+        "status": "accepted_actual_original_H_source_admission_compile_only",
+        "verification": {
+          "path": "D:/BCI/artifacts/joint-source-catalog-revision/huebner-compile-only-admission/VERIFICATION.json",
+          "sha256": "f4bc96c449c9edf20b1ae1be36d19ac50ddc2c83acc2c0a5249ede22b6a487b3",
+          "bytes": 54663
+        },
+        "execution_binding": {
+          "path": "D:/BCI/artifacts/joint-source-catalog-revision/huebner-compile-only-admission/EXECUTION_BINDING.json",
+          "sha256": "4a8f3d9331495e4d56be48edbd6d6d034d93a21b72e130736d7ef730e5b5b300",
+          "bytes": 4245
+        },
+        "handoff": {
+          "path": "D:/BCI/artifacts/joint-source-catalog-revision/huebner-compile-only-admission/HANDOFF.zh.md",
+          "sha256": "13c961d2df63340528a51fd6c5d6fc444001ab3ff04a581e9344b776c528d300",
+          "bytes": 4495
+        },
+        "actual_admission_source": {
+          "relative_path": "src/research/joint_source_catalog.py",
+          "path": "D:\\BCI\\artifacts\\joint-source-catalog-revision\\huebner-compile-only-admission\\executed_code\\src\\research\\joint_source_catalog.py",
+          "bytes": 35190,
+          "sha256": "3c8f2e72d061e01899f2fcd00e97d3325c1b16e67589128e97510a7f4af6f0b5"
+        },
+        "native_statistical_reads_before_after": [
+          18,
+          6
+        ],
+        "future_statistical_reads_before_after": [
+          12,
+          0
+        ],
+        "source_record_id": "Huebner2017:2:session:0:run:0",
+        "actual_source_C_labels": 68,
+        "source_raw_support": [
+          0,
+          19947
+        ],
+        "source_array_input_sha256": "0a926e3764794c779e20a82cbf75172d9c36f77730cf668830e71b9b1e2a86a5",
+        "preserved_original_artifacts": 17,
+        "new_source_fits": 0,
+        "new_target_fits": 0,
+        "new_MCMC": 0,
+        "source_programme_evidence_scope": "software_correctness",
+        "new_data_admission_scope": "original_public_data_development",
+        "actual_source_seed": null,
+        "root_review": "Read actual registered factory dispatch, RecordCalibrationPrefixCompiler constructor/geometry/compile and source-cohort admission; only unconsumed independent future views were removed. Verified actual source-byte match and unchanged source_entry fields against original receipt; live-owner refusal tests and full original-byte admission retained."
+      }
+    },
+    "bi_original_mat57": {
+      "original_runtime_commit": "9407235",
+      "original_actor_exit": 1,
+      "metadata_issue": "canonical selected_candidate equal; JSON list vs immutable tuple direct equality false",
+      "new_zero_fit_consumer_commit": "0a7def6",
+      "status": "accepted_completed_phase_composition",
+      "original_requested_cells": 90,
+      "original_true_target_fits": 59,
+      "original_adamw_steps": 168,
+      "original_internal_graph_replays": 3,
+      "new_fit_calls": 0,
+      "scientific_pid": 49460,
+      "birth": 1792140685.2529294,
+      "frozen_consumer_manifest_sha256": "ab781749206359fa2f77f6069c37d9fe499c205ba1e2d9d0f1362f651352a96b",
+      "root_delivery": {
+        "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/bi_original_mat57_delivery_20261016.json",
+        "sha256": "ce290fdaa23fbb29f603991921f81fd57206cb64d76d6e5692fb27b115531c49",
+        "bytes": 8850
+      },
+      "new_consumer_exit": 0,
+      "proper_capsule_exit": 0,
+      "active_owned_processes_after_exit": 0,
+      "probability_cells": 42,
+      "typed_unavailable_cells": 48,
+      "requested_decisions": 5,
+      "resident_input_bytes": [
+        0,
+        106496740,
+        0
+      ]
     }
   }
 }

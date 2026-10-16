@@ -13,6 +13,8 @@
 | 图存储 | compiler共享完整不可变scope；graph-store/2分列logical/physical SHA并持完整source闭包，prepared/reducer接通 | `cf9f590/9407235`，两切片与独审已接受；[实际与清理](graph_storage_delivery_20261016.json) |
 | BI label-K入口 | 公开marker持决策边界；四fixed/selector共用原输入与source owner | `3beed9e/be35c57`；8项decoder合同通过，大caller由实际01/57分别验收 |
 | BI旧保存子集续接 | A10与B2不重叠并集覆盖原12请求；6概率、6协议不可用；只补未启动的两格，新增6次目标primitive fit、0source fit | [实际交付与独审](bi_continuation_delivery_20261016.json) |
+| Joint typed/generic链 | 原continuous source、history/captured-only replay及真实拒绝、混合NN依赖、generic候选routing；真实H C68 source重新准入，future统计读取12→0 | `267a50e/6831503`，[集成与实际原数组准入](joint_generic_integration_20261016.json) |
+| BI原MAT01/57 | 原108/90格、三个图内部重放各自完成；完整parent正验、概率负例、proper child与真实resident归还；新消费者0fit | [01接受](bi_original_mat01_delivery_20261016.json)、[57接受](bi_original_mat57_delivery_20261016.json) |
 
 Shared AR实际31导×32点工厂3.814秒、峰值322MiB，误差证书1.6504e-12低于原3.1496e-7政策。独立AR3有理数oracle及真实保存包读取通过；旧689秒观察和小维配对计时分别保来源。load保原prefix/temporal启动因子，tail空间Cholesky仍由原owner构造。
 
@@ -20,8 +22,8 @@ Shared AR实际31导×32点工厂3.814秒、峰值322MiB，误差证书1.6504e-1
 
 ## 正在推进
 
-- **B11同record完整链：**唯一原source NPZ/29MB codec保持。实际31导C500按原128预热/128draw×2链完成，622坐标独立重算满足原1.2/5/5政策。attempt003消费原C500逐字节模型，首个K0 OOF完整capture在退休前自然完成；原OS15和随后owned0复核分列，187源码与observer保完整小归档。该OOF候选赢家在移除主导样本/分链/半样本时相同，最大任意pair logodds变化4.6725，绝对density贡献集中；正在核原law的一维logλ独立积分对照与等价QR缓存。原capture保持；其余7个OOF/7个future、capsule/parent/wholegraph沿各自真实结果继续。typed数值/ensemble与六个replay接点由两个owner在root合并，generic runner由root持有；原history refusal也要完整保存重放。
-- **BI原MAT01/57：**01的108格（90fixed+18selector）、74目标fit、204AdamW更新、0sourcefit、三个原graph内部精确重放、完整parent正验均保原producer；最后focused负例已实际OS0完成，13份小凭证由root逐SHA核回。正常parent与独立consumer共用原样提取的最终predicate（`f1a36a6`），0重放node/0新wholeparent。properchild/真实resident也各exit0/owned0，111681500B完整申请归还；原reader15/observer1分列。[最终接受](bi_original_mat01_delivery_20261016.json)已落地。57从9407235+8个固定helper独立D盘代码freeze启动，预算0/48/1163、5个future、90格；四fixed/selector/control完整执行中。
+- **B11同record完整链：**唯一原source NPZ/29MB codec保持。实际31导C500按原128预热/128draw×2链完成，622坐标独立重算满足原1.2/5/5政策。attempt003首个K0 OOF完整capture保原OS15与随后owned0，attempt004零重复采样复用原C500/OOF0并继续；K68的OOF1也已完整保存，559坐标及32个paired functional独立重算通过原政策，报告在`tmp/JOINT_FLAT_COMPLETED_FORWARD_001_AUDIT.json`及`JOINT_FLAT_FORWARD_001_FUNCTIONAL_AUDIT.json`。OOF0的A贡献ESS=1，OOF1约1.5；原有限样本程序照原政策验收，一维logλ独立积分另核连续支持。OOF0子集winner相同，最大pair logodds变化4.6725；新积分首mode已超旧有限样本最大λ，完整32q结果仍在执行。其余OOF/future、capsule/parent/wholegraph沿原实际程序继续，原history refusal完整保留。等价QR与私有verified-components缓存正在独立收尾，不改004活体源码。
+- **BI原MAT01/57已接受：**01为108格、74目标fit/204更新；57为90格、59目标fit/168更新，42概率/48不可用。两个原三图内部重放和新parent/capsule/负例分别保存实际producer。57原OS1是列表/元组比较，`0a7def6`仅修该语义；新consumer与capsule均exit0/owned0，resident0→106496740→0B，0新fit/0重复旧内部重放。root已核22项交付引用，读数见[公共评估](../../evidence/public_evaluation.zh.md)，完整60epoch公共矩阵沿原队列执行。
 - **大图元数据：**01 K950原2056864994B图已自然转换并fresh load为47161151B，保90节点/24scope及原logical SHA；真实峰RSS797597696B，wall214.87秒。实际Manager预留1378000596B并完整归还，0 EEG/PT/模型打开、fit或数字replay。独审P2发布后receipt读取异常释放已以最小修复及两个真实Manager反例关闭，实际a904执行源码与最终b28修后源码分别保存。四个可重建token cache已按cmd逐项删除，释放340545788B；原大图/模型保原址。
 - **H原输入NN链：**原13人metadata与最后session819请求、record-aware C/P/T、history/clock/variable-R等接口已集成；完整NN四fixed/selector沿原source和共享依赖继续。原数据、source、失败及requested保持。
 - **其余研究块：**B03温度/ε/整程序选择、B07 C-latent、B09紧凑物理效应与source/OOF/ensemble、B11 flat/Gamma各已有独立软件接受范围；新公共opt-in、完整面板和B13真人采集按各自原计划推进。
@@ -46,7 +48,7 @@ Shared AR实际31导×32点工厂3.814秒、峰值322MiB，误差证书1.6504e-1
 ## 下一步集成顺序
 
 1. 连接恢复后由云owner落地S4完整304/8parent final gate及原exit，然后直接继续已授权后五阶段；S5代码已接受。
-2. 收57固定runtime完整90格、actual fits/steps、保存重放/parent/capsule及终态；01和紧凑图已接受。
-3. B11保原C500/完整OOF0，审等价QR缓存与一维logλ积分对照，逐项报告实际概率/logodds及原连续law。
-4. root审typed数值/ensemble、graph与refusal闭包，接joint catalog/generic caller及真实H原数组准入；每个实际source/consumer保持独立身份。
+2. BI01/57开发链与紧凑图已接受；保原模型/失败/全部requested，接完整配方公共比较。
+3. B11保原C500/OOF0和新OOF1，收等价QR与私有缓存的最小交付、一维logλ完整32q积分及全域/尾界独审；继续原OOF/future矩阵。
+4. typed数值/ensemble、graph/refusal、generic routing及真实H原数组准入已接受当前切片；下一步接真正generic公共DAG与完整coverage，各source/consumer保持独立身份。
 5. 按roadmap推进余下B00–B14，集成前核数学、调用链与针对性反例，更新本交接和四主题页。

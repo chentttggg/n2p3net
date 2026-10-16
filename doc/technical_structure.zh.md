@@ -22,7 +22,9 @@ B07 `research.multichannel_c_latent`新增明确外部固定参数的finite C pr
 
 `research.latent_response_reference`只有五个科研入口：状态law、off-grid analytic basis、physical selection design、proper层级prior和有限conditional evidence。它复用`joint_response_scale`的prior/decision factory/联合Gaussian积分；global beta只一次，selection additive deviation独立零均值，full/prefix共同更新离散state权重。没有生产注册、真实产品caller或第二posterior/noise fitter。
 
-`research.joint_flat_response/joint_flat_authority/joint_flat_artifact`持有同record一个Gamma λ、global proper β与原flat漂移测度的完整科研owner。原source/C issuer颁发参数与raw-prefix权限；direct augmented QR保prefix漂移后验及point误差，`/2`包保存原sampling/numeric/noise/parameter来源，load/model-only replay恢复原producer数值。typed ensemble/public注册属于下一独立切片。
+`research.joint_flat_response/joint_flat_authority/joint_flat_artifact`持有同record一个Gamma λ、global proper β与原flat漂移测度的完整科研owner。原source/C issuer颁发参数与raw-prefix权限；direct augmented QR保prefix漂移后验及point误差，`/2`包保存原sampling/numeric/noise/parameter来源，load/model-only replay恢复原producer数值。typed ensemble、history capture/refusal、保存重放与generic候选routing已集成`267a50e`，完整公共DAG沿实际执行验收。
+
+`research.joint_source_catalog`独立持有原continuous source导出与当前目标绑定。Huebner原数组准入通过注册factory和`CalibrationPrefixCompiler.from_dataset_source(...).compile(K)`恢复实际C；该入口只编译所需prefix，完整future views由公共目标准备路径持有。live原数据owner授予本次public consumer准入，JSON描述记录保留来源；新进程重新取得实际owner。joint确定性source的seed为null，MCMC链seed由sampling合同单独保存。NN的`SourceSeedCatalog`及多seed合同保持各自语义。
 
 `ResponseDictionarySpec("bspline", duration, k, endpoint)`编译固定cubic/open-clamped/uniform字典，free或hard-value消费同ambient与interior selector。原`dictionary_artifact`唯一owner的 `/3`核exact rational表达，Gaussian/cosine仍 `/2`；同五数组进入已有prior/geometry/continuous/ensemble/OOF与保存链。cubic非零shift/width及off-grid导数尚unsupported，零状态直接消费保存native矩阵。
 

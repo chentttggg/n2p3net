@@ -386,7 +386,7 @@ def admit_huebner_joint_source_data(entry, *, target_contract, exclusion_scope,
     A serialized admission record is descriptive and cannot replace this owner.
     """
     from transfer.continuous_decision import ContinuousDecisionModel
-    from transfer.ensemble_views import prepare_dataset_independent_prefixes
+    from transfer.ensemble_views import CalibrationPrefixCompiler
 
     base_directory = Path.cwd() if base_directory is None else Path(base_directory)
     catalogue = JointFlatSourceCatalog([entry], base_directory=base_directory,
@@ -398,10 +398,10 @@ def admit_huebner_joint_source_data(entry, *, target_contract, exclusion_scope,
             raise ValueError("Huebner data admission requires actual source requests and its preprocessing contract")
         cohort = []
         for declaration, budget in declarations:
-            views = prepare_dataset_independent_prefixes(declaration, budgets=(budget,), profiles=(),
+            compiler = CalibrationPrefixCompiler.from_dataset_source(declaration, budgets=(budget,), profiles=(),
                 authorization_preprocessing=authorization_preprocessing, response_seconds=response_seconds,
                 pre_roll_seconds=pre_roll_seconds)
-            cohort.append((views.prefix_compiler, views.prefix_compiler.compile(budget)))
+            cohort.append((compiler, compiler.compile(budget)))
         data_scope = "original_public_data_development"
     else:
         if type(_software_issuer) is not _SoftwareSourceIssuer:
