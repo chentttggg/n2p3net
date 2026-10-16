@@ -2310,12 +2310,11 @@
       }
     },
     "ongoing": [
-      "MAT57 fixed zero-fit consumer first full parent, focused negative and true-ledger capsule",
-      "B11 actual004 remaining OOF/future and full nested graph; original C500/OOF0 reused",
-      "memo exact integration and private validated-score cache to remove repeated verified components",
-      "actual H-array live source admission from the fixed original roster",
-      "independent one-dimensional log-precision integral pilot with full-domain and tail coverage",
-      "cloud reopening: existing S4 304/8parent final gate then remaining five stages",
+      "B11 actual004 remaining OOF/future and complete graph; original C500/OOF0 retained",
+      "complete new seven-row continuous OOF from original earlier-C authority",
+      "full forward Beta nested/replay/capsule/parent integration review",
+      "actual generic public DAG sharing preserved primitive fits/captures",
+      "cloud reopening: saved S4 304/8parent final gate then remaining five stages",
       "B00-B14 programme"
     ],
     "completed_tree_cleanup": {
@@ -2535,18 +2534,24 @@
       "status": "accepted_empirical_OOF1_and_separate_single_record_continuous_audit",
       "root_delivery": {
         "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_predictive_evidence_20261016.json",
-        "sha256": "dee5738566a409cefaf1204be9fd396a3cdae8d1d9d6363e77a220202ee5806e",
-        "bytes": 15999
+        "sha256": "5fafeb44c1afd7199e882e86223ffac8b241d5f29f37726f17c023518a45c2a1",
+        "bytes": 17385
       },
       "remaining_public_programme": "ongoing",
-      "original_finite_programme_retained": true
+      "original_finite_programme_retained": true,
+      "completed_original_finite_OOF_ordinals": [
+        0,
+        1,
+        2,
+        3
+      ]
     },
     "joint_history_score_cache": {
       "status": "accepted_root_source_and_independent_review",
       "delivery": {
         "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_history_score_cache_20261016.json",
-        "sha256": "1e0ca33edd8d03f74837187e8dc0574d215910021417b9a8f4c8c8ffd9655a68",
-        "bytes": 6735
+        "sha256": "a3786024ddf357006ce8357b5910f36827c7e701b1a9a93e43bb7dae71aa67cc",
+        "bytes": 11252
       },
       "root_verified_artifact_references": 13,
       "contracts": 4,
@@ -2554,7 +2559,8 @@
       "component_calls": 1,
       "root_review": "Read full pure-QR delta and complete model hook, authority/current view/P/T/capture/consumer/native key, original-byte admission, fresh summary/diagnostics, immutable bounded LRU, explicit NPZ and current worker serialization boundary; read four distinguishing contracts and old saved-producer consumer. No open required fixes.",
       "original_actual004_source_unchanged": true,
-      "integration_commit": "eee72b3"
+      "integration_commit": "eee72b3",
+      "P_only_scalar_memo": "accepted_with_original_marginal_AST_and_bitexact_original_state_probe"
     },
     "joint_generic_completed_primitives": {
       "status": "accepted_source_and_distinguishing_caller",
@@ -2579,8 +2585,8 @@
       "status": "accepted_math_and_independent_review_full_optin_implementation_authorized",
       "root_delivery": {
         "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_forward_beta_design_20261016.json",
-        "sha256": "8352be22f3a16c0cbff00164d075a90b033ea215b0a04430e0b7d4eb0b34e2e3",
-        "bytes": 3709
+        "sha256": "3973b753ffa7c9f902c44662162222aa3ec29aa29dc07dbe00148f2f040983a4",
+        "bytes": 3923
       },
       "production": "ongoing"
     }

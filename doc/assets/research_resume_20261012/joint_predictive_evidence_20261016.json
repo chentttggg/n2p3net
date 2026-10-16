@@ -1,6 +1,6 @@
 {
   "schema": "n2p3_joint_predictive_evidence_root_acceptance/1",
-  "status": "accepted_empirical_OOF1_and_separate_single_record_continuous_audit",
+  "status": "accepted_original_finite_OOF0_through_3_and_separate_continuous_integral_consumer",
   "receipts": {
     "JOINT_FLAT_COMPLETED_FORWARD_001_AUDIT.py": {
       "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_COMPLETED_FORWARD_AUDIT.py",
@@ -187,9 +187,9 @@
   },
   "root_review": "Read the raw N and one-prior/flat formula, actual preparation/constant assembly, kernel and Gamma tails, full result and saved-root global concavity witness. Verified the complete requested denominator and separate original/consumer identities. Original P/C sampling and finite results retain their producers.",
   "ongoing": [
-    "actual31 remaining OOF and future, capsule/parent/full nested graph",
-    "generic run-scoped original-fit and history-capture reuse wiring",
-    "fast spectral continuous-lambda kernel and conditional multi-record extension"
+    "actual31 remaining OOF/future and complete graph",
+    "actual generic public DAG sharing original fit/captures",
+    "new complete seven-row continuous programme and conditional multi-record extension"
   ],
   "authorized_C_only_label_readout": {
     "scope": "first_2_of_7_original_forward_OOF_rows_within_original_C500_label_authority",
@@ -359,5 +359,46 @@
       "bytes": 98840
     },
     "manually_viewed": true
+  },
+  "OOF3": {
+    "status": "accepted_original_finite_empirical_programme",
+    "receipts": [
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_COMPLETED_FORWARD_003_AUDIT.json",
+        "sha256": "ec77b5d70159c605f9057c3ec3e74d775af28d0768ab7370a84fe2925807c692",
+        "bytes": 1982
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FORWARD_003_FUNCTIONAL_AUDIT.json",
+        "sha256": "897a1005917cf2b0306c321c5c1fd8daa4633231828a62fc38e1751c3f0ac72a",
+        "bytes": 4718
+      }
+    ],
+    "earlier_K": 204,
+    "capture_digest": "56d8b3536e89e3dd05f8590523f02fb7cbc27372233a4df3d5b38e810c341aae",
+    "raw_record_scalar_rows": [
+      2409537
+    ],
+    "global_beta_width": 496,
+    "coefficient_width": 558,
+    "record_precision_count": 1,
+    "current_q_support": 32,
+    "coordinate_max_rhat_min_bulk_min_tail": [
+      1.066254301799002,
+      46.726504395677374,
+      62.29481470299656
+    ],
+    "functional_max_rhat_min_bulk_min_tail": [
+      1.0046173954230613,
+      236.96191737585056,
+      205.43533512760794
+    ],
+    "max_paired_batch_mcse": 7.488320405642029e-32,
+    "A_contribution_ESS_min_max": [
+      1.0,
+      1.0
+    ],
+    "root_verified_original_references": 3,
+    "new_fits_or_sampler_calls": 0
   }
 }

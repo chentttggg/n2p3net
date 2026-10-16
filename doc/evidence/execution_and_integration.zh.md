@@ -26,6 +26,8 @@ B11新OOF1/K68原模型、完整capture与559坐标/32配对概率函数已独�
 
 `eee72b3`已集成等价unweighted QR memo及每模型私有verified-components LRU。第一次消费原capture时真实计算并逐byte核原组件，后续相同consumer/native/input/capture复用不可变数组；每次仍完整核权限、编译P/T operands并重建summary/诊断。缓存8MiB/16项有界，NPZ、digest、load与replace保原状态语义。四项区分性合同及旧保存producer的新consumer实际通过，小样例首验证0.4250秒、命中0.0966秒，两次仅一遍组件计算；这是小输入测量。源码、返回capture及producer关系见[缓存绑定](../assets/research_resume_20261012/joint_history_score_cache_20261016.json)。
 
+同一组件调用内的P-only标量缓存已接受：按完整有序root、误差、startup、精度、prior和数组布局内容复用原`_marginal`返回值及误差，局部LRU受字节预算约束。原数学函数AST、weighted F与公共ABI保持。实际保存单state的32q切片中，计算32→2次、30次命中，保留6920B≤65536B；value/error逐bit相同，耗时0.9253→0.09218秒。20项区分性检查、root与独审均通过，精确执行源码和小凭证已保到D盘稳定目录；该测量对应P切片，actual004继续使用原冻结producer。
+
 Generic原fit/capture复用已接通：新caller先证明漏传capture会误触采样，再验证forward/future recorder/selector三路径0新fit/采样、新consumer只做一次组件数学核验，最终单例12.451秒、退出0。五生产文件和新test经root/独审，18引用与9源before/after核回；NN路径保原None。真实H metadata计划保K500、7个OOF和7个future，fixed/forward-temperature/selector共21最终请求，原C500/C0/C68及OOF0/1定位齐全。实际公共DAG等原004进度与source freeze/locator刷新后统一调度，避免重复未完成节点，见[接线接受](../assets/research_resume_20261012/joint_generic_primitive_reuse_20261016.json)。
 
 独立快速λ数值模块已合入d65a618，root格式修正只移除EOF空行，实际4b冻结源与当前3856源AST相同并分列绑定。完整新fast64消费者按原prepared输入完成P32/F32，最大原QR积分差5.24e−10；两worker数值阶段76.800秒、平均1.533核、单worker峰297MB。原数值控制器OS1的partial保持，新writer从64份原结果零积分恢复并OS0/owned0，独审再以stdlib80位重归约。root核135件物理引用，[完整接受](../assets/research_resume_20261012/joint_fast_lambda_20261016.json)已落地。首次失败的展开code副本经193成员归档核验后用cmd逐项清理，原失败/source archive保持。

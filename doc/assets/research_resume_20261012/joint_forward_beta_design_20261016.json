@@ -49,8 +49,8 @@
     },
     "IMPLEMENTATION_CONTRACT.md": {
       "path": "D:/BCI/artifacts/research-deliveries/joint-forward-beta-calibration/IMPLEMENTATION_CONTRACT.md",
-      "sha256": "b4800bf4f60d924eaf1bacffaa892d353a24b74797fb4f7bb34dc3edd3706278",
-      "bytes": 5917
+      "sha256": "66353232b2b868eeb53cb7cfcaec19e925d6305c9abf3e4e4c925380aa2abd9d",
+      "bytes": 6075
     }
   },
   "root_review": "Read exact positive normalized Beta-mixture recursion, causal shared-training likelihood and leakage counterexample, one-selection likelihood count, proper-prior-once/full posterior/zero branches, evidence and uniform risk bounds, real CandidateEvidence tie/promotion counterexample, source/marker prefix scope, and complete nested/capsule/parent implementation contract.",
@@ -64,5 +64,6 @@
   "source_target_fits_samplers_or_EEG_decodes_in_design": 0,
   "design_completed_rows": 2,
   "full_programme_requested_OOF_rows": 7,
-  "production_implementation": "ongoing_with_separate_probability_and_pipeline_owners"
+  "production_implementation": "ongoing_with_separate_probability_and_pipeline_owners",
+  "implementation_truth_authority": "Original issuer-authorized C-prefix labels are retained for fit/replay; hidden future truth is excluded from prediction, and outer held/later labels from each outer learner."
 }

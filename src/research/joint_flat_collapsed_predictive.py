@@ -7,6 +7,7 @@ joint startup stays in the flat block; no Kronecker startup replacement.
 from __future__ import annotations
 
 import hashlib
+import sys
 from collections import OrderedDict
 
 import numpy as np
@@ -55,6 +56,77 @@ class _UnweightedQRCache:
                 _, old = self.entries.popitem(last=False)
                 self.used_bytes -= sum(value.nbytes for value in (old if isinstance(old, tuple) else (old,)))
             self.entries[key] = result
+            self.used_bytes += used
+        return result
+
+
+def _retained_size(value):
+    size = sys.getsizeof(value)
+    if isinstance(value, tuple):
+        size += sum(_retained_size(item) for item in value)
+    return size
+
+
+def _marginal_array_key(values):
+    if type(values) is not np.ndarray or values.dtype.hasobject:
+        return None
+    content = hashlib.sha256(memoryview(np.ascontiguousarray(values)).cast('B')).digest()
+    return values.shape, values.dtype.str, values.strides, content
+
+
+class _PrefixMarginalCache:
+    """One component call's P-only scalar results under frozen native arithmetic.
+
+    Ordered numerical operands and startup context are observed on each call.
+    No entry survives the component call or substitutes a weighted F integral.
+    The retained-byte charge includes keys, results and a mapping allowance.
+    """
+
+    def __init__(self, capacity_bytes):
+        if type(capacity_bytes) is not int or capacity_bytes < 0:
+            raise ValueError('P marginal cache requires a nonnegative byte capacity')
+        self.capacity_bytes, self.used_bytes = capacity_bytes, 0
+        self.entries = OrderedDict()
+        self.hits = self.misses = 0
+
+    def __call__(self, trees, precision, *, prior_covariance_error=0.):
+        # These bypasses preserve the original argument handling and named
+        # startup rejection. In particular, hashing never consumes an iterator.
+        if (not self.capacity_bytes or type(precision) is not np.ndarray
+                or precision.dtype.hasobject
+                or any(getattr(tree.record, 'startup_response_design', False) is not None for tree in trees)):
+            self.misses += 1
+            return _marginal(trees, precision, prior_covariance_error=prior_covariance_error)
+        context = []
+        for tree in trees:
+            record = tree.record
+            arrays = tuple(_marginal_array_key(value) for value in (
+                tree.root, tree.errors[1], record.startup_rows, record.startup_errors))
+            if any(key is None for key in arrays):
+                self.misses += 1
+                return _marginal(trees, precision, prior_covariance_error=prior_covariance_error)
+            record_id = getattr(record, 'record_id', None)
+            context.append((record_id if isinstance(record_id, str) else None,
+                record.response_width, record.channels, record.drift_width, arrays))
+        prior = np.asarray(prior_covariance_error)
+        if prior.ndim or prior.dtype.hasobject:
+            self.misses += 1
+            return _marginal(trees, precision, prior_covariance_error=prior_covariance_error)
+        key = (tuple(context), _marginal_array_key(precision), _marginal_array_key(prior))
+        if key in self.entries:
+            self.hits += 1
+            self.entries.move_to_end(key)
+            return self.entries[key][0]
+        self.misses += 1
+        result = _marginal(trees, precision, prior_covariance_error=prior_covariance_error)
+        # Conservatively charge repeated shared Python objects separately.
+        # The allowance covers each live OrderedDict node and its hash slot.
+        used = _retained_size(key)+_retained_size(result)+sys.getsizeof((result, 0))+sys.getsizeof(0)+512
+        if used <= self.capacity_bytes:
+            while self.used_bytes+used > self.capacity_bytes:
+                _, (_, retired_bytes) = self.entries.popitem(last=False)
+                self.used_bytes -= retired_bytes
+            self.entries[key] = result, used
             self.used_bytes += used
         return result
 
@@ -180,6 +252,7 @@ def collapsed_tail_components(records, tail_rows, tail_errors, axes, samples, *,
     """P-only marginal lambda/other-q measure; all current q have actual mass."""
     local_axes = [tuple(axis for axis in axes if axis.record_index == index) for index in range(len(records))]
     unweighted_qr = _UnweightedQRCache(cache_bytes)
+    prefix_marginal = _PrefixMarginalCache(cache_bytes)
     trees = [FactoredQRTree(record, local, leaf_rows=leaf_rows, cache_bytes=cache_bytes)
              for record, local in zip(records, local_axes, strict=True)]
     local = {index: sum(axis.record_index == axes[index].record_index for axis in axes[:index]) for index in range(len(axes))}
@@ -199,7 +272,7 @@ def collapsed_tail_components(records, tail_rows, tail_errors, axes, samples, *,
             prefix_errors = np.zeros(len(current.prior_mass))
             for q in positive:
                 trees[current.record_index].set_target(local[current_axis], int(q))
-                value_p, error_p = _marginal(trees, precision, prior_covariance_error=prior_covariance_error)
+                value_p, error_p = prefix_marginal(trees, precision, prior_covariance_error=prior_covariance_error)
                 actual_tail, actual_errors = tail_rows.copy(), tail_errors.copy()
                 for index, axis in enumerate(axes):
                     if axis.record_index != current.record_index:

@@ -146,5 +146,98 @@
     "full public source/DAG acceptance"
   ],
   "author_running_source_or_driver_changed": false,
-  "staged_or_committed_by_this_owner": false
+  "staged_or_committed_by_this_owner": false,
+  "P_only_marginal_memo": {
+    "status": "accepted_root_and_independent_source_review",
+    "delivery": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/p-only/JOINT_FLAT_P_ONLY_MEMO_BINDING.json",
+      "sha256": "86dfb714383cfe8bb4f2d1753f4f2de506f8db96678d83fbf5f529346b8bbdc1",
+      "bytes": 4853
+    },
+    "independent_review": {
+      "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/p-only/JOINT_FLAT_P_ONLY_MEMO_INDEPENDENT_REVIEW_20261016.md",
+      "sha256": "7d584306955f0b2a786965f6fcfcfba9a0a3372f00cd77473b3f75c66ec77dc4",
+      "bytes": 2083
+    },
+    "retained_artifacts": [
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/p-only/joint_flat_collapsed_predictive.py",
+        "sha256": "ed0e46a445fe34c7c36d90daa473b2e586ad6e8fea83c800c3beb875fbacecc7",
+        "bytes": 18605
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/p-only/test_joint_flat_prefix_marginal_cache.py",
+        "sha256": "e8b0d2a1819d48d7c07d0d132adeaa8f7e251b8ec8013f46ec25806b59e538bb",
+        "bytes": 5868
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/p-only/JOINT_FLAT_P_ONLY_MEMO_PROBE.py",
+        "sha256": "6746070a11531c47e68db8662cfb1ee1a023d85e989368d81e23217e05fca099",
+        "bytes": 6905
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/p-only/JOINT_FLAT_P_ONLY_MEMO_BASELINE_SOURCE.py",
+        "sha256": "85d056f56e517f6e9a202a646a77320c713b0ca4d5028a9a8c57861bc00102ae",
+        "bytes": 6906
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/p-only/JOINT_FLAT_P_ONLY_MEMO_BASELINE_SOURCE.json",
+        "sha256": "56a683ea47c83ed61709f44028d6ffa91e5c4650a70a3174879e6c9117929960",
+        "bytes": 571
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/p-only/JOINT_FLAT_P_ONLY_MEMO_BASELINE.json",
+        "sha256": "d9258b409a36df465391f63d5d920873ad6b486285c0e4bea1064df8d6a547d7",
+        "bytes": 6523
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/p-only/JOINT_FLAT_P_ONLY_MEMO_ACTUAL.json",
+        "sha256": "2f0a07ae550173842690171279a1ea4eac2e70aaf5c3ec5ae0012fc48cee1c7b",
+        "bytes": 6969
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/p-only/JOINT_FLAT_P_ONLY_MEMO.patch",
+        "sha256": "09beb3b849ae28f40823c5826c6ab210f58c4db3ac6c1a5d09ae6cec1ca62816",
+        "bytes": 5758
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/p-only/JOINT_FLAT_P_ONLY_MEMO_BINDING.json",
+        "sha256": "86dfb714383cfe8bb4f2d1753f4f2de506f8db96678d83fbf5f529346b8bbdc1",
+        "bytes": 4853
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/p-only/JOINT_FLAT_P_ONLY_MEMO_INDEPENDENT_REVIEW_20261016.md",
+        "sha256": "7d584306955f0b2a786965f6fcfcfba9a0a3372f00cd77473b3f75c66ec77dc4",
+        "bytes": 2083
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/p-only/JOINT_FLAT_P_ONLY_MEMO_PRODUCER_LOCATOR.json",
+        "sha256": "b4bc11381b5a71f5c042232ab30df1f7bd0455083b73b7583e37c64142ab6edc",
+        "bytes": 751
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/p-only/JOINT_FLAT_P_ONLY_MEMO_PRODUCER_MODULE.py",
+        "sha256": "ed0e46a445fe34c7c36d90daa473b2e586ad6e8fea83c800c3beb875fbacecc7",
+        "bytes": 18605
+      }
+    ],
+    "root_verified_original_references": 8,
+    "root_marginal_AST_unchanged": true,
+    "actual_one_state_probe": {
+      "baseline_os_exit_code": 0,
+      "actual_os_exit_code": 0,
+      "baseline_calls": 32,
+      "cached_calls": 2,
+      "cache_hits": 30,
+      "bitexact_value_and_error": true,
+      "capacity0_original_direct_bitexact": true,
+      "charged_retained_bytes": 6920,
+      "capacity_bytes": 65536,
+      "baseline_seconds": 0.9252773000043817,
+      "cached_seconds": 0.09217689999786671,
+      "interpretation": "one actual P state/32q memo benchmark only, not full component or matrix throughput"
+    },
+    "scope": "call-local bounded P scalar value/error only; ordered operand content/startup/precision/prior key; original weighted F and public ABI unchanged",
+    "original_actual004_producer_changed": false
+  }
 }

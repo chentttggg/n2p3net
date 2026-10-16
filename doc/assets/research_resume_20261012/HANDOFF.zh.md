@@ -16,6 +16,7 @@
 | Joint typed/generic链 | 原continuous source、history/captured-only replay及真实拒绝、混合NN依赖、generic候选routing；真实H C68 source重新准入，future统计读取12→0 | `267a50e/6831503`，[集成与实际原数组准入](joint_generic_integration_20261016.json) |
 | BI原MAT01/57 | 原108/90格、三个图内部重放各自完成；完整parent正验、概率负例、proper child与真实resident归还；新消费者0fit | [01接受](bi_original_mat01_delivery_20261016.json)、[57接受](bi_original_mat57_delivery_20261016.json) |
 | Joint消费者组件复用 | 原unweighted QR memo与每模型私有verified-components LRU；首次真实重算/byte-match，后续保完整权限与诊断；save/load/digest保持 | `eee72b3`，[四合同及旧producer实际消费](joint_history_score_cache_20261016.json) |
+| Joint前缀标量复用 | 单组件局部有界P-only memo，完整有序内容key；原数学函数、weighted F与ABI保持；实际单state32q计算32→2且value/error逐bit相同 | [原state探针及独审](joint_history_score_cache_20261016.json)，0新增fit/采样 |
 | Generic原fit/P复用 | run内共享原fit/capture，CLI/bound/recovery同locator；future/forward/selector复用，非joint保None；真实21请求计划准备完成 | [源码、单caller与计划接受](joint_generic_primitive_reuse_20261016.json) |
 | 快速single-record λ核 | flat先消、完整SVD与log-domain source/能量，raw N/Gamma/测度/外尾接口；保全部弱/零方向，旧exact capture ABI保持 | [15合同、实际窄消费者与独审接受](joint_fast_lambda_20261016.json) |
 
@@ -25,7 +26,7 @@ Shared AR实际31导×32点工厂3.814秒、峰值322MiB，误差证书1.6504e-1
 
 ## 正在推进
 
-- **B11同record完整链：**唯一原source NPZ/29MB codec保持。实际31导C500按原128预热/128draw×2链完成，622坐标独立重算满足原1.2/5/5政策。attempt003首个K0 OOF完整capture保原OS15与随后owned0，attempt004零重复采样复用原C500/OOF0并继续；OOF0/1/2已保存并逐行独审通过原政策。OOF0/2的A贡献ESS=1，OOF1约1.5；其余OOF/future、capsule/parent/wholegraph沿原实际程序继续，原history refusal完整保留。当前进入K204后续P/组件，科学PID27176/birth1792139035.673306已root实核活跃；科学状态以原实际log/新row为准。等价QR与私有verified-components缓存已集成`eee72b3`，004活体仍用自身冻结源码。
+- **B11同record完整链：**唯一原source NPZ/29MB codec保持。实际31导C500按原128预热/128draw×2链完成，622坐标独立重算满足原1.2/5/5政策。attempt003首个K0 OOF完整capture保原OS15与随后owned0，attempt004零重复采样复用原C500/OOF0并继续；OOF0/1/2/3已保存并逐行独审通过原政策。OOF0/2/3的A贡献ESS=1，OOF1约1.5；其余OOF/future、capsule/parent/wholegraph沿原实际程序继续，原history refusal完整保留。K204原559坐标与32配对概率函数已接受，正在继续K272后续P/组件；科学PID27176/birth1792139035.673306已root实核活跃；科学状态以原实际log/新row为准。等价QR与私有verified-components缓存已集成`eee72b3`，004活体仍用自身冻结源码。
 - **B11连续积分已接受：**独立单record/K0/current-only的32q/64个P/PT积分完成，source/尾界/全域唯一峰及80位归约已独审；winner12、runner由13变4，最大pair logodds变化73.9175，absolute logdensity增加950.4577。[原连续law接受](joint_predictive_evidence_20261016.json)保持。新fast数值模块已集成d65a618/2f39663；完整fast64以76.800秒数值阶段完成，原QR最大积分差5.24e−10。原数值controllerOS1与新零积分writerOS0分列，[完整接受](joint_fast_lambda_20261016.json)经135引用核回。`shared_ar_review`现在推进依法发行的新7条连续OOF，OOF0复用，先核现OOF1/2；不重做旧QR/源拟合，不改004。generic21请求实际DAG仍按原进度统一调度。
 - **B00/B03高置信风险：**原C500授权内前两条OOF真答案9/24、预测12/11，NLL409.5816/610.5583；首条连续积分真NLL470.3023。[两条读数](joint_predictive_evidence_20261016.json)保2/7范围。显式prior的ε-only完整Beta后验设计已独审通过并由root授权完整生产纵向；新ABI为forward_beta_uniform/beta_uniform_prior、独立beta_calibration/beta_oof_record、旧温度fixed和旧base身份保持。bi owner持数学/ensemble/fitter，source owner持generic/selection/replay/parent，joint_review独审。合同在tmp/JOINT_FORWARD_PROBABILITY_CALIBRATION/IMPLEMENTATION_CONTRACT.md，[设计接受](joint_forward_beta_design_20261016.json)已保存。无默认prior/晋升策略更改，不拿future选默认。
 - **快速核适用范围已核：**root只解三份已完成capture的metadata，OOF0/1/2均一个真record，q prior支持为[32]/[1,32]/[1,1,32]，过去q已固定，具备单record/current-only连续积分前提。新快速模块接受后可按每行实际权限构建独立连续programme，0重P采样；未来2record/过去未定q另保完整条件积分。直观图为稳定交付目录的`lambda_support.png`，原实际端点/source manifest已绑定。
@@ -55,6 +56,6 @@ Shared AR实际31导×32点工厂3.814秒、峰值322MiB，误差证书1.6504e-1
 
 1. 连接恢复后由云owner落地S4完整304/8parent final gate及原exit，然后直接继续已授权后五阶段；S5代码已接受。
 2. BI01/57开发链与紧凑图已接受；保原模型/失败/全部requested，接完整配方公共比较。
-3. B11保原C500和OOF0/1/2；fast64已完整接受，推进新single-record连续7条前向概率和条件多record设计，原有限矩阵继续。joint_flat另持root collapsed文件做P-only等价memo，不改004。
+3. B11保原C500和OOF0/1/2/3；fast64已完整接受，推进新single-record连续7条前向概率和条件多record设计，原有限矩阵继续。P-only等价memo已接受并交回root，004保持其原冻结源码。
 4. typed数值/ensemble、graph/refusal、generic routing及真实H原数组准入已接受当前切片；下一步接真正generic公共DAG与完整coverage，各source/consumer保持独立身份。
 5. 按roadmap推进余下B00–B14，集成前核数学、调用链与针对性反例，更新本交接和四主题页。
