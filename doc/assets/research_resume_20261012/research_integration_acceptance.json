@@ -2310,7 +2310,7 @@
       }
     },
     "ongoing": [
-      "B11 actual004 future3 through6, final OOF-attached model and complete graph",
+      "B11 actual004 future4 through6, final OOF-attached model and complete graph",
       "B07 real generic software DAG; original BNCI admission and public-scale unknown-history-q inference",
       "actual generic public DAG sharing preserved primitive fits/captures",
       "cloud reopening: saved S4 304/8parent final gate then remaining five stages",
@@ -2533,8 +2533,8 @@
       "status": "accepted_all_seven_original_OOF_and_preserved_future_outcomes",
       "root_delivery": {
         "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_predictive_evidence_20261016.json",
-        "bytes": 34226,
-        "sha256": "c632137b8f9fe05edfda06221366d6da994bdd2e4106abdbb09695c1c5f4f1b1"
+        "bytes": 38265,
+        "sha256": "8de5a2852c0ba14b8149f6cf57471d1ed96e0b5cc282eaaea45442a8315a756f"
       },
       "remaining_public_programme": "ongoing",
       "original_finite_programme_retained": true,
@@ -2550,7 +2550,8 @@
       "preserved_future_outcomes": {
         "0": "C24_embargo_unavailable",
         "1": "capture_intrinsic_accepted_final_model_pending",
-        "2": "original_sampling_resolution_refusal"
+        "2": "original_sampling_resolution_refusal",
+        "3": "capture_intrinsic_accepted_final_model_pending"
       }
     },
     "joint_history_score_cache": {

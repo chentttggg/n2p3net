@@ -187,7 +187,7 @@
   },
   "root_review": "Read the raw N and one-prior/flat formula, actual preparation/constant assembly, kernel and Gamma tails, full result and saved-root global concavity witness. Verified the complete requested denominator and separate original/consumer identities. Original P/C sampling and finite results retain their producers.",
   "ongoing": [
-    "original finite future3 through6 and final OOF-attached model/wholegraph binding",
+    "original finite future4 through6 and final OOF-attached model/wholegraph binding",
     "actual generic public DAG sharing original fit/captures",
     "conditional multi-record continuous-integral extension"
   ],
@@ -767,5 +767,80 @@
     "new_source_or_C_fits": 0,
     "new_sampler_calls": 0,
     "new_integrals": 0
+  },
+  "future3_capture_intrinsic": {
+    "status": "accepted_saved_capture_intrinsic_pending_original_effective_model_and_emitted_probability",
+    "ordinal": 3,
+    "actual_K": 500,
+    "capture_digest": "88ea51421c0f9ed4d76641d29542433f0524d5905bf73c62d2e28a1eec904450",
+    "sample_arrays_sha256": "dd30eeff1b455e04653766430515896e3400656941bd7789201304e7688a6d79",
+    "component_arrays_sha256": "bfb52dd54b7f97546834c1d3ab9f5856d2d8d3db203234a31d4e2a3e40c1f718",
+    "raw_record_scalar_rows": [
+      5318639,
+      2404391
+    ],
+    "one_global_beta_width": 496,
+    "true_record_precision_count": 2,
+    "coefficient_width": 620,
+    "target_axis_count": 4,
+    "current_true_q_support": 32,
+    "coordinate_count": 622,
+    "coordinate_max_rhat_min_bulk_min_tail": [
+      1.0442513871839132,
+      44.010600895410164,
+      53.78353309229261
+    ],
+    "functional_max_rhat_min_bulk_min_tail": [
+      1.0057774431325872,
+      256.0,
+      245.62643070978984
+    ],
+    "maximum_batch_mcse": 0.00380787887181536,
+    "contribution_summary_max_error": 9.553846602727845e-10,
+    "A_contribution_ESS_min_max": [
+      1.0373871622496145,
+      1.0429140739126295
+    ],
+    "A_max_contribution_fraction_min_max": [
+      0.978992121345958,
+      0.9816481524878222
+    ],
+    "normalization_roundoff": {
+      "per_state_log_mass_min_max": [
+        "-2.314134699081210815800647983150176839578749124542578282204853252546494910293759907553614527392288409957052229235360942420373995122614406519946825183461510605750050569981295587056346917347002370597298551314978174704778336064451179113739268817227051656E-10",
+        "2.323867639973960571927112516315654505034828623289090100172968152915456079968191768236686956795887541655822717143033491672387422594964735493071571259430078750467384232046852221649665934628639305209119935320345298736651653193557729845583405360155136480E-10"
+      ],
+      "normalized_log_probability_perturbation_bound": "4.638002339055171387727760499465831344613577747831668382377821405461950990261951675790301484188175951612874946378394434092761417717579142013018396442891589356217434802028147808706012851975641675806418486635323473441429989258008908959322674177382188136E-10",
+      "measured_normalized_log_probability_perturbation": "1.753450683753251036632273852490337180229828791715015055302861138044692415466934947787537989571569502216385523356369591395922285170226599520574377852438021881280583421880781206874940971159551024562083321870410839194451680585441501200787924666E-13"
+    },
+    "model_binding": {
+      "status": "PENDING_EFFECTIVE_MODEL_METADATA_RELATION",
+      "capture_effective_model_digest": "d3a9a0d762a847d765a0d674cc18e03c5d62752ba81dd838896bf8e50b3eb29f",
+      "C500_fixed_saved_model_digest": "076a6af657f9262f863a00af3c991de07008479b46ba0a73b2db309f2e37a7ac",
+      "numeric_producers_identical": false,
+      "actual_C_prefix_source_programme_equal": true
+    },
+    "receipts": [
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FUTURE_003_CAPTURE_AUDIT.py",
+        "sha256": "2c8aa6d25637a3776b5629e0853cc7af88d7ebd1aab309444aa08aa39960ae26",
+        "bytes": 12318
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FUTURE_003_CAPTURE_AUDIT.json",
+        "sha256": "fff8fe5089a9a298d96f9667112c4cfc384d5b07e2a1bbe9a567bae65454aae6",
+        "bytes": 4967
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FUTURE3_INTRINSIC_INDEPENDENT_REVIEW_20261016.md",
+        "sha256": "4366ef4353905f119f29b6412762cb5a3e332db99e3dc09873cb6aaae998abff",
+        "bytes": 3348
+      }
+    ],
+    "root_verified_original_references": 4,
+    "coordinate_and_functional_policy": "original_predeclared_policy",
+    "saved_emitted_probability_compared": false,
+    "new_fits_sampler_components_or_integrals": 0,
+    "future_truth_reads": 0
   }
 }

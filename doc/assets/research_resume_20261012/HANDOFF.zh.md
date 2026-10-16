@@ -27,7 +27,7 @@ Shared AR实际31导×32点工厂3.814秒、峰值322MiB，误差证书1.6504e-1
 
 ## 正在推进
 
-- **B11同record完整链：**唯一原source NPZ/29MB codec保持。实际31导C500按原128预热/128draw×2链完成，622坐标独立重算满足原1.2/5/5政策。attempt003首个K0 OOF完整capture保原OS15与随后owned0，attempt004零重复采样复用原C500/OOF0；原7/7 OOF已全部保存并逐行独审通过原政策。OOF0/2/3/4/5/6的A贡献ESS=1，OOF1约1.5。原future已处理3/7：000为C24 embargo不可用；001保存capture独审通过，其附OOF模型/实际输出关系等原final package；002的functional0 Rhat1.61766/bulk ESS3.34924未过原1.2/5门，fixed/grouped同为不可用，原P013及日志保全、无completed capture。科学PID27176/birth1792139035.673306沿原冻结源码继续future3，不改门或追加抽样。后续capsule/parent/wholegraph保完整失败账本；fit和score producer各保原值。科学状态以原实际log/新row为准。
+- **B11同record完整链：**唯一原source NPZ/29MB codec保持。实际31导C500按原128预热/128draw×2链完成，622坐标独立重算满足原1.2/5/5政策。attempt003首个K0 OOF完整capture保原OS15与随后owned0，attempt004零重复采样复用原C500/OOF0；原7/7 OOF已全部保存并逐行独审通过原政策。OOF0/2/3/4/5/6的A贡献ESS=1，OOF1约1.5。原future已处理4/7：000为C24 embargo不可用；001和003保存capture已独审通过，其附OOF模型/实际输出关系等原final package；002的functional0 Rhat1.61766/bulk ESS3.34924未过原1.2/5门，fixed/grouped同为不可用，原P013及日志保全、无completed capture。003坐标Rhat1.04425/bulk44.01/tail53.78、函数1.00578/256/245.63、MCSE.0038079满足原门，独审4366ef43；root核三交付/四原文件。科学PID27176/birth1792139035.673306沿原冻结源码继续future4，不改门或追加抽样。后续capsule/parent/wholegraph保完整失败账本；fit和score producer各保原值。科学状态以原实际log/新row为准。
 - **B11连续7行已接受：**新single-record programme完成K0/68/136/204/272/340/408全部7行及448逻辑P/F项；首64精确复用，新384项去重为204实际积分，0新fit/采样。whole/fixed归一log概率误差估计最高0.01448/0.02033 nats，独立80位归约最大差2.94e−10，root/独审核360物理引用与189冻结源。全7封存后才由原C500 issuer读476完整组标签+24 partial，raw argmax0/7、whole/fixed平均NLL319.3663/318.6237。[完整数值与原输入接受](joint_fast_lambda_20261016.json)保持原OOF0/001失败及新恢复各自身份；原有限004继续，泛型future/DAG沿原队列推进。
 - **B00/B03概率风险已完成新读数：**完整Beta opt-in生产链已集成12fb6a2，最后fixed/旧温度/β三候选nested/capsule/真实parent软件纵向通过。新的连续7行因果消费者逐题使用此前n0..6后验、评分后才加当前C真值，n7仅供future；显式具名Beta(1,1)将whole NLL319.3663降至3.7628、Brier1.999888降至1.057072。两臂prob/op7/7、tie0、hit0/7；uniform参照为3.4657/.96875。实际OS0/owned0、8.132秒、0新fit/采样/积分，独立80位逐步复算通过，原187源与9个概率/指标owner前后保持。[源码、原权限和实际接受](joint_forward_beta_design_20261016.json)及D盘稳定载荷齐备；当前重点为响应/排序和独立future。
 - **快速核适用范围已核：**全7行均有一个真实record，q先验支持为过去各singleton、当前完整32。原C labels只约束过去q，原source proper β一次进入C/P likelihood；当前单record连续结果已完整验收，未来两record或未定过去q使用其完整条件设计。
@@ -63,6 +63,6 @@ Shared AR实际31导×32点工厂3.814秒、峰值322MiB，误差证书1.6504e-1
 
 1. 连接恢复后由云owner落地S4完整304/8parent final gate及原exit，然后直接继续已授权后五阶段；S5代码已接受。
 2. BI01/57开发链与紧凑图已接受；保原模型/失败/全部requested，接完整配方公共比较。
-3. B11保原C500和全部七条OOF；future000/001/002分别为原embargo/保存capture接受/数值不可用，后续原矩阵继续，最终包落盘后闭模型wrapper与emitted概率关系。连续7条和因果Beta消费者已接受，条件多record扩展另按设计推进，004保持原冻结源码。
+3. B11保原C500和全部七条OOF；future000/001/002/003分别为原embargo/保存capture接受/数值不可用/保存capture接受，后续原矩阵继续，最终包落盘后闭模型wrapper与emitted概率关系。连续7条和因果Beta消费者已接受，条件多record扩展另按设计推进，004保持原冻结源码。
 4. typed数值/ensemble、graph/refusal、generic routing及真实H原数组准入已接受当前切片；下一步接真正generic公共DAG与完整coverage，各source/consumer保持独立身份。
 5. 按roadmap推进余下B00–B14，集成前核数学、调用链与针对性反例，更新本交接和四主题页。
