@@ -20,6 +20,8 @@ B07 `research.multichannel_c_latent`新增明确外部固定参数的finite C pr
 
 `CalibrationProgramCandidate`和generic CLI只在新策略记录显式prior，actual prefix/prior/ordered OOF共同进入校准身份；每个outer held的完整learner在原`before_group`权限内重新构造。`JointFlatPackageAdmission`和真实parent将原C groups/标签、immutable base fit digest及captured raw OOF数值重放连接，再确定性重建整posterior；校准JSON自洽不能替代这条关系。capsule恢复合法C权限供fit/replay，prediction reader不取得隐藏future truth。缓存只复用原exact C/P输入，首新consumer仍重算原数学组件并逐bit核验；operational tie、requested coverage、NLL/Brier与promotion继续由原owner判定。
 
+`research.joint_readset_transition`持有具名的原5e62/当前b39读取器关系。两个真实issuer各自颁发cap，除明确记录的`source_owner_sha256`外，完整权限及实际C标签/样本/时钟/q轴精确相同；新关系保原cap、capture、model和numeric-input身份，并另记当前readset。scorer仍从实际数组构建operands并逐bit核原组件，memo包含该关系；没有关系的普通入口沿原严格等式。fresh preparation只重颁权限，胶囊携带原reader实体供完整性核验，prepared reader无须访问外部旧路径或执行旧issuer；fresh parent再从原数据实际重颁两端。保存关系自身不授予读取权限。旧温度wrapper若改变model digest，按自身programme取得P measure。
+
 `transfer.information_bound`持有`/2`完整activation/模型诊断、raw plug-in估计量及不可变JSON报告，`save/load/replay_model`保护全部输出与原producer。`transfer.exact_covariance/2`持有raw传播、resolved SPD/显式identified support及独立ridge诊断，当前是内存诊断接口。二者没有生产调用；来源、反例和完整性验收见[数学整合](assets/research_resume_20261012/diagnostic_mathematics_integration.json)。原D树local-only `run_information_bound.py`保原字节，迁移membership、actual activation和报告schema后才可复用。
 
 2026-10-10[愿望清单整合](evidence/wishlist_progress_20261010.zh.md)继续复用原owner：`CandidateEvidence`在原tie判定处保存赢家索引；`candidate_metrics`持有requested层级的最大置信度、错时置信度、分箱ECE及实际J的uniform NLL contrast，原report consumer自动导出，现阶段只作描述性诊断。`SpatialSignalPrior.expected_whitened_signal_energy/energy_matched_graph`复用原response压缩root，以同C/noise匹配固定graph的centered信号能量；原posterior及B05物理因子继续消费该prior；新BLUE/source-group programme的实际ensemble接点见上文，固定graph与learned测量保持各自来源。

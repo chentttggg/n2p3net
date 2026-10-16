@@ -281,13 +281,23 @@ def bind_completed_joint_primitive_locators(declarations, *, base_directory):
 
 
 def load_completed_joint_primitives(declaration, *, views, expert_programs, source_checkpoints,
-                                    prefix_fit_cache, history_captures, source_preparation, context):
+                                    prefix_fit_cache, history_captures, source_preparation, context,
+                                    readset_transition=None):
     """Join declared original C/P files to this live source/input issuer.
 
     Saved bytes locate original producers. Current prefix/history authority and
     the first captured score still use their existing numerical admission.
     """
     from transfer.ensemble_fit import _calibration_expert_fit_digest
+
+    if readset_transition is not None:
+        from research.joint_readset_transition import SCHEMA as READSET_SCHEMA
+        from research.joint_readset_transition import admit_joint_readset_transition
+
+        if (readset_transition['schema'] != READSET_SCHEMA or len(expert_programs) != 1
+                or expert_programs[0].family != 'joint_flat'):
+            raise ValueError('completed joint readset changed its named transition schema')
+        admit_joint_readset_transition(views.prefix_compiler, readset_transition['original_reader'])
 
     def content(receipt):
         path = Path(receipt['path'])
@@ -347,14 +357,18 @@ def load_completed_joint_primitives(declaration, *, views, expert_programs, sour
         capability = views.prefix_compiler.record_read_scope(view, prefix=prefix, conditioning_stop=stop)
         expert.predictor.validate_history_permission(view, capability)
         saved = original['original_prediction_captures'][expert.program.expert_id]
+        from research.joint_readset_transition import joint_readset_relation
+
+        relation = joint_readset_relation(views.prefix_compiler, capability, capture)
+        original_capability = capability if relation is None else relation.original_capability
         if (original['status'] != 'scored' or original['earlier_actual_K'] != prefix.budget
                 or original['held_record_id'] != view.record_id
                 or original['expert_fit_digests'][expert.program.expert_id] != expert.fit_digest
-                or saved['capability_sha256'] != capability.digest
+                or saved['capability_sha256'] != original_capability.digest
                 or saved['captured_P_measure_sha256'] != capture.digest
                 or capture.binding['input']['model_sha256'] != expert.model_digest
                 or capture.binding['input']['source_sha256'] != source_checkpoints[expert.program.expert_id].digest
-                or semantic_sha256(capture.binding['input']['history_capability']) != semantic_sha256(capability.binding)):
+                or semantic_sha256(capture.binding['input']['history_capability']) != semantic_sha256(original_capability.binding)):
             raise ValueError('completed joint P primitive changed its original C/model/history/held authority')
         key = expert.model_digest, view.raw_input_digest, view.physical_support_digest
         if key in history_captures and history_captures[key].digest != capture.digest:
@@ -363,7 +377,8 @@ def load_completed_joint_primitives(declaration, *, views, expert_programs, sour
         capture_rows.append({'K': prefix.budget, 'expert_id': expert.program.expert_id,
             'held_record_id': view.record_id, 'capture': row['capture'], 'forward_row': row['forward_row'],
             'capture_sha256': capture.digest, 'capability_sha256': capability.digest,
-            'original_numeric_producer': capture.binding['input']['numeric_producer']})
+            'original_numeric_producer': capture.binding['input']['numeric_producer'],
+            **({'readset_transition': relation.record} if relation is not None else {})})
     return {'models': model_rows, 'captures': capture_rows,
         'captured_components_admission': 'original_score_history_recomputes_and_checks_first_use_in_each_consumer'}
 
@@ -385,13 +400,18 @@ class JointFlatReplayRecorder(InnerReplayRecorder):
         self.joint_oof.append(record)
 
     def score_future(self, programs, view, *, compiler, prefix):
-        captures, issued, refusals = {}, {}, {}
+        captures, issued, refusals, readset_transitions = {}, {}, {}, {}
         first = next((model for model in programs.values() if isinstance(model, FittedEnsemble)), None)
         by_name = {} if first is None else {expert.program.expert_id: expert for expert in first._experts}
         restored = {name: self.history_captures[key] for name, expert in by_name.items()
             if (key := (expert.model_digest, view.raw_input_digest, view.physical_support_digest)) in self.history_captures}
         def remember(name, capability, capture):
+            from research.joint_readset_transition import joint_readset_record
+
             captures[name] = (capability, capture)
+            transition = joint_readset_record(compiler, capability, capture)
+            if transition is not None:
+                readset_transitions[name] = transition
             self.history_captures[(by_name[name].model_digest, view.raw_input_digest,
                 view.physical_support_digest)] = capture
         def remember_permission(name, capability):
@@ -411,6 +431,8 @@ class JointFlatReplayRecorder(InnerReplayRecorder):
             'scores': {name: {expert: item.record() for expert, item in rows.items()} for name, rows in scored.items()}}
         if refusals:
             record['issued_refusals'] = refusals
+        if readset_transitions:
+            record['readset_transitions'] = readset_transitions
         self.joint_future.append(record)
         return scored
 
@@ -493,6 +515,11 @@ def persist_joint_flat_prefix(prefix, programs, directory, *, recorder, context=
             _save_capture(file, capture)
             captured[name] = {'capture': _artifact(file, directory), 'history_capability_sha256': capability.digest,
                               'capture_sha256': capture.digest}
+            transition = original['row'].get('original_readset_transitions', {}).get(name)
+            if transition is not None:
+                from research.joint_readset_transition import publish_joint_readset_records
+
+                captured[name]['readset_transition'] = publish_joint_readset_records(directory, (transition,))[0]
         inner_specs = tuple(spec for spec in specs if spec.expert_id in original['row']['expert_fit_digests'])
         inner_program = (inner.scorer.program if inner is not None else
             type(program).equal_weights(program.name+':forward_temperature', tuple(spec.expert_id for spec in inner_specs)))
@@ -515,6 +542,11 @@ def persist_joint_flat_prefix(prefix, programs, directory, *, recorder, context=
             _save_capture(file, capture)
             captured[name] = {'capture': _artifact(file, directory), 'history_capability_sha256': capability.digest,
                               'capture_sha256': capture.digest}
+            transition = original.get('readset_transitions', {}).get(name)
+            if transition is not None:
+                from research.joint_readset_transition import publish_joint_readset_records
+
+                captured[name]['readset_transition'] = publish_joint_readset_records(directory, (transition,))[0]
         future.append({'view': original['view'].record(), 'scores': original['scores'], 'captures': captured,
                        'issued_history_permissions': _permission_records(original['issued_capabilities']),
                        **({'issued_history_refusals': _permission_records(original['issued_refusals'])}
@@ -562,6 +594,8 @@ def _check_member_references(directory, record):
                   if row.get('schema') != NN_SOURCE_REFERENCE_SCHEMA]
     references.extend(entry['capture'] for row in (*record['OOF'], *record['future'])
                       for entry in row['captures'].values())
+    references.extend(entry['readset_transition']['original_reader'] for row in (*record['OOF'], *record['future'])
+                      for entry in row['captures'].values() if 'readset_transition' in entry)
     if any(members.get(row['path']) != row for row in references):
         raise ValueError('joint source or captured measure reference is outside the verified package members')
     for row in record['OOF']:
@@ -731,6 +765,15 @@ class JointFlatPackageAdmission:
                     row['row'].get('original_history_refusals', {})):
                 raise ValueError('joint forward OOF lost its original exact-request refusal witness')
         for row in (*record['OOF'], *record['future']):
+            for entry in row['captures'].values():
+                if 'readset_transition' in entry:
+                    from research.joint_readset_transition import check_joint_readset_record
+
+                    transition = entry['readset_transition']
+                    check_joint_readset_record(transition)
+                    if (transition['capture_sha256'] != entry['capture_sha256']
+                            or transition['current_capability_sha256'] != entry['history_capability_sha256']):
+                        raise ValueError('saved joint transition differs from its current permission and original capture')
             view = row.get('held_view', row.get('view'))
             for name, refusal in row.get('issued_history_refusals', {}).items():
                 binding = refusal['binding']
@@ -754,6 +797,11 @@ class JointFlatPackageAdmission:
             capability = compiler.record_read_scope(view, prefix=prefix, conditioning_stop=cutoff)
             if capability.digest != entry['history_capability_sha256'] or capture.digest != entry['capture_sha256']:
                 raise ValueError('captured measure differs from the original issuer history and fitted prefix')
+            if 'readset_transition' in entry:
+                from research.joint_readset_transition import reissue_joint_readset_record
+
+                reissue_joint_readset_record(compiler, capability, capture, entry['readset_transition'],
+                    directory=self.directory)
             result[name] = capture
         return result
 

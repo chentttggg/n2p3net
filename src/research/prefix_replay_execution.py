@@ -291,7 +291,7 @@ def _prepare_history_capabilities(views, budgets, records):
     for directory, expected in records:
         record = _selection_node_manifest(directory, expected_record_sha256=expected)
         if record["schema"] == "n2p3_joint_flat_prefix_inner_replay/1":
-            joint_records.append(record)
+            joint_records.append((directory, record))
     if not joint_records:
         return (), ()
     prefixes, original_views = {}, {}
@@ -303,7 +303,7 @@ def _prepare_history_capabilities(views, budgets, records):
             original_views[semantic_sha256(group.view.record())] = group.view
     original_views.update((semantic_sha256(view.record()), view) for view in views.decisions)
     capabilities, refusals = {}, {}
-    for record in joint_records:
+    for directory, record in joint_records:
         for row in (*record["OOF"], *record["future"]):
             for permission in row["issued_history_permissions"].values():
                 digest, binding = permission["sha256"], permission["binding"]
@@ -321,6 +321,15 @@ def _prepare_history_capabilities(views, budgets, records):
                 if cap.digest != digest or semantic_sha256(cap.binding) != semantic_sha256(binding):
                     raise ValueError("original compiler reissued a different C/P/T history permission")
                 capabilities[digest] = cap
+            for entry in row['captures'].values():
+                if 'readset_transition' in entry:
+                    from research.joint_flat_replay import _load_capture
+                    from research.joint_readset_transition import reissue_joint_readset_record
+
+                    transition = entry['readset_transition']
+                    cap = capabilities[transition['current_capability_sha256']]
+                    reissue_joint_readset_record(compiler, cap,
+                        _load_capture(Path(directory)/entry['capture']['path']), transition, directory=directory)
             for permission in row.get("issued_history_refusals", {}).values():
                 from research.history_authority import HistoryUnavailableError
                 from transfer.ensemble_views import _record_history_refusal_key

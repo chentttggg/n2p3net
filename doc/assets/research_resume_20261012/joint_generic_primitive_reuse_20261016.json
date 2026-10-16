@@ -49,5 +49,122 @@
     "coordinate with original actual004 to preserve each unfinished node and avoid duplicate fits or sampling"
   ],
   "root_new_public_fits_or_sampler_calls": 0,
-  "root_EEG_codec_or_model_decodes": 0
+  "root_EEG_codec_or_model_decodes": 0,
+  "named_original_current_readset_transition": {
+    "status": "accepted_root_source_and_full_independent_review",
+    "artifacts": {
+      "JOINT_READSET_TRANSITION_INDEPENDENT_REVIEW_20261016.md": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/readset-transition/JOINT_READSET_TRANSITION_INDEPENDENT_REVIEW_20261016.md",
+        "sha256": "9ed4d9f5e17dbfde664a359a57788b8897f3039a618eeb1800299f99ad8c8e95",
+        "bytes": 5591
+      },
+      "JOINT_READSET_TRANSITION_INDEPENDENT_AUDIT_20261016.py": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/readset-transition/JOINT_READSET_TRANSITION_INDEPENDENT_AUDIT_20261016.py",
+        "sha256": "aab40e58e9118cd2cfcbaf3f1b97a1d592c7719949014307196e4192175d5343",
+        "bytes": 5440
+      },
+      "JOINT_READSET_TRANSITION_INDEPENDENT_AUDIT_20261016.json": {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-score-cache/readset-transition/JOINT_READSET_TRANSITION_INDEPENDENT_AUDIT_20261016.json",
+        "sha256": "4e95d125b6a00dfa4e5b869d42501bcac60ac03109fb3a6164bbdc4d011a7f38",
+        "bytes": 1660
+      },
+      "TRANSITION_ACCEPTANCE.json": {
+        "path": "D:/BCI/artifacts/joint-source-catalog-revision/forward-beta-integration/TRANSITION_ACCEPTANCE.json",
+        "sha256": "dd2ee461cdf7c38bc25c90d7ab1adeeaa270f78616d46b035613b05fb12c4527",
+        "bytes": 26894
+      },
+      "READSET_SOURCE_MAP.json": {
+        "path": "D:/BCI/artifacts/joint-source-catalog-revision/forward-beta-integration/READSET_SOURCE_MAP.json",
+        "sha256": "7dabeee335e5110e93abb808a8147c1a0bde5eba7ed7051b4744c0179b56d52d",
+        "bytes": 5924
+      },
+      "READSET_EXECUTED_SOURCE.code-only.tar.gz": {
+        "path": "D:/BCI/artifacts/joint-source-catalog-revision/forward-beta-integration/READSET_EXECUTED_SOURCE.code-only.tar.gz",
+        "sha256": "a55694995afedd096ccc0607b790d261158e5f41ae6cf949ccd07b1f218af413",
+        "bytes": 771652
+      },
+      "LIVE_DUAL_ISSUER_PROBE.json": {
+        "path": "D:/BCI/artifacts/joint-source-catalog-revision/forward-beta-integration/LIVE_DUAL_ISSUER_PROBE.json",
+        "sha256": "a550dd0cc2f6d95342de09b3a42d0f9d7c82ee026dbab027914ecd113f1762a8",
+        "bytes": 1963
+      },
+      "PLAN_READSET_V3.json": {
+        "path": "D:/BCI/artifacts/joint-source-catalog-revision/forward-beta-integration/PLAN_READSET_V3.json",
+        "sha256": "73888974381aae8962b23964f0295db88ace03806ca53f3166ca19a8589aad33",
+        "bytes": 22073
+      },
+      "REUSE_V3_VERIFICATION.json": {
+        "path": "D:/BCI/artifacts/joint-source-catalog-revision/forward-beta-integration/REUSE_V3_VERIFICATION.json",
+        "sha256": "4c1c2f70ad60e3e76da6ea98929c8d00525866a6f1c0648aaf7bddd0ddda261a",
+        "bytes": 13115
+      },
+      "READSET_CLEANUP_PLAN.json": {
+        "path": "D:/BCI/artifacts/joint-source-catalog-revision/forward-beta-integration/READSET_CLEANUP_PLAN.json",
+        "sha256": "bdf15f26d1cdc8cb211221c465bb588cfd76c7c36bdf247a7300ba5ef04f07b9",
+        "bytes": 1375
+      }
+    },
+    "source_map_files": 9,
+    "production_files": 8,
+    "root_verified_actual_runtime_archive_members": 117,
+    "independent_verified_tiny_genesis_original_files": 42,
+    "permitted_binding_difference": "actual_original_5e62_vs_current_b39_source_owner_sha256_only",
+    "other_complete_bindings_and_actual_arrays": "exact",
+    "original_capture_model_capabilities_and_producer_preserved": true,
+    "ordinary_unrelated_capture_admission": "original_strict_path",
+    "transport_and_first_numeric_use": "separate; fresh capsule preparation0components, first scoring actual original component byte-check required",
+    "capsule": "contains_exact_original_reader_bytes_no_external_reader_access_or_old_code_execution_in_prepared_reader",
+    "live_parent": "reissues_both_actual_issuers_from_original_adapter_and_checks_original_source_C_labels",
+    "actual_vertical_case": {
+      "OS_exit": 0,
+      "seconds": 25.59209920000285,
+      "nested_candidates": [
+        "fixed",
+        "forward_beta_uniform"
+      ],
+      "outer_requested": 4,
+      "future_requested": 1,
+      "fresh_preparation_component_calls": 0,
+      "first_use_component_computations": 35,
+      "consumer_fits": 0,
+      "consumer_sampler_calls": 0,
+      "fully_resealed_OOF_relation": "loads_then_fresh_parent_rejects_at_actual_two_issuer_reissue"
+    },
+    "tiny_original_issuer_genesis": {
+      "source_fits": 1,
+      "target_expert_entries": 5,
+      "C_sampler_calls": 4,
+      "P_sampler_calls": 5,
+      "additional_nested_P_sampler_calls": 10
+    },
+    "actual_H_live_dual_issuer_probe": {
+      "seconds": 6.475267399997392,
+      "fits": 0,
+      "sampler_calls": 0,
+      "public_large_component_replays": 0,
+      "read_scope": [
+        0,
+        45284
+      ],
+      "old_saved_capability_reproduced": "881dd84fe4b30447fcda0d714be24a40f6fe57168501f69a763592b34c3818cc"
+    },
+    "preserved_finite_accepted_OOF_ordinals": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "full_public_DAG": "draft_plan_metadata_and_locators_prepared_not_launched",
+    "legacy_temperature_wrapper": "new_model_digest_requires_own_P_measure_not_admitted_by_readset_relation",
+    "later_B07_numerical_module_changes": "separate_current_source_and_validation",
+    "cleanup": {
+      "status": "automatic_approval_review_rejected_cmd_rmdir",
+      "reason": "blocked by policy",
+      "pending_regenerable_bytes": 24138622,
+      "action": "cmd.exe rmdir /s /q against an old transition software fixture",
+      "no_alternative_shell_or_bypass": true
+    }
+  }
 }

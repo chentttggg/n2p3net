@@ -355,6 +355,11 @@ def export_prepared_views(views, profiles, directory, request, *, record_history
     if record_history_refusals:
         document["record_history_refusals"] = [{"binding": refusal.binding, "sha256": refusal.digest}
             for refusal in record_history_refusals]
+    from research.joint_readset_transition import export_joint_readset_transitions
+
+    transitions = export_joint_readset_transitions(compiler, record_history_scopes)
+    if transitions is not None:
+        document["joint_readset_transitions"] = transitions
     capsule_path = directory / "capsule.json"
     capsule_path.write_bytes(_json_bytes(document))
     # Future truth belongs only to the parent scoring owner, never reader capsules.
@@ -762,6 +767,10 @@ def _restore_views(document, reader):
             if set(refusal) != {"binding", "sha256"} or semantic_sha256(refusal["binding"]) != refusal["sha256"]:
                 raise ValueError("prepared history refusal differs from its original complete request seal")
             _restore_record_history_refusal(compiler, refusal["binding"], future_views=decisions)
+    if document.get("joint_readset_transitions"):
+        from research.joint_readset_transition import _restore_joint_readset_transitions
+
+        _restore_joint_readset_transitions(compiler, document['joint_readset_transitions'])
     return IndependentSubjectViews({budget: prefixes[budget] for budget in document["calibration_Ks"]},
         decisions, {}, document["ledger"], compiler)
 

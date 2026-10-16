@@ -314,7 +314,7 @@ class JointFlatModel:
                     raise ValueError('independent joint prediction cannot consume current-selection C labels')
         return binding
 
-    def score_history(self, view, capability, *, captured=None):
+    def score_history(self, view, capability, *, captured=None, _readset_relation=None):
         binding = self.validate_history_permission(view, capability)
         kernel = shared_history_kernel(self.source)
         p_stop, t_stop = binding['conditioning_sample_support'][1], binding['score_sample_support'][1]
@@ -388,6 +388,14 @@ class JointFlatModel:
                 'candidate_vocabulary': list(axis.candidate_vocabulary), 'prior_mass': axis.prior_mass.tolist(),
                 'original_record_id': record_ids[axis.record_index]} for axis in axes],
             'current_axis': current_axis, 'tail_values_read_for_prefix_posterior': False}
+        relation_digest = None
+        if _readset_relation is not None:
+            from research.joint_readset_transition import _IssuedJointReadsetTransition
+
+            if type(_readset_relation) is not _IssuedJointReadsetTransition or captured is None:
+                raise TypeError('joint captured readset requires its actual issued transition')
+            input_binding = _readset_relation.input_relation(capability, captured, input_binding)
+            relation_digest = _readset_relation.digest
         input_digest = metadata_digest(input_binding)
         if captured is None:
             beta, drifts, precision, targets = _overdispersed_starts(records, axes, self.programme, phase='P',
@@ -421,7 +429,8 @@ class JointFlatModel:
             cache_key = metadata_digest({'model_sha256': self.digest(), 'source_sha256': self.source.digest,
                 'input_sha256': input_digest, 'current_view': view.record(), 'complete_history': binding,
                 'capture_sha256': captured.digest, 'T_record_operands': full_binding,
-                'tail_normalizer': common, 'consumer': contexts[0], 'native': contexts[1]})
+                'tail_normalizer': common, 'readset_transition': relation_digest,
+                'consumer': contexts[0], 'native': contexts[1]})
             components = self._verified_history_components.get(cache_key)
         if components is not None:
             logweights, logdensity = components
@@ -441,6 +450,8 @@ class JointFlatModel:
         if captured is not None and (not np.array_equal(logweights, captured.logweights)
                                      or not np.array_equal(logdensity, captured.logdensity)):
             raise ValueError('original captured posterior components changed during model-only replay')
+        if _readset_relation is not None:
+            _readset_relation.confirm_capture(capability, captured, capture)
         if (captured is not None and components is None
                 and array_digest(logweights, logdensity) == array_digest(captured.logweights, captured.logdensity)
                 and contexts == (_history_consumer_context(), _history_native_context())):

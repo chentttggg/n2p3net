@@ -948,7 +948,8 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
             joint_reuse.append(load_completed_joint_primitives(declaration, views=views,
                 expert_programs=paired_specs[source_seed], source_checkpoints=paired_sources[source_seed],
                 prefix_fit_cache=joint_fit_cache, history_captures=joint_history_captures,
-                source_preparation=joint_preparation, context={"source_seed": source_seed, "target_seed": seed}))
+                source_preparation=joint_preparation, context={"source_seed": source_seed, "target_seed": seed},
+                readset_transition=plan.get('joint_completed_readset_transition')))
     fit_requests = list(_expected_fit_roster(plan, views.ledger).values())
     ledger = _participant_ledger(row, plan, directory, expected_source, views.decisions,
                                 views.scoring_truth, views.ledger, fit_requests,
@@ -1864,6 +1865,11 @@ class CandidateCloudProgramme:
 
             self.plan["joint_completed_primitives"] = bind_completed_joint_primitive_locators(
                 self.plan["joint_completed_primitives"], base_directory=self.original_plan_path.parent)
+        if self.plan.get('joint_completed_readset_transition'):
+            from research.joint_readset_transition import bind_joint_readset_descriptor
+
+            self.plan['joint_completed_readset_transition'] = bind_joint_readset_descriptor(
+                self.plan['joint_completed_readset_transition'], base_directory=self.original_plan_path.parent)
         self.source, self.normalized, self.admitted, self.admission_failures = None, None, {}, {}
         self.source_snapshots = {}
         self.recovery_binding = None
@@ -2543,6 +2549,13 @@ def _prepare_candidate_plan(plan_path, *, native_threads=None, load_sources=True
 
             normalized["joint_completed_primitives"] = bind_completed_joint_primitive_locators(
                 completed, base_directory=plan_path.parent)
+        if plan.get('joint_completed_readset_transition'):
+            from research.joint_readset_transition import bind_joint_readset_descriptor
+
+            if not completed or len(joint_specs) != 1 or len(expert_programs) != 1:
+                raise ValueError('named completed readset transition requires its one joint programme and original primitives')
+            normalized['joint_completed_readset_transition'] = bind_joint_readset_descriptor(
+                plan['joint_completed_readset_transition'], base_directory=plan_path.parent)
         for mixture in mixtures:
             if any(spec.expert_id in mixture.expert_ids for spec in joint_specs) and set(
                     plan.get("mixture_calibration_strategies", {}).get(mixture.name, strategies)) & POOL_STRATEGIES:

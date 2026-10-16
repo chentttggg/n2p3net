@@ -483,7 +483,11 @@ class _FittedExpert:
                 capability = compiler.record_read_scope(view, prefix=prefix, conditioning_stop=p_stop)
                 if history_capability_recorder is not None:
                     history_capability_recorder(self.program.expert_id, capability)
-                result = self.predictor.score_history(view, capability, captured=captured_history)
+                from research.joint_readset_transition import joint_readset_relation
+
+                relation = joint_readset_relation(compiler, capability, captured_history)
+                result = self.predictor.score_history(view, capability, captured=captured_history,
+                    **({'_readset_relation': relation} if relation is not None else {}))
             except HistoryUnavailableError as error:
                 if history_refusal_recorder is not None:
                     from transfer.ensemble_views import _lookup_record_history_refusal
@@ -1712,11 +1716,16 @@ def _collect_forward_joint_oof(fitted, calibration, expert_programs, sources, de
             fit_failure = (error if isinstance(error, ExpectedSubjectError) else ExpectedSubjectError(
                 SubjectFailureCode.NUMERICAL_FAILURE, stage='forward_inner_fit', detail=f'{type(error).__name__}: {error}'))
         captures, issued, refusals = {}, {}, {}
-        actual_captures = {}
+        actual_captures, readset_transitions = {}, {}
         def remember(name, capability, capture, captures=captures, actual_captures=actual_captures,
-                     inner=inner, held=held):
+                     inner=inner, held=held, readset_transitions=readset_transitions):
             captures[name] = {'capability_sha256': capability.digest, 'captured_P_measure_sha256': capture.digest}
             actual_captures[name] = (capability, capture)
+            from research.joint_readset_transition import joint_readset_record
+
+            transition = joint_readset_record(prefix_compiler, capability, capture)
+            if transition is not None:
+                readset_transitions[name] = transition
             if history_captures is not None:
                 producer = next(expert for expert in inner._experts if expert.program.expert_id == name)
                 history_captures[(producer.model_digest, held.view.raw_input_digest,
@@ -1751,6 +1760,8 @@ def _collect_forward_joint_oof(fitted, calibration, expert_programs, sources, de
         if refusals:
             row['original_history_refusals'] = {name: {'sha256': refusal.digest, 'binding': refusal.binding}
                                                for name, refusal in refusals.items()}
+        if readset_transitions:
+            row['original_readset_transitions'] = readset_transitions
         score_rows.append(row)
         producers.append({key: value for key, value in row.items() if key != 'expert_evidence'})
         if producer_recorder is not None:

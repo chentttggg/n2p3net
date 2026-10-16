@@ -82,6 +82,11 @@ def _original_bound_plan(request, run):
 
         expected["joint_completed_primitives"] = bind_completed_joint_primitive_locators(
             expected["joint_completed_primitives"], base_directory=parent)
+    if expected.get('joint_completed_readset_transition'):
+        from research.joint_readset_transition import bind_joint_readset_descriptor
+
+        expected['joint_completed_readset_transition'] = bind_joint_readset_descriptor(
+            expected['joint_completed_readset_transition'], base_directory=parent)
     path = run / "bound_plan.json"
     content = path.read_bytes()
     if json.loads(content) != expected:

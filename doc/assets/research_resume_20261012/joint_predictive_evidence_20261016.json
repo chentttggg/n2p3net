@@ -1,6 +1,6 @@
 {
   "schema": "n2p3_joint_predictive_evidence_root_acceptance/1",
-  "status": "accepted_original_finite_OOF0_through_4_and_separate_continuous_integral_consumer",
+  "status": "accepted_original_finite_OOF0_through_5_and_separate_continuous_integral_consumer",
   "receipts": {
     "JOINT_FLAT_COMPLETED_FORWARD_001_AUDIT.py": {
       "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_COMPLETED_FORWARD_AUDIT.py",
@@ -471,5 +471,71 @@
       "sha256": "f3b1c156d3c9ba790e34f384852b9adff99f027ee6f21f4f27adaf888399b15c",
       "bytes": 2692
     }
+  },
+  "OOF5": {
+    "status": "accepted_original_finite_empirical_programme",
+    "receipts": [
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_COMPLETED_FORWARD_005_AUDIT.json",
+        "sha256": "9cdfe3320ceb26056034aeb6087b48714bfd88f3f979a50be860533956a92442",
+        "bytes": 3069
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FORWARD_005_FUNCTIONAL_AUDIT.json",
+        "sha256": "55c96b76d674234b515d012ea7259bdcd306fdc04ab7e2d6f66278bff3218672",
+        "bytes": 4694
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_COMPLETED_FORWARD_005_NORMALIZATION_AUDIT.py",
+        "sha256": "7f18f7434066a4c20c57bc55a8e23797ce4d62d8aca4694552c762847743e368",
+        "bytes": 10751
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_OOF5_INDEPENDENT_REVIEW_20261016.md",
+        "sha256": "2f70b8d443721777eb9152ba4d7753b38e6ad3243068599255554e843401ff21",
+        "bytes": 2341
+      }
+    ],
+    "earlier_K": 340,
+    "capture_digest": "aafaad699e36c92d12f95412d7c7100e15a3fa4734e65ec7ca41701666f84965",
+    "raw_record_scalar_rows": [
+      3973735
+    ],
+    "global_beta_width": 496,
+    "coefficient_width": 558,
+    "record_precision_count": 1,
+    "current_q_support": 32,
+    "coordinate_max_rhat_min_bulk_min_tail": [
+      1.0586556689107414,
+      52.51916255141845,
+      77.11191961728427
+    ],
+    "functional_max_rhat_min_bulk_min_tail": [
+      0.9982431975873021,
+      183.6031609463669,
+      183.14979007591384
+    ],
+    "max_paired_batch_mcse": 2.237671542828449e-71,
+    "A_contribution_ESS_min_max": [
+      1.0,
+      1.0
+    ],
+    "normalization_roundoff_addendum": {
+      "original_audit_source_sha256": "4d116109af239577ac54eb0f4699a6234f765439b5a89b82637fe6af40c1d9da",
+      "original_mean_mass_assertion_1e_minus_12_passed": false,
+      "mean_mass_defect_decimal80": "-2.70338687645720865333253570956189987864421341977766777533174313672895E-12",
+      "per_state_log_mass_min_max": [
+        "-1.163052579854259759664125884295343116430381110953662808462623597007432E-10",
+        "1.152533190737339913026611827776248280782983884555252795698316724443123E-10"
+      ],
+      "per_state_max_absolute_mass_defect": "1.163052579786625194E-10",
+      "normalized_whole_log_probability_perturbation_bound": "2.315585770591599672690737712071591397213364995508915604160940321450555E-10",
+      "measured_normalized_whole_log_probability_perturbation": "0E-73",
+      "bound_basis": "positive mixture log A corrections lie between negative max and min log state mass; normalized log P changes by at most that range",
+      "original_captured_arrays_modified": false,
+      "existing_probability_reduction_tolerance": 1e-08
+    },
+    "root_verified_original_references": 3,
+    "new_fits_or_sampler_calls": 0
   }
 }
