@@ -2533,8 +2533,8 @@
       "status": "accepted_empirical_OOF1_and_separate_single_record_continuous_audit",
       "root_delivery": {
         "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_predictive_evidence_20261016.json",
-        "sha256": "5fafeb44c1afd7199e882e86223ffac8b241d5f29f37726f17c023518a45c2a1",
-        "bytes": 17385
+        "sha256": "ca46a615a279389172e25ea781c5d4a43b6eca944379940e23cf8e4bac2052ad",
+        "bytes": 20717
       },
       "remaining_public_programme": "ongoing",
       "original_finite_programme_retained": true,
@@ -2542,7 +2542,8 @@
         0,
         1,
         2,
-        3
+        3,
+        4
       ]
     },
     "joint_history_score_cache": {
@@ -2559,7 +2560,8 @@
       "root_review": "Read full pure-QR delta and complete model hook, authority/current view/P/T/capture/consumer/native key, original-byte admission, fresh summary/diagnostics, immutable bounded LRU, explicit NPZ and current worker serialization boundary; read four distinguishing contracts and old saved-producer consumer. No open required fixes.",
       "original_actual004_source_unchanged": true,
       "integration_commit": "eee72b3",
-      "P_only_scalar_memo": "accepted_with_original_marginal_AST_and_bitexact_original_state_probe"
+      "P_only_scalar_memo": "accepted_with_original_marginal_AST_and_bitexact_original_state_probe",
+      "P_only_scalar_memo_integration_commit": "104b8dd"
     },
     "joint_generic_completed_primitives": {
       "status": "accepted_source_and_distinguishing_caller",
@@ -2588,7 +2590,8 @@
         "bytes": 9340
       },
       "production": "accepted_complete_optin_pipeline",
-      "actual_public_programme": "separate_pending_numerical_execution"
+      "actual_public_programme": "separate_pending_numerical_execution",
+      "integration_commit": "12fb6a2"
     }
   }
 }

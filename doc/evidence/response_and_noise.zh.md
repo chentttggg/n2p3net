@@ -37,6 +37,8 @@ B11联合模型已在原Huebner记录的500个授权标签上完成采样。直�
 
 第四条OOF/K204也已独立接受：2409537个原scalar观测行、一个global β和一个record精度、4条q轴保持。559坐标的最大Rhat为1.0663，最小bulk/tail ESS为46.73/62.29；32个配对概率函数满足原政策。分子贡献ESS为1，继续以新连续积分程序核主要权重覆盖。原模型、完整capture和两份独立归约已逐SHA接入同一[预测积分接受](../assets/research_resume_20261012/joint_predictive_evidence_20261016.json)，没有重做fit或采样。
 
+第五条OOF/K272自然完成并获独立接受：3190861个原scalar行，559坐标及32配对概率函数通过原政策，分子贡献ESS仍为1。旧审计的质量误差阈值1e−12在此过紧；独立80位计算保留实际2.60e−12均值偏差，并证明逐state正规化最多扰动whole log概率2.31e−10，低于既定1e−8归约容差。新审计使用该关系接纳原字节，模型、采样和概率均未改写。后续两行、future与完整图继续。
+
 源码及独审还确认：当前C draws只用于P sampler的初始点；实际P law从原source prior与C/P完整likelihood重新构造，同record的C不重复计入。因此具备上述条件的新连续programme可直接由真实earlier-prefix/history权限积分，省去纯初始化用途的C/P抽样。当前依序核OOF1/2对应关系，再按新身份完成7条连续前向概率；旧有限programme继续其原实验。
 
 原shared `/3`保存root也已实现快速严格准入：用小因子见证核验原992维矩阵，误差界9.386e-12低于原3.150e-7政策，保留原root与producer。实际完整source codec加载4.254秒，其中root部分1.130秒；较早同输入加载的457.8秒中，452.3秒集中在该验证。新见证是consumer准入元数据，原模型的概率计算仍消费原矩阵。来源见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
