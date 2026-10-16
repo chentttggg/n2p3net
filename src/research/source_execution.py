@@ -10,7 +10,7 @@ import uuid
 from contextlib import contextmanager
 from multiprocessing.managers import SyncManager
 from pathlib import Path
-from threading import Condition, RLock
+from threading import Condition, RLock, get_ident
 from zipfile import ZipFile
 
 from research.execution import atomic_write_json
@@ -247,7 +247,26 @@ def _named_output_bytes(path, directory=False):
     if not path.exists():
         return 0
     if directory:
-        return sum(item.stat().st_size for item in path.rglob("*") if item.is_file())
+        total, pending = 0, [path]
+        while pending:
+            current = pending.pop()
+            try:
+                entries = os.scandir(current)
+            except (FileNotFoundError, NotADirectoryError):
+                continue
+            with entries:
+                for entry in entries:
+                    if entry.is_dir(follow_symlinks=False):
+                        pending.append(entry.path)
+                        continue
+                    try:
+                        info = entry.stat()
+                    except FileNotFoundError:
+                        # An atomic writer may already have renamed its temporary.
+                        continue
+                    if stat.S_ISREG(info.st_mode):
+                        total += info.st_size
+        return total
     return path.stat().st_size
 
 
@@ -259,15 +278,17 @@ def _external_file_identity(info):
 class _SourceInputState:
     """Short atomic transactions execute in the existing Manager server.
 
-    A native client never owns the server's lock. Waiting remains in the
-    client, so a dead waiter cannot strand a server thread or claim bytes
-    after task retirement.
+    A native client never owns the server's lock. Resource retries wait in
+    the client; overlapping artifact inspections wait on the server Condition,
+    releasing the ledger lock until the active inspection leaves its scope.
     """
 
     def __init__(self, capacity, load_workers):
         self.capacity, self.load_workers = capacity, load_workers
         self.lock = RLock()
         self.leases, self.filesystems, self.retired_tasks = {}, {}, set()
+        self.artifact_condition = Condition(self.lock)
+        self.artifact_operations = {}
         self.nested_artifacts = {}
         self.reclaimed_paths = {}
         self.free = capacity
@@ -277,6 +298,55 @@ class _SourceInputState:
     def _identity_allowed(self, identity):
         if identity["task_id"] in self.retired_tasks:
             raise RuntimeError("input allocation requested after the owned task tree retired")
+
+    def _artifact_anchor(self, path):
+        roots = [row["path"] for row in self.leases.values()
+            if row["kind"] == "persistent_artifact" and row["directory"] and not row["committed"]
+            and Path(path).is_relative_to(row["path"])]
+        return min(roots, key=len) if roots else path
+
+    @contextmanager
+    def _artifact_guard(self, path, *temporary_paths):
+        # Register fixed scopes for the entire observation/mutation transaction.
+        # An ancestor operation conflicts with an already registered child even
+        # when no ancestor lease existed at registration. Condition.wait releases
+        # the shared ledger lock; filesystem scans run without that lock.
+        paths, thread = (path, *temporary_paths), get_ident()
+        operation = object()
+        with self.artifact_condition:
+            while True:
+                retained = [item for row in self.leases.values()
+                    if row["kind"] == "persistent_artifact" and row["path"] in paths
+                    for item in row["paths"]]
+                scopes = tuple(dict.fromkeys(Path(self._artifact_anchor(item)) for item in (*paths, *retained)))
+                held = [scope for owner, ranges in self.artifact_operations.values()
+                    if owner == thread for scope in ranges]
+                # Reentry inside held scopes cannot acquire a peer's range.
+                # Expanding them could deadlock two nested inspections.
+                if held and not all(any(scope.is_relative_to(parent) for parent in held) for scope in scopes):
+                    raise RuntimeError("reentrant artifact inspection cannot expand its registered output scope")
+                conflict = any(owner != thread and any(
+                    left.is_relative_to(right) or right.is_relative_to(left)
+                    for left in scopes for right in ranges)
+                    for owner, ranges in self.artifact_operations.values())
+                if not conflict:
+                    anchor = self._artifact_anchor(path)
+                    self.artifact_operations[operation] = (thread, scopes)
+                    break
+                self.artifact_condition.wait()
+        try:
+            yield anchor
+        finally:
+            with self.artifact_condition:
+                del self.artifact_operations[operation]
+                self.artifact_condition.notify_all()
+
+    def _covering_artifact(self, paths, key, ram_backed, identity):
+        return next((row for row in self.leases.values()
+            if row["kind"] == "persistent_artifact" and row["directory"] and not row["committed"]
+            and row["pid"] == identity["pid"] and row["task_id"] == identity["task_id"]
+            and row["filesystem"] == key and row["uses_host_memory"] == ram_backed
+            and all(Path(item).is_relative_to(row["path"]) for item in paths)), None)
 
     def _peak(self):
         self.peak_bytes = max(self.peak_bytes, self.capacity - self.free)
@@ -401,99 +471,128 @@ class _SourceInputState:
             del self.leases[token]
 
     def reserve_artifact(self, path, paths, directory, key, nbytes, ram_bytes, ram_backed, identity):
-        with self.lock:
-            self._identity_allowed(identity)
-            covering = next((row for row in self.leases.values()
-                if row["kind"] == "persistent_artifact" and row["directory"] and not row["committed"]
-                and row["pid"] == identity["pid"] and row["task_id"] == identity["task_id"]
-                and row["filesystem"] == key and row["uses_host_memory"] == ram_backed
-                and all(Path(item).is_relative_to(row["path"]) for item in paths)), None)
-            if covering is not None:
-                # The inner writer knows its actual encoded size before writing.
-                # Grow the same outer lease to cover surviving bytes plus this
-                # atomic temporary; a large late-bound scientific state must be
-                # admitted here, never discovered only at final settlement.
-                pending = 0
-                for row in self.nested_artifacts.values():
-                    if row["covering_token"] != covering["token"]:
-                        continue
-                    materialized = max(0, sum(_named_output_bytes(item, row["directory"])
-                        for item in row["paths"]) - row["baseline_bytes"])
-                    pending += max(0, row["disk_bytes"] - materialized)
-                actual = max(0, _named_output_bytes(covering["path"], True) - covering["baseline_bytes"])
-                required = actual + pending + nbytes
-                addition = max(0, required - covering["disk_bytes"])
-                if addition:
-                    parent = str(Path(covering["path"]).parent)
-                    state = self._filesystem(parent, key, required, ram_backed)
-                    additional_ram = addition if covering["uses_host_memory"] else 0
-                    if self._filesystem_room(state, parent, key) < addition or self.free < additional_ram:
-                        raise ValueError("nested artifact actual peak exceeds the remaining shared filesystem/RAM budget")
-                    self.free -= additional_ram
-                    state["reserved_bytes"] += addition
-                    state["peak_reserved_bytes"] = max(state["peak_reserved_bytes"], state["reserved_bytes"])
-                    covering["disk_bytes"] += addition
-                    covering["nbytes"] += additional_ram
-                    self._peak()
-                token = uuid.uuid4().hex
-                self.nested_artifacts[token] = {"covering_token": covering["token"], "paths": paths,
-                    "directory": directory, "disk_bytes": nbytes, **identity,
-                    "baseline_bytes": sum(_named_output_bytes(item, directory) for item in paths)}
-                return {"token": token, "owns_transaction": False}
-            matches = [(token, row) for token, row in self.leases.items()
-                       if row["kind"] == "persistent_artifact" and row["path"] == path]
-            token, previous = matches[0] if matches else (uuid.uuid4().hex, None)
-            if previous and not previous["committed"]:
-                raise ValueError("a named artifact writer already owns this output path")
-            if previous and previous["directory"] != directory:
-                raise ValueError("named writer retry changed its output kind")
-            parent = str(Path(path).parent)
-            state = self._filesystem(parent, key, nbytes, ram_backed)
-            room = self._filesystem_room(state, parent, key)
-            if room < nbytes or self.free < ram_bytes:
-                raise ValueError("named working artifact exceeds the remaining shared filesystem/RAM budget")
-            if previous:
-                baseline = previous["baseline_bytes"] + sum(_named_output_bytes(item, directory)
-                    for item in paths if item not in previous["paths"])
-                paths = list(dict.fromkeys([*previous["paths"], *paths]))
-            else:
-                baseline = sum(_named_output_bytes(item, directory) for item in paths)
-            self.free -= ram_bytes
-            state["reserved_bytes"] += nbytes
-            state["peak_reserved_bytes"] = max(state["peak_reserved_bytes"], state["reserved_bytes"])
-            self.leases[token] = {"kind": "persistent_artifact", "token": token, "path": path, "paths": paths,
-                "directory": directory, "baseline_bytes": baseline, "phase": "artifact", "filesystem": key,
-                "uses_host_memory": ram_backed,
-                "nbytes": ram_bytes + (previous["nbytes"] if previous else 0),
-                "disk_bytes": nbytes + (previous["disk_bytes"] if previous else 0), "committed": False, **identity}
-            self._peak()
-            return {"token": token, "owns_transaction": True}
+        while True:
+            with self._artifact_guard(path, *paths[1:]) as anchor:
+                with self.lock:
+                    self._identity_allowed(identity)
+                    covering = self._covering_artifact(paths, key, ram_backed, identity)
+                    if covering is not None:
+                        pending_rows = [dict(row) for row in self.nested_artifacts.values()
+                            if row["covering_token"] == covering["token"]]
+                    else:
+                        matches = [(token, row) for token, row in self.leases.items()
+                            if row["kind"] == "persistent_artifact" and row["path"] == path]
+                        token, previous = matches[0] if matches else (uuid.uuid4().hex, None)
+                        if previous and not previous["committed"]:
+                            raise ValueError("a named artifact writer already owns this output path")
+                        if previous and previous["directory"] != directory:
+                            raise ValueError("named writer retry changed its output kind")
 
-    def settle_artifact(self, token):
+                # Fresh inspection still includes unmanaged files and outside
+                # modifications; no TTL or managed-writer assumption is used.
+                if covering is not None:
+                    pending = 0
+                    for row in pending_rows:
+                        materialized = max(0, sum(_named_output_bytes(item, row["directory"])
+                            for item in row["paths"]) - row["baseline_bytes"])
+                        pending += max(0, row["disk_bytes"] - materialized)
+                    actual = max(0, _named_output_bytes(covering["path"], True) - covering["baseline_bytes"])
+                    required = actual + pending + nbytes
+                    addition = max(0, required - covering["disk_bytes"])
+                    baseline = sum(_named_output_bytes(item, directory) for item in paths)
+                elif previous:
+                    baseline = previous["baseline_bytes"] + sum(_named_output_bytes(item, directory)
+                        for item in paths if item not in previous["paths"])
+                else:
+                    baseline = sum(_named_output_bytes(item, directory) for item in paths)
+
+                with self.lock:
+                    self._identity_allowed(identity)
+                    if (self._artifact_anchor(path) != anchor
+                            or self._covering_artifact(paths, key, ram_backed, identity) is not covering):
+                        continue
+                    if covering is not None:
+                        # Keep surviving bytes + every concurrent pending peak
+                        # admitted before the exact encoded writer can open.
+                        if addition:
+                            parent = str(Path(covering["path"]).parent)
+                            state = self._filesystem(parent, key, required, ram_backed)
+                            additional_ram = addition if covering["uses_host_memory"] else 0
+                            if self._filesystem_room(state, parent, key) < addition or self.free < additional_ram:
+                                raise ValueError("nested artifact actual peak exceeds the remaining shared filesystem/RAM budget")
+                            self.free -= additional_ram
+                            state["reserved_bytes"] += addition
+                            state["peak_reserved_bytes"] = max(state["peak_reserved_bytes"], state["reserved_bytes"])
+                            covering["disk_bytes"] += addition
+                            covering["nbytes"] += additional_ram
+                            self._peak()
+                        token = uuid.uuid4().hex
+                        self.nested_artifacts[token] = {"covering_token": covering["token"], "paths": paths,
+                            "directory": directory, "disk_bytes": nbytes, **identity, "baseline_bytes": baseline}
+                        return {"token": token, "owns_transaction": False}
+                    parent = str(Path(path).parent)
+                    state = self._filesystem(parent, key, nbytes, ram_backed)
+                    if self._filesystem_room(state, parent, key) < nbytes or self.free < ram_bytes:
+                        raise ValueError("named working artifact exceeds the remaining shared filesystem/RAM budget")
+                    if previous:
+                        paths = list(dict.fromkeys([*previous["paths"], *paths]))
+                    self.free -= ram_bytes
+                    state["reserved_bytes"] += nbytes
+                    state["peak_reserved_bytes"] = max(state["peak_reserved_bytes"], state["reserved_bytes"])
+                    self.leases[token] = {"kind": "persistent_artifact", "token": token, "path": path, "paths": paths,
+                        "directory": directory, "baseline_bytes": baseline, "phase": "artifact", "filesystem": key,
+                        "uses_host_memory": ram_backed,
+                        "nbytes": ram_bytes + (previous["nbytes"] if previous else 0),
+                        "disk_bytes": nbytes + (previous["disk_bytes"] if previous else 0), "committed": False, **identity}
+                    self._peak()
+                    return {"token": token, "owns_transaction": True}
+
+    def settle_artifact(self, token, *, _retiring_row=None):
         with self.lock:
-            row = self.leases[token]
-            if any(item["covering_token"] == token for item in self.nested_artifacts.values()):
-                raise ValueError("outer artifact writer ended with pending nested writers")
-            total = sum(_named_output_bytes(path, row["directory"]) for path in row["paths"])
-            actual = max(0, total - row["baseline_bytes"])
-            difference = row["disk_bytes"] - actual
-            filesystem = self.filesystems[row["filesystem"]]
-            filesystem["reserved_bytes"] -= difference
-            filesystem["peak_reserved_bytes"] = max(filesystem["peak_reserved_bytes"], filesystem["reserved_bytes"])
-            if row["uses_host_memory"]:
-                self.free += difference
-                row["nbytes"] = actual
-            row.update(disk_bytes=actual, committed=True, surviving_total_bytes=total)
-            row["paths"] = [row["path"], *(path for path in row["paths"][1:] if Path(path).exists())]
-            self._peak()
-            if difference < 0:
-                raise ValueError("actual working artifact exceeds its pre-admitted estimate; surviving bytes remain charged")
-            return {"path": row["path"], "surviving_total_bytes": total,
-                    "baseline_bytes": row["baseline_bytes"], "charged_bytes": actual}
+            # Retry replaces the row but reuses its token. Its immutable task
+            # identity and this row generation must survive the guard wait.
+            initial = self.leases[token]
+            if _retiring_row is not None and (initial is not _retiring_row or initial["committed"]):
+                return None
+            path, paths = initial["path"], initial["paths"]
+        while True:
+            with self._artifact_guard(path, *paths[1:]) as anchor:
+                with self.lock:
+                    row = self.leases[token]
+                    if row is not initial:
+                        if _retiring_row is not None:
+                            return None
+                        raise ValueError("named artifact lease changed before its actual settlement")
+                    if _retiring_row is not None and row["committed"]:
+                        return None
+                    if any(item["covering_token"] == token for item in self.nested_artifacts.values()):
+                        raise ValueError("outer artifact writer ended with pending nested writers")
+                total = sum(_named_output_bytes(item, row["directory"]) for item in row["paths"])
+                surviving_paths = [row["path"], *(item for item in row["paths"][1:] if Path(item).exists())]
+                with self.lock:
+                    if self._artifact_anchor(path) != anchor:
+                        continue
+                    actual = max(0, total - row["baseline_bytes"])
+                    difference = row["disk_bytes"] - actual
+                    filesystem = self.filesystems[row["filesystem"]]
+                    filesystem["reserved_bytes"] -= difference
+                    filesystem["peak_reserved_bytes"] = max(filesystem["peak_reserved_bytes"], filesystem["reserved_bytes"])
+                    if row["uses_host_memory"]:
+                        self.free += difference
+                        row["nbytes"] = actual
+                    row.update(disk_bytes=actual, committed=True, surviving_total_bytes=total, paths=surviving_paths)
+                    self._peak()
+                    if difference < 0:
+                        raise ValueError("actual working artifact exceeds its pre-admitted estimate; surviving bytes remain charged")
+                    return {"path": row["path"], "surviving_total_bytes": total,
+                            "baseline_bytes": row["baseline_bytes"], "charged_bytes": actual}
 
     def settle_nested_artifact(self, token):
         with self.lock:
-            self.nested_artifacts.pop(token)
+            path = self.leases[self.nested_artifacts[token]["covering_token"]]["path"]
+        with self._artifact_guard(path):
+            with self.lock:
+                self.nested_artifacts.pop(token)
 
     def remove_external_file(self, path, expected_identity, ram_backed, identity):
         """Delete one verified external file, never an owner-managed output."""
@@ -549,20 +648,19 @@ class _SourceInputState:
             for token, row in list(self.nested_artifacts.items()):
                 if row["task_id"] == task_id:
                     del self.nested_artifacts[token]
-            failures = []
-            for token, row in list(self.leases.items()):
-                if row["task_id"] != task_id:
-                    continue
-                if row["kind"] == "persistent_artifact":
-                    if not row["committed"]:
-                        try:
-                            self.settle_artifact(token)
-                        except Exception as error:
-                            failures.append(error)
-                else:
-                    self.release(token)
-            if failures:
-                raise failures[0]
+            owned = [(token, row) for token, row in self.leases.items() if row["task_id"] == task_id]
+        failures = []
+        for token, row in owned:
+            if row["kind"] == "persistent_artifact":
+                if not row["committed"]:
+                    try:
+                        self.settle_artifact(token, _retiring_row=row)
+                    except Exception as error:
+                        failures.append(error)
+            else:
+                self.release(token)
+        if failures:
+            raise failures[0]
 
     def record(self):
         with self.lock:
