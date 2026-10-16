@@ -206,6 +206,17 @@ def test_nonpositive_law_and_unrepresentable_coordinate_range_are_typed():
         factor.compile_shared_stationary_root([1.], [[1.]], 4)
 
 
+@pytest.mark.parametrize("reflections,sigma", [
+    ([np.nextafter(-1., 0.)], [[1., .2], [.2, .7]]),
+    ([-.6], [[1., 1-2.**-48], [1-2.**-48, 1.]]),
+])
+def test_unresolved_weak_directions_keep_original_policy_instead_of_parameter_repair(reflections, sigma):
+    before = np.array(sigma)
+    with pytest.raises(UnidentifiableFitError, match="declared stationary noise model"):
+        factor.compile_shared_stationary_root(reflections, sigma, 4)
+    np.testing.assert_array_equal(sigma, before)
+
+
 def test_factor_noise_joint_flat_save_load_replays_original_numeric_prediction(tmp_path, monkeypatch):
     from research.joint_flat_artifact import load_joint_flat_state, save_joint_flat_state
     from research.joint_flat_authority import _parameters

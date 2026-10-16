@@ -1,0 +1,164 @@
+{
+  "benchmark": {
+    "certificate": {
+      "joint_law_pullback_F_bound": 1.6504317166686268e-12,
+      "original_joint_policy_F_bound": 3.1496031496047245e-07,
+      "product_rounding_F_bound": 8.1261922927159e-13,
+      "proof": "exact_rational_small_factor_residuals_inverse_defects_and_Kronecker_product_rounding",
+      "spatial_inverse_defect_F_bound": 1.0954762028139614e-15,
+      "spatial_law_pullback_F_bound": 1.642254398301903e-15,
+      "temporal_inverse_defect_F_bound": 2.4154986471571403e-16,
+      "temporal_law_pullback_F_bound": 2.856310596851288e-15
+    },
+    "channels": 31,
+    "fit_calls": 0,
+    "git_commit": "8ca8dd15e60ae2d90d17ae9c170b22d2bed7a30e",
+    "joint_rows": 992,
+    "native_threads": 1,
+    "new_codec": "n2p3_channel_noise_mechanism/4",
+    "new_factor_root_sha256": "30d718d4392208133daeb25ec52ea95a269f95a194f8e7df4a81bc03e0d99be8",
+    "new_noise_file_sha256": "bb930a8dcace3c6405a7d7ac975e9b92c1043ecf62aa5d3a59c2dec78cecc0a4",
+    "new_noise_state_sha256": "626e763da323a45efa6a4416c4c40664884db3634d475ee12be283e865437ab8",
+    "numpy_version": "2.5.2",
+    "old_new_prefix_whitening_max_abs_difference": 3.530509218307998e-14,
+    "old_new_root_max_abs_difference": 6.776263578034403e-21,
+    "old_new_startup_logdet_difference": 0.0,
+    "original_codec": "n2p3_channel_noise_mechanism/3",
+    "original_dense_root_sha256": "68377de479bdd096b2378000106b8cd24442a3fae25170dbbb4ee74758b96e26",
+    "original_noise_state_sha256": "bcb810611d8860ffa8ae9b4d8a22d1d6cbe5762783f80bb71a610f9db475efc3",
+    "original_parameters_unchanged": true,
+    "original_source_bytes": 29413076,
+    "original_source_sha256": "7ee809992ff4355dd59c68befba53bab1906f22e38e83c1d873c6947cf06c206",
+    "prefix_samples": 32,
+    "python_version": "3.14.3",
+    "resource_after": {
+      "available_bytes": 3707047936,
+      "cpu_seconds": 10.96875,
+      "peak_rss_bytes": 337625088,
+      "rss_bytes": 237035520
+    },
+    "resource_before": {
+      "affinity_logical": 32,
+      "available_bytes": 4323389440,
+      "rss_bytes": 162304000
+    },
+    "root_calls": {
+      "admit": 2,
+      "compile": 1
+    },
+    "same_process_small_baseline": {
+      "channels": 4,
+      "prefix": 8,
+      "root_max_abs_difference": 3.3881317890172014e-21,
+      "runs": [
+        {
+          "dense_seconds": 0.02586949999931676,
+          "factor_seconds": 0.009687300000223331
+        },
+        {
+          "dense_seconds": 0.025189900001350907,
+          "factor_seconds": 0.009036400000695721
+        },
+        {
+          "dense_seconds": 0.025949599999876227,
+          "factor_seconds": 0.00971190000018396
+        }
+      ],
+      "warmup_each": 1
+    },
+    "saved_original_state_equal": true,
+    "schema": "n2p3_shared_stationary_factor_benchmark/1",
+    "scope": "local_numeric_no_fits",
+    "source_files_sha256": {
+      "scripts/benchmark_shared_stationary_factor.py": "d511492678ab489f2777cfb6255cff4c8a806b4deca81b3fa2fee674397f5788",
+      "src/research/channel_noise_mechanism.py": "2c8f52e667fc134e228625b7de919434317cb4ffdde8697e35a9e9a8d6705171",
+      "src/research/shared_stationary_factor.py": "c42684c4a0f8cacc4bcf61e63afa519225b740fbf1f0a547975fc50cd1cc2f19",
+      "src/research/stationary_noise_artifact.py": "621badbd538bd724d24f91129f0c226db1c7001db90eeb1f013005dd81710c5f",
+      "src/transfer/dictionary_artifact.py": "8ed091213d2584a791d2b6d75e165af770fa44d907c10bb760f4fcdbb743a906",
+      "src/transfer/temporal_noise.py": "81e8ad45eabc980f5ee7e2d3131ae0ee2e08b0c663fbbbfc75427c3f43b0581b"
+    },
+    "threadpools": [
+      {
+        "architecture": "SkylakeX",
+        "filepath": "D:\\BCI\\n2p3-net\\.venv\\Lib\\site-packages\\numpy.libs\\libscipy_openblas64_-327b2e0bcffce2882e0dc04cdeb4eaa6.dll",
+        "internal_api": "openblas",
+        "num_threads": 1,
+        "prefix": "libscipy_openblas",
+        "threading_layer": "pthreads",
+        "user_api": "blas",
+        "version": "0.3.34.0.0"
+      },
+      {
+        "architecture": "SkylakeX",
+        "filepath": "D:\\BCI\\n2p3-net\\.venv\\Lib\\site-packages\\scipy.libs\\libscipy_openblas-197ee2fc9b4d071f7e048078cac74115.dll",
+        "internal_api": "openblas",
+        "num_threads": 1,
+        "prefix": "libscipy_openblas",
+        "threading_layer": "pthreads",
+        "user_api": "blas",
+        "version": "0.3.31.dev"
+      },
+      {
+        "filepath": "D:\\BCI\\n2p3-net\\.venv\\Lib\\site-packages\\sklearn\\.libs\\vcomp140.dll",
+        "internal_api": "openmp",
+        "num_threads": 1,
+        "prefix": "vcomp",
+        "user_api": "openmp",
+        "version": null
+      }
+    ],
+    "timings": {
+      "admissions_seconds": [
+        1.4589892999993026,
+        1.502682399999685
+      ],
+      "compile_seconds": 2.0759212000011757,
+      "factory_seconds": 3.8137652999994316,
+      "load_seconds": 2.2813935999984096,
+      "read_and_admit_original_temporal_seconds": 0.601098600000114,
+      "save_seconds": 0.8328940000010334
+    },
+    "whitening_replay_bitwise_equal": true
+  },
+  "benchmark_receipt_sha256": "f53eaa028a05821c29a77cbc2314a09cf50be91021789292f09b0a9bbb4e24e5",
+  "historical_large_dense_observation": {
+    "origin": "root observed original B11 source startup before pause; not rerun in this benchmark",
+    "paired_timing_claim": false,
+    "seconds_about": 689
+  },
+  "local_final_noise": "tmp/shared_stationary_actual31_20261016_final/new_factor_noise.json",
+  "original_pause_draft": {
+    "bytes": 11145,
+    "path": "tmp/shared_stationary_factor_pause_original.py",
+    "sha256": "81f39b6bbdbf2210131dcd91abb1387ede492e0e8315beddd2cd7cb4bd35b250"
+  },
+  "scope": "new explicit shared factor numerical producer; no public efficacy evaluation or fitting",
+  "software_validation": {
+    "git_diff_check": "passed",
+    "ruff": "passed",
+    "suite_attributes": [
+      {
+        "errors": "0",
+        "failures": "0",
+        "name": "pytest",
+        "skipped": "0",
+        "tests": "62",
+        "time": "11.990",
+        "timestamp": "2026-10-16T11:06:44.729569+08:00"
+      }
+    ],
+    "test_source_sha256": "14e85e9ee079fad36c3a34932925543a1486b21a594a11d53ba8a8511ef12436",
+    "xml_local_path": "tmp/shared_stationary_actual31_20261016_final/software_contracts.xml",
+    "xml_sha256": "9c638563eadfc24f72e4d744db7f45c69d4de933804b4e419ff88c0663bb0b8a"
+  },
+  "superseded_benchmark_numeric_cleanup": {
+    "bytes": 9851201,
+    "detailed_receipt": "doc/assets/shared_stationary_factor_20261016/cleanup.json",
+    "instruction_compliance": "PowerShell retry violated user cmd-only instruction; stopped cleanup and returned ownership to root",
+    "method": "cmd single-file deletion blocked by tool policy; native PowerShell literal-path deletion succeeded",
+    "path": "tmp\\shared_stationary_actual31_20261016\\new_factor_noise.json",
+    "reason": "superseded zero-fit benchmark package; same root bytes preserved in final package; initial receipt retained locally",
+    "removed": true,
+    "sha256": "5aab3f406e6719f5a9e8d0bc33c7035f86415eda343291329bf843d7ee6cb065"
+  }
+}

@@ -28,6 +28,10 @@
 
 独立小维测试从AR0/1/2闭式YW组装raw K，用有理Gauss–Jordan直接计算完整`R⁻¹ K R⁻ᵀ-I`，覆盖原单位与极小/极大协方差尺度；另有private拒绝、改签/损坏state、逆缺陷方向及normalization反例。新noise通过B11实际`compile_owned_flat_decision → save_joint_flat_state → load_joint_flat_state → predict_flat_tail`，保存重放时禁止任何fit/whiten/root compiler，预测的component logs和prefix weights逐数组相等。本地软件检查不代表公共分类效能。
 
+固定源码`8ca8dd15`以原31通道shared-AR1/P32输入实测：新compile 2.076秒、constructor准入1.459秒、完整factory 3.814秒、save 0.833秒、load 2.281秒；native1、峰值RSS 322.0 MiB。law bound为`1.6504e-12`，原政策为`3.1496e-7`。原stored AR/Σ逐数组保持，新root与原保存dense root最大差`6.7763e-21`，startup logdet差0；新包record和白化逐bit重放。原source JSON只读并前后核SHA，无新fit。原观察约689秒为不同次执行的历史瓶颈，不构造配对倍率；同进程相同AR/Σ的P8C4经各一次warmup后三次生成，中位dense 25.87毫秒、factor 9.69毫秒，约2.67倍。完整[执行绑定](../assets/shared_stationary_factor_20261016/binding.json)保存原输入、实际执行source SHA、阶段耗时和软件验证。
+
+产品舍入项的反例使精确`2⁻¹²⁰⁰` off-diagonal乘积存成0，独立有理pullback仍受界覆盖。原政策附近的近unit AR和近奇异Σ示例由新producer明确报typed unavailable；保守证书未承诺覆盖全部原dense可接受输入。调用者显式选择新producer，原保存态继续按原codec消费。
+
 ## P1完整16格读数
 
 完整16格已完成并独审：8人各一个held selection05、R10、36选1，两噪声臂共576个候选分数，seed20260918，新增fit及response-fit均0。科学exit0、所属树0；[完成绑定](../assets/research_resume_20261011/p1_cloud_completion_binding.json)保原producer、新consumer、结果和两路独立复算。此处覆盖下文“A01已恢复、余14格待评”的阶段状态，原失败面板继续保原身份。
