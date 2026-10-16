@@ -67,7 +67,7 @@ from transfer.calibration_candidates import (  # noqa: E402
 from transfer.calibration_state import FrozenTrialPredictor  # noqa: E402
 from transfer.checkpoint import (  # noqa: E402
     PreparedTransferCheckpoint,
-    ScopedSourceCheckpointPreparation,
+    SourceCheckpointPreparation,
     load_checkpoint_payload,
 )
 from transfer.recipes import TargetRecipe, erp_target_recipe  # noqa: E402
@@ -402,7 +402,7 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
     from research.source_metadata_store import SourceMetadataStore
 
     metadata_store = SourceMetadataStore(metadata_directory or Path(output) / "source_metadata")
-    source_preparations = {subject: ScopedSourceCheckpointPreparation() for subject in subjects}
+    source_preparation = SourceCheckpointPreparation()
     cells, requests, identities, authority = [], [], {}, {}
     # Keep only small preflight receipts. EEG memory is bounded to one arm and
     # participant; independent prefix loader owns per-K raw support validation.
@@ -454,7 +454,7 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
                     origin, architecture = None, None
                     if available and arm["family"] in NN_FAMILIES:
                         prepared, trunk, origin = _nn_anchor(_source_snapshot(checkpoints, catalog_snapshots, arm, study, source_seed), data, subject,
-                                                           source_preparations[subject])
+                                                           source_preparation)
                         architecture = trunk.architecture_record()
                         del prepared, trunk
                     recipe = _recipe(arm, seed) if budget > 0 else None
@@ -556,7 +556,7 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
                         device = plan.get("device", "cpu")
                         if arm["family"] in NN_FAMILIES:
                             prepared, source, _ = _nn_anchor(_source_snapshot(checkpoints, catalog_snapshots, arm,
-                                cell["study"], cell["source_seed"]), data, subject, source_preparations[subject])
+                                cell["study"], cell["source_seed"]), data, subject, source_preparation)
                             stats = prepared.input_statistics if arm["family"] == "full_fine" else None
                         if budget == 0:
                             predictor = FrozenTrialPredictor.from_source(prepared, subject)

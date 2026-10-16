@@ -1122,8 +1122,8 @@ class _BoundTransferSource:
             self._target_membership = freeze_metadata(target_membership)
 
 
-class ScopedSourceCheckpointPreparation:
-    """Source decode reuse owned by one participant's programme lifetime.
+class SourceCheckpointPreparation:
+    """One immutable source cache belonging to a serial programme ingress.
 
     Every call binds its current dataset, identity, preprocessing execution and
     source/input domain. No target rows, labels, fitted statistics or models
@@ -1131,7 +1131,6 @@ class ScopedSourceCheckpointPreparation:
     """
 
     def __init__(self):
-        self._participant = None
         self._sources = {}
         self._source_keys = {}
         self.source_admissions = 0
@@ -1139,15 +1138,12 @@ class ScopedSourceCheckpointPreparation:
 
     def prepare(self, content, dataset, subject):
         if not isinstance(content, bytes) or not content:
-            raise ValueError("scoped source preparation requires immutable checkpoint bytes")
+            raise ValueError("source preparation requires immutable checkpoint bytes")
         if not isinstance(getattr(dataset, "identity_table", None), DatasetIdentityTable):
-            raise ValueError("scoped source preparation requires current target identities")
-        target = dataset.identity_table.record_for(str(subject))
+            raise ValueError("source preparation requires current target identities")
+        dataset.identity_table.record_for(str(subject))
         if len(dataset.identity_table.records) != 1:
-            raise ValueError("scoped source preparation belongs to one actual participant")
-        participant = (target.origin_subject_keys, target.global_person_keys, target.identity_status)
-        if self._participant is not None and participant != self._participant:
-            raise ValueError("source preparation owner cannot cross participant identities")
+            raise ValueError("each source binding requires one actual participant")
         content_digest = hashlib.sha256(content).hexdigest()
         key = self._source_keys.get(content_digest)
         source = None if key is None else self._sources[key]
@@ -1160,13 +1156,31 @@ class ScopedSourceCheckpointPreparation:
             self._sources[key] = source
             self._source_keys[content_digest] = key
             self.source_admissions += 1
-        self._participant = participant
         self.target_bindings += 1
         return bound
 
     def record(self):
         return {"source_admissions": self.source_admissions, "target_bindings": self.target_bindings,
                 "source_keys": [list(key) for key in self._sources]}
+
+
+class ScopedSourceCheckpointPreparation(SourceCheckpointPreparation):
+    """The participant-scoped variant used by nested calibration callers."""
+
+    def __init__(self):
+        super().__init__()
+        self._participant = None
+
+    def prepare(self, content, dataset, subject):
+        if not isinstance(getattr(dataset, "identity_table", None), DatasetIdentityTable):
+            raise ValueError("scoped source preparation requires current target identities")
+        target = dataset.identity_table.record_for(str(subject))
+        participant = (target.origin_subject_keys, target.global_person_keys, target.identity_status)
+        if self._participant is not None and participant != self._participant:
+            raise ValueError("source preparation owner cannot cross participant identities")
+        result = super().prepare(content, dataset, subject)
+        self._participant = participant
+        return result
 
 
 def checkpoint_architecture_record(payload: Mapping[str, object]) -> dict[str, object]:

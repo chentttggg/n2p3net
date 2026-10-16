@@ -197,6 +197,37 @@ def test_public_report_source_schema_requires_reference_and_keeps_legacy_full_va
     assert semantic_sha256(load_binary_report(path, metadata_store=store)) == semantic_sha256(legal)
 
 
+def test_serial_ingress_two_current_participants_share_only_source_prototype(tmp_path):
+    from data.identity import DatasetIdentityTable
+    from transfer.checkpoint import SourceCheckpointPreparation
+
+    data, content, _, _ = _source(tmp_path)
+    second = copy.deepcopy(data)
+    second.subject_ids = np.full(data.n_epochs, "second")
+    second.identity_table = DatasetIdentityTable.from_source_rows(second.subject_ids.tolist(), ["synthetic_p300"] * data.n_epochs)
+    owner = SourceCheckpointPreparation()
+    first = owner.prepare(content, data, "p1")
+    fresh = owner.prepare(content, second, "second")
+    first.assert_library_exclusion(target_membership=dataset_study_membership(data))
+    fresh.assert_library_exclusion(target_membership=dataset_study_membership(second))
+    assert owner.source_admissions == 1 and owner.target_bindings == 2
+    a, b = first.trunk_for_target("p1"), fresh.trunk_for_target("second")
+    with torch.no_grad():
+        for value in a.state_dict().values():
+            value.add_(1)
+    first.input_statistics[0][:] = 999
+    for name, value in b.state_dict().items():
+        torch.testing.assert_close(value, owner.prepare(content, second, "second").trunk_for_target("second").state_dict()[name], rtol=0, atol=0)
+    assert not np.array_equal(first.input_statistics[0], fresh.input_statistics[0])
+    leaked = copy.deepcopy(second)
+    source_identity = plain_metadata(first.payload["training_identity_ledger"])
+    leaked.identity_table = DatasetIdentityTable.from_payload(source_identity)
+    leaked.subject_ids = np.full(data.n_epochs, source_identity["records"][0]["local_subject_id"])
+    with pytest.raises(ValueError, match="includes target"):
+        owner.prepare(content, leaked, leaked.subject_ids[0])
+    assert owner.source_admissions == 1
+
+
 def test_binary_actual_serial_save_replay_parent_and_pool_share_source(tmp_path):
     from data.epochs import load_epoch_dataset
     from data.source_records import prepare_source_record_prefixes
