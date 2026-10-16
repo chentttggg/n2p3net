@@ -1,0 +1,9 @@
+{
+  "backend_source": "c71a4d2109eaed23bea734c76845940bcf05d51a3af4478ac3c1db54fe75fd24",
+  "default_source_sha256": "0105bb90dc4a5d9a2788a55ff0e183a230e8e5cf8df20dbd601848c67b2221be",
+  "producer_source_sha256": "f3267cd466efac946ee4a79ababa11a79472ba78119694e641cc592940ac05e4",
+  "source_schema": "n2p3_transfer_checkpoint/2",
+  "strict_state_restored": true,
+  "parameters": 1202,
+  "scope": "Structural checkpoint and saved-personal-model restoration only; no target data eligibility, predictions, fit, hardware or accuracy claim"
+}

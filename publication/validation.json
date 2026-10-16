@@ -1,0 +1,78 @@
+{
+  "schema": "n2p3_stable_publication_validation/1",
+  "scope": "Byte-exact publication of already completed historical source; no scientific recipe changes or new training.",
+  "restore": {
+    "publication": "D:\\BCI\\artifacts\\github-stable-20260920\\publication",
+    "all_original_archive_checks_passed": true,
+    "original_zip_members": 95,
+    "all_four_source_members_verified": 1251,
+    "published_backend_members": 346,
+    "published_frontend_members": 73,
+    "source_python_ast_parsed": 347,
+    "excluded_frontend_payloads": [
+      {
+        "path": "frontend/libusb-1.0.dll",
+        "bytes": 158720,
+        "sha256": "5072054cb3002ae071f382ad5c2c2b0092d9451c537d0c13444c2b6f968f7251",
+        "reason": "model_or_external_runtime_resource_retained_locally"
+      },
+      {
+        "path": "frontend/models/source/bnci_cz6_seed20260906_A01.pt",
+        "bytes": 29461,
+        "sha256": "0105bb90dc4a5d9a2788a55ff0e183a230e8e5cf8df20dbd601848c67b2221be",
+        "reason": "model_or_external_runtime_resource_retained_locally"
+      },
+      {
+        "path": "frontend/resources/fonts/AlibabaPuHuiTi-2-45-Light.ttf",
+        "bytes": 8478864,
+        "sha256": "7ca937d812c081862fe139aa1a65324faa883978d65450252d66c80d271ee20d",
+        "reason": "model_or_external_runtime_resource_retained_locally"
+      }
+    ],
+    "original_bytes_preserved": true
+  },
+  "ruff": {
+    "command": "ruff check --no-cache .",
+    "exit_code": 0,
+    "scope": "backend and frontend under their original configurations"
+  },
+  "pytest": {
+    "command": "python -m pytest -p no:cacheprovider tests/environment/test_python_compatibility.py tests/data/test_preprocessing_execution_provenance.py tests/data/test_channel.py",
+    "tests": 32,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 5.034,
+    "junit_sha256": "73428ad702a48524c00216dcbfb7eca23c115e515714d33902301aaaff65123b",
+    "environment": "Existing backend repository virtual environment; dependency reinstall and full historical suite not repeated."
+  },
+  "staged_source_verification": {
+    "original_files": 419,
+    "bytes_match_origin_sha256": true,
+    "credential_pattern_scan": "pass",
+    "bulk_model_raw_cache_runtime_archives_staged": false
+  },
+  "diff_check": {
+    "new_publication_files_exit": 0,
+    "original_frozen_source_exit": 2,
+    "original_warnings": [
+      "frontend/gtn_workstation/recording.py:598: new blank line at EOF.",
+      "frontend/run_gtn_workstation.py:12: trailing whitespace.",
+      "+        ",
+      "frontend/run_gtn_workstation.py:12: new blank line at EOF.",
+      "src/data/source_parsers.py:241: new blank line at EOF.",
+      "src/research/domain_folds.py:201: new blank line at EOF.",
+      "tests/data/test_artifact.py:345: new blank line at EOF.",
+      "tests/data/test_events.py:229: new blank line at EOF.",
+      "tests/data/test_ocular.py:196: new blank line at EOF.",
+      "tests/support/snapshots.py:36: new blank line at EOF."
+    ],
+    "line_ending_handling": "Original CRLF retained byte-exact; Git cr-at-eol enabled. Historical whitespace warnings retained rather than altering stable source."
+  },
+  "claims": {
+    "full_suite_run": false,
+    "new_fits": 0,
+    "hardware_test": false,
+    "adult_confirmation": false
+  }
+}

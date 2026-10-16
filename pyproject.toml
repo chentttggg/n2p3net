@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "n2p3-net"
+version = "0.1.0"
+description = "Performance-first oddball P300 decoding research framework"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.14",
+    "scikit-learn>=1.5",
+    "psutil>=5.9",
+    "torch==2.8.0; sys_platform == 'linux' and platform_machine == 'x86_64' and python_version < '3.14'",
+    "torchaudio==2.8.0; sys_platform == 'linux' and platform_machine == 'x86_64' and python_version < '3.14'",
+    "torch>=2.4; sys_platform != 'linux' or platform_machine != 'x86_64' or python_version >= '3.14'",
+]
+
+[project.optional-dependencies]
+signals = ["mne>=1.8", "pandas>=2.2", "moabb==1.6.1", "matplotlib>=3.9"]
+baselines = ["pyriemann>=0.6", "braindecode>=1.7"]
+dev = ["packaging>=24", "pytest>=8.0", "ruff>=0.14"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+exclude = ["doc/assets"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B"]
+# Preserve conventional mathematical tensor names (X, H, W, etc.) used throughout
+# the EEG model equations and implementations.
+ignore = ["E501", "N803", "N806", "N812"]

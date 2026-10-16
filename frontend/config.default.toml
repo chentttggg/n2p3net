@@ -1,0 +1,60 @@
+[app]
+language = "zh-CN"
+
+[window]
+params_collapsed = true
+
+[eeg]
+sample_rate = 250
+gain = 6.0
+signal_type = "EEG"
+
+[protocol.serial]
+vid = 21059
+pid = 8
+
+[protocol.ble]
+service_uuid = "4de5a20c-0001-ae14-bf63-0242ac130002"
+tx_char_uuid = "4de5a20c-0002-ae14-bf63-0242ac130002"
+rx_char_uuid = "4de5a20c-0003-ae14-bf63-0242ac130002"
+
+[filters.highpass]
+enabled = true
+freq = 0.5
+
+[filters.lowpass]
+enabled = true
+freq = 49.0
+
+[filters.bandpass]
+enabled = false
+low = 30.0
+high = 32.0
+
+[filters.bandstop]
+enabled = true
+low = 49.0
+high = 51.0
+
+[recording]
+save_enable = false
+format = "bdf+"
+output_dir = ""
+patient_name = ""
+patient_id = ""
+technician = ""
+equipment = "BrainSync_8CH_EEG"
+remarks = ""
+
+[trigger_alias_map]
+PD = "PD"
+AUD = "声音"
+MIC = "麦克风"
+BTN = "按键"
+
+[hotkey_alias_map]
+F1 = "咳嗽伪迹"
+F2 = "眨眼伪迹"
+F3 = "身体晃动"
+F4 = "闭眼开始"
+F5 = "睁眼恢复"

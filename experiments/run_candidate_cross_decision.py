@@ -1,0 +1,1685 @@
+"""Evaluate known early decisions -> later unknown candidate-task decisions."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import platform
+import sys
+import tempfile
+from collections.abc import Mapping, Sequence
+from functools import lru_cache
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+ROOT = Path(__file__).resolve().parent.parent
+SRC = ROOT / "src"
+for search_path in (ROOT, SRC):
+    if str(search_path) not in sys.path:
+        sys.path.insert(0, str(search_path))
+
+from experiments.result_batch_contract import ZERO_SHOT_FEATURE_CACHE_SCHEMA  # noqa: E402
+from research.contracts import (  # noqa: E402
+    MIN_PROMOTION_HIT_AT_R,
+    DecisionPlanContract,
+    DecisionPlanEntry,
+    ParticipantSelectionFailure,
+    assert_promotion_evidence_gate,
+    semantic_sha256,
+)
+from research.execution import (  # noqa: E402
+    ExpectedSubjectError,
+    SubjectFailureCode,
+    atomic_write_json,
+)
+
+if TYPE_CHECKING:
+    import numpy as np
+
+    from data.candidate_task import CandidateTaskContract
+    from data.identity import IdentityExclusionPolicy
+    from models.n2p3net import N2P3Net
+    from transfer.outcomes import DecisionOutcome
+
+
+def _load_trunk(
+    path: str | Path | dict[str, object],
+    dataset,
+    *,
+    target_subject: str,
+    identity_exclusion_policy: IdentityExclusionPolicy,
+) -> N2P3Net:
+    from transfer.checkpoint import load_n2p3_trunk_checkpoint
+
+    trunk, _ = load_n2p3_trunk_checkpoint(
+        path,
+        dataset,
+        target_subject=target_subject,
+        identity_exclusion_policy=identity_exclusion_policy,
+    )
+    return trunk
+
+
+def _sha256_file(path: str | Path) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _cached_attested_dataset(cache_path: str) -> object:
+    from data.epochs import load_epoch_dataset
+
+    return load_epoch_dataset(cache_path, require_labels=True, validation="attested")
+
+
+@lru_cache(maxsize=8)
+def _cached_sha256_file(path: str) -> str:
+    return _sha256_file(path)
+
+
+def _load_source_selection(
+    path: str | Path,
+    *,
+    source_cache_sha256: str,
+    row_identity_digest: str | None = None,
+) -> tuple[object, dict[str, object]]:
+    """Load a PDS selection record bound to the attested source cache.
+
+    Mirrors ``run_pretrain_supervised._load_source_selection`` so the live
+    AS-MMD source-stream path verifies the exact same cache identity and row
+    identity fields before applying selected indices.
+    """
+
+    from train.source_sampling import load_pds_selection_record, pds_selection_from_record
+
+
+    _, record = load_pds_selection_record(path)
+    selection = pds_selection_from_record(
+        record,
+        expected_source_cache_sha256=source_cache_sha256,
+    )
+    if row_identity_digest is not None:
+        feature_record = record.get("source_feature_record")
+        if not isinstance(feature_record, Mapping):
+            raise ValueError("source-selection record lacks its source_feature_record.")
+        feature_row_digest = feature_record.get("row_identity_digest")
+        if feature_row_digest != row_identity_digest:
+            raise ValueError(
+                "source-selection feature row_identity_digest disagrees with "
+                "the loaded source cache."
+            )
+    return selection, record
+
+
+@lru_cache(maxsize=8)
+def _cached_candidate_split(
+    dataset_cache_path: str,
+    calibration_selections: int,
+    test_repetitions: int,
+    selection_repetition_floor: int,
+    max_test_selections: int | None,
+) -> object:
+    from transfer.candidate_within_subject import candidate_calibration_decision_split
+
+    return candidate_calibration_decision_split(
+        _cached_attested_dataset_memo(dataset_cache_path),
+        calibration_selections=calibration_selections,
+        test_repetitions=test_repetitions,
+        selection_repetition_floor=selection_repetition_floor,
+        max_test_selections=max_test_selections,
+    )
+
+
+@lru_cache(maxsize=2)
+def _cached_attested_dataset_memo(cache_path: str) -> object:
+    return _cached_attested_dataset(cache_path)
+
+
+@lru_cache(maxsize=8)
+def _cached_checkpoint_payload(checkpoint_path: str) -> dict[str, object]:
+    from transfer.checkpoint import load_checkpoint_payload
+
+    return load_checkpoint_payload(Path(checkpoint_path))
+
+
+@lru_cache(maxsize=8)
+def _cached_verified_source_snapshot(manifest_path: str) -> dict[str, object]:
+    from research.evaluation import verified_source_snapshot
+
+    return verified_source_snapshot(Path(manifest_path))
+
+
+def _zero_shot_cache_header(
+    *,
+    checkpoint_sha256: str,
+    target_cache_sha256: str,
+    evaluation_snapshot_sha256: str,
+    partition_key: str,
+    epoch_rows: np.ndarray,
+    test_reps: int,
+) -> dict[str, object]:
+    import numpy as np
+
+    return {
+        "schema": ZERO_SHOT_FEATURE_CACHE_SCHEMA,
+        "checkpoint_sha256": checkpoint_sha256,
+        "target_cache_sha256": target_cache_sha256,
+        "evaluation_snapshot_sha256": evaluation_snapshot_sha256,
+        "partition_key": partition_key,
+        "epoch_rows": np.asarray(epoch_rows, dtype=np.int64).tolist(),
+        "test_reps": int(test_reps),
+    }
+
+
+def _read_zero_shot_feature_cache(
+    cache_path: str | Path | None,
+    header: dict[str, object],
+) -> dict[str, np.ndarray] | None:
+    import numpy as np
+
+    if cache_path is None:
+        return None
+    path = Path(cache_path)
+    if not path.is_file():
+        return None
+    try:
+        payload = np.load(path, allow_pickle=False)
+        if "header" not in payload or "scores" not in payload or "features" not in payload:
+            return None
+        stored = str(payload["header"][0])
+        stored_header = json.loads(stored)
+        if stored_header != header:
+            return None
+        features = np.asarray(payload["features"], dtype=np.float32)
+        scores = np.asarray(payload["scores"], dtype=np.float64)
+    except (OSError, ValueError, TypeError, IndexError, json.JSONDecodeError):
+        # The memo is derived, not a scientific input: a corrupt cache is
+        # recomputed rather than failing an otherwise valid result run.
+        return None
+    if scores.ndim != 1 or features.ndim != 2 or len(features) != len(scores):
+        return None
+    return {"features": features, "scores": scores}
+
+
+def _write_zero_shot_feature_cache(
+    cache_path: str | Path,
+    *,
+    header: dict[str, object],
+    features: np.ndarray,
+    scores: np.ndarray,
+) -> None:
+    import numpy as np
+
+    path = Path(cache_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, raw_temp = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    temp = Path(raw_temp)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            np.savez(
+                stream,
+                header=np.asarray([json.dumps(header, ensure_ascii=False, sort_keys=True)]),
+                features=np.asarray(features, dtype=np.float32),
+                scores=np.asarray(scores, dtype=np.float64),
+            )
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp, path)
+    except BaseException:
+        temp.unlink(missing_ok=True)
+        raise
+
+
+BUFFER_ESTIMAND_BY_BUFFER_SOURCE = {
+    "pooled_source": "source_mixture",
+    "source_weighted": "declared_source_composition",
+    "target_calibration": "calibration_defined_target",
+}
+
+_ENV_LOCKFILE_NAMES = ("uv.lock", "requirements.txt", "requirements-minimal.txt")
+
+
+def _lockfile_digests() -> dict[str, str]:
+    lockfiles = {
+        name: _sha256_file(ROOT / name) for name in _ENV_LOCKFILE_NAMES if (ROOT / name).is_file()
+    }
+    if "uv.lock" not in lockfiles:
+        raise ValueError("uv.lock is missing; the environment identity cannot be recorded.")
+    return lockfiles
+
+
+def _environment_record(device: object) -> dict[str, object]:
+    import numpy as np
+    import torch
+
+    record: dict[str, object] = {
+        "python": sys.version,
+        "numpy": np.__version__,
+        "torch": torch.__version__,
+        "device": str(device),
+        "platform": platform.platform(),
+        "cuda_runtime": torch.version.cuda,
+        "cudnn": (torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else None),
+        "gpu": (
+            torch.cuda.get_device_name(device)
+            if torch.cuda.is_available() and str(device).startswith("cuda")
+            else None
+        ),
+        "lockfiles": _lockfile_digests(),
+    }
+    record["environment_digest"] = semantic_sha256(record)
+    return record
+
+
+def _bn_buffer_digest(payload: dict[str, object] | None) -> str | None:
+    """Semantic digest over every BatchNorm buffer in the checkpoint trunk."""
+
+    import torch
+
+
+    if not isinstance(payload, dict) or not isinstance(payload.get("trunk_state_dict"), dict):
+        return None
+    buffers: dict[str, object] = {}
+    for key, tensor in payload["trunk_state_dict"].items():
+        name = str(key)
+        if name.endswith(("running_mean", "running_var")):
+            buffers[name] = torch.asarray(tensor).detach().cpu().float().tolist()
+        elif name.endswith("num_batches_tracked"):
+            buffers[name] = int(torch.asarray(tensor).reshape(-1)[0].item())
+    return semantic_sha256(buffers)
+
+
+def _splitbn_summary_from_checkpoint(payload: dict[str, object] | None) -> dict[str, object]:
+    config: dict[str, object] = {}
+    if isinstance(payload, dict) and isinstance(payload.get("config"), dict):
+        config = payload["config"]
+    buffer_source = config.get("splitbn_target_buffer_source")
+    return {
+        "present": payload is not None,
+        "effective_target_buffer_source": buffer_source,
+        "buffer_estimand": (
+            None if buffer_source is None else BUFFER_ESTIMAND_BY_BUFFER_SOURCE.get(buffer_source)
+        ),
+        "source_weights": config.get("splitbn_source_weights"),
+        "bn_buffer_digest": _bn_buffer_digest(payload),
+    }
+
+
+def _failed_decision_outcomes(
+    *,
+    subject: str,
+    requested_decisions: tuple[str, ...],
+    failure_reasons: dict[str, str],
+    target_by_decision: dict[str, str],
+    test_repetitions: int,
+    candidate_task: CandidateTaskContract,
+) -> tuple[DecisionOutcome, ...]:
+    from transfer.candidate_decision import expected_candidate_counts
+    from transfer.outcomes import CandidateCoverage, DecisionKey, DecisionOutcome, DecisionStatus
+
+    outcomes: list[DecisionOutcome] = []
+    for decision in requested_decisions:
+        if decision not in failure_reasons:
+            continue
+        for repetition in range(1, test_repetitions + 1):
+            outcomes.append(
+                DecisionOutcome(
+                    key=DecisionKey(subject, decision),
+                    evidence_level=repetition,
+                    status=DecisionStatus.INCOMPLETE,
+                    coverage=CandidateCoverage.from_mappings(
+                        expected_candidate_counts(candidate_task, repetition), {}
+                    ),
+                    target_candidate=target_by_decision[decision],
+                    failure_reason=failure_reasons[decision],
+                )
+            )
+    return tuple(outcomes)
+
+
+def _fit_failure_decision_outcomes(
+    *,
+    subject: str,
+    decisions: tuple[str, ...],
+    test_repetitions: int,
+    failure: ExpectedSubjectError,
+    target_by_decision: dict[str, str],
+    candidate_task: CandidateTaskContract,
+) -> tuple[DecisionOutcome, ...]:
+    from transfer.candidate_decision import expected_candidate_counts
+    from transfer.outcomes import CandidateCoverage, DecisionKey, DecisionOutcome, DecisionStatus
+
+    return tuple(
+        DecisionOutcome(
+            key=DecisionKey(subject, decision),
+            evidence_level=level,
+            status=DecisionStatus.FIT_FAILURE,
+            coverage=CandidateCoverage.from_mappings(
+                expected_candidate_counts(candidate_task, level), {}
+            ),
+            target_candidate=target_by_decision[decision],
+            failure_reason=f"{failure.stage}:{failure.code.value}",
+        )
+        for decision in decisions
+        for level in range(1, test_repetitions + 1)
+    )
+
+
+def _accounting_record(
+    outcomes: tuple[DecisionOutcome, ...],
+    *,
+    subject: str,
+    requested_decisions: tuple[str, ...],
+    eligible_decisions: tuple[str, ...],
+    test_repetitions: int,
+) -> dict[str, object]:
+    from transfer.outcomes import DecisionKey, DecisionStatus, build_decision_outcome_accounting
+
+    accounting = build_decision_outcome_accounting(
+        outcomes,
+        requested_decisions=[DecisionKey(subject, decision) for decision in requested_decisions],
+        evidence_levels=range(1, test_repetitions + 1),
+    )
+    record = accounting.to_record()
+    data_eligible = len(eligible_decisions)
+    failed_evaluation_keys = {
+        outcome.key.decision_id
+        for outcome in outcomes
+        if outcome.key.decision_id in eligible_decisions
+        and outcome.status in {DecisionStatus.INCOMPLETE, DecisionStatus.FIT_FAILURE}
+    }
+    record["data_eligible"] = data_eligible
+    record["data_ineligible"] = len(requested_decisions) - data_eligible
+    record["evaluation_successful"] = data_eligible - len(failed_evaluation_keys)
+    record["evaluation_failed"] = len(failed_evaluation_keys)
+    return record
+
+
+def _build_decision_plan(
+    dataset,
+    *,
+    candidate_task: CandidateTaskContract,
+    requested_subjects: tuple[str, ...],
+    requested_decisions_by_subject: dict[str, tuple[str, ...]],
+    participant_by_subject: dict[str, str],
+    participant_failure_reasons: dict[str, str],
+    target_cache_sha256: str,
+) -> tuple[DecisionPlanContract, dict[str, dict[str, str]]]:
+    import numpy as np
+
+    from transfer.candidate_decision import row_column_target
+
+    if dataset.metadata is None or dataset.identity_table is None:
+        raise ValueError("Candidate decision plan requires metadata and participant identity.")
+    selection_ids = dataset.metadata["selection_id"].astype(str).to_numpy()
+    subjects = np.asarray(dataset.subject_ids).astype(str)
+    target_rows = dataset.metadata["target_row"].to_numpy(dtype=np.int64)
+    target_cols = dataset.metadata["target_col"].to_numpy(dtype=np.int64)
+    entries: list[DecisionPlanEntry] = []
+    participant_failures: list[ParticipantSelectionFailure] = []
+    local_targets: dict[str, dict[str, str]] = {}
+    for subject in requested_subjects:
+        local_targets[subject] = {}
+        requested_decisions = requested_decisions_by_subject.get(subject, ())
+        failure_reason = participant_failure_reasons.get(subject)
+        if failure_reason is not None:
+            if not failure_reason:
+                raise ValueError(
+                    f"requested participant {subject!r} has an empty selection failure reason."
+                )
+            participant_failures.append(
+                ParticipantSelectionFailure(
+                    participant_key=participant_by_subject[subject],
+                    stage="decision_selection",
+                    reason=failure_reason,
+                )
+            )
+            continue
+        if not requested_decisions:
+            raise ValueError(
+                f"requested participant {subject!r} has neither a decision nor a failure."
+            )
+        for decision in requested_decisions:
+            rows = (subjects == subject) & (selection_ids == decision)
+            unique_rows = np.unique(target_rows[rows])
+            unique_cols = np.unique(target_cols[rows])
+            if (
+                len(unique_rows) != 1
+                or len(unique_cols) != 1
+                or not 0 <= int(unique_rows[0]) < candidate_task.n_rows
+                or not 0 <= int(unique_cols[0]) < candidate_task.n_columns
+            ):
+                raise ValueError(
+                    f"Candidate decision {subject!r}/{decision!r} lacks one valid frozen target."
+                )
+            target = row_column_target(int(unique_rows[0]), int(unique_cols[0]))
+            local_targets[subject][decision] = target
+            entries.append(
+                DecisionPlanEntry(
+                    participant_key=participant_by_subject[subject],
+                    decision_id=decision,
+                    target_candidate=target,
+                )
+            )
+    plan = DecisionPlanContract(
+        target_cache_sha256=target_cache_sha256,
+        target_identity_digest=dataset.identity_table.digest(),
+        requested_participant_keys=tuple(
+            participant_by_subject[subject] for subject in requested_subjects
+        ),
+        entries=tuple(entries),
+        participant_selection_failures=tuple(participant_failures),
+    )
+    return plan, local_targets
+
+
+def _validate_cached_candidate_labels(dataset) -> CandidateTaskContract:
+    import numpy as np
+
+    from data.candidate_task import (
+        candidate_task_contract_from_provenance,
+        validate_candidate_membership_metadata,
+    )
+
+    if dataset.metadata is None or dataset.y is None:
+        raise ValueError("Candidate cache requires metadata and binary labels.")
+    contract = candidate_task_contract_from_provenance(dataset.provenance)
+    validate_candidate_membership_metadata(
+        dataset.metadata,
+        contract,
+        labels=np.asarray(dataset.y),
+    )
+    return contract
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dataset-cache", required=True)
+    parser.add_argument("--checkpoint", default=None)
+    parser.add_argument("--arm-name", required=True)
+    parser.add_argument("--training-replicate-key", required=True)
+    parser.add_argument("--partition-key", required=True)
+    parser.add_argument("--source-snapshot-manifest", type=Path, required=True)
+    parser.add_argument("--evaluation-snapshot-manifest", type=Path)
+    parser.add_argument(
+        "--identity-exclusion-policy",
+        required=True,
+        choices=("source", "source_or_global", "global"),
+    )
+    parser.add_argument("--calibration-selections", type=int, default=5)
+    parser.add_argument("--test-reps", type=int, default=MIN_PROMOTION_HIT_AT_R)
+    parser.add_argument(
+        "--min-evidence-level",
+        type=int,
+        default=MIN_PROMOTION_HIT_AT_R,
+        help=(
+            "Declared minimum evidence horizon for this run's hit@R claim. "
+            f"Defaults to {MIN_PROMOTION_HIT_AT_R} (promotion depth); a development "
+            "estimand may declare a shallower horizon explicitly."
+        ),
+    )
+    parser.add_argument("--max-test-selections", type=int, default=None)
+    parser.add_argument(
+        "--head",
+        choices=("auto", "zero_shot", "classifier_fine", "linear", "mlp16", "full_fine", "adapter"),
+        default="auto",
+    )
+    parser.add_argument("--epochs", type=int, default=None)
+    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--lr", type=float, default=None)
+    parser.add_argument(
+        "--epoch-selection",
+        choices=("fixed_budget", "target_time_split"),
+        default="fixed_budget",
+    )
+    parser.add_argument(
+        "--adapt-batchnorm",
+        action="store_true",
+        help="Experimental full-fine arm: update target BatchNorm running statistics.",
+    )
+    parser.add_argument(
+        "--normalization",
+        choices=("auto", "source", "target_prefix", "shrinkage"),
+        default="auto",
+    )
+    parser.add_argument("--target-stat-weight", type=float, default=0.25)
+    parser.add_argument(
+        "--candidate-loss-weight",
+        type=float,
+        default=None,
+        help="Sum-membership decision weight; explicit 0 keeps the same decision workset control.",
+    )
+    parser.add_argument(
+        "--candidate-loss-temperature",
+        type=float,
+        default=1.0,
+        help="Temperature of the row/column candidate ranking softmax.",
+    )
+    parser.add_argument(
+        "--as-mmd-lambda0",
+        type=float,
+        default=0.0,
+        help="Base weight of logit-level marginal AS-MMD during target adaptation.",
+    )
+    parser.add_argument("--as-mmd-warmup-epochs", type=int, default=1)
+    parser.add_argument("--as-mmd-target-weight-min", type=float, default=1.0)
+    parser.add_argument("--as-mmd-target-weight-max", type=float, default=6.0)
+    parser.add_argument(
+        "--as-mmd-source-logits",
+        type=Path,
+        default=None,
+        help="Optional .npz with keys logits/labels from the frozen source checkpoint.",
+    )
+    parser.add_argument(
+        "--source-stream-cache",
+        type=Path,
+        default=None,
+        help=(
+            "Attested EpochDataset source cache used as a live AS-MMD source "
+            "stream instead of frozen checkpoint logits."
+        ),
+    )
+    parser.add_argument(
+        "--source-selection-record",
+        type=Path,
+        default=None,
+        help="Optional PDS source-selection JSON bound to --source-stream-cache.",
+    )
+
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--fold-local-qc",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+    )
+    parser.add_argument("--max-subjects", type=int, default=None)
+    parser.add_argument(
+        "--target-subjects-file",
+        type=Path,
+        default=None,
+        help="JSON list or newline-delimited target subjects assigned to this checkpoint.",
+    )
+    parser.add_argument("--device", default="auto")
+    parser.add_argument(
+        "--cpu-threads",
+        type=int,
+        default=None,
+        help="Pin this result worker to a fixed native thread budget.",
+    )
+    parser.add_argument(
+        "--zero-shot-feature-cache",
+        type=Path,
+        default=None,
+        help="Optional per-partition feature/logit memo for zero_shot arms.",
+    )
+    parser.add_argument("--output", required=True)
+    args = parser.parse_args(argv)
+    if args.fold_local_qc and args.epoch_selection == "target_time_split":
+        parser.error(
+            "target_time_split cannot use outer-calibration fold-local QC; "
+            "use --no-fold-local-qc or --epoch-selection fixed_budget until "
+            "QC fitting and refit support separate inner-training scopes"
+        )
+
+    import numpy as np
+    import torch
+    from sklearn.metrics import roc_auc_score
+
+    from baselines.calibration import calibration_data_from_model, fit_weighted_logit_temperature
+    from data.artifact import FoldLocalArtifactPolicy, apply_fold_local_artifact_policy
+    from data.contract import assert_causal_p300_input_contract
+    from data.domain import source_domain_ids, source_domain_vocabulary
+    from data.epochs import epoch_row_identity_digest, loaded_epoch_cache_attestation
+    from data.qc_features import compute_epoch_qc_features
+    from models.adapters import source_domain_axis_from_record
+    from models.candidate_evidence import MEMBERSHIP_SCORE_METHOD
+    from models.n2p3net import N2P3Net
+    from models.splitbn import splitbn_config_from_record
+    from research.evaluation import (
+        build_evaluation_run_contract,
+        checkpoint_model_origin,
+        scratch_model_origin,
+    )
+    from train.device import get_device
+    from train.runtime import is_oom_error
+    from transfer.calibration_candidates import calibration_decision_groups, remap_decision_groups
+    from transfer.candidate_decision import decision_outcomes_at_repetition
+    from transfer.checkpoint import (
+        assert_checkpoint_target_identity_excluded,
+        checkpoint_architecture_record,
+        checkpoint_classifier_is_trained,
+        checkpoint_input_stats,
+        checkpoint_scores_to_llr,
+        checkpoint_training_contract,
+        predict_n2p3_checkpoint_with_features,
+    )
+    from transfer.cohort import read_subject_manifest, resolve_subject_scope
+    from transfer.decision_loss import DirectDecisionContractError
+    from transfer.outcomes import (
+        DecisionKey,
+        DecisionStatus,
+        build_decision_outcome_accounting,
+    )
+    from transfer.subject_adapter import SubjectAdapter, SubjectAdapterConfig
+    from transfer.within_subject import chronological_time_validation_split
+
+    if args.cpu_threads is not None:
+        if args.cpu_threads < 1:
+            parser.error("--cpu-threads must be at least one")
+        os.environ["OMP_NUM_THREADS"] = str(args.cpu_threads)
+        os.environ["MKL_NUM_THREADS"] = str(args.cpu_threads)
+        os.environ["OPENBLAS_NUM_THREADS"] = str(args.cpu_threads)
+        torch.set_num_threads(args.cpu_threads)
+    if args.candidate_loss_weight is not None and (not np.isfinite(args.candidate_loss_weight) or args.candidate_loss_weight < 0.0):
+        parser.error("--candidate-loss-weight must be non-negative")
+    if args.candidate_loss_temperature <= 0.0:
+        parser.error("--candidate-loss-temperature must be positive")
+    if args.as_mmd_lambda0 < 0.0:
+        parser.error("--as-mmd-lambda0 must be non-negative")
+    if args.as_mmd_warmup_epochs < 1:
+        parser.error("--as-mmd-warmup-epochs must be at least one")
+    if not 0.0 < args.as_mmd_target_weight_min <= args.as_mmd_target_weight_max:
+        parser.error("AS-MMD target-weight bounds must satisfy 0 < min <= max")
+    if args.source_stream_cache is not None and args.as_mmd_lambda0 == 0.0:
+        parser.error("--source-stream-cache is only valid with --as-mmd-lambda0 > 0")
+    if args.as_mmd_lambda0 > 0.0:
+        supplied_source_inputs = sum(
+            value is not None for value in (args.as_mmd_source_logits, args.source_stream_cache)
+        )
+        if supplied_source_inputs != 1:
+            parser.error(
+                "--as-mmd-lambda0 > 0 requires exactly one of "
+                "--as-mmd-source-logits or --source-stream-cache"
+            )
+
+    try:
+        assert_promotion_evidence_gate(
+            args.test_reps,
+            minimum_evidence_level=args.min_evidence_level,
+            name="candidate promotion runner",
+        )
+    except ValueError as error:
+        parser.error(str(error))
+    source_snapshot_identity = _cached_verified_source_snapshot(
+        str(args.source_snapshot_manifest.resolve())
+    )
+    source_snapshot_sha256 = str(source_snapshot_identity["archive_sha256"])
+    evaluation_manifest = args.evaluation_snapshot_manifest or args.source_snapshot_manifest
+    evaluation_snapshot_identity = _cached_verified_source_snapshot(
+        str(evaluation_manifest.resolve())
+    )
+    evaluation_snapshot_sha256 = str(evaluation_snapshot_identity["archive_sha256"])
+    if args.target_subjects_file is not None and args.max_subjects is not None:
+        parser.error(
+            "--target-subjects-file defines the exact denominator; do not combine it "
+            "with --max-subjects"
+        )
+
+    device = torch.device(args.device) if args.device != "auto" else get_device()
+    dataset = _cached_attested_dataset_memo(str(Path(args.dataset_cache).resolve()))
+    target_cache_sha256 = str(loaded_epoch_cache_attestation(dataset)["sha256"])
+    assert_causal_p300_input_contract(dataset.preprocessing)
+    candidate_task = _validate_cached_candidate_labels(dataset)
+    split = _cached_candidate_split(
+        str(Path(args.dataset_cache).resolve()),
+        args.calibration_selections,
+        args.test_reps,
+        args.min_evidence_level,
+        args.max_test_selections,
+    )
+    manifest_subjects = (
+        read_subject_manifest(args.target_subjects_file)
+        if args.target_subjects_file is not None
+        else None
+    )
+    try:
+        requested_order, usable_order = resolve_subject_scope(
+            np.asarray(dataset.subject_ids).astype(str),
+            split.usable_subjects,
+            requested_subjects=manifest_subjects,
+            max_subjects=args.max_subjects,
+        )
+    except ValueError as error:
+        parser.error(str(error))
+    requested_subjects = set(requested_order)
+    if dataset.identity_table is None:
+        raise ValueError("Candidate cache lacks the current participant identity table.")
+    participant_by_subject = {
+        subject: dataset.identity_table.record_for(subject).authority_key(
+            args.identity_exclusion_policy
+        )
+        for subject in requested_order
+    }
+    decision_plan, target_by_subject = _build_decision_plan(
+        dataset,
+        candidate_task=candidate_task,
+        requested_subjects=tuple(requested_order),
+        requested_decisions_by_subject=split.requested_test_selections_by_subject,
+        participant_by_subject=participant_by_subject,
+        participant_failure_reasons=split.excluded_subjects,
+        target_cache_sha256=target_cache_sha256,
+    )
+    subjects = np.asarray(usable_order)
+
+    checkpoint_payload = (
+        _cached_checkpoint_payload(str(Path(args.checkpoint).resolve()))
+        if args.checkpoint
+        else None
+    )
+    if (
+        checkpoint_payload is not None
+        and checkpoint_training_contract(checkpoint_payload).source_snapshot_sha256
+        != source_snapshot_sha256
+    ):
+        raise ValueError(
+            "checkpoint TrainingRunContract source snapshot disagrees with the "
+            "verified physical source freeze."
+        )
+    if checkpoint_payload is not None:
+        if not requested_order:
+            raise AssertionError("validated target scope unexpectedly has no participant")
+        _load_trunk(
+            checkpoint_payload,
+            dataset,
+            target_subject=requested_order[0],
+            identity_exclusion_policy=args.identity_exclusion_policy,
+        )
+        for target_subject in requested_order[1:]:
+            assert_checkpoint_target_identity_excluded(
+                checkpoint_payload,
+                dataset,
+                target_subject=target_subject,
+                identity_exclusion_policy=args.identity_exclusion_policy,
+            )
+    checkpoint_stats = (
+        checkpoint_input_stats(checkpoint_payload, dataset.n_channels)
+        if checkpoint_payload is not None
+        else None
+    )
+    checkpoint_sha256 = (
+        _cached_sha256_file(str(Path(args.checkpoint).resolve())) if args.checkpoint else None
+    )
+    as_mmd_input_mode = "none"
+    as_mmd_source_logits = None
+    as_mmd_source_labels = None
+    source_stream_sha256: str | None = None
+    source_selection_record_path = (
+        str(Path(args.source_selection_record).resolve())
+        if args.source_selection_record is not None
+        else None
+    )
+    source_vocabulary: tuple[str, ...] | None = None
+    source_X_stream: np.ndarray | None = None
+    source_labels_stream: np.ndarray | None = None
+    source_domain_indices_stream: np.ndarray | None = None
+    if args.as_mmd_lambda0 > 0.0:
+        if args.source_stream_cache is not None:
+            as_mmd_input_mode = "source_stream"
+        else:
+            assert args.as_mmd_source_logits is not None
+            as_mmd_input_mode = "frozen_logits"
+            with np.load(args.as_mmd_source_logits, allow_pickle=False) as archive:
+                if "logits" not in archive.files or "labels" not in archive.files:
+                    raise ValueError("as-mmd source logits npz requires logits/labels.")
+                as_mmd_source_logits = np.asarray(archive["logits"], dtype=np.float32)
+                as_mmd_source_labels = np.asarray(archive["labels"], dtype=np.int64)
+            if as_mmd_source_logits.ndim != 2 or as_mmd_source_labels.shape != (
+                as_mmd_source_logits.shape[0],
+            ):
+                raise ValueError("as-mmd source logits/labels must be aligned (N,classes)/(N,).")
+            if bool(((as_mmd_source_labels < 0) | (as_mmd_source_labels > 1)).any()):
+                raise ValueError("as-mmd source labels must be binary 0/1.")
+    head_mode = args.head
+    if head_mode == "auto":
+        head_mode = "zero_shot" if checkpoint_payload is not None else "linear"
+    if head_mode in {"zero_shot", "classifier_fine"} and checkpoint_payload is None:
+        parser.error(f"--head {head_mode} requires --checkpoint")
+    if head_mode in {"zero_shot", "classifier_fine"} and not checkpoint_classifier_is_trained(
+        checkpoint_payload
+    ):
+        parser.error(f"--head {head_mode} requires a supervised classifier checkpoint")
+    if head_mode == "zero_shot" and args.fold_local_qc:
+        parser.error("zero_shot cannot fit target calibration QC")
+    normalization = args.normalization
+    if normalization == "auto":
+        normalization = "source" if checkpoint_payload is not None else "target_prefix"
+    if checkpoint_payload is None and normalization in {"source", "shrinkage"}:
+        parser.error(f"--normalization {normalization} requires --checkpoint")
+    if head_mode == "zero_shot" and normalization != "source":
+        parser.error("zero_shot uses source checkpoint statistics")
+    if as_mmd_input_mode == "source_stream":
+        if checkpoint_payload is None:
+            parser.error("--source-stream-cache requires a SplitBN checkpoint")
+        if head_mode != "full_fine":
+            parser.error("live AS-MMD source-stream adaptation requires --head full_fine")
+        normalization_record = checkpoint_architecture_record(checkpoint_payload)["normalization"]
+        source_splitbn_config = splitbn_config_from_record(normalization_record)
+        if source_splitbn_config is None:
+            parser.error("live AS-MMD source-stream adaptation requires a SplitBN checkpoint")
+        source_cache_path = Path(args.source_stream_cache).resolve()
+        source_dataset = _cached_attested_dataset_memo(str(source_cache_path))
+        source_stream_sha256 = str(loaded_epoch_cache_attestation(source_dataset)["sha256"])
+        if (
+            source_dataset.n_channels != dataset.n_channels
+            or source_dataset.n_times != dataset.n_times
+        ):
+            raise ValueError("source-stream cache must match the target cache n_channels/n_times.")
+        if tuple(source_dataset.channel_names) != tuple(dataset.channel_names):
+            raise ValueError("source-stream cache channel names disagree with the target cache.")
+        training_contract = checkpoint_training_contract(checkpoint_payload)
+        contract_channels = training_contract.preprocessing.get("channel_names")
+        if contract_channels is not None and list(contract_channels) != list(
+            source_dataset.channel_names
+        ):
+            raise ValueError(
+                "checkpoint training-contract channel names disagree with the source cache."
+            )
+        axis_record = checkpoint_payload.get("source_domain_axis")
+        if not isinstance(axis_record, Mapping):
+            raise ValueError("checkpoint lacks a source_domain_axis vocabulary.")
+        try:
+            checkpoint_vocabulary, _ = source_domain_axis_from_record(axis_record)
+        except (TypeError, ValueError) as error:
+            raise ValueError(f"checkpoint source_domain_axis is invalid: {error}") from error
+        source_vocabulary = source_domain_vocabulary(source_dataset)
+        if checkpoint_vocabulary != source_vocabulary:
+            raise ValueError(
+                "checkpoint SplitBN domain vocabulary must exactly match the "
+                f"source-stream cache vocabulary: {checkpoint_vocabulary} != "
+                f"{source_vocabulary}."
+            )
+        if len(checkpoint_vocabulary) != source_splitbn_config.domain_count:
+            raise ValueError(
+                "checkpoint SplitBN domain count disagrees with its source-domain vocabulary."
+            )
+        domain_to_index = {
+            domain: domain_index for domain_index, domain in enumerate(checkpoint_vocabulary)
+        }
+        raw_domain_ids = source_domain_ids(source_dataset)
+        source_domain_indices_stream = np.asarray(
+            [domain_to_index[str(domain)] for domain in raw_domain_ids],
+            dtype=np.int64,
+        )
+        source_X_stream = np.asarray(source_dataset.X, dtype=np.float32)
+        source_labels_stream = np.asarray(source_dataset.y, dtype=np.int64)
+        if args.source_selection_record is not None:
+            assert source_selection_record_path is not None
+            selection_path = Path(source_selection_record_path)
+            selection, _ = _load_source_selection(
+                selection_path,
+                source_cache_sha256=source_stream_sha256,
+                row_identity_digest=epoch_row_identity_digest(source_dataset),
+            )
+            if selection.source_count != source_dataset.n_epochs:
+                raise ValueError(
+                    "PDS source-selection source_count disagrees with the loaded "
+                    f"source cache ({selection.source_count} vs {source_dataset.n_epochs})."
+                )
+            selection_mask = np.zeros(source_dataset.n_epochs, dtype=bool)
+            selection_mask[selection.selected_indices] = True
+            source_X_stream = source_X_stream[selection_mask]
+            source_labels_stream = source_labels_stream[selection_mask]
+            source_domain_indices_stream = source_domain_indices_stream[selection_mask]
+        if len(source_X_stream) < 2:
+            raise ValueError("live AS-MMD source stream must retain at least two rows.")
+    epochs = (
+        0
+        if head_mode == "zero_shot"
+        else int(args.epochs)
+        if args.epochs is not None
+        else 5
+        if head_mode in {"classifier_fine", "full_fine"}
+        else 30
+    )
+    lr = (
+        0.0
+        if head_mode == "zero_shot"
+        else float(args.lr)
+        if args.lr is not None
+        else 1e-4
+        if head_mode in {"classifier_fine", "full_fine"}
+        else 1e-3
+    )
+    trial_mask = (
+        np.asarray(dataset.trial_channel_mask, dtype=bool)
+        if dataset.trial_channel_mask is not None
+        else np.broadcast_to(
+            np.asarray(dataset.channel_mask, dtype=bool), dataset.X.shape[:2]
+        ).copy()
+    )
+    qc_features = dataset.qc_features
+    if qc_features is None and args.fold_local_qc:
+        qc_features = compute_epoch_qc_features(
+            dataset.X,
+            channel_mask=np.asarray(dataset.channel_mask, dtype=bool),
+            trial_channel_mask=trial_mask,
+        )
+    evidence = np.asarray(dataset.event_timeline.evidence_indices, dtype=np.int64)
+    available_events = np.flatnonzero(evidence >= 0)
+    onset_by_epoch = np.empty(dataset.n_epochs, dtype=float)
+    available_by_epoch = np.empty(dataset.n_epochs, dtype=float)
+    onset_by_epoch[evidence[available_events]] = np.asarray(
+        dataset.event_timeline.onset_times_s, dtype=float
+    )[available_events]
+    available_by_epoch[evidence[available_events]] = np.asarray(
+        dataset.event_timeline.evidence_available_times_s, dtype=float
+    )[available_events]
+
+    records = []
+    oom_fit_failure_subjects: list[str] = []
+    outcomes_by_subject: dict[str, tuple[DecisionOutcome, ...]] = {}
+    for subject in subjects:
+        subject_rows = np.flatnonzero(dataset.subject_ids == subject)
+        pre_rows = subject_rows[split.calibration_mask[subject_rows]]
+        post_rows = subject_rows[split.test_mask[subject_rows]]
+        if not len(pre_rows) or not len(post_rows):
+            raise AssertionError(
+                f"usable candidate-task subject {subject!s} lacks calibration or test rows."
+            )
+        local_rows = np.concatenate((pre_rows, post_rows))
+        local_train = np.zeros(len(local_rows), dtype=bool)
+        local_train[: len(pre_rows)] = True
+        local_test = ~local_train
+        local_meta = dataset.metadata.iloc[local_rows]
+        local_groups = local_meta["selection_id"].astype(str).to_numpy()
+        local_X = np.asarray(dataset.X[local_rows], dtype=np.float32)
+        local_y = np.asarray(dataset.y[local_rows], dtype=np.int64)
+        local_mask = trial_mask[local_rows]
+        local_qc = None if qc_features is None else qc_features.subset(local_rows)
+        decision_scope = None
+        if args.candidate_loss_weight is not None:
+            authorized = np.zeros(dataset.n_epochs, dtype=bool)
+            authorized[pre_rows] = True
+            decision_scope = calibration_decision_groups(dataset, authorized)
+            if not decision_scope[0]:
+                raise ValueError(f"candidate loss requires authorized physical decisions: {decision_scope[3]['reason']}")
+        artifact_audit = {"enabled": False, "scope": "known_calibration_decisions"}
+        if args.fold_local_qc:
+            local_X, local_mask, effective_train, artifact_audit = apply_fold_local_artifact_policy(
+                FoldLocalArtifactPolicy(),
+                local_X,
+                local_groups,
+                local_train,
+                local_test,
+                local_mask,
+                local_qc,
+                materialize_masked_data=True,
+            )
+            effective_train &= local_train
+            before_counts = np.bincount(local_y[local_train], minlength=2)
+            after_counts = np.bincount(local_y[effective_train], minlength=2)
+            artifact_audit["train_label_counts_before"] = before_counts.astype(int).tolist()
+            artifact_audit["train_label_counts_after"] = after_counts.astype(int).tolist()
+            artifact_audit["train_label_retention"] = (
+                after_counts / np.maximum(before_counts, 1)
+            ).tolist()
+        else:
+            effective_train = local_train
+
+        trunk = (
+            _load_trunk(
+                checkpoint_payload,
+                dataset,
+                target_subject=str(subject),
+                identity_exclusion_policy=args.identity_exclusion_policy,
+            )
+            if args.checkpoint
+            else N2P3Net(
+                dataset.n_channels,
+                n_times=dataset.n_times,
+                sfreq=dataset.preprocessing.sfreq,
+                tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
+                pooling_mode="ms_flatten",
+            )
+        )
+        suffix_X = local_X[local_test]
+        suffix_mask = local_mask[local_test]
+        y_post = local_y[local_test]
+        if head_mode == "zero_shot":
+            assert checkpoint_payload is not None and checkpoint_stats is not None
+            assert checkpoint_sha256 is not None
+            feature_cache_header = _zero_shot_cache_header(
+                checkpoint_sha256=checkpoint_sha256,
+                target_cache_sha256=target_cache_sha256,
+                evaluation_snapshot_sha256=evaluation_snapshot_sha256,
+                partition_key=args.partition_key,
+                epoch_rows=post_rows,
+                test_reps=args.test_reps,
+            )
+            feature_cache = _read_zero_shot_feature_cache(
+                args.zero_shot_feature_cache,
+                feature_cache_header,
+            )
+            if feature_cache is not None:
+                if feature_cache["scores"].shape != (len(post_rows),):
+                    raise AssertionError("cached zero-shot scores disagree with row scope")
+                suffix_logits = feature_cache["scores"].astype(np.float64, copy=False)
+            else:
+                suffix_logits, zero_shot_features = predict_n2p3_checkpoint_with_features(
+                    trunk,
+                    suffix_X,
+                    input_stats=checkpoint_stats,
+                    device=device,
+                    trial_channel_mask=suffix_mask,
+                )
+                if args.zero_shot_feature_cache is not None and zero_shot_features is not None:
+                    _write_zero_shot_feature_cache(
+                        args.zero_shot_feature_cache,
+                        header=feature_cache_header,
+                        features=zero_shot_features,
+                        scores=suffix_logits,
+                    )
+            suffix_llr, calibration_record = checkpoint_scores_to_llr(
+                checkpoint_payload, suffix_logits
+            )
+            total_parameters = trunk.parameter_count()
+            trainable_parameters = 0
+            refit_record = {"enabled": False, "mode": "zero_shot"}
+        else:
+            adapter = SubjectAdapter(
+                trunk,
+                config=SubjectAdapterConfig(
+                    head_kind=head_mode,
+                    epochs=epochs,
+                    batch_size=args.batch_size,
+                    lr=lr,
+                    seed=args.seed,
+                    val_group_fraction=(None if args.epoch_selection == "fixed_budget" else 0.1),
+                    refit_full_prefix=args.epoch_selection == "target_time_split",
+                    freeze_batchnorm_stats=not args.adapt_batchnorm,
+                    input_statistics=normalization,
+                    target_stat_weight=args.target_stat_weight,
+                    candidate_loss_weight=0. if args.candidate_loss_weight is None else args.candidate_loss_weight,
+                    candidate_loss_temperature=args.candidate_loss_temperature,
+                    as_mmd_lambda0=args.as_mmd_lambda0,
+                    as_mmd_warmup_epochs=args.as_mmd_warmup_epochs,
+                    as_mmd_target_weight_min=args.as_mmd_target_weight_min,
+                    as_mmd_target_weight_max=args.as_mmd_target_weight_max,
+                    input_mean=None if checkpoint_stats is None else checkpoint_stats[0],
+                    input_std=None if checkpoint_stats is None else checkpoint_stats[1],
+                ),
+                device=device,
+            )
+            calibration_rows = local_rows[effective_train]
+            candidate_fit_kwargs: dict[str, object] = {}
+            if decision_scope is not None:
+                groups, targets, weights, decision_ledger = decision_scope
+                candidate_fit_kwargs = {
+                    "decision_groups": remap_decision_groups(groups, calibration_rows),
+                    "decision_targets": targets,
+                    "decision_weights": weights,
+                }
+                artifact_audit["decision_scope"] = decision_ledger
+
+            as_mmd_fit_kwargs: dict[str, object] = {}
+            if as_mmd_input_mode == "frozen_logits":
+                as_mmd_fit_kwargs = {
+                    "source_logits": as_mmd_source_logits,
+                    "source_labels": as_mmd_source_labels,
+                }
+            elif as_mmd_input_mode == "source_stream":
+                as_mmd_fit_kwargs = {
+                    "source_X": source_X_stream,
+                    "source_labels": source_labels_stream,
+                    "source_domain_indices": source_domain_indices_stream,
+                }
+
+            inner = None
+            subject_failure: ExpectedSubjectError | None = None
+            try:
+                if args.epoch_selection == "target_time_split":
+                    inner = chronological_time_validation_split(
+                        onset_by_epoch[calibration_rows],
+                        available_by_epoch[calibration_rows],
+                        local_y[effective_train],
+                        epoch_start_offset_s=float(dataset.preprocessing.tmin_ms) / 1000.0,
+                    )
+                    adapter.fit(
+                        local_X[effective_train],
+                        local_y[effective_train],
+                        training_mask=inner.train_mask,
+                        validation_mask=inner.validation_mask,
+                        prefix_mask=np.ones(len(calibration_rows), dtype=bool),
+                        trial_channel_mask=local_mask[effective_train],
+                        **candidate_fit_kwargs,
+                        **as_mmd_fit_kwargs,
+                    )
+                else:
+                    adapter.fit(
+                        local_X[effective_train],
+                        local_y[effective_train],
+                        trial_channel_mask=local_mask[effective_train],
+                        **candidate_fit_kwargs,
+                        **as_mmd_fit_kwargs,
+                    )
+                suffix_logits = adapter.predict_logit(suffix_X, trial_channel_mask=suffix_mask)
+            except ExpectedSubjectError as failure:
+                subject_failure = failure
+            except DirectDecisionContractError:
+                # A P2 contract violation invalidates the whole run; it is never
+                # downgraded to a subject-local failure.
+                raise
+            except RuntimeError as error:
+                if not is_oom_error(error):
+                    raise
+                # Accelerator OOM that survives the batch-size retry ladder is a
+                # predeclared subject-local failure: it enters the ledger as
+                # accelerator_oom and keeps the full requested denominator.
+                subject_failure = ExpectedSubjectError(
+                    SubjectFailureCode.ACCELERATOR_OOM,
+                    stage="subject_fit",
+                    detail=str(error),
+                )
+                oom_fit_failure_subjects.append(str(subject))
+            if subject_failure is not None:
+                failure = subject_failure
+                requested_test = split.requested_test_selections_by_subject[str(subject)]
+                eligible_test = split.test_selections_by_subject[str(subject)]
+                failed_test = split.failed_test_selections_by_subject[str(subject)]
+                subject_outcomes = (
+                    *_fit_failure_decision_outcomes(
+                        subject=str(subject),
+                        decisions=eligible_test,
+                        test_repetitions=args.test_reps,
+                        failure=failure,
+                        target_by_decision=target_by_subject[str(subject)],
+                        candidate_task=candidate_task,
+                    ),
+                    *_failed_decision_outcomes(
+                        subject=str(subject),
+                        requested_decisions=requested_test,
+                        failure_reasons=failed_test,
+                        test_repetitions=args.test_reps,
+                        target_by_decision=target_by_subject[str(subject)],
+                        candidate_task=candidate_task,
+                    ),
+                )
+                outcomes_by_subject[str(subject)] = tuple(subject_outcomes)
+                records.append(
+                    {
+                        "subject": str(subject),
+                        "participant_key": participant_by_subject[str(subject)],
+                        "binary_auc": None,
+                        "eligible_hit_rate_by_evidence": {
+                            level: 0.0 for level in range(1, args.test_reps + 1)
+                        },
+                        "fit_failure": failure.record(subject=str(subject)),
+                        "decision_accounting": _accounting_record(
+                            tuple(subject_outcomes),
+                            subject=str(subject),
+                            requested_decisions=requested_test,
+                            eligible_decisions=eligible_test,
+                            test_repetitions=args.test_reps,
+                        ),
+                        "decision_outcomes": [
+                            {
+                                **outcome.to_record(),
+                                "participant_key": participant_by_subject[str(subject)],
+                            }
+                            for outcome in subject_outcomes
+                        ],
+                    }
+                )
+                continue
+            if inner is not None:
+                calibration_logits, calibration_y, calibration_source = calibration_data_from_model(
+                    adapter, local_X[effective_train], local_y[effective_train]
+                )
+                calibration = fit_weighted_logit_temperature(
+                    calibration_logits,
+                    calibration_y,
+                    pos_weight=float(adapter.training_pos_weight_),
+                    train_prior=float(adapter.training_prior_),
+                    source=calibration_source,
+                )
+                suffix_llr = calibration.to_llr(suffix_logits)
+                calibration_record = {
+                    "mode": "weighted_ce_llr_pre_refit_selection_scale",
+                    "source": calibration.source,
+                    "n_samples": calibration.n_samples,
+                    "temperature": calibration.temperature,
+                    "offset": calibration.offset,
+                    "order_preserving": True,
+                    "probability_calibration_valid_for_refit_model": False,
+                }
+            else:
+                suffix_llr, calibration_record = checkpoint_scores_to_llr(
+                    {
+                        "source_calibration": {
+                            "pos_weight": adapter.training_pos_weight_,
+                            "train_prior": adapter.training_prior_,
+                            "temperature": 1.0,
+                            "source": "target_fixed_budget_weighted_ce_analytic",
+                        }
+                    },
+                    suffix_logits,
+                )
+                calibration_record["source"] = "target_fixed_budget_weighted_ce_analytic"
+            total_parameters = adapter.total_parameter_count()
+            trainable_parameters = adapter.parameter_count()
+            refit_record = {
+                "enabled": bool(adapter.last_history.get("refit_full_prefix")),
+                "selected_epochs": adapter.last_history.get("best_epoch"),
+                "refit_epochs": adapter.last_history.get("refit_epochs"),
+                "fit_scope": dict(adapter.last_history["fit_scope"]),
+                "as_mmd_losses": list(adapter.last_history["refit_as_mmd_losses"]),
+                "initial_fit_as_mmd_losses": list(adapter.last_history["as_mmd_losses"]),
+                "inner_embargo_trials": int(
+                    np.count_nonzero(inner.embargo_mask)
+                    if inner is not None and inner.embargo_mask is not None
+                    else 0
+                ),
+                "epoch_selection": args.epoch_selection,
+            }
+        auc = None
+        if len(np.unique(y_post)) == 2:
+            auc = float(roc_auc_score(y_post, suffix_logits))
+        meta = dataset.metadata.iloc[post_rows]
+        evaluated_outcomes = decision_outcomes_at_repetition(
+            suffix_llr,
+            meta["candidate_id"].to_numpy(dtype=np.int64),
+            meta["target_row"].to_numpy(dtype=np.int64),
+            meta["target_col"].to_numpy(dtype=np.int64),
+            meta["selection_id"].astype(str).to_numpy(),
+            split.test_repetition_indices[post_rows],
+            contract=candidate_task,
+            subject_ids=np.repeat(str(subject), len(post_rows)),
+            onset_times_s=onset_by_epoch[post_rows],
+            evidence_available_times_s=available_by_epoch[post_rows],
+            max_repetitions=args.test_reps,
+        )
+        requested_test = split.requested_test_selections_by_subject[str(subject)]
+        eligible_test = split.test_selections_by_subject[str(subject)]
+        failed_test = split.failed_test_selections_by_subject[str(subject)]
+        failed_outcomes = _failed_decision_outcomes(
+            subject=str(subject),
+            requested_decisions=requested_test,
+            failure_reasons=failed_test,
+            test_repetitions=args.test_reps,
+            target_by_decision=target_by_subject[str(subject)],
+            candidate_task=candidate_task,
+        )
+        indexed_outcomes = {
+            (outcome.key.decision_id, outcome.evidence_level): outcome
+            for outcome in (*evaluated_outcomes, *failed_outcomes)
+        }
+        subject_outcomes = tuple(
+            indexed_outcomes[(decision, repetition)]
+            for decision in requested_test
+            for repetition in range(1, args.test_reps + 1)
+        )
+        outcomes_by_subject[str(subject)] = subject_outcomes
+        decision_accounting = _accounting_record(
+            subject_outcomes,
+            subject=str(subject),
+            requested_decisions=requested_test,
+            eligible_decisions=eligible_test,
+            test_repetitions=args.test_reps,
+        )
+        evaluated_accounting = build_decision_outcome_accounting(
+            evaluated_outcomes,
+            requested_decisions=[DecisionKey(str(subject), decision) for decision in eligible_test],
+            evidence_levels=range(1, args.test_reps + 1),
+        )
+        eligible_hit_rate_by_evidence = {
+            counts.evidence_level: (
+                counts.correct / len(eligible_test) if eligible_test else float("nan")
+            )
+            for counts in evaluated_accounting.counts_by_evidence
+        }
+        records.append(
+            {
+                "subject": str(subject),
+                "participant_key": participant_by_subject[str(subject)],
+                "n_prefix": int(len(pre_rows)),
+                "n_prefix_after_qc": int(effective_train.sum()),
+                "n_suffix": int(len(post_rows)),
+                "binary_auc": auc,
+                "eligible_hit_rate_by_evidence": eligible_hit_rate_by_evidence,
+                "total_parameters": total_parameters,
+                "trainable_parameters": trainable_parameters,
+                "head": head_mode,
+                "calibration": calibration_record,
+                "prefix_refit": refit_record,
+                "artifact_quality": artifact_audit,
+                "calibration_selections": split.calibration_selections_by_subject[str(subject)],
+                "requested_test_selections": requested_test,
+                "test_selections": eligible_test,
+                "failed_test_selections": failed_test,
+                "decision_accounting": decision_accounting,
+                "decision_outcomes": [
+                    {
+                        **outcome.to_record(),
+                        "participant_key": participant_by_subject[str(subject)],
+                    }
+                    for outcome in subject_outcomes
+                ],
+                "suffix_predictions": {
+                    "epoch_rows": post_rows.astype(int).tolist(),
+                    "raw_logits": suffix_logits.tolist(),
+                    "llr_scores": suffix_llr.tolist(),
+                    "labels": y_post.astype(int).tolist(),
+                    "candidate_ids": meta["candidate_id"].to_numpy(dtype=np.int64).tolist(),
+                    "selection_ids": meta["selection_id"].astype(str).tolist(),
+                    "repetition_indices": (
+                        split.test_repetition_indices[post_rows].astype(int).tolist()
+                    ),
+                    "onset_times_s": onset_by_epoch[post_rows].tolist(),
+                    "evidence_available_times_s": available_by_epoch[post_rows].tolist(),
+                },
+            }
+        )
+        print(json.dumps(records[-1], ensure_ascii=False), flush=True)
+
+    subject_decision_ledger = []
+    for subject in sorted(requested_subjects, key=lambda value: participant_by_subject[value]):
+        selection_failed = subject in split.excluded_subjects
+        requested = (
+            () if selection_failed else split.requested_test_selections_by_subject.get(subject, ())
+        )
+        eligible = () if selection_failed else split.test_selections_by_subject.get(subject, ())
+        failed = (
+            {} if selection_failed else split.failed_test_selections_by_subject.get(subject, {})
+        )
+        if subject not in outcomes_by_subject:
+            outcomes_by_subject[subject] = _failed_decision_outcomes(
+                subject=subject,
+                requested_decisions=requested,
+                failure_reasons=failed,
+                test_repetitions=args.test_reps,
+                target_by_decision=target_by_subject[subject],
+                candidate_task=candidate_task,
+            )
+        subject_outcomes = outcomes_by_subject[subject]
+        accounting = _accounting_record(
+            subject_outcomes,
+            subject=subject,
+            requested_decisions=requested,
+            eligible_decisions=eligible,
+            test_repetitions=args.test_reps,
+        )
+        subject_decision_ledger.append(
+            {
+                "subject": subject,
+                "participant_key": participant_by_subject[subject],
+                **accounting,
+                "failed_test_selections": failed,
+                "subject_exclusion_reason": split.excluded_subjects.get(subject),
+            }
+        )
+    data_eligible_decisions = sum(item["data_eligible"] for item in subject_decision_ledger)
+    data_ineligible_decisions = sum(item["data_ineligible"] for item in subject_decision_ledger)
+    evaluation_successful_decisions = sum(
+        item["evaluation_successful"] for item in subject_decision_ledger
+    )
+    evaluation_failed_decisions = sum(item["evaluation_failed"] for item in subject_decision_ledger)
+    all_outcomes = tuple(
+        outcome
+        for subject in sorted(requested_subjects)
+        for outcome in outcomes_by_subject[subject]
+    )
+    global_accounting = build_decision_outcome_accounting(
+        all_outcomes,
+        requested_decisions=[
+            DecisionKey(subject, decision)
+            for subject in sorted(requested_subjects)
+            if subject not in split.excluded_subjects
+            for decision in split.requested_test_selections_by_subject.get(subject, ())
+        ],
+        evidence_levels=range(1, args.test_reps + 1),
+    )
+    decision_accounting = global_accounting.to_record()
+    decision_accounting["data_eligible"] = data_eligible_decisions
+    decision_accounting["data_ineligible"] = data_ineligible_decisions
+    decision_accounting["evaluation_successful"] = evaluation_successful_decisions
+    decision_accounting["evaluation_failed"] = evaluation_failed_decisions
+    participant_accounting = {
+        "requested": len(decision_plan.requested_participant_keys),
+        "decision_planned": len(decision_plan.participant_keys),
+        "selection_failed": len(decision_plan.participant_selection_failures),
+    }
+    participant_operational_endpoints = []
+    selection_failed_keys = {
+        failure.participant_key for failure in decision_plan.participant_selection_failures
+    }
+    for subject in sorted(requested_subjects):
+        participant_key = participant_by_subject[subject]
+        planned_decisions = sum(
+            entry.participant_key == participant_key for entry in decision_plan.entries
+        )
+        correct_at_r = sum(
+            outcome.key.subject_id == subject
+            and outcome.evidence_level == args.test_reps
+            and outcome.status is DecisionStatus.CORRECT
+            for outcome in all_outcomes
+        )
+        if participant_key in selection_failed_keys:
+            if planned_decisions:
+                raise AssertionError("selection-failed participant has planned decisions")
+            endpoint = 0.0
+        else:
+            if planned_decisions < 1:
+                raise AssertionError("planned participant has no decision denominator")
+            endpoint = correct_at_r / planned_decisions
+        participant_operational_endpoints.append(
+            {
+                "participant_key": participant_key,
+                "evidence_level": args.test_reps,
+                "planned_decisions": planned_decisions,
+                "correct_decisions": correct_at_r,
+                "selection_failed": participant_key in selection_failed_keys,
+                "requested_participant_operational_hit_rate": endpoint,
+            }
+        )
+    model_origin = (
+        checkpoint_model_origin(
+            checkpoint_payload,
+            checkpoint_sha256=checkpoint_sha256,
+        )
+        if checkpoint_payload is not None and checkpoint_sha256 is not None
+        else scratch_model_origin(
+            {
+                "model": "N2P3Net",
+                "pooling_mode": "ms_flatten",
+                "head": head_mode,
+                "seed": args.seed,
+                "n_channels": dataset.n_channels,
+                "n_times": dataset.n_times,
+            }
+        )
+    )
+    evaluation_contract = build_evaluation_run_contract(
+        arm_name=args.arm_name,
+        model_origin=model_origin,
+        dataset=dataset,
+        target_cache_sha256=target_cache_sha256,
+        source_snapshot_sha256=evaluation_snapshot_sha256,
+        requested_subjects=tuple(sorted(requested_subjects)),
+        identity_policy=args.identity_exclusion_policy,
+        target_protocol={
+            "estimand": "known_early_decisions_to_later_unknown_decisions",
+            "split_axis": "decision_time",
+            "calibration_truth_access": "adapter_visible",
+            "test_truth_access": "scorer_only",
+            "calibration_selections": args.calibration_selections,
+            "test_repetitions": args.test_reps,
+            "minimum_evidence_level": args.min_evidence_level,
+            "max_test_selections": args.max_test_selections,
+        },
+        adaptation={
+            "procedure": {
+                "head": head_mode,
+                "epochs": epochs,
+                "epoch_selection": args.epoch_selection,
+                "learning_rate": lr,
+                "batch_size": args.batch_size,
+                "adapt_batchnorm": bool(args.adapt_batchnorm),
+                "normalization": normalization,
+                "target_stat_weight": args.target_stat_weight,
+                "candidate_loss_weight": args.candidate_loss_weight,
+                "candidate_loss_score_kind": MEMBERSHIP_SCORE_METHOD if args.candidate_loss_weight is not None else None,
+                "candidate_loss_temperature": args.candidate_loss_temperature,
+                "as_mmd_lambda0": args.as_mmd_lambda0,
+                "as_mmd_warmup_epochs": args.as_mmd_warmup_epochs,
+                "as_mmd_target_weight_min": args.as_mmd_target_weight_min,
+                "as_mmd_target_weight_max": args.as_mmd_target_weight_max,
+                "as_mmd_input_mode": as_mmd_input_mode,
+                "source_stream_cache": (
+                    str(Path(args.source_stream_cache).resolve())
+                    if args.source_stream_cache is not None
+                    else None
+                ),
+                "source_stream_sha256": source_stream_sha256,
+                "source_selection_record": source_selection_record_path,
+                "source_domain_vocabulary": (
+                    None if source_vocabulary is None else list(source_vocabulary)
+                ),
+                "fold_local_qc": bool(args.fold_local_qc),
+                "identity_exclusion_policy": args.identity_exclusion_policy,
+            },
+            "replicate_parameters": {
+                "training_replicate_key": args.training_replicate_key,
+                "random_seed": args.seed,
+            },
+        },
+        decision={
+            "candidate_task_contract": candidate_task.record(),
+            "candidate_task_contract_digest": semantic_sha256(candidate_task.record()),
+            "aggregation": "cumulative_candidate_membership_llr",
+            "tie_policy": "abstain",
+            "test_repetitions": args.test_reps,
+        },
+        evidence_scope={
+            "stage": candidate_task.evidence_scope["stage"],
+            "population": dict(candidate_task.population),
+            "task": candidate_task.task_id,
+            "dataset_id": candidate_task.dataset_id,
+            "product_confirmation": candidate_task.evidence_scope["product_confirmation"],
+        },
+    )
+    data_eligible_keys = {
+        (participant_by_subject[subject], decision)
+        for subject in requested_subjects
+        for decision in split.test_selections_by_subject.get(subject, ())
+    }
+    decision_failures_by_key: dict[tuple[str, str], dict[str, object]] = {}
+    for outcome in all_outcomes:
+        if outcome.status not in {DecisionStatus.INCOMPLETE, DecisionStatus.FIT_FAILURE}:
+            continue
+        participant_key = participant_by_subject[outcome.key.subject_id]
+        failure_key = (participant_key, outcome.key.decision_id)
+        decision_failures_by_key.setdefault(
+            failure_key,
+            {
+                "participant_key": participant_key,
+                "decision_id": outcome.key.decision_id,
+                "status": outcome.status.value,
+                "stage": (
+                    "subject_fit"
+                    if outcome.status is DecisionStatus.FIT_FAILURE
+                    else "decision_evaluation"
+                    if failure_key in data_eligible_keys
+                    else "decision_eligibility"
+                ),
+                "reason": outcome.failure_reason,
+            },
+        )
+    environment_record = _environment_record(device)
+    splitbn_record = _splitbn_summary_from_checkpoint(checkpoint_payload)
+    requested_decision_slots = sum(
+        len(decisions) for decisions in split.requested_test_selections_by_subject.values()
+    )
+    ledger_decision_slots = len(
+        {(outcome.key.subject_id, outcome.key.decision_id) for outcome in all_outcomes}
+    )
+    summary = {
+        "schema": "n2p3_candidate_cross_decision_result/1",
+        "run_status": (
+            "completed_with_selection_failures"
+            if decision_plan.participant_selection_failures
+            else "completed"
+        ),
+        "arm_name": args.arm_name,
+        "training_replicate_key": args.training_replicate_key,
+        "partition_key": args.partition_key,
+        "source_snapshot_manifest": str(args.source_snapshot_manifest.resolve()),
+        "source_snapshot_sha256": source_snapshot_sha256,
+        "source_snapshot_manifest_sha256": str(source_snapshot_identity["manifest_sha256"]),
+        "source_commit": str(source_snapshot_identity["source_commit"]),
+        "evaluation_snapshot_manifest": str(evaluation_manifest.resolve()),
+        "evaluation_snapshot_sha256": evaluation_snapshot_sha256,
+        "evaluation_snapshot_manifest_sha256": str(
+            evaluation_snapshot_identity["manifest_sha256"]
+        ),
+        "evaluation_source_commit": str(evaluation_snapshot_identity["source_commit"]),
+        "evaluation_contract": evaluation_contract.record(),
+        "evaluation_contract_digest": evaluation_contract.digest(),
+        "decision_plan": decision_plan.record(),
+        "decision_plan_digest": decision_plan.digest(),
+        "requested_participant_keys": list(evaluation_contract.requested_participant_keys),
+        "dataset_cache": str(Path(args.dataset_cache).resolve()),
+        "checkpoint": str(Path(args.checkpoint).resolve()) if args.checkpoint else None,
+        "checkpoint_sha256": checkpoint_sha256,
+        "target_cache_sha256": target_cache_sha256,
+        "candidate_task_contract": candidate_task.record(),
+        "candidate_task_contract_digest": semantic_sha256(candidate_task.record()),
+        "calibration_selections": args.calibration_selections,
+        "test_reps": args.test_reps,
+        "head": head_mode,
+        "epochs": epochs,
+        "lr": lr,
+        "epoch_selection": args.epoch_selection,
+        "adapt_batchnorm": bool(args.adapt_batchnorm),
+        "normalization": normalization,
+        "target_stat_weight": args.target_stat_weight,
+        "candidate_loss_weight": args.candidate_loss_weight,
+        "candidate_loss_score_kind": MEMBERSHIP_SCORE_METHOD if args.candidate_loss_weight is not None else None,
+        "candidate_loss_temperature": args.candidate_loss_temperature,
+        "seed": args.seed,
+        "environment": environment_record,
+        "splitbn": splitbn_record,
+        "estimand": "known_early_decisions_to_later_unknown_decisions",
+        "excluded_subjects": split.excluded_subjects,
+        "decision_accounting": decision_accounting,
+        "participant_accounting": participant_accounting,
+        "participant_operational_endpoints": participant_operational_endpoints,
+        "decision_failures": list(decision_failures_by_key.values()),
+        "oom_accounting": {
+            "oom_fit_failure_subjects": sorted(oom_fit_failure_subjects),
+            "oom_fit_failure_decisions": sum(
+                len(split.requested_test_selections_by_subject.get(subject, ()))
+                for subject in oom_fit_failure_subjects
+            ),
+            "requested_decision_slots": requested_decision_slots,
+            "ledger_decision_slots": ledger_decision_slots,
+            "requested_denominator_preserved": (ledger_decision_slots == requested_decision_slots),
+        },
+        "decision_outcomes": [
+            {
+                **outcome.to_record(),
+                "participant_key": participant_by_subject[outcome.key.subject_id],
+            }
+            for outcome in all_outcomes
+        ],
+        "binary_auc_mean": (
+            float(np.mean(auc_values))
+            if (
+                auc_values := [
+                    rec["binary_auc"] for rec in records if rec["binary_auc"] is not None
+                ]
+            )
+            else None
+        ),
+        "records": records,
+    }
+    output = Path(args.output)
+    atomic_write_json(output, summary)
+    print(f"[summary] {output}", flush=True)
+
+
+if __name__ == "__main__":
+    main()

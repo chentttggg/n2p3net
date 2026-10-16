@@ -1,0 +1,17 @@
+{
+  "schema": "n2p3_source_pool_plan/1",
+  "source_pools": {
+    "B7": ["BI2014a", "BI2015a", "BNCI2014-008", "Huebner2017", "BI2013a", "EPFLP300", "Chailloux2020", "Speier2017", "GTN"],
+    "B7_plus_three": ["BI2014a", "BI2015a", "BNCI2014-008", "Huebner2017", "BI2013a", "EPFLP300", "Chailloux2020", "Speier2017", "GTN", "BI2012", "Cattan2019_VR", "BrainForm"]
+  },
+  "targets": {
+    "BI2014a": ["BI2014a"],
+    "BI2015a": ["BI2015a"],
+    "BNCI2014-008": ["BNCI2014-008"],
+    "Huebner2017": ["Huebner2017"]
+  },
+  "seeds": [20260918, 20260919, 20260920],
+  "matched_pools": ["B7", "B7_plus_three"],
+  "product_pools": [],
+  "standalone": {}
+}

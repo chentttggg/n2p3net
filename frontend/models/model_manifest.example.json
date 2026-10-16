@@ -1,0 +1,38 @@
+{
+  "schema": "brainsync-model-manifest/1",
+  "name": "example_model",
+  "version": "0.1.0",
+  "python_executable": "path/to/model-environment/python.exe",
+  "entrypoint": "path/to/runner.py",
+  "tasks": ["preprocess", "train", "infer", "evaluate"],
+  "parameter_options": [
+    {
+      "key": "default",
+      "label": "使用模型默认参数",
+      "description": "由模型入口自行决定训练或推理参数",
+      "arguments": ""
+    }
+  ],
+  "input_contract": {
+    "session_schema": "brainsync-gtn-session/4",
+    "session_manifest": "session.json",
+    "recording_path": "recording.bids.recording (session-relative BIDS raw EEG)",
+    "recording_environment_variable": "BRAIN_SYNC_RECORDING_PATH",
+    "events": "recording.bids.events_tsv (continuous raw onset/sample plus retained rest intervals)",
+    "preprocessing_contract": "declared by the selected algorithm",
+    "channel_positions": "recording.bids.electrodes_tsv + coordsystem_json (metres)"
+  },
+  "output_contract": {
+    "trial_results": "analysis/trials.jsonl",
+    "summary": "analysis/summary.json",
+    "artifacts": "analysis/"
+  },
+  "runtime": {
+    "working_directory": "entrypoint parent",
+    "session_environment_variable": "BRAIN_SYNC_SESSION_DIR",
+    "task_environment_variable": "BRAIN_SYNC_TASK",
+    "output_environment_variable": "BRAIN_SYNC_OUTPUT_DIR",
+    "manifest_environment_variable": "BRAIN_SYNC_MODEL_MANIFEST",
+    "progress_protocol": "PROGRESS <0-100>"
+  }
+}

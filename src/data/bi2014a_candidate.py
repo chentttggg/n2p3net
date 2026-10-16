@@ -1,0 +1,406 @@
+"""BI2014a raw-CSV candidate recovery.
+
+MOABB's generic BI2014a adapter collapses the 6x6 speller flash codes to
+target/non-target. The raw CSV keeps two event columns: column 17 is the
+flash group code and column 18 is the binary target/non-target label. Each
+repetition contains exactly 12 flashes:
+
+    5 x {20..25} non-target rows + 1 x {60..65} target row
+    5 x {40..45} non-target cols + 1 x {80..85} target col
+
+The target character is the intersection (target_row, target_col).
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+
+import mne
+import numpy as np
+import pandas as pd
+
+from data.bi2014a_schedule import BI2014A_FLASH_SCHEDULE, BIFlashLabelAudit
+from data.candidate_task import (
+    CandidateTaskContract,
+    validate_candidate_membership_metadata,
+)
+from data.channel import build_channel_identity
+from data.epochs import EpochDataset, PreprocessingSpec
+from data.events import observed_only_timeline
+from data.exclusions import select_allowed_subjects
+from data.preprocess import execute_preprocessing
+
+BI2014A_SFREQ = 512.0
+BI2014A_CHANNELS = (
+    "Fp1",
+    "Fp2",
+    "F3",
+    "AFz",
+    "F4",
+    "T7",
+    "Cz",
+    "T8",
+    "P7",
+    "P3",
+    "Pz",
+    "P4",
+    "P8",
+    "O1",
+    "Oz",
+    "O2",
+)
+_FLASH_COLUMN = 17
+_LABEL_COLUMN = 18
+# The public BI2014a Event stream retains experiment/session and game-level
+# control markers in addition to the 20..85 flash codes. Code 100 starts a new
+# recorded game session; code 104 closes a level or its forced restart after
+# the attempt budget. Either marker is a hard target-episode boundary even when
+# the next level happens to use the same target row/column pair.
+_SESSION_START_CODE = 100
+_LEVEL_OR_RESTART_BOUNDARY_CODE = 104
+_SELECTION_BOUNDARY_CODES = frozenset({_SESSION_START_CODE, _LEVEL_OR_RESTART_BOUNDARY_CODE})
+BI2014A_CANDIDATE_TASK_CONTRACT = CandidateTaskContract(
+    dataset_id="BI2014a",
+    task_id="p300_row_column_speller_6x6",
+    population={
+        "label": "public_dataset_participants",
+        "age_scope": "not_asserted_by_cache_producer",
+    },
+    evidence_scope={"stage": "development", "product_confirmation": False},
+    membership_kind="row_column",
+    grid_shape=(6, 6),
+    candidate_ids=tuple(range(12)),
+    row_candidate_ids=tuple(range(6)),
+    column_candidate_ids=tuple(range(6, 12)),
+    target_representation="row_column_intersection",
+    raw_target_label_is_target={"1": False, "2": True},
+)
+
+
+@dataclass(frozen=True)
+class BI2014ACandidateRecord:
+    flash_sample: np.ndarray
+    flash_code: np.ndarray
+    target_label: np.ndarray
+    is_target: np.ndarray
+    row_code: np.ndarray
+    col_code: np.ndarray
+    target_row: np.ndarray
+    target_col: np.ndarray
+    selection_id: np.ndarray
+    repetition_index: np.ndarray
+    selection_boundary_reason: np.ndarray
+    n_repetitions: int
+    n_explicit_boundaries: int
+    raw_label_audit: BIFlashLabelAudit
+    dropped_tail_flashes: int = 0
+
+
+def _require_csv(subject_dir: Path) -> Path:
+    subject_id = subject_dir.name.removeprefix("subject_")
+    csv_path = subject_dir / f"subject_{subject_id}.csv"
+    if not csv_path.is_file():
+        raise FileNotFoundError(
+            f"{csv_path} is required to recover BI2014a flash codes from MAT fallback."
+        )
+    return csv_path
+
+
+def recover_bi2014a_candidates(
+    subject_dir: str | Path,
+) -> BI2014ACandidateRecord:
+    """Parse one raw BI2014a CSV and validate its 6x6 flash schedule."""
+
+    subject_dir = Path(subject_dir)
+    csv_path = _require_csv(subject_dir)
+    table = pd.read_csv(csv_path, header=None)
+    if table.shape[1] <= _LABEL_COLUMN:
+        raise ValueError(f"{csv_path} lacks the BI2014a event columns.")
+    raw_flash_code = table[_FLASH_COLUMN].to_numpy(dtype=np.float64)
+    raw_target_label = table[_LABEL_COLUMN].to_numpy(dtype=np.float64)
+    possible_flash = np.isfinite(raw_flash_code) & (raw_flash_code >= 20) & (raw_flash_code <= 85)
+    flash_samples = np.flatnonzero(possible_flash)
+    if np.any(raw_flash_code[flash_samples] != np.floor(raw_flash_code[flash_samples])):
+        raise ValueError(f"{subject_dir.name}: non-integer BI flash code.")
+    flash_code = np.zeros(len(raw_flash_code), dtype=np.int64)
+    integer_event_codes = np.isfinite(raw_flash_code) & (raw_flash_code == np.floor(raw_flash_code))
+    flash_code[integer_event_codes] = raw_flash_code[integer_event_codes].astype(np.int64)
+    all_codes = flash_code[flash_samples]
+    all_labels = raw_target_label[flash_samples]
+    raw_label_audit = BI2014A_FLASH_SCHEDULE.audit_raw_labels(
+        all_codes,
+        all_labels,
+        flash_samples=flash_samples,
+        stage="raw_csv_before_preprocessing",
+    )
+
+    # Some public BI2014a files end with one or two trailing flashes that do
+    # not form a complete 12-flash repetition. Keep only complete repetitions
+    # and report the dropped tail in the audit.
+    n_repetitions = len(flash_samples) // 12
+    if n_repetitions < 1:
+        raise ValueError(f"{subject_dir.name}: fewer than one complete flash repetition.")
+    complete_count = n_repetitions * 12
+    dropped_tail = len(flash_samples) - complete_count
+    flash_samples = flash_samples[:complete_count]
+    codes = all_codes[:complete_count]
+    labels = all_labels[:complete_count].astype(np.int64, copy=False)
+    is_target = BI2014A_FLASH_SCHEDULE.target_mask(codes)
+    expected_targets = 2 * n_repetitions
+    expected_nontargets = 10 * n_repetitions
+    if np.count_nonzero(is_target) != expected_targets:
+        raise ValueError(
+            f"{subject_dir.name}: expected {expected_targets} target flashes, "
+            f"got {np.count_nonzero(is_target)}."
+        )
+    if np.count_nonzero(~is_target) != expected_nontargets:
+        raise ValueError(
+            f"{subject_dir.name}: expected {expected_nontargets} non-target flashes, "
+            f"got {np.count_nonzero(~is_target)}."
+        )
+
+    row_code = np.full(len(flash_samples), -1, dtype=np.int64)
+    col_code = np.full(len(flash_samples), -1, dtype=np.int64)
+    target_row = np.full(n_repetitions, -1, dtype=np.int64)
+    target_col = np.full(n_repetitions, -1, dtype=np.int64)
+    selection_id = np.empty(len(flash_samples), dtype=object)
+    repetition_index = np.empty(len(flash_samples), dtype=np.int64)
+    selection_boundary_reason = np.empty(len(flash_samples), dtype=object)
+
+    previous_pair: tuple[int, int] | None = None
+    active_selection = 0
+    active_repetition = -1
+    explicit_boundary_count = 0
+
+    for rep in range(n_repetitions):
+        start = rep * 12
+        stop = start + 12
+        rep_codes = codes[start:stop]
+        decoded_events = tuple(BI2014A_FLASH_SCHEDULE.decode(code) for code in rep_codes)
+        row_events = tuple(event for event in decoded_events if event.axis == "row")
+        col_events = tuple(event for event in decoded_events if event.axis == "column")
+        target_row_events = tuple(event for event in row_events if event.is_target)
+        target_col_events = tuple(event for event in col_events if event.is_target)
+        valid_candidates = tuple(range(BI2014A_FLASH_SCHEDULE.grid_size))
+        if (
+            len(target_row_events) != 1
+            or len(target_col_events) != 1
+            or tuple(sorted(event.candidate_index for event in row_events)) != valid_candidates
+            or tuple(sorted(event.candidate_index for event in col_events)) != valid_candidates
+        ):
+            raise ValueError(f"{subject_dir.name}: repetition {rep} has invalid flash structure.")
+
+        pair = (
+            target_row_events[0].candidate_index,
+            target_col_events[0].candidate_index,
+        )
+        span_start = int(flash_samples[start])
+        span_stop = int(flash_samples[stop - 1]) + 1
+        internal_markers = _SELECTION_BOUNDARY_CODES.intersection(
+            flash_code[span_start:span_stop].tolist()
+        )
+        if internal_markers:
+            raise ValueError(
+                f"{subject_dir.name}: repetition {rep} contains selection-boundary "
+                f"markers {sorted(internal_markers)} inside its 12-flash block."
+            )
+
+        explicit_markers: tuple[int, ...] = ()
+        if rep > 0:
+            previous_flash = int(flash_samples[start - 1])
+            current_flash = int(flash_samples[start])
+            explicit_markers = tuple(
+                sorted(
+                    _SELECTION_BOUNDARY_CODES.intersection(
+                        flash_code[previous_flash + 1 : current_flash].tolist()
+                    )
+                )
+            )
+        pair_changed = previous_pair is not None and previous_pair != pair
+        starts_selection = previous_pair is None or pair_changed or bool(explicit_markers)
+        if starts_selection:
+            active_selection += 1
+            active_repetition = 0
+            explicit_boundary_count += int(bool(explicit_markers))
+        else:
+            active_repetition += 1
+        reasons: list[str] = []
+        if previous_pair is None:
+            reasons.append("recording_start")
+        if _SESSION_START_CODE in explicit_markers:
+            reasons.append("raw_session_start_code_100")
+        if _LEVEL_OR_RESTART_BOUNDARY_CODE in explicit_markers:
+            reasons.append("raw_level_or_restart_code_104")
+        if pair_changed:
+            reasons.append("target_pair_change")
+        boundary_reason = "+".join(reasons) if reasons else "same_selection_repetition"
+        previous_pair = pair
+        target_row[rep] = pair[0]
+        target_col[rep] = pair[1]
+
+        for local, global_idx in enumerate(range(start, stop)):
+            decoded = decoded_events[local]
+            if decoded.axis == "row":
+                row_code[global_idx] = decoded.candidate_index
+            else:
+                col_code[global_idx] = decoded.candidate_index
+            selection_id[global_idx] = f"{subject_dir.name}:selection{active_selection}"
+            repetition_index[global_idx] = active_repetition
+            selection_boundary_reason[global_idx] = boundary_reason
+
+    return BI2014ACandidateRecord(
+        flash_sample=flash_samples,
+        flash_code=codes,
+        target_label=labels,
+        is_target=is_target,
+        row_code=row_code,
+        col_code=col_code,
+        target_row=np.repeat(target_row, 12),
+        target_col=np.repeat(target_col, 12),
+        selection_id=np.asarray(selection_id),
+        repetition_index=repetition_index,
+        selection_boundary_reason=np.asarray(selection_boundary_reason),
+        n_repetitions=n_repetitions,
+        n_explicit_boundaries=explicit_boundary_count,
+        raw_label_audit=raw_label_audit,
+        dropped_tail_flashes=dropped_tail,
+    )
+
+
+def build_bi2014a_subject_dataset(
+    subject_dir: str | Path,
+    *,
+    preprocessing: PreprocessingSpec,
+) -> EpochDataset:
+    subject_dir = Path(subject_dir)
+    subject_id = subject_dir.name.removeprefix("subject_")
+    select_allowed_subjects("BI2014a", [int(subject_id)], explicit=True)
+    recovered = recover_bi2014a_candidates(subject_dir)
+
+    csv_path = _require_csv(subject_dir)
+    table = pd.read_csv(csv_path, header=None)
+    eeg_uv = table.iloc[:, 1:17].to_numpy(dtype=np.float64).T
+    eeg_v = (eeg_uv * 1e-6).astype(np.float32)
+    if not np.isfinite(eeg_v).all():
+        raise ValueError(f"{subject_dir.name}: non-finite EEG samples.")
+    info = mne.create_info(list(BI2014A_CHANNELS), BI2014A_SFREQ, ch_types="eeg")
+    raw = mne.io.RawArray(eeg_v, info, verbose=False)
+
+    events = np.column_stack(
+        [
+            recovered.flash_sample.astype(np.int64),
+            np.zeros(len(recovered.flash_sample), dtype=np.int64),
+            recovered.flash_code.astype(np.int64),
+        ]
+    )
+    result = execute_preprocessing(
+        raw,
+        events,
+        preprocessing,
+        channels=BI2014A_CHANNELS,
+        montage="standard_1005",
+    )
+    evidence = np.asarray(result.event_evidence_indices, dtype=np.int64)
+    available = np.flatnonzero(evidence >= 0)
+    ordered = available[np.argsort(evidence[available], kind="stable")]
+    if len(ordered) != result.n_epochs:
+        raise AssertionError("preprocess evidence mapping is not bijective.")
+    post_is_target = BI2014A_FLASH_SCHEDULE.target_mask(recovered.flash_code[ordered])
+    if not np.array_equal(post_is_target, recovered.is_target[ordered]):
+        raise AssertionError("preprocessing changed BI flash-code label semantics.")
+    post_label_audit = BI2014A_FLASH_SCHEDULE.audit_raw_labels(
+        recovered.flash_code[ordered],
+        recovered.target_label[ordered],
+        flash_samples=recovered.flash_sample[ordered],
+        stage="retained_epochs_after_preprocessing",
+    )
+
+    identity = build_channel_identity(
+        result.channel_names,
+        channel_mask=np.ones(len(result.channel_names), dtype=bool),
+        montage="standard_1005",
+        allow_missing_positions=False,
+    )
+    metadata = pd.DataFrame(
+        {
+            "subject": np.repeat(subject_id, result.n_epochs),
+            "flash_sample": recovered.flash_sample[ordered],
+            "flash_code": recovered.flash_code[ordered],
+            "candidate_id": np.where(
+                recovered.row_code[ordered] >= 0,
+                recovered.row_code[ordered],
+                BI2014A_CANDIDATE_TASK_CONTRACT.n_rows + recovered.col_code[ordered],
+            ),
+            "raw_is_target": recovered.target_label[ordered] == 2,
+            "raw_target_label": recovered.target_label[ordered],
+            "row_code": recovered.row_code[ordered],
+            "col_code": recovered.col_code[ordered],
+            "target_row": recovered.target_row[ordered],
+            "target_col": recovered.target_col[ordered],
+            "selection_id": recovered.selection_id[ordered],
+            "repetition_index": recovered.repetition_index[ordered],
+            "selection_boundary_reason": recovered.selection_boundary_reason[ordered],
+            "acquisition_time_s": result.event_times_s[ordered],
+        }
+    )
+    timeline = observed_only_timeline(
+        dataset_id=f"BI2014a-candidate:{subject_id}",
+        subject_ids=np.repeat(subject_id, result.n_epochs),
+        stimulus_ids=recovered.flash_code[ordered],
+        onset_times_s=result.event_times_s[ordered],
+        evidence_available_times_s=result.evidence_available_times_s[ordered],
+        group_ids=np.asarray(recovered.selection_id[ordered]),
+        online_causal=result.online_causal,
+        timing_source="bi2014a_raw_csv_flash_codes;" + result.timing_source,
+        selection_ids=np.asarray(recovered.selection_id[ordered]),
+        session_ids=np.repeat("0", result.n_epochs),
+        run_ids=np.repeat("0", result.n_epochs),
+    )
+    dataset = EpochDataset(
+        name="BI2014a-candidate",
+        X=result.data.astype(np.float32, copy=False),
+        y=post_is_target.astype(np.int64),
+        subject_ids=np.repeat(subject_id, result.n_epochs).astype(str),
+        channel_names=identity.names,
+        channel_positions_m=identity.coords,
+        channel_mask=np.ones(result.n_channels, dtype=bool),
+        preprocessing=preprocessing,
+        event_timeline=timeline,
+        metadata=metadata,
+        provenance={
+            **({"preprocessing_execution": result.execution_receipt}
+               if result.execution_receipt is not None else {}),
+            "source": "bi2014a_raw_csv",
+            "subject_dir": str(subject_dir.resolve()),
+            "source_sample_rate_hz": BI2014A_SFREQ,
+            "model_input_sample_rate_hz": preprocessing.sfreq,
+            "source_reference": "right earlobe",
+            "signal_unit": "V",
+            "candidate_task_contract": BI2014A_CANDIDATE_TASK_CONTRACT.record(),
+            "flash_schedule": {
+                "n_flashes": int(len(recovered.flash_sample)),
+                "n_targets": int(np.count_nonzero(recovered.is_target)),
+                "n_nontargets": int(np.count_nonzero(~recovered.is_target)),
+                "n_repetitions": recovered.n_repetitions,
+                "candidate_grid": "6x6",
+                "label_source": "derived_from_flash_code",
+                "raw_label_role": "per_event_cross_check_only",
+                "raw_label_audit": recovered.raw_label_audit.to_record(BI2014A_FLASH_SCHEDULE),
+                "post_preprocessing_label_audit": post_label_audit.to_record(
+                    BI2014A_FLASH_SCHEDULE
+                ),
+                "selection_boundary_rule": (
+                    "target_pair_change_or_raw_session_100_or_level_restart_104"
+                ),
+                "n_explicit_boundaries": recovered.n_explicit_boundaries,
+            },
+        },
+    )
+    validate_candidate_membership_metadata(
+        metadata,
+        BI2014A_CANDIDATE_TASK_CONTRACT,
+        labels=post_is_target.astype(np.int64),
+    )
+    dataset.validate(require_labels=True)
+    return dataset

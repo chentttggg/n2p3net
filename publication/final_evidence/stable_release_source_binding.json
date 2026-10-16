@@ -1,0 +1,253 @@
+{
+  "python": "3.10 compiler matching packaged runtime",
+  "comparison": "Recursive code objects; only filename replaced to compare source locations, bytecode/constants/line table/flags retained",
+  "modules": [
+    {
+      "module": "gtn_workstation",
+      "relative": "gtn_workstation/__init__.py",
+      "runtime_sha256": "4777dc9b726dcdcdc83b59b50f878f7d2e807363093f24b724634c992b4b3376",
+      "current_matches_optimizations": [
+        0,
+        1
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "gtn_workstation.acquisition_provenance",
+      "relative": "gtn_workstation/acquisition_provenance.py",
+      "runtime_sha256": "b5d5bf58f995973dc7d46cb9d99e93ab56a25c7cfc367915b42fda087f01d3c6",
+      "current_matches_optimizations": [
+        0,
+        1
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "gtn_workstation.app",
+      "relative": "gtn_workstation/app.py",
+      "runtime_sha256": "e192f2c8a0ccb3833c572f9e935cbe04bf161ddc490c411beaf687c23c4bcac0",
+      "current_matches_optimizations": [
+        0,
+        1
+      ],
+      "archived_0917_matches_optimizations": []
+    },
+    {
+      "module": "gtn_workstation.backend",
+      "relative": "gtn_workstation/backend.py",
+      "runtime_sha256": "3092c9e3b0ae2dbdcc8348416dd5cf91a48e5cd91b226877834a36ba19b07ebd",
+      "current_matches_optimizations": [
+        0,
+        1
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "gtn_workstation.bids",
+      "relative": "gtn_workstation/bids.py",
+      "runtime_sha256": "d720fdd094166d3c4f97a840924d16c5e220c946a3a402472ad767040c96f03d",
+      "current_matches_optimizations": [
+        0,
+        1
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "gtn_workstation.decoding",
+      "relative": "gtn_workstation/decoding.py",
+      "runtime_sha256": "74795588cc0eb95391981f252e32b64f46e72fccd0c674875000ea8d60b56477",
+      "current_matches_optimizations": [
+        0,
+        1,
+        2
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "module": "gtn_workstation.decoding_results",
+      "relative": "gtn_workstation/decoding_results.py",
+      "runtime_sha256": "38492f5674caf99ead96450731a26df453ef3890fca8c03d58ba081563cbbef9",
+      "current_matches_optimizations": [
+        0,
+        1,
+        2
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "module": "gtn_workstation.device_state",
+      "relative": "gtn_workstation/device_state.py",
+      "runtime_sha256": "3511f71d02ae4003cb21a434f4d64bafe613a061d74390fcdd3b8acf6e35558d",
+      "current_matches_optimizations": [
+        0,
+        1
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "gtn_workstation.models",
+      "relative": "gtn_workstation/models.py",
+      "runtime_sha256": "a1726d9ab39223a96cc96ec2ea6db07ce382384a3e323852b59d9fc9be07984b",
+      "current_matches_optimizations": [
+        0,
+        1
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "gtn_workstation.quality_reports",
+      "relative": "gtn_workstation/quality_reports.py",
+      "runtime_sha256": "0b964dc9ca91039adbe0591794a4ce153ea3da45b85889a52c82558bff3ffd18",
+      "current_matches_optimizations": [
+        0,
+        1,
+        2
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "module": "gtn_workstation.recording",
+      "relative": "gtn_workstation/recording.py",
+      "runtime_sha256": "e793626b14c3cda12e4abdbc7a65158e12bddbc2c91ad098eeb9147688962900",
+      "current_matches_optimizations": [
+        0,
+        1
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "gtn_workstation.recording_clock",
+      "relative": "gtn_workstation/recording_clock.py",
+      "runtime_sha256": "b04dbad0d3113b1d2beed230ac71a39bba421d5f0b608ea860bcd5c0565a9505",
+      "current_matches_optimizations": [
+        0,
+        1
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "gtn_workstation.runtime",
+      "relative": "gtn_workstation/runtime.py",
+      "runtime_sha256": "1126f4b3183c847b4dd4910048669b0916211722ae2b3eda4e01ccbe122fb173",
+      "current_matches_optimizations": [
+        0
+      ],
+      "archived_0917_matches_optimizations": [
+        0
+      ]
+    },
+    {
+      "module": "gtn_workstation.signal_processing",
+      "relative": "gtn_workstation/signal_processing.py",
+      "runtime_sha256": "4bb5dc8339e2699331c718f01832a47f95bc1aab7c897196d50c8ae325466ae5",
+      "current_matches_optimizations": [
+        0,
+        1
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "gtn_workstation.storage",
+      "relative": "gtn_workstation/storage.py",
+      "runtime_sha256": "4a86e76a959bd4bbe675fd5d77dc4a8d480ab7b66478dfd64ccae37ace275c03",
+      "current_matches_optimizations": [
+        0,
+        1
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "gtn_workstation.theme",
+      "relative": "gtn_workstation/theme.py",
+      "runtime_sha256": "ed143cdc20f8b7236f1081091707f50bbef2b808b818d25c10be05d22d0979ef",
+      "current_matches_optimizations": [
+        0,
+        1,
+        2
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "module": "gtn_workstation.timeline",
+      "relative": "gtn_workstation/timeline.py",
+      "runtime_sha256": "5c3afb2f314ce324cd9cfef7e18c59385ab19762d4a0f287708784bd334a4543",
+      "current_matches_optimizations": [
+        0,
+        1
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "gtn_workstation.transport",
+      "relative": "gtn_workstation/transport.py",
+      "runtime_sha256": "d6c8ab9692ec369419d73cc74798a8fd5848f7a6aa57084d63dc805c2b33ff94",
+      "current_matches_optimizations": [
+        0,
+        1
+      ],
+      "archived_0917_matches_optimizations": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": "gtn_workstation.ui",
+      "relative": "gtn_workstation/ui.py",
+      "runtime_sha256": "90c9a39389b4d39c445d6f171c4f16d0272642ee97898f1287047b16d46467d4",
+      "current_matches_optimizations": [
+        0,
+        1
+      ],
+      "archived_0917_matches_optimizations": []
+    }
+  ]
+}

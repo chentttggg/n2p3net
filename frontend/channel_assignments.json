@@ -1,0 +1,77 @@
+{
+  "schema": "brainsync-channel-montage/3",
+  "channel_indexing": "zero_based",
+  "active_mask": 255,
+  "labels": ["Fz", "Cz", "P3", "Pz", "P4", "PO8", "EOG", "Oz"],
+  "channel_types": ["eeg", "eeg", "eeg", "eeg", "eeg", "eeg", "eog", "eeg"],
+  "eog_derivation": {
+    "EOG": {
+      "kind": "single_ended",
+      "placement": "left_eye_corner",
+      "reference": "left earlobe"
+    }
+  },
+  "eeg": [
+    {
+      "label": "Fz",
+      "channel": 0,
+      "ch_type": "eeg"
+    },
+    {
+      "label": "Cz",
+      "channel": 1,
+      "ch_type": "eeg"
+    },
+    {
+      "label": "P3",
+      "channel": 2,
+      "ch_type": "eeg"
+    },
+    {
+      "label": "Pz",
+      "channel": 3,
+      "ch_type": "eeg"
+    },
+    {
+      "label": "P4",
+      "channel": 4,
+      "ch_type": "eeg"
+    },
+    {
+      "label": "PO8",
+      "channel": 5,
+      "ch_type": "eeg"
+    },
+    {
+      "label": "EOG",
+      "channel": 6,
+      "ch_type": "eog"
+    },
+    {
+      "label": "Oz",
+      "channel": 7,
+      "ch_type": "eeg"
+    }
+  ],
+  "channel_positions_m": [
+    [-0.001229276531, 0.093274451792, 0.102639295161],
+    [-0.001374138752, 0.027617093176, 0.140199497342],
+    [-0.055038236082, -0.044210303575, 0.099908977747],
+    [-0.001709450386, -0.045212991536, 0.126672923565],
+    [0.053636010736, -0.044334523380, 0.100516028702],
+    [0.053557317704, -0.066416941583, 0.047850977629],
+    null,
+    [-0.002060251543, -0.082782991230, 0.060736630111]
+  ],
+  "coordinate_frame": "head",
+  "units": "m",
+  "stim": [],
+  "ref": {
+    "label": "left earlobe",
+    "slot": 0
+  },
+  "gnd": {
+    "label": "T8(T4)",
+    "slot": 1
+  }
+}
