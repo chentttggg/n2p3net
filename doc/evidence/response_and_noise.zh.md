@@ -43,6 +43,8 @@ B11联合模型已在原Huebner记录的500个授权标签上完成采样。直�
 
 响应形状新切片已完成科学推导和两个基础模块。每个selection可有预声明的非负额外delay与正width，四臂区分原模板、平均波形、同全一二阶矩Gaussian和完整finite law；同能量并不自动有同容量。矩控制令`β=μ+Fu`、`A=diag(sqrtπ)−πsqrtπᵀ`，局部factor为`A⊗[F,μ]`；全selection共享原β，新增selection只追加其独立局部prior。该控制匹配均值/协方差和Gaussian容量代理，非Gaussian的高阶关系由finite臂保留。唯一law正规化、全矩factor、compact收缩及原native阵列的具名off-grid延拓均获root/独审接受；新正误差长求和反例已修复，记录在[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)的`source_informed_finite_response`。原source参数、Gaussian ηK噪声、physical漂移测度、C0/history和保存引擎正在接入。
 
+公共计算按真实尺寸安排。若每次选择有H种形状，S次选择的完整离散组合按`H^S`增长，再乘尚未确定的候选数；矩匹配Gaussian的proper变量数为`r+SH(r+1)`，其中r是原source factor的列数。当前软件样例r=16，八导、八basis的原配置对应r=128，因此公共入口先核实际样本数、选择数和候选支持，再安排共享source闭包、流式计算及完整预算。现有预算式估计数值工作区；下一资源账本补齐常驻C根、保留状态与元数据，并结合实际峰值内存验收。
+
 原shared `/3`保存root也已实现快速严格准入：用小因子见证核验原992维矩阵，误差界9.386e-12低于原3.150e-7政策，保留原root与producer。实际完整source codec加载4.254秒，其中root部分1.130秒；较早同输入加载的457.8秒中，452.3秒集中在该验证。新见证是consumer准入元数据，原模型的概率计算仍消费原矩阵。来源见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
 
 ## Shared PARCOR平稳启动因子的显式入口

@@ -24,6 +24,8 @@ B07 `research.multichannel_c_latent`新增明确外部固定参数的finite C pr
 
 `research.finite_response_law`是新有限delay/width的唯一正规化owner：正binary64原质量按exact rational一次归一，保存全部有效log质量与误差；mean/moment从同一law取权重。source矩控制直接用原factor生成共享global β与每selection局部Gaussian变量，保全一二阶矩、跨selection相关和弱/零方向，compact接口直接收缩state设计。`transfer.native_response_dictionary`显式声明原native阵列的新连续延拓：整数点保原字节，off-grid按exact rational线性插值一次舍入，terminal knot与半开支持明确。它不改历史Gaussian/cosine等dictionary producer；这两个基础模块已有独立实现/保存接受，source→C→history引擎及完整typed/nested/parent另沿当前切片集成。
 
+`StructuredGaussianMarginalProgram`的可选接点统一消费显式noise covariance scale、设计误差和`GaussianResponseImages`。噪声缩放同时进入完整观测维度的Jacobian；新selection只追加独立proper prior，已保存C的root/RHS与物理flat坐标继续复用。`_triangular_residual`保原乘积及fallback可表示性检查，跳过root中精确为零的项；同一512维启动根的交替完整误差证书测得FMA路径12.54倍、fallback 1.67倍，全部返回字段逐bit相同。此处接受的是中枢接口和证书计算，四臂引擎及caller沿各自实际出口验收，见[整合绑定](assets/research_resume_20261012/research_integration_acceptance.json)。
+
 `transfer.information_bound`持有`/2`完整activation/模型诊断、raw plug-in估计量及不可变JSON报告，`save/load/replay_model`保护全部输出与原producer。`transfer.exact_covariance/2`持有raw传播、resolved SPD/显式identified support及独立ridge诊断，当前是内存诊断接口。二者没有生产调用；来源、反例和完整性验收见[数学整合](assets/research_resume_20261012/diagnostic_mathematics_integration.json)。原D树local-only `run_information_bound.py`保原字节，迁移membership、actual activation和报告schema后才可复用。
 
 2026-10-10[愿望清单整合](evidence/wishlist_progress_20261010.zh.md)继续复用原owner：`CandidateEvidence`在原tie判定处保存赢家索引；`candidate_metrics`持有requested层级的最大置信度、错时置信度、分箱ECE及实际J的uniform NLL contrast，原report consumer自动导出，现阶段只作描述性诊断。`SpatialSignalPrior.expected_whitened_signal_energy/energy_matched_graph`复用原response压缩root，以同C/noise匹配固定graph的centered信号能量；原posterior及B05物理因子继续消费该prior；新BLUE/source-group programme的实际ensemble接点见上文，固定graph与learned测量保持各自来源。

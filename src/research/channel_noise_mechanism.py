@@ -1290,12 +1290,13 @@ def _inverse_root_geometry(root, *, lower=False):
 
 
 def _triangular_residual(root, values, image):
-    """Accurate stored-input residual using two-product and an fsum reduction.
+    """Accurate residual, omitting exact-zero root terms after original gates.
 
-    A normal product has an exactly representable FMA (or Dekker) remainder.
-    fsum reduces both limbs and rhs together: roundoff follows the small
-    residual, not the cancelling L*x operands. This is a residual certificate,
-    not a new whitening map. Nonnormal/overflowing operands remain unresolved.
+    Preserve product and fallback split representability checks on the full
+    original operands. An omitted root entry is exactly +/-0; its finite product
+    and FMA/Dekker remainder are zero, and it contributes no underflow count.
+    Retain all nonzero rows, including subnormals, and the original reduction
+    order of their two limbs. Do not threshold or change error operations.
     """
     residual = np.empty_like(values)
     error = np.empty_like(values)
@@ -1308,9 +1309,16 @@ def _triangular_residual(root, values, image):
         if not np.isfinite(product).all():
             raise DiffuseProjectionResolutionError("whitening residual products are not representable")
         if fma is None:
+            # Original gates see even a zero-times-finite extreme operand.
             split_left, split_right = splitter*left, splitter*right
             if not np.isfinite(split_left).all() or not np.isfinite(split_right).all():
                 raise DiffuseProjectionResolutionError("whitening residual splitting is not representable")
+        active = np.flatnonzero(left[:, 0] != 0)
+        if len(active) != len(left):
+            left, right, product = left[active], right[active], product[active]
+            if fma is None:
+                split_left, split_right = split_left[active], split_right[active]
+        if fma is None:
             high_left = split_left-(split_left-left)
             high_right = split_right-(split_right-right)
             low_left, low_right = left-high_left, right-high_right
@@ -1320,7 +1328,7 @@ def _triangular_residual(root, values, image):
         else:
             remainder = np.asarray([[fma(float(a), float(b), -float(c))
                 for b, c in zip(right[index], product[index], strict=True)]
-                for index, a in enumerate(left[:, 0])])
+                for index, a in enumerate(left[:, 0])]).reshape(product.shape)
         if not np.isfinite(remainder).all():
             raise DiffuseProjectionResolutionError("whitening residual remainder is not representable")
         try:
@@ -2091,6 +2099,35 @@ class GaussianQRPosteriorState:
         return frozen_array(solve_triangular(self.precision_root, self.precision_response))
 
 
+@dataclass(frozen=True)
+class GaussianResponseImages:
+    """Contracted physical response mean and rectangular unit-normal image."""
+
+    mean: np.ndarray
+    proper_image: np.ndarray
+    mean_error: np.ndarray
+    proper_error: np.ndarray
+    coordinate_ids: tuple[str, ...]
+    binding: dict
+
+    def __post_init__(self):
+        mean = _array(self.mean, "contracted physical response mean", 2)
+        image = _array(self.proper_image, "contracted proper response image", 3)
+        mean_error = _array(self.mean_error, "contracted response mean error", 2)
+        proper_error = _array(self.proper_error, "contracted proper image error", 3)
+        ids = tuple(self.coordinate_ids)
+        if (image.shape[:2] != mean.shape or mean_error.shape != mean.shape
+                or proper_error.shape != image.shape or len(ids) != image.shape[2]
+                or len(set(ids)) != len(ids) or any(not isinstance(x, str) or not x for x in ids)
+                or np.any(mean_error < 0) or np.any(proper_error < 0)):
+            raise ValueError("contracted response images changed dimensions, coordinates or error bounds")
+        for key, value in (("mean", mean), ("proper_image", image), ("mean_error", mean_error),
+                           ("proper_error", proper_error)):
+            object.__setattr__(self, key, frozen_array(value))
+        object.__setattr__(self, "coordinate_ids", ids)
+        object.__setattr__(self, "binding", freeze_metadata(self.binding))
+
+
 class StructuredGaussianMarginalProgram:
     """One raw record/chart and the B05 proper-plus-flat QR calculation.
 
@@ -2101,7 +2138,13 @@ class StructuredGaussianMarginalProgram:
     """
 
     def __init__(self, noise, samples, mean, coefficient_factor, nuisance, *,
-                 intercept_chart=False, factor_source_error=None, flat_coordinate_transform=None):
+                 intercept_chart=False, factor_source_error=None, flat_coordinate_transform=None,
+                 noise_scale=1., response_images=None):
+        scale = np.asarray(noise_scale)
+        if scale.ndim != 0 or scale.dtype.kind not in "fiu" or not np.isfinite(scale) or scale <= 0:
+            raise ValueError("Gaussian noise covariance scale must be explicitly positive")
+        self.noise_scale = float(scale)
+        self.response_images = response_images
         self.mean = _array(mean, "frozen marginal mean", 2)
         y = _array(samples, "marginal samples", 2)
         coefficient_factor = _array(coefficient_factor, "frozen proper image", 2)
@@ -2123,9 +2166,13 @@ class StructuredGaussianMarginalProgram:
         self.factor_source_error = factor_source_error
         factor = coefficient_factor
         rank = factor.shape[1]
+        if response_images is not None:
+            if not isinstance(response_images, GaussianResponseImages) or response_images.mean.shape != y.shape:
+                raise ValueError("precontracted response images differ from the actual record")
+            rank = response_images.proper_image.shape[2]
         # Diffuse nuisance coordinate scaling cancels in the conditional ratio.
         # It keeps volt/microvolt changes from changing the QR rank decision.
-        white_nuisance = noise._whiten(nuisance).reshape(len(y) * channels, nuisance.shape[2])
+        white_nuisance = self._whiten(nuisance).reshape(len(y) * channels, nuisance.shape[2])
         proper_root = np.zeros((rank, rank + nuisance.shape[2]))
         proper_root[:, :rank] = np.eye(rank)
         prefix_rows = prefix * channels
@@ -2144,11 +2191,11 @@ class StructuredGaussianMarginalProgram:
                               & (np.abs(y[0])/2 <= np.abs(y))) | (y == 0) | (y[0] == 0))
         chart_error = (_roundoff_gamma(1)*np.abs(np.where(exact_subtraction, 0., chart_y))
                        if intercept_chart else np.zeros_like(y))
-        white_y = noise._whiten(chart_y)
+        white_y = self._whiten(chart_y)
         map_geometry = (_score_whitening_geometry(noise) if isinstance(noise, FittedChannelNoise)
                         else noise.error_geometry)
-        white_y_error = _structured_whitening_error(noise, chart_y, white_y, chart_error, map_geometry)
-        nuisance_error = _structured_whitening_error(noise, nuisance, white_nuisance.reshape(nuisance.shape),
+        white_y_error = self._white_error(chart_y, white_y, chart_error, map_geometry)
+        nuisance_error = self._white_error(nuisance, white_nuisance.reshape(nuisance.shape),
             _roundoff_gamma(3)*np.abs(nuisance), map_geometry)
         # Only the flat coordinate block changes. The same stored transform
         # defines full/prefix da and is shared by all candidates in this record.
@@ -2171,28 +2218,120 @@ class StructuredGaussianMarginalProgram:
             projection_geometry, white_y, map_geometry, white_y_error,
             score_nuisance, nuisance_error, nuisance_transform, nuisance_logabsdet)
 
+    def _whiten(self, values):
+        image = self.noise._whiten(values)
+        return image if self.noise_scale == 1. else image/np.sqrt(self.noise_scale)
+
+    def _white_error(self, raw, white, source_error, geometry):
+        if self.noise_scale == 1.:
+            return _structured_whitening_error(self.noise, raw, white, source_error, geometry)
+        scale = np.sqrt(self.noise_scale)
+        base = self.noise._whiten(raw)
+        original = _structured_whitening_error(self.noise, raw, base, source_error, geometry)
+        cut = self.noise.conditioning_samples
+        rounding = _roundoff_gamma(3)*np.abs(white)+2*np.nextafter(0., 1.)
+        columns = rounding.reshape(len(raw), -1, white.shape[-1]) if white.ndim == 3 else rounding[:, :, None]
+        prefix_columns = _column_norms(columns[:cut].reshape(-1, columns.shape[-1]))
+        tail_columns = _column_norms(columns[cut:].reshape(-1, columns.shape[-1]))
+        return _SegmentError(original.prefix/scale+float(np.linalg.norm(rounding[:cut])),
+            original.tail/scale+float(np.linalg.norm(rounding[cut:])),
+            None if original.prefix_columns is None else original.prefix_columns/scale+prefix_columns,
+            None if original.tail_columns is None else original.tail_columns/scale+tail_columns)
+
+    def _logwhite(self, samples):
+        value = self.noise.whitening_logabsdet(samples)
+        return value if self.noise_scale == 1. else value-.5*samples*self.samples.shape[1]*np.log(self.noise_scale)
+
+    def _logwhite_error(self, samples):
+        error = _structured_log_jacobian_error(self.noise, samples)
+        if self.noise_scale != 1.:
+            correction = .5*samples*self.samples.shape[1]*abs(float(np.log(self.noise_scale)))
+            error += _roundoff_gamma(5)*(abs(self.noise.whitening_logabsdet(samples))+correction)
+        return error
+
+    def _noise_digest(self):
+        original = _structured_noise_digest(self.noise)
+        return original if self.noise_scale == 1. else metadata_digest({"original_noise": original,
+            "covariance_scale": self.noise_scale, "lambda": 1.})
+
+    def _raw_digest(self, design, cut, *, proper_dimensions=None):
+        values = [self.samples[:cut], np.asarray(design)[:cut], self.raw_nuisance[:cut]]
+        if self.response_images is not None:
+            image = self.response_images
+            width = image.proper_image.shape[2] if proper_dimensions is None else proper_dimensions
+            values.extend((image.mean[:cut], image.proper_image[:cut, :, :width]))
+        return array_digest(*values)
+
+    def _chart_digest(self, *, proper_dimensions=None):
+        values = [self.mean, self.context[0], self.context[-2]]
+        original = array_digest(*values)
+        if self.response_images is None:
+            return original
+        axes = self.response_images.coordinate_ids
+        width = len(axes) if proper_dimensions is None else proper_dimensions
+        return metadata_digest({"original_source_chart": original, "proper_coordinate_ids": axes[:width]})
+
+    def extend_posterior(self, design, state):
+        """Append independent local unit priors without revisiting C likelihood."""
+        if self.response_images is None or not isinstance(state, GaussianQRPosteriorState):
+            raise TypeError("local extension requires precontracted response images and an actual C state")
+        old, new, cut = state.proper_dimensions, self.context[1], state.calibration_samples
+        if (new < old or self._raw_digest(design, cut, proper_dimensions=old) != state.raw_prefix_digest
+                or self._chart_digest(proper_dimensions=old) != state.chart_digest
+                or self._noise_digest() != state.noise_digest
+                or np.any(self.response_images.proper_image[:cut, :, old:])):
+            raise ValueError("new local priors changed the original C state or its existing coordinates")
+        flat = len(state.flat_transform)
+        indices = np.r_[np.arange(old), np.arange(new, new+flat)]
+        root = np.zeros((new+flat, new+flat))
+        root[np.ix_(indices, indices)] = state.precision_root
+        root[old:new, old:new] = np.eye(new-old)
+        rhs = np.zeros(new+flat)
+        rhs[indices] = state.precision_response
+        return GaussianQRPosteriorState(root, rhs, state.flat_transform, cut, new,
+            self._raw_digest(design, cut), self._chart_digest(), self._noise_digest(), state.log_marginal,
+            {**state.resolution, "independent_local_prior_extension": {"old_proper_dimensions": old,
+                "new_proper_dimensions": new, "C_likelihood_updates": 0}})
+
     def __call__(self, design):
         return self.evaluate(design)
 
-    def _posterior_operands(self, design):
+    def _posterior_operands(self, design, *, design_source_error=None):
         """The same native vec, stored white map and flat chart as evaluate."""
         design = _array(design, "complete posterior state design", 2)
         (factor, rank, channels, prefix, _, _, _, _, _, _, _, white_y,
          geometry, white_y_error, flat, flat_error, _, _) = self.context
         if design.shape != (len(self.samples), len(self.mean)):
             raise ValueError("posterior design differs from its actual physical prior")
-        mean = design@self.mean
-        white_mean = self.noise._whiten(mean)
-        mean_error = _roundoff_gamma(design.shape[1])*(np.abs(design)@np.abs(self.mean))
-        white_mean_error = _structured_whitening_error(self.noise, mean, white_mean, mean_error, geometry)
-        raw_image = np.einsum("nk,kcr->ncr", design, factor.reshape(len(self.mean), channels, rank))
-        white_image = self.noise._whiten(raw_image).reshape(self.samples.size, rank)
-        source = _roundoff_gamma(design.shape[1])*np.einsum("nk,kcr->ncr", np.abs(design),
-            np.abs(factor).reshape(len(self.mean), channels, rank))
-        if self.factor_source_error is not None:
-            source += np.einsum("nk,kcr->ncr", np.abs(design),
-                self.factor_source_error.reshape(len(self.mean), channels, rank))
-        image_error = _structured_whitening_error(self.noise, raw_image,
+        if self.response_images is not None:
+            images = self.response_images
+            mean, mean_error = images.mean, images.mean_error
+            raw_image, source = images.proper_image, images.proper_error
+        else:
+            mean = design@self.mean
+            mean_error = _roundoff_gamma(design.shape[1])*(np.abs(design)@np.abs(self.mean))
+            raw_image = np.einsum("nk,kcr->ncr", design, factor.reshape(len(self.mean), channels, rank))
+            source = _roundoff_gamma(design.shape[1])*np.einsum("nk,kcr->ncr", np.abs(design),
+                np.abs(factor).reshape(len(self.mean), channels, rank))
+            if self.factor_source_error is not None:
+                source += np.einsum("nk,kcr->ncr", np.abs(design),
+                    self.factor_source_error.reshape(len(self.mean), channels, rank))
+            if design_source_error is not None:
+                de = _array(design_source_error, "physical design source error", 2)
+                if de.shape != design.shape or np.any(de < 0):
+                    raise ValueError("physical design source error differs from its design")
+                gamma = _roundoff_gamma(2*design.shape[1]+2)
+                mean_bound = de@np.abs(self.mean)
+                mean_bound = np.nextafter((mean_bound+design.shape[1]*np.nextafter(0., 1.))/(1-gamma), np.inf)
+                mean_error = np.nextafter((mean_error+mean_bound)/(1-_roundoff_gamma(1)), np.inf)
+                bound = np.abs(factor) if self.factor_source_error is None else np.abs(factor)+self.factor_source_error
+                factor_bound = np.einsum("nk,kcr->ncr", de, bound.reshape(len(self.mean), channels, rank))
+                factor_bound = np.nextafter((factor_bound+design.shape[1]*np.nextafter(0., 1.))/(1-gamma), np.inf)
+                source = np.nextafter((source+factor_bound)/(1-_roundoff_gamma(1)), np.inf)
+        white_mean = self._whiten(mean)
+        white_mean_error = self._white_error(mean, white_mean, mean_error, geometry)
+        white_image = self._whiten(raw_image).reshape(self.samples.size, rank)
+        image_error = self._white_error(raw_image,
             white_image.reshape(raw_image.shape), source, geometry)
         centered = (white_y-white_mean).ravel()
         centering = _roundoff_gamma(1)*(np.abs(white_y)+np.abs(white_mean))
@@ -2201,14 +2340,14 @@ class StructuredGaussianMarginalProgram:
         return (np.column_stack((white_image, flat)), centered,
                 image_error.join_columns(flat_error), white_y_error+white_mean_error+centering_error)
 
-    def posterior_state(self, design):
+    def posterior_state(self, design, *, design_source_error=None):
         """Fit the full raw C record once, with one proper prior and one da."""
-        matrix, response, source_error, data_error = self._posterior_operands(design)
+        matrix, response, source_error, data_error = self._posterior_operands(design, design_source_error=design_source_error)
         factor, rank, channels, _, _, prior = self.context[:6]
         transform, logvolume = self.context[-2:]
         rhs, root, q, _ = _posterior_qr(matrix, response, prior)
-        logwhite = self.noise.whitening_logabsdet(len(self.samples))
-        normalizer_error = _structured_log_jacobian_error(self.noise, len(self.samples))
+        logwhite = self._logwhite(len(self.samples))
+        normalizer_error = self._logwhite_error(len(self.samples))
         normalizer_error += _roundoff_gamma(len(transform)+5)*(
             float(np.abs(np.log(np.abs(np.diag(transform)))).sum())+abs(logvolume))
         normalizer_error += _roundoff_gamma(3)*(len(response)-len(transform))*abs(float(np.log(2*np.pi)))
@@ -2217,15 +2356,15 @@ class StructuredGaussianMarginalProgram:
             normalizer_error=normalizer_error, normalizer_magnitude=logwhite,
             coordinate_logabsdet=logvolume)
         return GaussianQRPosteriorState(root, rhs, transform, len(self.samples), rank,
-            array_digest(self.samples, np.asarray(design), self.raw_nuisance),
-            array_digest(self.mean, factor, transform), _structured_noise_digest(self.noise), marginal,
+            self._raw_digest(design, len(self.samples)),
+            self._chart_digest(), self._noise_digest(), marginal,
             {"C": certificate, "source_sha256": _IMPLEMENTATION_SHA256,
              "coefficient_order": "row_major_coefficient_then_channel_and_flat_coefficient_then_channel",
              "raw_scalar_rows": len(response), "flat_dimensions": matrix.shape[1]-rank,
              "physical_flat_logvolume": logvolume,
              "measure": "original_physical_da_integrated_once_normalized_joint_posterior"})
 
-    def continue_posterior(self, design, state, *, conditioning_samples):
+    def continue_posterior(self, design, state, *, conditioning_samples, design_source_error=None):
         """Extend an actual C QR state using full-record white suffix rows.
 
         The complete Y/D/Z map starts at raw sample zero. Its leading C rows
@@ -2238,11 +2377,11 @@ class StructuredGaussianMarginalProgram:
         n, cut, channels = len(self.samples), state.calibration_samples, self.samples.shape[1]
         if type(conditioning_samples) is not int or not cut < conditioning_samples < n:
             raise ValueError("future conditioning must follow C and leave an observed score tail")
-        if (array_digest(self.samples[:cut], np.asarray(design)[:cut], self.raw_nuisance[:cut])
-                != state.raw_prefix_digest or array_digest(self.mean, self.context[0], self.context[-2])
-                != state.chart_digest or _structured_noise_digest(self.noise) != state.noise_digest):
+        if (self._raw_digest(design, cut)
+                != state.raw_prefix_digest or self._chart_digest()
+                != state.chart_digest or self._noise_digest() != state.noise_digest):
             raise ValueError("continuation differs from actual C operands or its saved physical chart")
-        matrix, response, matrix_error, response_error = self._posterior_operands(design)
+        matrix, response, matrix_error, response_error = self._posterior_operands(design, design_source_error=design_source_error)
         start, prefix_rows = cut*channels, (conditioning_samples-cut)*channels
         matrix, response = matrix[start:], response[start:]
         inverse = solve_triangular(state.precision_root, np.eye(len(state.precision_root)))
@@ -2280,12 +2419,12 @@ class StructuredGaussianMarginalProgram:
         logdet = float(2*(np.log(np.abs(np.diag(full_root))).sum()
                           -np.log(np.abs(np.diag(prefix_root))).sum()))
         tail_rows = (n-conditioning_samples)*channels
-        tail_logwhite = self.noise.whitening_logabsdet(n)-self.noise.whitening_logabsdet(conditioning_samples)
+        tail_logwhite = self._logwhite(n)-self._logwhite(conditioning_samples)
         normalizer = tail_rows*np.log(2*np.pi)-2*tail_logwhite
-        jacobian_error = (_structured_log_jacobian_error(self.noise, n)
-            +_structured_log_jacobian_error(self.noise, conditioning_samples)
-            +_roundoff_gamma(1)*(abs(self.noise.whitening_logabsdet(n))
-                                 +abs(self.noise.whitening_logabsdet(conditioning_samples))))
+        jacobian_error = (self._logwhite_error(n)
+            +self._logwhite_error(conditioning_samples)
+            +_roundoff_gamma(1)*(abs(self._logwhite(n))
+                                 +abs(self._logwhite(conditioning_samples))))
         normalizer_error = 2*jacobian_error+_roundoff_gamma(4)*(
             tail_rows*abs(float(np.log(2*np.pi)))+2*abs(tail_logwhite))
         conditional = _conditional_score_resolution(image, centered, prior, prefix_rows,
@@ -2295,12 +2434,12 @@ class StructuredGaussianMarginalProgram:
         values, certificates = [], []
         for stop in (prefix_rows, len(centered)):
             rhs, root, q, _ = _posterior_qr(image[:stop], centered[:stop], prior)
-            logwhite = (self.noise.whitening_logabsdet(cut+stop//channels)
-                        -self.noise.whitening_logabsdet(cut))
-            logwhite_error = (_structured_log_jacobian_error(self.noise, cut+stop//channels)
-                +_structured_log_jacobian_error(self.noise, cut)
-                +_roundoff_gamma(1)*(abs(self.noise.whitening_logabsdet(cut+stop//channels))
-                                     +abs(self.noise.whitening_logabsdet(cut))))
+            logwhite = (self._logwhite(cut+stop//channels)
+                        -self._logwhite(cut))
+            logwhite_error = (self._logwhite_error(cut+stop//channels)
+                +self._logwhite_error(cut)
+                +_roundoff_gamma(1)*(abs(self._logwhite(cut+stop//channels))
+                                     +abs(self._logwhite(cut))))
             value, certificate = _absolute_marginal_resolution(image[:stop], centered[:stop],
                 prior, q, root, rhs, source_columns, data_error,
                 normalizer_error=logwhite_error+_roundoff_gamma(3)*stop*abs(float(np.log(2*np.pi))),
@@ -2315,7 +2454,7 @@ class StructuredGaussianMarginalProgram:
              "C_rows_reused_in_update": 0, "new_flat_dimensions": 0,
              "sample_mean_provided": False}, None, None)
 
-    def evaluate(self, design, *, absolute_marginals=True):
+    def evaluate(self, design, *, absolute_marginals=True, design_source_error=None, conditioning_samples=None):
         design = _array(design, "complete state design", 2)
         y, noise = self.samples, self.noise
         if design.shape != (len(y), len(self.mean)):
@@ -2324,25 +2463,50 @@ class StructuredGaussianMarginalProgram:
          white_nuisance, nuisance_q, nuisance_root, nuisance_scales,
          projection_geometry, white_y, map_geometry, white_y_error,
          score_nuisance, nuisance_error, nuisance_transform, nuisance_logabsdet) = self.context
-        mean = design @ self.mean
-        white_mean = noise._whiten(mean)
-        mean_error = _roundoff_gamma(design.shape[1])*(np.abs(design)@np.abs(self.mean))
-        white_mean_error = _structured_whitening_error(noise, mean, white_mean, mean_error, map_geometry)
-        residual = (white_y - white_mean).ravel()
-        if rank:
-            uncertainty = np.einsum("nk,kcr->ncr", design,
-                factor.reshape(self.mean.shape[0], channels, rank))
-            white_uncertainty = noise._whiten(uncertainty).reshape(len(y) * channels, rank)
-            uncertainty_error = _roundoff_gamma(design.shape[1])*np.einsum("nk,kcr->ncr", np.abs(design),
-                    np.abs(factor).reshape(self.mean.shape[0], channels, rank))
-            if self.factor_source_error is not None:
-                uncertainty_error += np.einsum("nk,kcr->ncr", np.abs(design),
-                    self.factor_source_error.reshape(self.mean.shape[0], channels, rank))
-            white_uncertainty_error = _structured_whitening_error(noise, uncertainty,
-                white_uncertainty.reshape(uncertainty.shape), uncertainty_error, map_geometry)
+        requested_prefix = conditioning_samples is not None
+        if requested_prefix:
+            if type(conditioning_samples) is not int or not 0 < conditioning_samples < len(y):
+                raise ValueError("actual conditional prefix must leave an observed tail")
+            prefix, prefix_rows = conditioning_samples, conditioning_samples*channels
+        if self.response_images is not None or design_source_error is not None or requested_prefix:
+            operand_matrix, residual, matrix_error, response_error = self._posterior_operands(
+                design, design_source_error=design_source_error)
+            white_uncertainty = operand_matrix[:, :rank]
+            white_uncertainty_error = _SegmentError(
+                matrix_error.prefix, matrix_error.tail,
+                matrix_error.prefix_columns[:rank], matrix_error.tail_columns[:rank])
+            mean = self.response_images.mean if self.response_images is not None else design@self.mean
+            white_mean = self._whiten(mean)
+            white_mean_error = response_error
+            white_y_error = _SegmentError(0., 0.)
+            if requested_prefix:
+                columns = matrix_error.prefix_columns+matrix_error.tail_columns
+                white_uncertainty_error = _SegmentError(float(np.linalg.norm(columns[:rank])),
+                    float(np.linalg.norm(columns[:rank])), columns[:rank], columns[:rank])
+                nuisance_error = _SegmentError(float(np.linalg.norm(columns[rank:])),
+                    float(np.linalg.norm(columns[rank:])), columns[rank:], columns[rank:])
+                total = response_error.prefix+response_error.tail
+                white_mean_error = _SegmentError(total, total)
         else:
-            white_uncertainty = np.empty((len(y) * channels, 0))
-            white_uncertainty_error = _SegmentError(0., 0., np.empty(0), np.empty(0))
+            mean = design @ self.mean
+            white_mean = self._whiten(mean)
+            mean_error = _roundoff_gamma(design.shape[1])*(np.abs(design)@np.abs(self.mean))
+            white_mean_error = self._white_error(mean, white_mean, mean_error, map_geometry)
+            residual = (white_y - white_mean).ravel()
+            if rank:
+                uncertainty = np.einsum("nk,kcr->ncr", design,
+                    factor.reshape(self.mean.shape[0], channels, rank))
+                white_uncertainty = self._whiten(uncertainty).reshape(len(y) * channels, rank)
+                uncertainty_error = _roundoff_gamma(design.shape[1])*np.einsum("nk,kcr->ncr", np.abs(design),
+                        np.abs(factor).reshape(self.mean.shape[0], channels, rank))
+                if self.factor_source_error is not None:
+                    uncertainty_error += np.einsum("nk,kcr->ncr", np.abs(design),
+                        self.factor_source_error.reshape(self.mean.shape[0], channels, rank))
+                white_uncertainty_error = self._white_error(uncertainty,
+                    white_uncertainty.reshape(uncertainty.shape), uncertainty_error, map_geometry)
+            else:
+                white_uncertainty = np.empty((len(y) * channels, 0))
+                white_uncertainty_error = _SegmentError(0., 0., np.empty(0), np.empty(0))
         # The actual frozen covariance image is already the full proper
         # latent prior chart. Reuse record Z-QR only for numerical admission;
         # the raw prefix/tail conditional posterior below is unchanged.
@@ -2366,13 +2530,22 @@ class StructuredGaussianMarginalProgram:
         # Avoid subtracting two large nuisance means before applying R_p.
         shift = prefix_root@full_mean-prefix_rhs
         quadratic = float(remaining @ remaining + shift @ shift)
-        if isinstance(noise, FittedChannelNoise):
+        if requested_prefix:
+            tail_logwhite = self._logwhite(len(y))-self._logwhite(prefix)
+            tail_normalizer = (len(y)-prefix)*channels*np.log(2*np.pi)-2*tail_logwhite
+            normalizer_error = 2*(self._logwhite_error(len(y))+self._logwhite_error(prefix))
+            normalizer_error += _roundoff_gamma(5)*(abs(tail_normalizer)+2*abs(tail_logwhite))
+        elif isinstance(noise, FittedChannelNoise):
             noise_logs = 2*np.log(np.diag(noise._spatial_root))
             tail_normalizer = (len(y)-prefix)*(float(noise_logs.sum())+channels*np.log(2*np.pi))
             normalizer_error = .5*(len(y)-prefix)*_roundoff_gamma(channels+5)*(
                 float(np.abs(noise_logs).sum())+channels*abs(float(np.log(2*np.pi))))
         else:
             tail_normalizer, normalizer_error = noise.conditional_normalizer(len(y), prefix)
+        if self.noise_scale != 1. and not requested_prefix:
+            correction = (len(y)-prefix)*channels*float(np.log(self.noise_scale))
+            tail_normalizer += correction
+            normalizer_error += _roundoff_gamma(5)*(abs(tail_normalizer)+abs(correction))
         conditional_resolution = _conditional_score_resolution(
             matrix, residual, proper_root, prefix_rows, prefix_q, prefix_root,
             prefix_smallest, full_design, full_y, q, full_root, full_rhs, full_mean,
@@ -2403,7 +2576,7 @@ class StructuredGaussianMarginalProgram:
                 prefix_root, prefix_rhs, prefix_smallest, q, full_root,
                 quadratic, conditional_resolution, nuisance_logabsdet,
                 white_uncertainty_error.join_columns(nuisance_error),
-                white_y_error+white_mean_error+centering_error)
+                white_y_error+white_mean_error+centering_error, noise_scale=self.noise_scale)
             resolution.update(absolute_resolution)
         return StructuredGaussianMarginalPair(joint, leading, float(density),
             resolution, mean, white_mean.ravel())
@@ -2675,7 +2848,7 @@ def _absolute_marginal_resolution(design, response, prior, q, root, rhs,
 
 def _absolute_gaussian_marginals(noise, matrix, residual, proper_root, prefix_rows,
         prefix_q, prefix_root, prefix_rhs, prefix_smallest, q, full_root, quadratic,
-        conditional_resolution, nuisance_logabsdet, matrix_source_error, response_source_error):
+        conditional_resolution, nuisance_logabsdet, matrix_source_error, response_source_error, *, noise_scale=1.):
     """Absolute full/prefix potentials; stable conditional is kept separately."""
     del prefix_smallest, q, full_root, quadratic, conditional_resolution
     channels = len(noise.innovation_covariance)
@@ -2688,6 +2861,8 @@ def _absolute_gaussian_marginals(noise, matrix, residual, proper_root, prefix_ro
              matrix_source_error.prefix_columns+matrix_source_error.tail_columns,
              response_source_error.prefix+response_source_error.tail)):
         logwhite = noise.whitening_logabsdet(stop//channels)
+        if noise_scale != 1.:
+            logwhite -= .5*stop*np.log(noise_scale)
         normalizer_error = _roundoff_gamma(stop+matrix.shape[1]+5)*(
             abs(logwhite)+abs(nuisance_logabsdet)+stop*abs(float(np.log(2*np.pi))))
         value, certificate = _absolute_marginal_resolution(matrix[:stop], residual[:stop],

@@ -2712,6 +2712,60 @@
         "new_source_or_target_fits": 0,
         "new_sampler_or_lambda_integrals": 0,
         "source_response_engine_central_and_full_pipeline": "separate_ongoing"
+      },
+      "central_response_images_and_certificate": {
+        "status": "accepted_optional_central_interface_and_equivalent_certificate",
+        "production_source": {
+          "path": "src/research/channel_noise_mechanism.py",
+          "sha256": "5ed75519c0006577b44e4dc33c45303f00aef7e91f3aebc67ef81d8fb1ed91c7"
+        },
+        "artifacts": {
+          "B07_CENTRAL_LOCAL_EXTENSION_INDEPENDENT.py": {
+            "path": "D:/BCI/artifacts/research-deliveries/source-response-states/triangular-certificate/B07_CENTRAL_LOCAL_EXTENSION_INDEPENDENT.py",
+            "sha256": "05975f8aa6a35808b32f5c01de5d4e6946978ff4718793e457bf0664b6bac351",
+            "bytes": 5882
+          },
+          "B07_CENTRAL_LOCAL_EXTENSION_INDEPENDENT.json": {
+            "path": "D:/BCI/artifacts/research-deliveries/source-response-states/triangular-certificate/B07_CENTRAL_LOCAL_EXTENSION_INDEPENDENT.json",
+            "sha256": "c0efad7485f60da232f107644fcf88d51538547e965548aaf35f5512bc3bfc56",
+            "bytes": 932
+          },
+          "ROOT_ACCEPTANCE.json": {
+            "path": "D:/BCI/artifacts/research-deliveries/source-response-states/triangular-certificate/ROOT_ACCEPTANCE.json",
+            "sha256": "b5402d7179e4f10b18a1afb39d562b99c14171fbfa713fcb4f744c89b22ba629",
+            "bytes": 1346
+          },
+          "DELIVERY.binding.json": {
+            "path": "D:/BCI/artifacts/research-deliveries/source-response-states/triangular-certificate/DELIVERY.binding.json",
+            "sha256": "84160dd9e217c9efdd29ff63342803fd4cc64e346ccd020c2481b2e831fd1b55",
+            "bytes": 7794
+          },
+          "paired_certificate.json": {
+            "path": "D:/BCI/artifacts/research-deliveries/source-response-states/triangular-certificate/paired_certificate.json",
+            "sha256": "2d08d613ab385a206f27b8e29193c67a73a73fa767d19f59f6abc739948b2024",
+            "bytes": 4264
+          }
+        },
+        "scope": [
+          "explicit_eta_noise_covariance_with_full_raw_Jacobian",
+          "typed_contracted_physical_mean_and_rectangular_proper_images",
+          "independent_new_selection_local_prior_extension_preserving_actual_C_root",
+          "exact_zero_triangular_residual_skip_after_original_representability_gates"
+        ],
+        "independent_dense_max_absolute_error_nats": 8.881784197001252e-16,
+        "unchanged_C_root_rhs": true,
+        "original_default_path_checks_passed": 4,
+        "new_eta_and_positive_long_dot_cases_passed": 2,
+        "certificate_edge_cases": 70,
+        "paired_complete_certificate_speedup_FMA": 12.536480463147726,
+        "paired_complete_certificate_speedup_Dekker": 1.6672695032695217,
+        "certificate_fields_bitexact": true,
+        "root_verified_performance_delivery_members": 16,
+        "final_and_executed_candidate_function_AST_equal": true,
+        "all_other_central_module_AST_unchanged_from_seam_oracle_source": true,
+        "new_fits_or_sampling_in_performance_and_independent_dense_checks": 0,
+        "four_arm_engine_and_caller": "separate_ongoing",
+        "public_scale_entry": "actual_source_rank_state_count_source_stage_and_complete_resident_budget_next"
       }
     }
   }
