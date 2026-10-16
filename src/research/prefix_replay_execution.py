@@ -34,6 +34,21 @@ _CONSUMER_PATHS = (
     "src/research/nested_selection_replay.py", "src/research/joint_flat_replay.py",
     "src/transfer/ensemble_fit.py", "src/transfer/joint_flat_model.py", "src/transfer/joint_flat_programme.py",
 )
+_SOURCE_RESPONSE_CONSUMER_PATHS = (
+    "src/research/source_response_replay.py", "src/research/source_response_states.py",
+    "src/transfer/source_response_programme.py", "src/research/finite_response_law.py",
+    "src/transfer/native_response_dictionary.py", "src/research/channel_noise_mechanism.py",
+    "src/research/response_history_identification.py", "src/research/history_authority.py",
+    "src/research/latent_response_reference.py", "src/research/multichannel_c_latent.py",
+    "src/research/joint_response_scale.py", "src/research/joint_source_catalog.py",
+    "src/transfer/noise_model.py", "src/transfer/continuous_decision.py",
+    "src/transfer/response_dictionary.py", "src/transfer/ensemble.py",
+    "src/models/candidate_evidence.py", "src/research/candidate_metrics.py",
+    "experiments/run_candidate_ensemble_study.py",
+    "src/transfer/dictionary_artifact.py", "src/transfer/temporal_noise.py",
+    "src/research/shared_stationary_factor.py", "src/research/stationary_noise_artifact.py",
+    "src/research/joint_flat_authority.py",
+)
 
 
 def artifact_receipt(path):
@@ -70,8 +85,18 @@ def _read_sealed(receipt):
     return record
 
 
+def _consumer_paths(request):
+    for row in (*request.get("ordinary_packages", ()), *request.get("selection_packages", ())):
+        original = row["original_request"]
+        groups = (candidate["expert_programs"] for candidate in original["candidates"]) if "candidates" in original else (
+            original["expert_programs"],)
+        if any(spec["family"] == "source_response" for group in groups for spec in group):
+            return (*_CONSUMER_PATHS, *_SOURCE_RESPONSE_CONSUMER_PATHS)
+    return _CONSUMER_PATHS
+
+
 def _consumer_identity(request):
-    actual = {name: artifact_receipt(_ROOT / name)["sha256"] for name in _CONSUMER_PATHS}
+    actual = {name: artifact_receipt(_ROOT / name)["sha256"] for name in _consumer_paths(request)}
     if (any(request["consumer_source"].get(name) != digest for name, digest in actual.items())
             or actual["src/research/prefix_replay_execution.py"] != _EXECUTED_SHA256):
         raise ValueError("prefix replay adapter differs from the externally bound executed consumer")
