@@ -118,3 +118,19 @@ def test_adapter_only_exports_public_memberships_and_preserves_unknown_terminal_
     np.testing.assert_array_equal(native.read_native(10, 20), samples[10:20, 1:17] * 1e-6)
     rebuilt = bi2014a_dataset_adapter(adapter.source_artifacts, source_format=adapter.source_format)
     assert rebuilt.digest == adapter.digest
+
+
+def test_private_target_change_cannot_supply_a_public_selection_boundary(tmp_path):
+    from data.bi2014a_recording import bi2014a_dataset_adapter
+
+    samples = original_samples()
+    onsets = np.flatnonzero((samples[:, 17] >= 20) & (samples[:, 17] <= 85))
+    # A valid second repetition with another private target, inside the same
+    # original public episode: its targets cannot authorize a new boundary.
+    third = np.asarray([61, 82, 20, 22, 23, 24, 25, 40, 41, 43, 44, 45])
+    samples[onsets[12:24], 17] = third
+    samples[onsets[12:24], 18] = np.where(third >= 60, 2, 1)
+    path, digest = source(tmp_path, samples)
+    with pytest.raises(ValueError, match="physical episode contains conflicting"):
+        bi2014a_dataset_adapter([{"path": str(path), "sha256": digest, "subject": "01"}],
+                               source_format="original_mat_zip")

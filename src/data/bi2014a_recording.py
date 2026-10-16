@@ -45,6 +45,7 @@ class BI2014aOriginalRecord:
     recorded_times_s: np.ndarray
     schedule: BI2014ACandidateRecord
     source_receipt: dict
+    selection_boundary_samples: np.ndarray
 
 
 def _original_payload(path, expected_sha256, source_format, source_member):
@@ -137,7 +138,8 @@ def read_bi2014a_original_record(path, *, source_sha256, source_format, source_m
         "numeric_fields_sha256": array_digest(frozen), "original_fields_sha256": array_digest(values),
         "decoder_source_sha256": _FACTORY_SOURCE_SHA256}
     return BI2014aOriginalRecord(actual_subject, source_sha256, relative, source_format,
-                                 frozen[:, 1:17], frozen[:, 0], schedule, receipt)
+        frozen[:, 1:17], frozen[:, 0], schedule, receipt,
+        np.frombuffer(np.flatnonzero(np.isin(markers, [100, 104])).astype(np.int64).tobytes(), dtype=np.int64))
 
 
 def _parent_target(record, rows):
@@ -148,7 +150,7 @@ def _parent_target(record, rows):
     targets = {axis: {event.candidate_index for event in decoded if event.is_target and event.axis == axis}
                for axis in ("row", "column")}
     if any(len(values) > 1 for values in targets.values()):
-        raise ValueError("BI original episode contains conflicting actual target-coded membership")
+        raise ValueError("BI physical episode contains conflicting actual target-coded membership")
     if not all(len(values) == 1 for values in targets.values()):
         return None
     from transfer.candidate_decision import row_column_target
@@ -178,14 +180,16 @@ def bi2014a_dataset_adapter(record_sources, *, source_format):
         for event in map(BI2014A_FLASH_SCHEDULE.decode, schedule.scheduled_flash_code)], dtype=np.int64)
     participant = origin_subject_key("BI2014a", record.subject_id)
     selections = []
-    for name in dict.fromkeys(schedule.scheduled_selection_id.tolist()):
-        rows = np.flatnonzero(schedule.scheduled_selection_id == name)
-        repetitions = schedule.scheduled_repetition_index[rows]
+    partitions = np.searchsorted(record.selection_boundary_samples, schedule.scheduled_flash_sample, side="left")
+    for episode, partition in enumerate(dict.fromkeys(partitions.tolist()), start=1):
+        rows = np.flatnonzero(partitions == partition)
+        repetitions = np.arange(len(rows), dtype=np.int64) // 12
         decision = MembershipDecision.row_column(public_ids[rows], n_rows=6, n_columns=6,
             event_ids=tuple(f"BI2014a:{record.subject_id}:{int(row)}" for row in rows),
             repetition_indices=repetitions, repetitions=int(repetitions.max()) + 1,
             evidence_indices=np.arange(len(rows)), timeline_complete=True)
-        selections.append(OriginalCandidateSelection(str(name), tuple(rows.tolist()), decision, _parent_target(record, rows)))
+        name = f"subject_{record.subject_id}:episode{episode}"
+        selections.append(OriginalCandidateSelection(name, tuple(rows.tolist()), decision, _parent_target(record, rows)))
 
     def read_native(start, stop):
         if not 0 <= start < stop <= len(record.eeg_uv):
