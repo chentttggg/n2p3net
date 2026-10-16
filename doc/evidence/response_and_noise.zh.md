@@ -24,9 +24,9 @@
 
 此式要求`r<1`，并继续使用原`1e-8*sqrt(P*C)`准入政策。无PSD修补、噪声参数重估、降通道或缩prefix。数学根计算为`P³+C³`主阶，完整actual root物化/核对仍有必要的`P²C²`项，small rational数的位长也影响时间。
 
-`FittedChannelNoise.from_shared_stationary_factors`显式发布新`/4`包；原factory/fit/default constructor保持原`/3`。新包保存原A/B、actual R、证书及三项原producer源码SHA；consumer核固定语义、精确law和witness，保原源码身份。load不调用任何root compiler。完整startup/tail whitening、leading prefix、log determinant、physical prior和flat da测度沿原函数消费actual root。
+`FittedChannelNoise.from_shared_stationary_factors`显式发布新`/4`包；原factory/fit/default constructor保持原`/3`。新包保存原A/B、actual R、证书及三项原producer源码SHA；consumer核固定语义、精确law和witness，保原源码身份。load直接准入保存的prefix因子和TemporalNoise启动状态；tail的空间Cholesky沿原owner构造。完整startup/tail whitening、leading prefix、log determinant、physical prior和flat da测度沿原函数消费actual root。
 
-独立小维测试从AR0/1/2闭式YW组装raw K，用有理Gauss–Jordan直接计算完整`R⁻¹ K R⁻ᵀ-I`，覆盖原单位与极小/极大协方差尺度；另有private拒绝、改签/损坏state、逆缺陷方向及normalization反例。新noise通过B11实际`compile_owned_flat_decision → save_joint_flat_state → load_joint_flat_state → predict_flat_tail`，保存重放时禁止任何fit/whiten/root compiler，预测的component logs和prefix weights逐数组相等。本地软件检查不代表公共分类效能。
+独立小维测试从AR0/1/2闭式YW组装raw K，用有理Gauss–Jordan直接计算完整`R⁻¹ K R⁻ᵀ-I`，覆盖原单位与极小/极大协方差尺度；另有private拒绝、改签/损坏state、逆缺陷方向及normalization反例。独审再从AR3 companion Lyapunov方程独立求raw K，P2/P5的真实误差均受证书覆盖。新noise通过B11实际`compile_owned_flat_decision → save_joint_flat_state → load_joint_flat_state → predict_flat_tail`，保存重放时禁用fit、重新白化及prefix/temporal启动编译，预测的component logs和prefix weights逐数组相等。这些检查验收数值law和保存重放，公共分类表现由实际面板记录。
 
 固定源码`8ca8dd15`以原31通道shared-AR1/P32输入实测：新compile 2.076秒、constructor准入1.459秒、完整factory 3.814秒、save 0.833秒、load 2.281秒；native1、峰值RSS 322.0 MiB。law bound为`1.6504e-12`，原政策为`3.1496e-7`。原stored AR/Σ逐数组保持，新root与原保存dense root最大差`6.7763e-21`，startup logdet差0；新包record和白化逐bit重放。原source JSON只读并前后核SHA，无新fit。原观察约689秒为不同次执行的历史瓶颈，不构造配对倍率；同进程相同AR/Σ的P8C4经各一次warmup后三次生成，中位dense 25.87毫秒、factor 9.69毫秒，约2.67倍。完整[执行绑定](../assets/shared_stationary_factor_20261016/binding.json)保存原输入、实际执行source SHA、阶段耗时和软件验证。
 

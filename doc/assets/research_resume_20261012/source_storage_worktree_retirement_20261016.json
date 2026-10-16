@@ -1,0 +1,24 @@
+{
+  "schema": "n2p3_completed_worktree_retirement/1",
+  "status": "removed_after_root_recovery_verification",
+  "worktree": "D:/BCI/worktrees/source-lineage-storage",
+  "retained_head": "cadfb7d2e17756c156fbc6ae10ff71560a12d8c3",
+  "retained_branch": "refs/heads/codex/source-lineage-storage",
+  "recovery_binding": {
+    "path": "D:/BCI/artifacts/research-deliveries/worktree-recovery/source-lineage-storage/RECOVERY.binding.json",
+    "bytes": 25067,
+    "sha256": "8599f0a7ba9c57908b81727da8eb42be06a2266fc5538bf50b723703eaa99f7b"
+  },
+  "root_verified_exact_recovery_mappings": 26,
+  "persistent_files_existing_outside_removed_tree": 1587,
+  "bundle_verified": true,
+  "all_ignored_files_classified": true,
+  "active_path_references": 0,
+  "new_environments_data_models_copied": 0,
+  "root_combination_acceptance": "46732ee actual Manager source publish/prefix/save/replay OS0",
+  "deletion_method": "cmd.exe git worktree remove; no other shell fallback",
+  "actual_cmd": "git worktree remove D:\\BCI\\worktrees\\source-lineage-storage",
+  "actual_cmd_exit": 0,
+  "worktree_exists_after": false,
+  "git_registration_exists_after": false
+}

@@ -13,9 +13,9 @@
 
 ## 当前研究
 
-本地科研已按2026-10-14用户指令收尾暂停，见[统一暂停检查点](assets/research_resume_20261012/pause_checkpoint_20261014.json)与[交接](assets/research_resume_20261012/HANDOFF.zh.md)。科研代码、未提交切片、原模型和结果保留；云端按用户在独立云窗口的明确指令继续现有队列。
+2026-10-16用户已恢复科研，沿[10月14日暂停检查点](assets/research_resume_20261012/pause_checkpoint_20261014.json)核验原代码与产物后续接，当前入口见[交接](assets/research_resume_20261012/HANDOFF.zh.md)。本窗口临时并发上限为6（含总监）。云端原八人candidate拟合已完成；ordinary重放的单格差已定位到评分线程上下文，正按原ordinary4/selection1准备零fit恢复，保全部原requested与失败记录，后五阶段由唯一云owner继续。
 
-科研集成树位于`D:/BCI/worktrees/research-director`，续接读[总监handoff](assets/research_resume_20261012/HANDOFF.zh.md)与实际Git/云窗口。binary requested选择、四fixed source/scratch程序、B07多通道C-latent、B09compact结构及source/OOF/ensemble、B03完整温度+ε/ordinary、B11同record Gamma/flat均已接受其独立软件范围，见[整合绑定](assets/research_resume_20261012/research_integration_acceptance.json)。Linux sealed输入及source线程/E2接缝已闭合。seed20261014四source训练完整完成，BNCI binary八人120次目标fit及128份预测已零新fit恢复；新的八人candidate由唯一云执行窗口推进。原始Huebner/BI adapter、record-aware C权限和输入capsule已集成，完整13人Huebner metadata固定最后session819请求；下一B11 typed ensemble/fullhistory与H/BI NN四fixed/selector真实调用链继续收口，见[当前执行计划](roadmap.zh.md)。
+科研集成树位于`D:/BCI/worktrees/research-director`，实际接受范围见[整合绑定](assets/research_resume_20261012/research_integration_acceptance.json)。本轮已合入source串行共享与candidate完整依赖闭包、并发产物预算修复及显式shared AR启动因子；真实Manager组合检查完成共享source发布、prefix保存与精确重放。BI旧保存子集的12请求已闭合，原MAT01/57正独立执行四fixed/selector完整链。B11 typed ensemble/fullhistory沿实际C500数值误差见证继续；H完整13人metadata、最后session819请求及record-aware输入接口已集成，完整NN链按原owner推进。
 
 当前按[愿望清单进展](evidence/wishlist_progress_20261010.zh.md)推进123项。B03真正prefix整程序选择及保存重放/public parent准入已集成；修后entry005完成八人152请求，选择收益随K变化。P1新stationary law两臂16/16完成、0新fit，winner与旧law一致。source cache/shared score、conditional公共白化及逐decision horizon已接入。BI61人与BNCI8人的episode三臂队列已完成并独立复算；BNCI微调的NLL改善集中A04，scratch命中/Brier较好。当前科研独立树从保留的`f1d0ec0`恢复，源码和Git证据已恢复；原BI/BNCI报告、entry005/P1结果及P1原score/receipt已按原SHA恢复到D盘持久目录，逐预测复算和恢复清理来源见[原载荷绑定](assets/research_resume_20261011/cloud_payload_recovery_binding.json)。结论集中维护在[校准与选择](evidence/calibration_and_selection.zh.md)、[响应与噪声](evidence/response_and_noise.zh.md)、[公共评估](evidence/public_evaluation.zh.md)和[执行与集成](evidence/execution_and_integration.zh.md)；六指南持有活动规范，各产物保持自己的来源与分母。
 

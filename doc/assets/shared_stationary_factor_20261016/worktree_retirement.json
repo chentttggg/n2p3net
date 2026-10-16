@@ -1,0 +1,61 @@
+{
+  "schema": "n2p3_completed_worktree_retirement/1",
+  "status": "removed_after_verified_integration_and_recovery",
+  "worktree": "D:/BCI/worktrees/shared-ar-stationary-factor",
+  "retained_branch": "codex/shared-ar-stationary-factor",
+  "retained_head": "4ecbdd0f6bd95ca93a3ba802789708663795a2ce",
+  "integrated_runtime_files_equal": true,
+  "current_build": "root explicit /4 factory integrated; unchanged source hashes and independently admitted original31x32 saved state",
+  "active_path_references": [],
+  "recovery_files": [
+    {
+      "original": "D:/BCI/worktrees/shared-ar-stationary-factor/tmp/SHARED_AR_STATIONARY_FACTOR_HANDOFF.md",
+      "recovery": "D:/BCI/artifacts/research-deliveries/worktree-recovery/shared-ar-stationary-factor/tmp/SHARED_AR_STATIONARY_FACTOR_HANDOFF.md",
+      "bytes": 12959,
+      "sha256": "1cf4f5bed4b85523ca9558a88297ed11c24d6fa265b6b784bff6e230bbaf4cb1"
+    },
+    {
+      "original": "D:/BCI/worktrees/shared-ar-stationary-factor/tmp/shared_stationary_actual31_20261016/receipt.json",
+      "recovery": "D:/BCI/artifacts/research-deliveries/worktree-recovery/shared-ar-stationary-factor/tmp/shared_stationary_actual31_20261016/receipt.json",
+      "bytes": 4360,
+      "sha256": "120e52ca37efaa91073bf272aeb3504e7abbf66575a6be4b34fe940e1eb2b6a8"
+    },
+    {
+      "original": "D:/BCI/worktrees/shared-ar-stationary-factor/tmp/shared_stationary_actual31_20261016_final/new_factor_noise.json",
+      "recovery": "D:/BCI/artifacts/research-deliveries/worktree-recovery/shared-ar-stationary-factor/tmp/shared_stationary_actual31_20261016_final/new_factor_noise.json",
+      "bytes": 9851201,
+      "sha256": "bb930a8dcace3c6405a7d7ac975e9b92c1043ecf62aa5d3a59c2dec78cecc0a4"
+    },
+    {
+      "original": "D:/BCI/worktrees/shared-ar-stationary-factor/tmp/shared_stationary_actual31_20261016_final/receipt.json",
+      "recovery": "D:/BCI/artifacts/research-deliveries/worktree-recovery/shared-ar-stationary-factor/tmp/shared_stationary_actual31_20261016_final/receipt.json",
+      "bytes": 4886,
+      "sha256": "f53eaa028a05821c29a77cbc2314a09cf50be91021789292f09b0a9bbb4e24e5"
+    },
+    {
+      "original": "D:/BCI/worktrees/shared-ar-stationary-factor/tmp/shared_stationary_actual31_20261016_final/software_contracts.xml",
+      "recovery": "D:/BCI/artifacts/research-deliveries/worktree-recovery/shared-ar-stationary-factor/tmp/shared_stationary_actual31_20261016_final/software_contracts.xml",
+      "bytes": 10421,
+      "sha256": "9c638563eadfc24f72e4d744db7f45c69d4de933804b4e419ff88c0663bb0b8a"
+    },
+    {
+      "original": "D:/BCI/worktrees/shared-ar-stationary-factor/tmp/shared_stationary_factor_pause_original.py",
+      "recovery": "D:/BCI/artifacts/research-deliveries/worktree-recovery/shared-ar-stationary-factor/tmp/shared_stationary_factor_pause_original.py",
+      "bytes": 11145,
+      "sha256": "81f39b6bbdbf2210131dcd91abb1387ede492e0e8315beddd2cd7cb4bd35b250"
+    }
+  ],
+  "recovery_bytes": 9894972,
+  "discardable_ignored": "Python bytecode, pytest cache and Ruff cache",
+  "original_source_codec": "D:/BCI/worktrees/joint-flat-ensemble/tmp/joint_flat_actual31/frozen_source.json; unchanged, outside removed worktree",
+  "deletion_method": "cmd.exe invoking git worktree remove; no shell fallback",
+  "actual_cmd": "git worktree remove D:\\BCI\\worktrees\\shared-ar-stationary-factor",
+  "actual_cmd_exit": 0,
+  "worktree_exists_after": false,
+  "git_registration_exists_after": false,
+  "preceding_cmd_attempt": {
+    "exit_code": 128,
+    "reason": "quoted path arrived with literal quotes; no deletion occurred"
+  },
+  "retained_source_commits": true
+}

@@ -2,13 +2,20 @@
 
 原record共享接口已完成C权限、history C/P/T、per-record最大raw backing、prepared exact lookup和声明future roster集成。H最后session的819请求由原13人记录归约，test event预算只计已声明future录制；BI变长R与prefix graph按真实record/globalK/held preroll核回。旧冻结producer无history回放继续使用其原能力。代码及原receipt小归档保持实际版本，来源见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
 
-NN完整source metadata共享存储已集成binary软件链。原H67,247,311B checkpoint在公共store保存一次，八份同状态K0模型与源依赖由342,489,096B降为67,442,231B，每模型24,365B；单cell完整pretty报告由127,347,082B降为23,695B。独立shared加载和移到孤立目录的75,416,129B standalone闭包都重新走原source程序门，raw/LLR/posterior/probability逐值相等。原计量仅软件三行推理、0EEG/fit，保持自己的实际producer；新源长度/报告ref反例已单独闭合，当前root组合tinybinary caller通过。candidate完整model/graph dependency由同owner继续接入。
+NN完整source metadata共享存储已集成binary软件链。原H67,247,311B checkpoint在公共store保存一次，八份同状态K0模型与源依赖由342,489,096B降为67,442,231B，每模型24,365B；单cell完整pretty报告由127,347,082B降为23,695B。独立shared加载和移到孤立目录的75,416,129B standalone闭包都重新走原source程序门，raw/LLR/posterior/probability逐值相等。原计量仅软件三行推理、0EEG/fit，保持自己的实际producer；新源长度/报告ref反例已单独闭合，当前root组合tinybinary caller通过。candidate完整model/prefix/graph/chunk/parent依赖已接入，完整closure导出及最终原blob复核共用同owner。
 
 本轮Windows源复用遇到Linux原source的Butterworth gain末位差；相同Scipy/MNE版本下，仅总positive gain1–3 ULP，目标BI512Hz、poles/zerosshape/notch/padding全部exact。独立六rate及七wrong-programme反例后，集中source-family门声明4 ULP gain-only关系，原source系数不换、target/replay精确关系保持。实际新BI consumer已通过该门；早期软件观察counter随后在K0 metadata shape失败，其原OS1保留，受影响完整caller继续。
 
 本文按主题维护已复核的结论、代码接点和下一步。运行日期与源码身份留在各证据及绑定中；使用方式和工程规则由原六指南维护。
 
 ## 当前职责与交付
+
+### 当前集成（2026-10-16）
+
+Source串行共享与candidate完整依赖闭包、并发产物记账修复及显式shared AR因子已合入科研树。总监逐读实际模块、writer、save/load和parent接点；source/owner新组合用真实Manager进程完成共享source发布、prefix保存和精确重放，最终预算等于存活字节。预算独审关闭祖先范围ABA与旧任务结算新lease两P1，独立目录保持并行；修后Linux Manager/链接/同FUSE测量继续单列。准确提交、源码SHA和receipt见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)的`resume_20261016`。
+
+BI旧保存子集的A10+B2已按原12请求闭合，新增6次必要目标primitive fit、0source fit，原101/103文件及180源码保持；原MAT01/57正在独立执行完整新公共程序。云端原八个candidate fit已完成，24项ordinary replay精确差定位到score线程上下文；按原ordinary4/selection1和实际fit/退役authority做零fit恢复，后五阶段继续由唯一云owner推进。B11实际C500诊断将下一工作集中到prior/分块数值误差见证；原模型、阈值和唯一source fit保持。
+
 
 ### 当前工作成果（2026-10-14）
 

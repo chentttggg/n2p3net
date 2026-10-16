@@ -1,0 +1,436 @@
+{
+  "schema": "n2p3_BI_saved_subset_continuation_delivery/1",
+  "status": "independently_verified",
+  "evidence_scope": "software_correctness",
+  "scope": "preserved toy-MAT target actor continuation with actual BI-excluded source",
+  "actual_original_MAT01_57_vertical": "separate work; not established by this continuation",
+  "author_workspace": "D:\\BCI\\worktrees\\bi2014a-label-prefix",
+  "binding": {
+    "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\CONTINUATION_BINDING_20261016.json",
+    "sha256": "caea8103f4cd2fff4df53a7c90c2df7d7f87f844a030fc3afaa7f7731e471ea2",
+    "bytes": 76440
+  },
+  "final_readout": {
+    "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\CONTINUATION_FINAL_READOUT_20261016.json",
+    "sha256": "df9045409c5978c258817c0216b2a48776f153eb09053a609988e1af088caab6",
+    "bytes": 428308
+  },
+  "final_continuation": {
+    "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\quartet-vertical-03-CONTINUATION-CLOSURE-20261016\\CONTINUATION_CLOSURE.json",
+    "sha256": "017c01803c614118c7bbfa67b6f4b9467954ecf4b90983b18bb2fa6dfc90e70f",
+    "bytes": 114508
+  },
+  "full_original_requests_sha256": "1d65c95fcd7c74963de76777ecf3902f07e5b96324a439b05cc159c36070ef81",
+  "requested_to_actual_K": {
+    "0": 0,
+    "48": 48,
+    "2000": 134
+  },
+  "partition_counts": {
+    "old-completed": 8,
+    "saved-replay": 2,
+    "newfit": 2
+  },
+  "requested_cells": 12,
+  "probability_cells": 6,
+  "unavailable_cells": 6,
+  "unavailable_reasons": {
+    "pretrained-A: response_overlaps_common_C_test_embargo": 6
+  },
+  "roles": [
+    {
+      "role": "saved-original-producers",
+      "closure": {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\quartet-vertical-03-saved-role-capsule-20261016\\ROLE_CLOSURE.json",
+        "sha256": "4b08f6b22dd515baa9227c3126d13a547f75e5f337063fb63085d2d90c84581a",
+        "bytes": 22878
+      },
+      "parent": {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\quartet-vertical-03-saved-role-20261016\\parent-positive.json",
+        "sha256": "039cc58f422a0377c72501b0029957e99c9327f076eec20ccdb759557b488591",
+        "bytes": 509752
+      },
+      "actual_cells": 10,
+      "parent_status": "partial",
+      "full_request_rows": 12,
+      "numeric_producer_source_digest": "e93cc49ee8adca9989053b4264f4fff3f5dbcecfb6eba640047b8a7c9915bba3"
+    },
+    {
+      "role": "new-K134-selector",
+      "closure": {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\quartet-vertical-03-K134-complement-20261016\\ROLE_CLOSURE.json",
+        "sha256": "99dfaae6d94b741ade712168fc2159860f16e61fd314c2bdde48dd1f530448fe",
+        "bytes": 428583
+      },
+      "parent": {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\quartet-vertical-03-K134-complement-20261016\\parent-positive.json",
+        "sha256": "f99a793015d6f7c4c29a7a272da337c2929a372578b69da49e1100f9fe86facf",
+        "bytes": 447316
+      },
+      "actual_cells": 2,
+      "parent_status": "partial",
+      "full_request_rows": 12,
+      "numeric_producer_source_digest": "b21859bb3bc64db50a868e1d58aabe3a31c7cce9a4cb7f37d0e0c0c1f41e3faf"
+    }
+  ],
+  "cells": [
+    {
+      "cell_sha256": "135645d913207dffbac576b610f9b696b13e7e285e5d0da678f0e52bca550cbe",
+      "key": [
+        20261014,
+        20261014,
+        134,
+        "nested_selection",
+        "BI-fixed-quartet-selected",
+        "subject_01:episode7"
+      ],
+      "role": "newfit",
+      "probability_available": false,
+      "failure_kind": "incomplete",
+      "score_source_digest": "b21859bb3bc64db50a868e1d58aabe3a31c7cce9a4cb7f37d0e0c0c1f41e3faf"
+    },
+    {
+      "cell_sha256": "1f39dc03b88a93a95bc7213d3828757ff76e91e9317465605f951edede648f05",
+      "key": [
+        20261014,
+        20261014,
+        134,
+        "fixed",
+        "ordinary-source",
+        "subject_01:episode8"
+      ],
+      "role": "old-completed",
+      "probability_available": true,
+      "failure_kind": null,
+      "score_source_digest": "e93cc49ee8adca9989053b4264f4fff3f5dbcecfb6eba640047b8a7c9915bba3"
+    },
+    {
+      "cell_sha256": "1f7d5ea8c593cbcbcc7190c1e29e652b7799ea9c520e206c141956503515e5d2",
+      "key": [
+        20261014,
+        20261014,
+        0,
+        "fixed",
+        "ordinary-source",
+        "subject_01:episode8"
+      ],
+      "role": "old-completed",
+      "probability_available": true,
+      "failure_kind": null,
+      "score_source_digest": "e93cc49ee8adca9989053b4264f4fff3f5dbcecfb6eba640047b8a7c9915bba3"
+    },
+    {
+      "cell_sha256": "273a631e97234ecc3ccb39bf230f7b5e484ead6ba28790602a0a78883fcbcb32",
+      "key": [
+        20261014,
+        20261014,
+        48,
+        "nested_selection",
+        "BI-fixed-quartet-selected",
+        "subject_01:episode8"
+      ],
+      "role": "saved-replay",
+      "probability_available": true,
+      "failure_kind": null,
+      "score_source_digest": "e93cc49ee8adca9989053b4264f4fff3f5dbcecfb6eba640047b8a7c9915bba3"
+    },
+    {
+      "cell_sha256": "657fbfedb7d98eda4f8945e8f4a33034a65ed94fd62c51438fd9765f2ff210f7",
+      "key": [
+        20261014,
+        20261014,
+        0,
+        "nested_selection",
+        "BI-fixed-quartet-selected",
+        "subject_01:episode7"
+      ],
+      "role": "old-completed",
+      "probability_available": false,
+      "failure_kind": "incomplete",
+      "score_source_digest": "e93cc49ee8adca9989053b4264f4fff3f5dbcecfb6eba640047b8a7c9915bba3"
+    },
+    {
+      "cell_sha256": "6eed74a4630475ee5a529aea1e4c43739d94a3d8fc2eff5f09d2ee33c8e35785",
+      "key": [
+        20261014,
+        20261014,
+        0,
+        "nested_selection",
+        "BI-fixed-quartet-selected",
+        "subject_01:episode8"
+      ],
+      "role": "old-completed",
+      "probability_available": true,
+      "failure_kind": null,
+      "score_source_digest": "e93cc49ee8adca9989053b4264f4fff3f5dbcecfb6eba640047b8a7c9915bba3"
+    },
+    {
+      "cell_sha256": "71cb3cd7baa06568f7f0a61e955deef1ab9f16f553e13bccd1d96285b762537e",
+      "key": [
+        20261014,
+        20261014,
+        48,
+        "nested_selection",
+        "BI-fixed-quartet-selected",
+        "subject_01:episode7"
+      ],
+      "role": "saved-replay",
+      "probability_available": false,
+      "failure_kind": "incomplete",
+      "score_source_digest": "e93cc49ee8adca9989053b4264f4fff3f5dbcecfb6eba640047b8a7c9915bba3"
+    },
+    {
+      "cell_sha256": "75a540f6bbdc7965e187f1bbc82d1945dad6ac8a406dcdc973c2a8a20f51278e",
+      "key": [
+        20261014,
+        20261014,
+        48,
+        "fixed",
+        "ordinary-source",
+        "subject_01:episode8"
+      ],
+      "role": "old-completed",
+      "probability_available": true,
+      "failure_kind": null,
+      "score_source_digest": "e93cc49ee8adca9989053b4264f4fff3f5dbcecfb6eba640047b8a7c9915bba3"
+    },
+    {
+      "cell_sha256": "8592d63f2776f65f23e7e383c7b36ed9613f21f606535097fefaffcccd0a881d",
+      "key": [
+        20261014,
+        20261014,
+        134,
+        "fixed",
+        "ordinary-source",
+        "subject_01:episode7"
+      ],
+      "role": "old-completed",
+      "probability_available": false,
+      "failure_kind": "incomplete",
+      "score_source_digest": "e93cc49ee8adca9989053b4264f4fff3f5dbcecfb6eba640047b8a7c9915bba3"
+    },
+    {
+      "cell_sha256": "961b5de6b2b050ef8644ad7b32d379c08c6908fc76d390e581310e1cfe161a97",
+      "key": [
+        20261014,
+        20261014,
+        0,
+        "fixed",
+        "ordinary-source",
+        "subject_01:episode7"
+      ],
+      "role": "old-completed",
+      "probability_available": false,
+      "failure_kind": "incomplete",
+      "score_source_digest": "e93cc49ee8adca9989053b4264f4fff3f5dbcecfb6eba640047b8a7c9915bba3"
+    },
+    {
+      "cell_sha256": "ae78e2d44abb9a288e76b4072154c100612e549a3ae17b95348ca9748b154814",
+      "key": [
+        20261014,
+        20261014,
+        48,
+        "fixed",
+        "ordinary-source",
+        "subject_01:episode7"
+      ],
+      "role": "old-completed",
+      "probability_available": false,
+      "failure_kind": "incomplete",
+      "score_source_digest": "e93cc49ee8adca9989053b4264f4fff3f5dbcecfb6eba640047b8a7c9915bba3"
+    },
+    {
+      "cell_sha256": "e4520dbfb103a96bf79df7453a2f2119d5a06426c18b90cab0cf0391353493b4",
+      "key": [
+        20261014,
+        20261014,
+        134,
+        "nested_selection",
+        "BI-fixed-quartet-selected",
+        "subject_01:episode8"
+      ],
+      "role": "newfit",
+      "probability_available": true,
+      "failure_kind": null,
+      "score_source_digest": "b21859bb3bc64db50a868e1d58aabe3a31c7cce9a4cb7f37d0e0c0c1f41e3faf"
+    }
+  ],
+  "numeric_sources": {
+    "old_producer": "e93cc49ee8adca9989053b4264f4fff3f5dbcecfb6eba640047b8a7c9915bba3",
+    "new_producer": "b21859bb3bc64db50a868e1d58aabe3a31c7cce9a4cb7f37d0e0c0c1f41e3faf",
+    "old_runtime_entries": 178,
+    "new_runtime_entries": 180,
+    "new_before_after_exact": true
+  },
+  "actual_primitive_calls": {
+    "artifact": {
+      "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\quartet-vertical-03-K134-complement-20261016\\ACTUAL_PRIMITIVE_CALLS.json",
+      "sha256": "b845e62bbc1bd66d99cb817ee68e371945ca734df74dd087b69eca7ce254e727",
+      "bytes": 43215
+    },
+    "total": 32,
+    "classification": {
+      "original_expert_reuse": 11,
+      "current_run_expert_reuse": 15,
+      "new_primitive_fit": 6
+    },
+    "new_fit_initializations": {
+      "source": 2,
+      "scratch": 2,
+      "xdawn_erp": 2
+    },
+    "returned_AdamW_steps": 4,
+    "new_source_fits": 0,
+    "new_target_fits": 6,
+    "new_fits": [
+      {
+        "call_id": "0019-9e0b8b151a40d00a6801337aabe116d3b3829950705a4f16427297fc463b89cc",
+        "initialization": "source",
+        "labels": 84,
+        "optimizer_steps": 1,
+        "model_digest": "0188f77c9dc7bad1745cd7292cdfa0f85dd1096a8fbf095c77cbc0a00eba428d",
+        "fit_digest": "9e0b8b151a40d00a6801337aabe116d3b3829950705a4f16427297fc463b89cc"
+      },
+      {
+        "call_id": "0020-3ea65117c0d79a52164bf78d600690629fbc39e325482ae7f9d71088bff810f7",
+        "initialization": "scratch",
+        "labels": 84,
+        "optimizer_steps": 1,
+        "model_digest": "36c3f5abdfdfbf34bbe9327d88f756e7406ec811137a690208c6348b8d239ea0",
+        "fit_digest": "3ea65117c0d79a52164bf78d600690629fbc39e325482ae7f9d71088bff810f7"
+      },
+      {
+        "call_id": "0022-7cd262d23042c7c081b0f4334ea1d6c86daa1e484b1e7e33c27a07c8677b9446",
+        "initialization": "xdawn_erp",
+        "labels": 84,
+        "optimizer_steps": 0,
+        "model_digest": "3230ddc10dbbc800f05f467ec802bb31cef4d4c3c129a86e149074f99fed3f9a",
+        "fit_digest": "7cd262d23042c7c081b0f4334ea1d6c86daa1e484b1e7e33c27a07c8677b9446"
+      },
+      {
+        "call_id": "0025-2b3b199d347fab028adacd9a1af515022a067e42fb2293bac2d2b7f93740292c",
+        "initialization": "source",
+        "labels": 108,
+        "optimizer_steps": 1,
+        "model_digest": "c3574246d111c0f52030effeb255f6d47046dc4746d182148088bd561ad82e28",
+        "fit_digest": "2b3b199d347fab028adacd9a1af515022a067e42fb2293bac2d2b7f93740292c"
+      },
+      {
+        "call_id": "0026-9c525f989e637f812c158fc85d11d34e597ab87a6242951a64a849fc904a34dc",
+        "initialization": "scratch",
+        "labels": 108,
+        "optimizer_steps": 1,
+        "model_digest": "0613e0e802c26c56c327806379d2a1f916a37fcf5b7f78bb569473e9db3fb002",
+        "fit_digest": "9c525f989e637f812c158fc85d11d34e597ab87a6242951a64a849fc904a34dc"
+      },
+      {
+        "call_id": "0028-3fdecedf77027e26266edd226e9889dfec1a3f2951fc935b77e6c66cf32ce945",
+        "initialization": "xdawn_erp",
+        "labels": 108,
+        "optimizer_steps": 0,
+        "model_digest": "86cb6b6732141bddf423ae466d384f4bdcbcfd02fdf1264599fb59e66d91c261",
+        "fit_digest": "3fdecedf77027e26266edd226e9889dfec1a3f2951fc935b77e6c66cf32ce945"
+      }
+    ],
+    "actual_scratch_constructors": 2,
+    "scratch_artifacts": [
+      {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\quartet-vertical-03-K134-complement-20261016\\primitive_fits\\0020-3ea65117c0d79a52164bf78d600690629fbc39e325482ae7f9d71088bff810f7.scratch.json",
+        "sha256": "28b90f700f9111afdfff1dda02a426dbbf039e35f5001a4d9d021d640ff3084d",
+        "bytes": 2877
+      },
+      {
+        "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\quartet-vertical-03-K134-complement-20261016\\primitive_fits\\0026-9c525f989e637f812c158fc85d11d34e597ab87a6242951a64a849fc904a34dc.scratch.json",
+        "sha256": "8c50bcdb33adc39a3dc24e511f169d0fd040b351667aabd61e9f83ccbbb217bb",
+        "bytes": 2877
+      }
+    ],
+    "start_end_records_checked": 32,
+    "original_primitive_count": "not durably recorded; not inferred from package/node counts"
+  },
+  "new_graph": {
+    "artifact": {
+      "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\quartet-vertical-03-K134-complement-20261016\\run\\participant_000\\source20261014_target20261014_K134_selection\\prefix_selection.json",
+      "sha256": "76160972864729987bf1c3661cf3d49c98f5e826148abe5d096f57f41e78ba9c",
+      "bytes": 25882686
+    },
+    "graph_sha256": "57316755a7705eb6185764731419770f3a65831287f6126409fd50657362ffaa",
+    "selection_sha256": "4d5d2e637e1a075753db180e5ebb0b19449cfd454c901fac3830eed07585d654",
+    "nodes": 22,
+    "exact_score_checks": 23,
+    "selected_candidate": "source_nn_fixed",
+    "saved_model_and_graph_seals_checked": 99
+  },
+  "capsule": {
+    "descriptor": {
+      "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\quartet-vertical-03-saved-role-capsule-20261016\\capsule\\capsule.json",
+      "sha256": "b8f3a1f76fa0032f4da8eec27379fadff2e5627ba4ccee958332a6cd6dc59c33",
+      "bytes": 625252
+    },
+    "private_truth": {
+      "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\quartet-vertical-03-saved-role-capsule-20261016\\capsule\\scoring_truth.json",
+      "sha256": "2ed9d12ffc2a62f4b6b0c03235497c9570da240205caa90a3964531e3e1dddfa",
+      "bytes": 16059
+    },
+    "public_holder_and_private_truth_join": "actual A finishing driver passed; file bindings independently rechecked",
+    "child_exit_code": 0,
+    "active_owned_processes_after_exit": 0
+  },
+  "terminal": {
+    "A_capsule": {
+      "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\saved-capsule-finish-20261016.terminal.json",
+      "sha256": "454482e0f9a647ad5ad2916c4c97397eb388c0f4c70486e2e47d2dafb31c027d",
+      "bytes": 1305
+    },
+    "B": {
+      "path": "D:\\BCI\\worktrees\\bi2014a-label-prefix\\tmp\\BI2014A_LABEL_PREFIX\\K134-complement-20261016.terminal.json",
+      "sha256": "a53eaba47f870177126cce1baaf4d99b58cf31dbb12b6f7f8211e247bd8b8f3a",
+      "bytes": 1111
+    },
+    "B_actual_numeric_pid": {
+      "pid": 25752,
+      "birth": 1792121726.5690582,
+      "alive": false
+    },
+    "B_exit_code": 0,
+    "B_active_owned_processes_after_exit": 0,
+    "B_wall_seconds": 773.5504486560822,
+    "B_peak_tree_rss_bytes": 1667059712,
+    "issuer": {
+      "kind": "reported_original_synchronous_tool_result",
+      "chunk_id": "b2b0a8",
+      "exit_code": 0,
+      "wall_seconds": 1.2100193,
+      "separate_terminal_artifact": null,
+      "provenance": "author reported original exec_command result; final output artifact independently hashed"
+    }
+  },
+  "preservation": {
+    "original_regular_files": 101,
+    "old_consumer_regular_files": 103,
+    "all_original_and_old_consumer_hashes_exact": true,
+    "shared_source_checkpoint": {
+      "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\shared-source-checkpoints\\BI2014a_seed20261014.pt",
+      "sha256": "669306ebd08b95c0ff9acea1bd4737c2802615122d98ea244396d4cd7fb45bae",
+      "bytes": 72660879
+    },
+    "verified_numeric_hardlinks": 26,
+    "copied_original_numeric_bytes": 0,
+    "original_failed_exit_retained": 1
+  },
+  "verification": {
+    "method": "existing JSON plus streaming SHA and hardlink identity only",
+    "EEG_PT_decodes": 0,
+    "new_fits": 0,
+    "repeated_green_runs": 0,
+    "script": {
+      "path": "D:\\BCI\\worktrees\\research-director\\tmp\\BI_CONTINUATION_FINAL_VERIFY_20261016.py",
+      "sha256": "b3632fafe808d6c863bd6dc9b1d4c6ac394435e6123e8e5b1cf42a058b41ab61",
+      "bytes": 18899
+    }
+  },
+  "remaining": [
+    "separate original MAT01/57 full input-to-quartet/selector/capsule/parent route",
+    "root integration, active-guide updates and recovery-preserving worktree retirement"
+  ]
+}

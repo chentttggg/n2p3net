@@ -2120,5 +2120,133 @@
     "physical_space_reclaimed_not_inferred": true,
     "original_source_JUnit_final_closures_protected": true,
     "prior_permanent_delete_review_rejections_retained": true
+  },
+  "resume_20261016": {
+    "reviewed_integration_head": "46732ee84c70806078bc593c89481b8d7dee1002",
+    "status": "accepted_individual_software_slices",
+    "concurrency_limit_including_root": 6,
+    "source_sha256": {
+      "src/research/source_execution.py": "b67b10514649823b47732980d389ab95b739f7b43913bbd1c4db8a2f07cdd2ec",
+      "src/research/source_metadata_store.py": "f12caae8105a5efed5b2a1d4ae547fdf2f4060093d27e4257ac46f4810f94c7c",
+      "src/transfer/checkpoint.py": "34b632d1afb52c8a0843507ceb23b3680d860a6e25b0cb70f06a97ff46ac3a91",
+      "src/transfer/ensemble_fit.py": "bda33a5bbadabebe24b620694d3e9cec375ca440707ad4d291146ee8d0095f7c",
+      "src/research/prefix_inner_replay.py": "0a10d981ac2b9f365f1f59431551f7108815c2435968301036005ea0f486dc12",
+      "src/research/prefix_selection_replay.py": "31405aba4f0cd59a2a1c3da26a20d50fe1a776cfe3e4405970f911ef7ed2f59b",
+      "experiments/run_candidate_ensemble_study.py": "9f67d25794544b040d13d0970b74e1bc3a1170bf673c326794bf5d5cb7f626b6",
+      "src/research/shared_stationary_factor.py": "c42684c4a0f8cacc4bcf61e63afa519225b740fbf1f0a547975fc50cd1cc2f19",
+      "src/research/channel_noise_mechanism.py": "2c8f52e667fc134e228625b7de919434317cb4ffdde8697e35a9e9a8d6705171",
+      "tests/research/test_source_storage_prefix.py": "869a2072745dba7b3c593cfb674922f6077f1d3f17e5e095b5dbab58472a4520",
+      "tests/train/test_artifact_owner_throughput_contract.py": "221473cf517244485163192b9ff630d86e7a1c4c87cefdb1bd2206abc6c28bb6"
+    },
+    "source_storage": {
+      "integrated_commits": [
+        "25c3497",
+        "2e47e2a"
+      ],
+      "delivery": "source_storage_candidate_delivery_20261016.json",
+      "behavior": "shared immutable source preparation with fresh target state; complete candidate/prefix/graph/chunk/parent dependency closure; final original-source seal after replay-pool retirement"
+    },
+    "artifact_owner": {
+      "author_commit": "4f39590",
+      "integrated_commit": "987e3f2",
+      "baseline": "5e21317",
+      "review": "root source/caller review plus independent Spec and Standards reviews",
+      "behavior": "fixed path overlap scopes through observation and mutation; retirement bound to original lease row generation; independent roots remain concurrent",
+      "author_distinct_relevant_cases": 19,
+      "author_windows_symlink": "creation failed with Windows1314; not counted as passing",
+      "combined_manager_source_prefix": {
+        "commit": "46732ee",
+        "receipt": {
+          "path": "D:/BCI/artifacts/base-matrix-20261014/artifact-budget-integration/verification/root-manager-source-prefix.xml",
+          "bytes": 392,
+          "sha256": "9c09c1a13bba39d6ebecb33c5e209a8fd6239c539050eb1b95d1a1794afcb7f7"
+        },
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "seconds": 15.59,
+        "scope": "actual SyncManager process; shared source publish, prefix package save and exact independent replay; final pool equals surviving bytes"
+      },
+      "linux_manager_links_fuse": "delivery in preparation; no repaired-code timing ratio claimed",
+      "old_f6_candidate": "rejected; historical writer timing remains attached to old source"
+    },
+    "shared_stationary_factor": {
+      "author_commits": [
+        "ee1256bd",
+        "0a9eb42",
+        "8ca8dd15",
+        "4ecbdd0"
+      ],
+      "integrated_commits": [
+        "45a9edf",
+        "36f2929",
+        "69eb1ab",
+        "69c1eb9"
+      ],
+      "delivery": "../shared_stationary_factor_20261016/binding.json",
+      "independent_review": {
+        "path": "D:/BCI/worktrees/research-director/tmp/SHARED_AR_STATIONARY_INDEPENDENT_REVIEW.md",
+        "bytes": 8267,
+        "sha256": "29d47915f5537f6a4dee0f0ee5ee10cb9cadea031ef511e95efbb6f86b9b1b1c"
+      },
+      "independent_probe": {
+        "path": "D:/BCI/worktrees/research-director/tmp/SHARED_AR_STATIONARY_INDEPENDENT_PROBE.json",
+        "bytes": 4508,
+        "sha256": "49302787f12876991c807deab6c47650e8828451cf8e2b832af7e0289656482c"
+      },
+      "acceptance": "exact AR3 companion-Lyapunov oracle plus actual31x32 read-only saved factor admission; explicit /4 factory, old /3 producer states retained",
+      "factory_seconds": 3.814,
+      "peak_rss_mib": 322,
+      "public_training_effect": "actual consumer integration and public evaluation continue separately"
+    },
+    "bi_saved_subset_continuation": {
+      "delivery": "bi_continuation_delivery_20261016.json",
+      "status": "independently_verified",
+      "requested_cells": 12,
+      "probability_cells": 6,
+      "unavailable_cells": 6,
+      "partition": {
+        "original_completed": 8,
+        "saved_replay": 2,
+        "new_cells": 2
+      },
+      "primitive_calls": {
+        "original_reuse": 11,
+        "current_run_reuse": 15,
+        "new_target_fit": 6
+      },
+      "new_source_fits": 0,
+      "scope": "toy-MAT saved subset continuation; original MAT01/57 full routes are separate current work"
+    },
+    "cloud_replay": {
+      "original_fit_actors_completed": 8,
+      "original_replay_tasks": {
+        "completed": 248,
+        "failed": 24,
+        "blocked": 32
+      },
+      "original_requested_cells": 6080,
+      "single_cell_diagnostic": {
+        "path": "D:/BCI/artifacts/base-matrix-20261014/raw-native-replay/attempt01/SUMMARY.binding.json",
+        "bytes": 5932,
+        "sha256": "74bc666802102df80cb646b2c9531f1576fc7ff81b124371aebe4c535d3a28bb"
+      },
+      "finding": "original raw_native8 saved state unchanged; score native4 reproduces original bits, score native1 differs by1.1641532182693481e-10 in one log probability",
+      "recovery_contract": "zero fit; ordinary replay and numeric parent native4; original selection/node/chunk/reducer native1; actual original fit_execution and OS retirement joins; separate consumer transition and complete original requested ledger",
+      "status": "concrete recovery consumer and issuer under cloud-owner implementation; full recovery not yet accepted"
+    },
+    "ongoing": [
+      "B11 actual C500 numerical error certificate and full history/OOF/future/capsule/parent graph",
+      "BI original MAT01/57 full four-fixed/selector/control routes",
+      "H original-input NN programme after shared-source integration",
+      "full remaining cloud target matrix and B00-B14 programme"
+    ],
+    "completed_tree_cleanup": {
+      "method": "cmd.exe git worktree remove",
+      "source_storage": "source_storage_worktree_retirement_20261016.json",
+      "shared_stationary_factor": "../shared_stationary_factor_20261016/worktree_retirement.json",
+      "removed_worktrees": 2,
+      "source_commits_and_necessary_payloads_preserved": true
+    }
   }
 }
