@@ -24,7 +24,11 @@ B07 `research.multichannel_c_latent`新增明确外部固定参数的finite C pr
 
 `research.finite_response_law`是新有限delay/width的唯一正规化owner：正binary64原质量按exact rational一次归一，保存全部有效log质量与误差；mean/moment从同一law取权重。source矩控制直接用原factor生成共享global β与每selection局部Gaussian变量，保全一二阶矩、跨selection相关和弱/零方向，compact接口直接收缩state设计。`transfer.native_response_dictionary`显式声明原native阵列的新连续延拓：整数点保原字节，off-grid按exact rational线性插值一次舍入，terminal knot与半开支持明确。它不改历史Gaussian/cosine等dictionary producer；这两个基础模块已有独立实现/保存接受，source→C→history引擎及完整typed/nested/parent另沿当前切片集成。
 
-`StructuredGaussianMarginalProgram`的可选接点统一消费显式noise covariance scale、设计误差和`GaussianResponseImages`。噪声缩放同时进入完整观测维度的Jacobian；新selection只追加独立proper prior，已保存C的root/RHS与物理flat坐标继续复用。`_triangular_residual`保原乘积及fallback可表示性检查，跳过root中精确为零的项；同一512维启动根的交替完整误差证书测得FMA路径12.54倍、fallback 1.67倍，全部返回字段逐bit相同。此处接受的是中枢接口和证书计算，四臂引擎及caller沿各自实际出口验收，见[整合绑定](assets/research_resume_20261012/research_integration_acceptance.json)。
+`StructuredGaussianMarginalProgram`的可选接点统一消费显式noise covariance scale、设计误差和`GaussianResponseImages`。噪声缩放同时进入完整观测维度的Jacobian；新selection只追加独立proper prior，已保存C的root/RHS与物理flat坐标继续复用。`whole_increment`直接积分完整F/C新增观测；`continue_posterior`保持conditional的P/F证书。`_triangular_residual`保原乘积及fallback可表示性检查，跳过root中精确为零的项；同一512维启动根的交替完整误差证书测得FMA路径12.54倍、fallback 1.67倍，全部返回字段逐bit相同。中枢、四臂引擎和完整caller分别绑定实际出口，见[整合绑定](assets/research_resume_20261012/research_integration_acceptance.json)。
+
+`research.source_response_states`持有source-informed四臂的完整C后验、真实history派生权限及确定性评分。首次消费重建实际C的QR并比较保存root/RHS/权重；后续scope内复用验证，计数由独立operational receipt持有。`transfer.source_response_programme`只声明原source排除范围与连续延拓关系；`source_response_replay`连接typed ensemble、before-group nested、完整模型/证据保存、truth-free capsule与原source/MAT parent。首片明确支持BNCI单record、纯`source_response`名单和fixed策略；旧joint/Beta与trial路线由原owner保持。
+
+`research.original_continuous_source_stage`将一次原source拟合、独立进程观察和只读目录导出分开。worker在拟合内部发start，原NPZ及完整codec读回后发saved；observer以真实PID/birth、Windows Job和scientific OS handle核完整生命周期及源码归档。stage终态与导出aggregate终态独立；`--admit-only`向新目录恢复只读导出，复用原模型和原stage。首个实际genesis属于software correctness，公共原始数据由独立issuer准入。
 
 `transfer.information_bound`持有`/2`完整activation/模型诊断、raw plug-in估计量及不可变JSON报告，`save/load/replay_model`保护全部输出与原producer。`transfer.exact_covariance/2`持有raw传播、resolved SPD/显式identified support及独立ridge诊断，当前是内存诊断接口。二者没有生产调用；来源、反例和完整性验收见[数学整合](assets/research_resume_20261012/diagnostic_mathematics_integration.json)。原D树local-only `run_information_bound.py`保原字节，迁移membership、actual activation和报告schema后才可复用。
 

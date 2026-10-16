@@ -10,6 +10,8 @@
 
 [独立前缀公共入口](evidence/independent_prefix_20261008.zh.md)在实际K和共同later-test上保存requested→actualK及失败分母；fixed/grouped分别声明并共享最终专家，K0只消费冻结源状态。source与consumer证据角色分开，每seed选择/refit由真实producer绑定。软件交付和公共效能/成人确认分别验收。
 
+响应形状研究将原模板、平均shape、同完整一二阶矩Gaussian与完整finite law作为四个明确对照，共享原source prior/noise。其引擎、真实C/history权限、因果nested选择与保存重放已取得软件全链出口；whole与conditional按自己的估计量和数值预算记录结果。公共比较先完成原MAT来源准入和实际尺度资源计划，保留全部预声明模型、候选及失败分母。当前读数与来源统一维护在[响应与噪声](evidence/response_and_noise.zh.md)。
+
 版本：2026-09-06d，作者拒收被试排除版。唯一活动研究规范，负责目标与科学约束。
 公开BI等数据用于学习可迁移P300/ERP特征；目标硬件为七路头皮EEG和一路独立EOG。
 阶段、配方和验收统一见[执行计划](roadmap.zh.md)，实际接口见[技术结构](technical_structure.zh.md)，

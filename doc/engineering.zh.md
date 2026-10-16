@@ -239,9 +239,11 @@ Windows原子JSON替换对短暂PermissionError最多等待0.63秒重试，失�
 缺失时明确skip，不能跳过断言后计为通过。全套运行用`python -m pytest`；pytest缓存支持
 `--lf`重跑失败项，不能代替改动结束后的相关测试或大范围改动后的全套验证。
 Python兼容检查覆盖`src/`、`tests/`、根配置和`experiments/`直接入口，不递归扫描历史运行快照。
-全套验收独立运行；根`conftest.py`在导入数值库前默认设`OPENBLAS_NUM_THREADS=1`、
+科研集成先逐段审阅相关builder、模块、保存加载和真实caller，复用已封存的绿色数学与运行证据；只为新行为或具体未闭合风险增加区分性检查。真实纵向消费者记录自己的拟合、QR重构、评分和重放成本。全套验收独立运行；根`conftest.py`在导入数值库前默认设`OPENBLAS_NUM_THREADS=1`、
 `OMP_NUM_THREADS=1`、`MKL_NUM_THREADS=1`，避免多个解释器导入时各自铺满线程；显式环境设置优先。
 子进程线程预算仍由相应测试显式指定；资源不足不能通过重试或跳过行为断言来掩盖。
+
+原continuous source stage用独立worker/observer保存start→saved、实际PID/birth、scientific/shim各自OS退出、Job回收及导入源码对预启动code-only归档的关系。原NPZ和完整FrozenSource读回后才发布saved；只读catalog准入与aggregate独立封存。保存后导出失败通过`research.original_continuous_source_stage --admit-only`写入全新导出目录，原stage/model/aggregate保留。首个实际software genesis成功1fit、native1、峰值RSS606564352B；公共scope另由原数据issuer与完整计划取得。
 定位耗时用`python -m pytest --durations=20`。真实spawn、快照校验、模型拟合与重载继续执行；
 源训练进程池在组间复用worker，Manager和CLI参数入口不提前导入训练依赖，
 Braindecode仅在构造其对照模型时加载。调度日志直接格式化plan/builder已解析的路径，

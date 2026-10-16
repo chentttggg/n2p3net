@@ -2310,12 +2310,11 @@
       }
     },
     "ongoing": [
-      "B11 actual004 remaining OOF/future and complete graph; original C500/OOF0 retained",
-      "source-informed finite response law and four matched response controls: production implementation",
+      "B11 actual004 future3 through6, final OOF-attached model and complete graph",
+      "B07 real generic software DAG; original BNCI admission and public-scale unknown-history-q inference",
       "actual generic public DAG sharing preserved primitive fits/captures",
       "cloud reopening: saved S4 304/8parent final gate then remaining five stages",
-      "B00-B14 programme",
-      "actual generic public DAG from preserved primitives; accepted named readset relation, fresh final source freeze required"
+      "B00-B14 programme"
     ],
     "completed_tree_cleanup": {
       "method": "cmd.exe git worktree remove",
@@ -2531,11 +2530,11 @@
       ]
     },
     "joint_predictive_evidence": {
-      "status": "accepted_empirical_OOF1_and_separate_single_record_continuous_audit",
+      "status": "accepted_all_seven_original_OOF_and_preserved_future_outcomes",
       "root_delivery": {
         "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/joint_predictive_evidence_20261016.json",
-        "sha256": "dfababa178a68d3fed01d95988831b586e92ce062d3af44547e749630ae0e460",
-        "bytes": 23760
+        "bytes": 34226,
+        "sha256": "c632137b8f9fe05edfda06221366d6da994bdd2e4106abdbb09695c1c5f4f1b1"
       },
       "remaining_public_programme": "ongoing",
       "original_finite_programme_retained": true,
@@ -2545,8 +2544,14 @@
         2,
         3,
         4,
-        5
-      ]
+        5,
+        6
+      ],
+      "preserved_future_outcomes": {
+        "0": "C24_embargo_unavailable",
+        "1": "capture_intrinsic_accepted_final_model_pending",
+        "2": "original_sampling_resolution_refusal"
+      }
     },
     "joint_history_score_cache": {
       "status": "accepted_root_source_and_independent_review",
@@ -2766,7 +2771,308 @@
         "new_fits_or_sampling_in_performance_and_independent_dense_checks": 0,
         "four_arm_engine_and_caller": "separate_ongoing",
         "public_scale_entry": "actual_source_rank_state_count_source_stage_and_complete_resident_budget_next"
-      }
+      },
+      "current_status": "accepted_four_arm_core_full_software_pipeline_and_real_source_genesis",
+      "core_engine": {
+        "status": "accepted",
+        "integrated_commit": "7fba5ef",
+        "delivery": {
+          "path": "D:/BCI/artifacts/research-deliveries/source-response-states/engine/FINAL_DELIVERY.binding.json",
+          "bytes": 4914,
+          "sha256": "6c8028a4eced4249faf6e242789443429127fc4d667625faf63a24ef53bc44f8"
+        },
+        "source_archive": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\engine\\final_source.zip",
+          "bytes": 177348,
+          "sha256": "c57c764fde8b53cff5f0309ba3690087dca6b23099d996c7cdcf035751ca1364"
+        },
+        "physical_source_map": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\engine\\final_source_map.json",
+          "bytes": 3858,
+          "sha256": "18c32d6ed393d7159d60bc018a4b1306143d7bd7c455d82389ab531d1d98c5e7"
+        },
+        "independent_review": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\engine\\independent-review\\B07_SOURCE_RESPONSE_CORE_REVIEW.md",
+          "bytes": 21678,
+          "sha256": "41f678fa25bf85330c29ba282befb83218f42977101f690c2dbdc5ba59aa5b93"
+        },
+        "source_sha256": {
+          "src/research/source_response_states.py": "1869c3fe782b54dbefa9109c7074e4f6fc0e523fcc90a57050d18e4780a78f72",
+          "src/research/channel_noise_mechanism.py": "81307c233c8ebc1d37a30c4db13083a46bdefa2537b0b1aecceaa8804c57f701",
+          "tests/research/test_source_response_states.py": "41f50e649360d7f49e569d8ee18737f7056c89544a986719be0c6a30afb7c887"
+        },
+        "root_verified_delivery_receipts": 8,
+        "root_verified_physical_and_archive_members": 15,
+        "final_helper_scope": "two_JSON_mutable_attack_clones_after_FIFTH_source_archive",
+        "final_narrow_source_preparation_check": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\engine\\source-ingress-final\\result.json",
+          "bytes": 4282,
+          "sha256": "7437daacdb5873ca1670e930bf1de7a7334a0b9c19c3b567915abc2f7cd48f30"
+        },
+        "final_narrow_counts": {
+          "source_parameter_fits": 0,
+          "target_parameter_fits": 0,
+          "source_math_decodes": 1,
+          "C_QR_constructions_or_reconstructions": 0,
+          "future_prediction_outputs": 0,
+          "raw_EEG_array_reads": 0
+        },
+        "whole_measure": "direct_normalized_saved_C_posterior_full_F_over_C_increment",
+        "conditional_measure": "original_F_over_P_gate_preserved",
+        "all_positive_states_and_original_numerical_policy_preserved": true
+      },
+      "full_software_pipeline": {
+        "status": "accepted_original_FIFTH_pipeline",
+        "integrated_commit": "0a79f99",
+        "delivery": {
+          "path": "D:/BCI/artifacts/source-response-pipeline/FINAL_DELIVERY_MANIFEST.json",
+          "bytes": 8057,
+          "sha256": "b1ccc5fb35238d726121b71c1c892d6ba9b6cadf5cfd4de5deecb2f754b4ab2b"
+        },
+        "acceptance": {
+          "path": "D:\\BCI\\artifacts\\source-response-pipeline\\CALLER_FIFTH_ACCEPTANCE.json",
+          "bytes": 38046,
+          "sha256": "0f4e34fbaa0f94ca1fcae3b2d92d4f9b62a8b323a1aaba6f32b87c19fe7dd06d"
+        },
+        "source_archive": {
+          "path": "D:\\BCI\\artifacts\\source-response-pipeline\\CALLER_FIFTH_EXECUTED_SOURCE.code-only.tar.gz",
+          "bytes": 822477,
+          "sha256": "db83e3c2a207fb9c4efdfd390c66490d3c7d8b3e4c145d731094a597055b3486"
+        },
+        "pipeline": {
+          "path": "D:\\BCI\\artifacts\\source-response-pipeline\\caller-fifth\\test_four_arms_two_laws_origin0\\PIPELINE_RESULT.json",
+          "bytes": 86599,
+          "sha256": "88e7d54a700f75882e72263a1f30430fffcc95fdc87d79c92a523d69e6d45a0e"
+        },
+        "independent_review": {
+          "path": "D:/BCI/artifacts/source-response-pipeline/independent-review/B07_SOURCE_RESPONSE_PIPELINE_FINAL_INDEPENDENT_REVIEW_20261016.md",
+          "bytes": 8868,
+          "sha256": "f72823cfc513f93fee2dee4aebcdffdfb29d1a2c1048642c59916806f4999049"
+        },
+        "root_source_review": "programme_and_continuation_ensemble_replay_nested_prepared_catalogue_generic_routing",
+        "root_verified_delivery_references": 18,
+        "owned_physical_source_files": [
+          {
+            "relative_path": "src/transfer/source_response_programme.py",
+            "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\source_response_programme.py",
+            "bytes": 10751,
+            "sha256": "8de3dd6e13fa8ed95929d0a8b0efbeb01b49381e18c3ee8fc6497abdac467ad0"
+          },
+          {
+            "relative_path": "src/research/source_response_replay.py",
+            "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\source_response_replay.py",
+            "bytes": 20111,
+            "sha256": "70e2a307daf5418ecf3858db61c7077cfa31e544a0ea40b0f639203a32d301d2"
+          },
+          {
+            "relative_path": "src/transfer/ensemble_fit.py",
+            "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\ensemble_fit.py",
+            "bytes": 142591,
+            "sha256": "40ce078723b736d927502af424694341b3171539c0ed4489c310a54cda3f2df8"
+          },
+          {
+            "relative_path": "src/research/prefix_inner_replay.py",
+            "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\prefix_inner_replay.py",
+            "bytes": 73791,
+            "sha256": "f67380cabf0d51915a21c3ed7e8ad9db36aea9ee83ba7b60d75fe61ef2cb1904"
+          },
+          {
+            "relative_path": "src/research/calibration_selection.py",
+            "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\calibration_selection.py",
+            "bytes": 47029,
+            "sha256": "4a69806171b67f006065c86549effe903aed13a42db8cddc7a6cc133b8abf19b"
+          },
+          {
+            "relative_path": "src/research/prefix_selection_replay.py",
+            "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\prefix_selection_replay.py",
+            "bytes": 45614,
+            "sha256": "aad9cf5dee51203bf946c17ecdebceced12f3ec5652b664bfa3efe8a0864ffcf"
+          },
+          {
+            "relative_path": "src/research/prefix_replay_execution.py",
+            "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\prefix_replay_execution.py",
+            "bytes": 46879,
+            "sha256": "30834699c83f1e42e8859f0765a111edfd93dda7197f66293d0e42fea12c52df"
+          },
+          {
+            "relative_path": "src/research/joint_source_catalog.py",
+            "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\joint_source_catalog.py",
+            "bytes": 35318,
+            "sha256": "7c82e7b5d5b53eee7c52e975c2340f78d2e47e32f05c1d88d1b3b647cda9da07"
+          },
+          {
+            "relative_path": "src/research/history_artifact.py",
+            "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\history_artifact.py",
+            "bytes": 20725,
+            "sha256": "9ca4ed49ca1a6897ad13342c4c74520e406083dfd5ad5b484d8affe0d94936fe"
+          },
+          {
+            "relative_path": "experiments/run_candidate_ensemble_study.py",
+            "path": "D:\\BCI\\worktrees\\research-director\\experiments\\run_candidate_ensemble_study.py",
+            "bytes": 196238,
+            "sha256": "e6105ab48c0fdb119aa9c6a42dd5e83328f0b36e8953b6732c537ec6c5f77786"
+          },
+          {
+            "relative_path": "tests/research/test_source_response_pipeline.py",
+            "path": "D:\\BCI\\worktrees\\research-director\\tests\\research\\test_source_response_pipeline.py",
+            "bytes": 34767,
+            "sha256": "23af6046548f4a854ed5733166794ec70cf223651d722aa82482d5f00339663c"
+          }
+        ],
+        "actual_imported_source_files": 125,
+        "expert_law_requested": 8,
+        "expert_law_probability_available": 7,
+        "main_fixed_pools_requested": 2,
+        "main_fixed_pools_available": 1,
+        "main_fixed_pool_separate_postprocessing": {
+          "path": "D:\\BCI\\artifacts\\source-response-pipeline\\MAIN_FIXED_POOL_SUMMARY.json",
+          "bytes": 22654,
+          "sha256": "103f2de7557708a7e9940e5866772fa95124bb199d3b79c2eddec6ece11972fd"
+        },
+        "original_parent_outcomes": {
+          "partial_C119_finite": {
+            "requested": 1,
+            "accounted": 1,
+            "correct": 0,
+            "incorrect": 1,
+            "tie": 0,
+            "abstain": 0,
+            "incomplete": 0,
+            "fit_failure": 0,
+            "valid": 1,
+            "operational_hit_rate": 0.0,
+            "valid_hit_rate": 0.0
+          },
+          "conditional_C120_four_expert_pool": {
+            "requested": 1,
+            "accounted": 1,
+            "correct": 0,
+            "incorrect": 0,
+            "tie": 0,
+            "abstain": 1,
+            "incomplete": 0,
+            "fit_failure": 0,
+            "valid": 0,
+            "operational_hit_rate": 0.0,
+            "valid_hit_rate": 0.0
+          },
+          "P_budget": {
+            "requested_from_actual_fresh_views_fixture": 1,
+            "probability_coverage_asserted_by_executed_test": 0.0,
+            "complete_metric_object_persisted": false
+          }
+        },
+        "nested_graph": {
+          "file": {
+            "path": "D:\\BCI\\artifacts\\source-response-pipeline\\caller-fifth\\test_four_arms_two_laws_origin0\\nested\\prefix_selection.json",
+            "bytes": 334615,
+            "sha256": "f12069b6195c14f14976b9f240da235927271af0212cde772e266b1b299b76a0"
+          },
+          "graph_record_sha256": "612cfa62869809c62bb25a9fcac6983aa12735105203e7ac81775a2fb7b3eceb",
+          "selection_sha256": "8d95b3894e926956d0ee98138f08c45d6546f387b657b16d039fe6ba09bce5d5",
+          "nodes": 5,
+          "outer_requested": 1,
+          "selected_candidate": "mean_shape",
+          "outer_scores_used_for_final_selection": false,
+          "actual_prepared_model_only_replay_passed": true
+        },
+        "resealed_prediction_attack": {
+          "file": {
+            "path": "D:\\BCI\\artifacts\\source-response-pipeline\\caller-fifth\\test_four_arms_two_laws_origin0\\resealed-prediction\\prefix_inner_replay.json",
+            "bytes": 25413142,
+            "sha256": "9c2e51a65bd15b3e090e80a35f8d5bea3f47b21ecad75a45f25c970693fb07e5"
+          },
+          "changed_only_original_core_prediction_log_probability": true,
+          "self_resealed_manifest_admitted_by_executed_test": true,
+          "actual_original_parent_rejected_by_executed_test": true,
+          "recomputed_complete_prediction_equals_original": true,
+          "complete_evidence_writer_reseal_claimed": false
+        },
+        "source_fits_this_invocation": 0,
+        "sampler_calls": 0,
+        "C_initialization_attempts": 17,
+        "C_initialization_completed": 15,
+        "nonempty_C_posterior_constructions": 13,
+        "actual_C_verification_counts": {
+          "C_QR_reconstruction_attempts": 29,
+          "C_QR_reconstructions": 29,
+          "C_verification_cache_hits": 1
+        },
+        "core_history_score_calls": 32,
+        "expert_checkpoints": 36,
+        "source_or_C_fit_blocked_during_prepared_and_parent_replay": true,
+        "public_data_admission": false,
+        "full_generic_run": false
+      },
+      "original_source_genesis": {
+        "status": "accepted_real_software_source_stage_and_catalogue",
+        "integrated_commit": "e595033",
+        "delivery": {
+          "path": "D:/BCI/artifacts/research-deliveries/source-response-states/engine/source-stage/DELIVERY.json",
+          "bytes": 5914,
+          "sha256": "3ea1b781d89c84802b1211cb26484b506eccd1643ebe011c0519494bea238b3c"
+        },
+        "independent_review": {
+          "path": "D:/BCI/artifacts/research-deliveries/source-response-states/engine/source-stage/independent-review/B07_ORIGINAL_SOURCE_STAGE_FINAL_INDEPENDENT_REVIEW_20261016.md",
+          "bytes": 5860,
+          "sha256": "075f01011f1650ae56a12996fc070a84526885ca306748bb595dea96dfb8450b"
+        },
+        "stage_terminal": {
+          "path": "D:/BCI/artifacts/research-deliveries/source-response-states/engine/source-stage/genesis-001/source_stage_terminal.json",
+          "bytes": 17565,
+          "sha256": "d6a332788c9d3275e2480565a1aaeab55d14690a09218849bdbc0e8ef027391e"
+        },
+        "aggregate_terminal": {
+          "path": "D:/BCI/artifacts/research-deliveries/source-response-states/engine/source-stage/genesis-001/aggregate_terminal.json",
+          "bytes": 16051,
+          "sha256": "84a8d59fe850091011316e2eed8c923f8b33e14f03ab40cfa19aacaedf54f0ae"
+        },
+        "source_archive": {
+          "bytes": 1308686,
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\engine\\source-stage\\genesis-001\\source_code.zip",
+          "sha256": "16fdd30d390406e5c66096c1cb850cd3e33191e6dfcefd6b253307853a9116cd"
+        },
+        "source_entry": {
+          "bytes": 73780,
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\engine\\source-stage\\genesis-001\\SOURCE_ENTRY.json",
+          "sha256": "1eeb9c56f8fe1f96d4ca2838cdb7072250938b5ea6e682235f0c75b54e1faf29"
+        },
+        "scientific_identity": {
+          "create_time": 1792162163.727851,
+          "pid": 49476
+        },
+        "scientific_child_exit_code": 0,
+        "launcher_exit_code": 0,
+        "retirement": {
+          "active_owned_processes_after_exit": 0,
+          "backend": "windows_job"
+        },
+        "source_fit_attempts": 1,
+        "successful_source_fits": 1,
+        "native_threads": 1,
+        "peak_scientific_RSS_bytes": 606564352,
+        "source_before_after_equal": true,
+        "scientific_imported_source_files": 53,
+        "observer_imports_match_prelaunch_archive": true,
+        "saved_NPZ_SHA": "ac674a5241156a35929d6ca88514ef74104e63a08db6d938b12fb74d98cb43ad",
+        "deterministic_same_input_NPZ_bytes_equal_original_genesis": true,
+        "new_live_stage_identity_separate_from_original_genesis": true,
+        "readonly_source_refits": 0,
+        "public_data_admission": false,
+        "full_generic_run": false,
+        "root_verified_delivery_receipts": 19,
+        "readonly_recovery_checks": {
+          "path": "D:/BCI/artifacts/research-deliveries/source-response-states/engine/source-stage/readonly-recovery-001/checks.json",
+          "bytes": 2499,
+          "sha256": "0818ee50981fbb159a1699983a1cef722aa6d5f1009636a99174b9e4cea155ef"
+        }
+      },
+      "next": [
+        "real_generic_software_worker_and_DAG_with_new_source_entry_complete_requested_roster",
+        "independent_original_BNCI_MAT_data_admission_for_public_programme",
+        "actual_public_rank_complete_resident_budget_and_streaming_closed_local_Gaussian_marginalization",
+        "complete_paired_public_response_and_calibration_programmes"
+      ]
     }
   }
 }

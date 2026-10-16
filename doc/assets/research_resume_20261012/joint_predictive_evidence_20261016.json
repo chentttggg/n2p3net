@@ -1,6 +1,6 @@
 {
   "schema": "n2p3_joint_predictive_evidence_root_acceptance/1",
-  "status": "accepted_original_finite_OOF0_through_5_and_separate_continuous_integral_consumer",
+  "status": "accepted_all_seven_original_finite_OOF_and_separate_continuous_integral_consumer",
   "receipts": {
     "JOINT_FLAT_COMPLETED_FORWARD_001_AUDIT.py": {
       "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_COMPLETED_FORWARD_AUDIT.py",
@@ -187,9 +187,9 @@
   },
   "root_review": "Read the raw N and one-prior/flat formula, actual preparation/constant assembly, kernel and Gamma tails, full result and saved-root global concavity witness. Verified the complete requested denominator and separate original/consumer identities. Original P/C sampling and finite results retain their producers.",
   "ongoing": [
-    "actual31 remaining OOF/future and complete graph",
+    "original finite future3 through6 and final OOF-attached model/wholegraph binding",
     "actual generic public DAG sharing original fit/captures",
-    "new complete seven-row continuous programme and conditional multi-record extension"
+    "conditional multi-record continuous-integral extension"
   ],
   "authorized_C_only_label_readout": {
     "scope": "first_2_of_7_original_forward_OOF_rows_within_original_C500_label_authority",
@@ -681,6 +681,91 @@
     "future_truth_reads": 0,
     "next_binding": "join_exact_seven_OOF_attached_model_and_emitted_probability_after_original_final_package",
     "original_future0": "C24_embargo_unavailable_preserved",
-    "original_future2": "running_original_frozen_producer"
+    "original_future2": "original_sampling_resolution_refusal_preserved"
+  },
+  "future2_preserved_refusal": {
+    "status": "accepted_original_return_and_refusal_record",
+    "scientific_future_status": "not_available",
+    "ordinal": 2,
+    "receipts": [
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FUTURE_002_RETURN_AND_FAILURE_AUDIT.py",
+        "sha256": "6a2795bec5b1ba1a7dcaee7c220b14882707d220d1e5f14030c5e3772536c7e6",
+        "bytes": 5806
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FUTURE_002_RETURN_AND_FAILURE_AUDIT.json",
+        "sha256": "e9763c7b42212a5d0eed3b8634d91b3c431c89677c0efb33e67ca51ee43553ff",
+        "bytes": 2377
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/JOINT_FLAT_FUTURE2_REFUSAL_INDEPENDENT_REVIEW_20261016.md",
+        "sha256": "8185ec5105a42f40c125f38162473f246450caf8cec876a76c68e7e70cecdb55",
+        "bytes": 2433
+      }
+    ],
+    "sampler_file": {
+      "path": "D:\\BCI\\worktrees\\joint-flat-ensemble\\tmp\\joint_flat_actual31\\attempt_004_result\\sampler_returns\\013_P.npz",
+      "bytes": 1237838,
+      "sha256": "db72b474f0066b0a4b2f1b128214d4419ffb3cec66f0938d6e73961f93ed3e96"
+    },
+    "sampler_arrays_sha256": "8cd376f2a1cdd3fbf45a3526c8def78a8a201dacff3128c5b7dfab9be2a6ba52",
+    "original_log_prefix": {
+      "path": "D:\\BCI\\worktrees\\joint-flat-ensemble\\tmp\\joint_flat_actual31\\attempt_004.log",
+      "through_line": 40,
+      "bytes": 35282,
+      "sha256": "812657aabfd1b8bd2b1da1243c3f9f0c38dccd378a44718a84b70e05d8ddc969",
+      "sampler_components_failure_lines": [
+        38,
+        39,
+        40
+      ]
+    },
+    "draw_shapes": {
+      "coefficients": [
+        2,
+        128,
+        620
+      ],
+      "precisions": [
+        2,
+        128,
+        2
+      ],
+      "targets": [
+        2,
+        128,
+        3
+      ]
+    },
+    "raw_record_scalar_rows": [
+      5318639,
+      1624121
+    ],
+    "original_observed_functional_0": {
+      "bulk_ess": 3.349243870463658,
+      "rank_folded_split_rhat": 1.6176554878706808,
+      "tail_ess": 240.06441239406647
+    },
+    "original_policy": {
+      "max_rhat": 1.2,
+      "min_bulk_ess": 5.0,
+      "min_tail_ess": 5.0
+    },
+    "original_refusal": {
+      "message": "paired current-q predictive functional 0 requires additional mixing: {\"bulk_ess\": 3.349243870463658, \"rank_folded_split_rhat\": 1.6176554878706808, \"tail_ess\": 240.06441239406647}",
+      "stage": "joint_history_read_only_prediction",
+      "type": "SamplingResolutionError"
+    },
+    "fixed_and_grouped_original_refusal_identical": true,
+    "requested_row_kept_unavailable": true,
+    "component_arrays_available_or_recomputed": false,
+    "capture_available_or_reconstructed": false,
+    "independent_functional_recomputation_executed": false,
+    "root_verified_original_references": 2,
+    "effective_model_and_final_parent_binding": "pending_original_final_package",
+    "new_source_or_C_fits": 0,
+    "new_sampler_calls": 0,
+    "new_integrals": 0
   }
 }

@@ -1,5 +1,9 @@
 # 执行、保存重放与代码集成
 
+source-informed四臂已完成完整软件caller：125份实际导入源码归档、36份评分checkpoint、13包/56成员、5节点选择图和truth-free capsule均经独审。保存态的原source/MAT parent接受合法预测，并拒绝自重封的预测记录篡改；此窗新增source fit和采样均为0，C后验构造与验证QR单列成本。核心、caller和原始执行字节分别绑定在[整合接受](../assets/research_resume_20261012/research_integration_acceptance.json)的`source_informed_finite_response`。
+
+原source生成也取得独立实际出口：一次有用途的合成source fit，29.31秒后完成NPZ/full-codec保存，真实scientific进程、venv启动器和外层CLI均退出0，Windows Job所属进程归零。真实目录签发与解析通过，代码归档仅1.31MB；峰值RSS约579MiB、全部native pool为1。随后的只读CLI恢复硬禁source/noise拟合及worker启动，0次调用、原十项关键载荷保持同字节，新导出entry与原值相同。新实时stage与旧同输入的确定性模型各保来源。下一出口是以该真实entry运行generic完整声明的worker/DAG/parent；公共BNCI再接独立原MAT来源准入。
+
 原record共享接口已完成C权限、history C/P/T、per-record最大raw backing、prepared exact lookup和声明future roster集成。H最后session的819请求由原13人记录归约，test event预算只计已声明future录制；BI变长R与prefix graph按真实record/globalK/held preroll核回。旧冻结producer无history回放继续使用其原能力。代码及原receipt小归档保持实际版本，来源见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
 
 NN完整source metadata共享存储已集成binary软件链。原H67,247,311B checkpoint在公共store保存一次，八份同状态K0模型与源依赖由342,489,096B降为67,442,231B，每模型24,365B；单cell完整pretty报告由127,347,082B降为23,695B。独立shared加载和移到孤立目录的75,416,129B standalone闭包都重新走原source程序门，raw/LLR/posterior/probability逐值相等。原计量仅软件三行推理、0EEG/fit，保持自己的实际producer；新源长度/报告ref反例已单独闭合，当前root组合tinybinary caller通过。candidate完整model/prefix/graph/chunk/parent依赖已接入，完整closure导出及最终原blob复核共用同owner。

@@ -13,6 +13,8 @@
 
 ## 当前研究
 
+source-informed响应四臂的C/history引擎、完整typed/nested/保存/胶囊/原MAT parent软件链，以及实时original-source genesis/真实catalogue已闭合，来源集中在[整合绑定](assets/research_resume_20261012/research_integration_acceptance.json)。下一步由真实来源entry推进generic完整执行，并并行准备BNCI原MAT准入、公共尺度预算与流式Gaussian；解释与读数维护于[响应与噪声](evidence/response_and_noise.zh.md)。
+
 2026-10-16科研继续，当前入口见[交接](assets/research_resume_20261012/HANDOFF.zh.md)。本窗口临时并发上限为6（含总监）。云owner已观察到完整candidate零fit恢复退出0：6080请求、8份原fit复用、0新fit，CPU峰值24.89核，观测副本已落地。用户当前关闭云端，304任务及8个parent的最终逐项绑定在重新开云后先落地，再继续已接受S5的后五阶段。
 
 科研集成树位于`D:/BCI/worktrees/research-director`，实际接受范围见[整合绑定](assets/research_resume_20261012/research_integration_acceptance.json)。已合入source共享闭包、并发产物预算、显式shared AR启动因子及原保存root快速严格准入；Linux同FUSE四写者三组配对的进程耗时中位数改善5.55倍。BI原MAT01的108格与MAT57的90格均完成完整parent正验、概率篡改负例及真实capsule/内存归还；两个一epoch开发样例接下来的效能比较采用完整配方。紧凑图两切片已接受，原K950图2.06GB变47.16MB，原逻辑与90节点保持。B11 typed/generic链、真实H C68 source准入和消费者组件缓存已集成，统计future读取12→0；实际31导C500及7/7原OOF通过原政策，独立single-record连续λ完整7行已接受；C内因果Beta校准将平均NLL319.37降至3.76，命中0/7，后续响应/排序机制已进入实施，详见[响应与噪声](evidence/response_and_noise.zh.md)。快速积分核、generic原fit/capture复用及独立future继续。H13人metadata、最后session819请求及record-aware输入接口已集成。

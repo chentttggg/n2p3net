@@ -43,11 +43,11 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
 | B05 AR/噪声 | 固定32前缀/M1、given-noise physical-prior；modern M/R/原Σ与完整source/C权限paired入口；冻结W态与新stationary `/3` 同支持16格云续评完成；双oracle、strict export/Path/控制面和结果账本通过 | 多selection/类别的更大同支持面板、高置信尾部校准、Windows资源采样诊断、finite endpoint交互与joint MLE |
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
-| B07 字典/历史 | 五家族native/off-grid/history/capsule软件链；新多通道finite C-latent正joint状态、原权限、两current-q评分法及原包回放 | 同支持公共opt-in、source/C参数学习、长history扩展、实测fractional时钟、wavelet和硬斜率 |
+| B07 字典/历史 | 五家族native/off-grid/history/capsule软件链；source-informed四臂及两current-q评分法、真实C/history权限、因果nested/cold-load/capsule/原MAT parent；原source实时genesis及真实catalog软件准入 | BNCI原始数据准入与实际generic完整执行；公共尺度resident预算/流式Gaussian、同支持公共配对、source/C参数学习、实测fractional时钟、wavelet和硬斜率 |
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
 | B09 空间 | physical effect/exact结构、compact长record rowspace、source group forecast与真实source/OOF/ensemble；immutable producer旧包零fit回放 | 公共跨布局与reference效能、d-prime/variance不确定性、joint MLE；Pz4保原范围 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |
-| B11 动态/稳健 | noise-only Gamma、proper与同record flat联合尺度；实际source/C issuer、typed ensemble/generic routing、history/refusal及/2原包重放；真实H C68准入、actual31 C500/前六个OOF、快速核与独立完整7行连续OOF、原K0全域唯一峰 | actual31剩余OOF/future/wholegraph、条件多record连续扩展、响应/噪声匹配、动态state及完整公共效能 |
+| B11 动态/稳健 | noise-only Gamma、proper与同record flat联合尺度；实际source/C issuer、typed ensemble/generic routing、history/refusal及/2原包重放；真实H C68准入、actual31 C500/全部7行原OOF、快速核与独立完整7行连续OOF、原K0全域唯一峰 | actual31后续future/最终模型关联/wholegraph、条件多record连续扩展、响应/噪声匹配、动态state及完整公共效能 |
 | B12 公共流程 | 完整C/test/K0/requested与原BI/BNCI/entry005/P1读数；新seed source四fold闭合；H13人metadata/819请求、record-aware compiler与原adapter；BI原MAT01/57完整开发parent/capsule/负例 | 当前完整目标矩阵；H joint真实generic DAG/coverage；BI完整配方公共比较；BI2015a真实stimulus日志；新公共配对与泛化 |
 | B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
 | B14 工程/吞吐 | B12同resource owner/完整账；旧完整candidate恢复、source prepared与共享评分实测云候选，纯CPU尾三拓扑读数；source cache/shared current-view scoring及conditional公共白化已合入并完成相关复核 | 统一新source实际25CPU/4GPU能力及ready工作路由，完整矩阵吞吐、跨host整包和新study owner边界 |

@@ -35,7 +35,7 @@ B11联合模型已在原Huebner记录的500个授权标签上完成采样。直�
 
 原有限采样programme的7/7条OOF（K0至K408）已全部保存并接受，每条原模型、capture、坐标与32配对概率函数均经独立复核并满足原政策。除K68的分子贡献ESS为1.47–1.53，其余行仍为1；新连续积分另核其支持覆盖。K272/K340/K408的逐state概率正规化舍入经80位量化，归一log概率扰动上界最高4.622e−10，低于既定1e−8归约容差；原数组与producer保持。逐行读数和误差关系集中保存在[预测积分接受](../assets/research_resume_20261012/joint_predictive_evidence_20261016.json)。原程序已进入独立future队列，首项按原C24 embargo返回不可用，后续future与完整图继续。
 
-首份可评分future的保存capture也已独立复核：两个真实record、622坐标、32个配对概率函数及贡献表均满足原政策。完整模型关联将在原程序保存附有七行OOF记录的最终模型后闭合；当前接受其保存样本和数值归约。该份有限证据的最大贡献约占99.998%，对应当前record保留的最大精度λ；后续支持检查按真实双record模型处理。原程序继续下一future，结果和来源同样集中保存在上述接受文件。
+首份可评分future的保存capture也已独立复核：两个真实record、622坐标、32个配对概率函数及贡献表均满足原政策。完整模型关联将在原程序保存附有七行OOF记录的最终模型后闭合；当前接受其保存样本和数值归约。该份有限证据的最大贡献约占99.998%，对应当前record保留的最大精度λ；后续支持检查按真实双record模型处理。下一项ordinal002保留原数值不可用：配对概率函数的Rhat为1.61766、bulk ESS为3.34924，原政策要求分别≤1.2、≥5；两策略保留同一失败和完整请求。原采样返回及日志已独审入账，后续请求沿原队列继续，结果和来源集中保存在上述接受文件。
 
 源码及独审还确认：当前C draws只用于P sampler的初始点；实际P law从原source prior与C/P完整likelihood重新构造，同record的C不重复计入。因此具备上述条件的新连续programme可直接由真实earlier-prefix/history权限积分，省去纯初始化用途的C/P抽样。七条新连续前向概率沿这些真实权限完成，旧有限programme继续其原实验。
 
@@ -43,9 +43,17 @@ B11联合模型已在原Huebner记录的500个授权标签上完成采样。直�
 
 七份预测全部封存后，原issuer才以C500授权恢复7个完整组的476标签和第二record的24个partial标签。两种连续law的argmax诊断均为0/7，whole/fixed平均NLL为319.3663/318.6237，Brier约1.999888。准确积分已经给出清楚的模型开发信号：原source→target的响应与噪声匹配、候选排序及概率校准需要联合推进。后续有限delay/width研究将固定原basis/β坐标和noise，对照平均shape、完整矩匹配Gaussian与有限state；概率校准采用逐题只看此前结果的程序。
 
-响应形状新切片已完成科学推导和两个基础模块。每个selection可有预声明的非负额外delay与正width，四臂区分原模板、平均波形、同全一二阶矩Gaussian和完整finite law；同能量并不自动有同容量。矩控制令`β=μ+Fu`、`A=diag(sqrtπ)−πsqrtπᵀ`，局部factor为`A⊗[F,μ]`；全selection共享原β，新增selection只追加其独立局部prior。该控制匹配均值/协方差和Gaussian容量代理，非Gaussian的高阶关系由finite臂保留。唯一law正规化、全矩factor、compact收缩及原native阵列的具名off-grid延拓均获root/独审接受；新正误差长求和反例已修复，记录在[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)的`source_informed_finite_response`。原source参数、Gaussian ηK噪声、physical漂移测度、C0/history和保存引擎正在接入。
+响应形状新切片已完成四臂引擎及完整软件调用链。每个selection可有预声明的非负额外delay与正width，四臂区分原模板、平均波形、同全一二阶矩Gaussian和完整finite law；同能量并不自动有同容量。矩控制令`β=μ+Fu`、`A=diag(sqrtπ)−πsqrtπᵀ`，局部factor为`A⊗[F,μ]`；全selection共享原β，新增selection只追加其独立局部prior。该控制匹配均值/协方差和Gaussian容量代理，非Gaussian的高阶关系由finite臂保留。唯一law正规化、全矩factor、compact收缩及原native阵列的具名off-grid延拓均获root/独审接受，来源集中在[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)的`source_informed_finite_response`。
+
+直观上，这四臂分别问：每次反应严格沿原模板、只允许平均波形、允许同样幅度的Gaussian波动、或保留几种形状各自的概率，会怎样改变候选判断。原source响应先验只进入一次；噪声沿原保存参数取Gaussian ηK，漂移用每导的截距与每秒斜率。C0使用共同平坦测度，非空C保存完整后验，首次真实评分重建C的QR并核对原保存态。whole直接计算保存C后验下的完整新增观测密度，conditional保留自身的前段条件化误差门。
+
+实际合成原MAT软件纵向已完成四臂、两法、完整模型冷加载、before-group因果选择、无future真值的胶囊重放及原source/target MAT父级核验；篡改保存预测的负例被拒绝。八个专家×评分法组合中七个产出概率：whole四臂全部可用，conditional的矩匹配Gaussian保留原数值不可用。要求四臂齐备的两个固定混合池中一个可用，另一个保完整失败；partial-C119的finite单臂父级可用，实际判错。这里取得的是数学与软件全链出口，后续真实公共数据比较沿独立来源准入和资源账本推进。
 
 公共计算按真实尺寸安排。若每次选择有H种形状，S次选择的完整离散组合按`H^S`增长，再乘尚未确定的候选数；矩匹配Gaussian的proper变量数为`r+SH(r+1)`，其中r是原source factor的列数。当前软件样例r=16，八导、八basis的原配置对应r=128，因此公共入口先核实际样本数、选择数和候选支持，再安排共享source闭包、流式计算及完整预算。现有预算式估计数值工作区；下一资源账本补齐常驻C根、保留状态与元数据，并结合实际峰值内存验收。
+
+源码还明确了跨完整future队列的主要规模项：即使nominal/mean/moment，每个未标注history selection的36个合法q也进入全联合求和，j个这样的selection需要`36^j`状态；finite再乘全部selection的shape数。精确边缘化已结束的Gaussian局部变量可降低每状态维度，离散q的组合仍需独立推断方案。下一科学切片将比较有剩余质量证书的树求和、完整当前q支持的逐步粒子/Gaussian近似，以及在给定共享连续系数时按时间支持因子图先消去离散变量；各方案明确自己的估计量、误差和保存身份。当前generic软件完整请求通过预声明状态预算返回概率或类型化不可用，公共完整概率目标沿上述全局推断设计推进。
+
+两种评分的直觉区别是：whole用完整观测一起判断候选；conditional固定当前候选先验，再比较后段在前段条件下的证据。若前段P严格早于当前刺激、两法均有定义，因非负delay和因果白化，P对当前q不含信息，`p(P|C,q)`就是共同常数，两法归一后的候选概率相同。P已经含有当前刺激时，whole还保留该段对q的信息，两种程序可产生不同概率。C0的conditional要求P能识别漂移，whole可由完整观测识别；各自的密度误差证书按对应观测范围验收。
 
 原shared `/3`保存root也已实现快速严格准入：用小因子见证核验原992维矩阵，误差界9.386e-12低于原3.150e-7政策，保留原root与producer。实际完整source codec加载4.254秒，其中root部分1.130秒；较早同输入加载的457.8秒中，452.3秒集中在该验证。新见证是consumer准入元数据，原模型的概率计算仍消费原矩阵。来源见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
 

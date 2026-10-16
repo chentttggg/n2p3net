@@ -6,6 +6,8 @@
 
 ## 当前结论与实施
 
+source-informed四响应候选已接入同一before-group选择与保存图。实际合成纵向在一个合法outer held上比较四候选，保存五节点/两C scope，选中mean_shape；outer成绩不参与最终选择，完整selected graph可在不读取future真值、不重新拟合的胶囊内重放。这验证了完整学习程序的接线，公共优劣沿后续完整配对评估。fixed四专家池仍要求原名单齐备，某专家数值不可用时保留整个池的不可用结果；四臂两法的8个专家请求与2个混合池分别记分母。
+
 Joint程序已完成的前两条C内forward OOF显示高置信错答：K0把真position:9判为12，NLL409.5816；K68把真position:24判为11，NLL610.5583，两个最大概率均舍入为1。原marker的target编码与物理membership一致，标签都在原C500授权范围内；完整7行OOF与全部future沿原程序继续。单record连续λ积分保持首条赢家，真答案NLL为470.3023。这把后续研究明确分成两条：准确计算原law，以及用C内证据学习概率尺度/保留备选质量并检验响应与噪声匹配。下一opt-in比较现有有界温度、含uniform锚点的逆温度与ε混合；完整forward/nested学习关系保持，原程序照原政策执行。证据见[预测积分及授权标签读数](../assets/research_resume_20261012/joint_predictive_evidence_20261016.json)。
 
 新的`forward_beta_uniform`采用显式Beta(a,b) prior，只对合法更早C产生的完整OOF概率更新一次。每个selection贡献一个likelihood；正权log-Beta混合用O(n²)递推保存整个后验，未来单decision概率恰为`E(1−ε)p+Eε/J`。直觉上，它综合有限校准数据支持的多种平滑强度，同时为备选保留概率。真empty roster使用原prior，非空未完成/失败roster保持不可用；完整nested learner只使用outer held之前的真实行。数学核心和完整opt-in生产调用链均已接受，见[设计、源码与实施验收](../assets/research_resume_20261012/joint_forward_beta_design_20261016.json)。
