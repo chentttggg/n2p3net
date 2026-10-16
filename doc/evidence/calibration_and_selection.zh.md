@@ -22,7 +22,7 @@ Joint程序已完成的前两条C内forward OOF显示高置信错答：K0把真p
 | 具名Beta(1,1)，只用此前结果校准 | 3.7628 | 1.057072 |
 | 32候选均匀概率参照 | 3.4657 | 0.968750 |
 
-NLL是给真答案的概率过低时产生的惩罚。校准让错误的最高置信度由首题约51.56%逐步降到末题15.23%，最终`Eε=8/9`；它学会了为备选保留质量。当前候选排序需要响应模型改进，下一有限delay/width研究会在同source prior和noise下检验这一点。原模型、全部预测、逐题后验及9个实际概率/指标owner保持原身份；独立80位正混合oracle逐步复算14条向量、整后验和n7，最大概率差3.62e−16。新消费者8.13秒、0新fit/采样/λ积分，完整源码和实际读数见[因果7行接受](../assets/research_resume_20261012/joint_forward_beta_design_20261016.json)。
+NLL是给真答案的概率过低时产生的惩罚。校准让错误的最高置信度由首题约51.56%逐步降到末题15.23%，最终`Eε=8/9`；它学会了为备选保留质量。这7题的原真值概率都极小，因此每次错答近似把后验推进到Beta(n+1,1)；累计NLL相对uniform多`log8`，与这一模型的预声明上界吻合。当前候选排序需要响应模型改进，下一有限delay/width研究会在同source prior和noise下检验这一点。原模型、全部预测、逐题后验及9个实际概率/指标owner保持原身份；独立80位正混合oracle逐步复算14条向量、整后验和n7，最大概率差3.62e−16。新消费者8.13秒、0新fit/采样/λ积分，完整源码和实际读数见[因果7行接受](../assets/research_resume_20261012/joint_forward_beta_design_20261016.json)。
 
 binary候选的排名量固定为fit前requested正负样本对的成功credit；任一输出缺失的pair记0，分母保持`n+×n−`。完整输出等于原AUC，删除输出只能丢失非负credit。可用子集ROC AUC作诊断单列，同风险先保coverage。legacy CE固定共同校准class cost与requested验证mass，完整输出才参与排名；BrainSync继续保全部真实45-flash block，缺失及tie为miss。普通/QC/EOG产品与公共E3共原fit/refit owner，保存支持、评分和final选择关系。两个实际source候选的新旧对照中，full-C参数、独立预测及保存加载逐bit一致；最终入口关系核查随集成源码绑定。
 
