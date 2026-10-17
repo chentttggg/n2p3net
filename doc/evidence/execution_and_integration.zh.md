@@ -1,5 +1,9 @@
 # 执行、保存重放与代码集成
 
+## 规范入口与交付清理证据
+
+本次整理将规则归入对应主指南，运行状态归入checkpoint，交接保留续接指针。整理前十三份文档已按原字节归档，见[原文清单](../../frozen/guidance_consolidation.manifest.json)。清理实际删除一份可重建字节码缓存及其空目录，共36550字节原文件；二十个先前已退休构建目录复核仍不存在，这些不计本次删除量。[实际清理记录](../assets/research_resume_20261012/guidance_cleanup_receipt.json)区分生成缓存与原始科研证据、冻结结果、producer和暂停依赖。200份冻结科学源码及四项暂停载荷核同原SHA，科研暂停保持。
+
 source-informed四臂已完成完整软件caller：125份实际导入源码归档、36份评分checkpoint、13包/56成员、5节点选择图和truth-free capsule均经独审。保存态的原source/MAT parent接受合法预测，并拒绝自重封的预测记录篡改；此窗新增source fit和采样均为0，C后验构造与验证QR单列成本。核心、caller和原始执行字节分别绑定在[整合接受](../assets/research_resume_20261012/research_integration_acceptance.json)的`source_informed_finite_response`。
 
 原source生成也取得独立实际出口：一次有用途的合成source fit，29.31秒后完成NPZ/full-codec保存，真实scientific进程、venv启动器和外层CLI均退出0，Windows Job所属进程归零。真实目录签发与解析通过，代码归档仅1.31MB；峰值RSS约579MiB、全部native pool为1。随后的只读CLI恢复硬禁source/noise拟合及worker启动，0次调用、原十项关键载荷保持同字节，新导出entry与原值相同。新实时stage与旧同输入的确定性模型各保来源。下一出口是以该真实entry运行generic完整声明的worker/DAG/parent；公共BNCI再接独立原MAT来源准入。
@@ -26,7 +30,7 @@ MAT57已完成90格（42概率/48不可用）、原59次目标fit/168更新及�
 
 B11实际31导C500用原128 burnin/128 draws×2 chains完成，622坐标由独立直接自协方差重算，最大Rhat1.0413、最小bulk/tail ESS52.14/98.97，满足原1.2/5/5政策。完整新程序已消费与原C500逐字节相同的模型，继续OOF、future和whole nested graph。云owner已实际观察S4完整恢复退出0、6080请求、8原fit复用、0新fit和CPU峰24.89核；连接中断前已读原exit，最终304任务/8parent逐项绑定待恢复连接后落地。S5只供尚未开始的后五阶段。
 
-B11新OOF1/K68原模型、完整capture与559坐标/32配对概率函数已独立接受，原C500/OOF0强制复用。另一个独立单record/K0连续λ审计完成64项P/PT积分，三个实际角色均退出0且所属进程为0，0新fit/采样；完整32候选、原先验/测度/常数、source误差、解析尾界与全域唯一峰证明已核回。root再核75项保存SHA，结论与下一快速核见[响应与噪声](response_and_noise.zh.md#连续噪声尺度积分已完成的单记录对照)及[接受绑定](../assets/research_resume_20261012/joint_predictive_evidence_20261016.json)。当前generic入口正在接通原fit/capture共享复用，actual004沿原冻结源码继续。
+B11新OOF1/K68原模型、完整capture与559坐标/32配对概率函数已独立接受，原C500/OOF0强制复用。另一个独立单record/K0连续λ审计完成64项P/PT积分，三个实际角色均退出0且所属进程为0，0新fit/采样；完整32候选、原先验/测度/常数、source误差、解析尾界与全域唯一峰证明已核回。root再核75项保存SHA，结论与下一快速核见[响应与噪声](response_and_noise.zh.md#连续噪声尺度积分已完成的单记录对照)及[接受绑定](../assets/research_resume_20261012/joint_predictive_evidence_20261016.json)。相关generic接口与原冻结程序的后续进度由checkpoint引用的任务记录维护。
 
 `eee72b3`已集成等价unweighted QR memo及每模型私有verified-components LRU。第一次消费原capture时真实计算并逐byte核原组件，后续相同consumer/native/input/capture复用不可变数组；每次仍完整核权限、编译P/T operands并重建summary/诊断。缓存8MiB/16项有界，NPZ、digest、load与replace保原状态语义。四项区分性合同及旧保存producer的新consumer实际通过，小样例首验证0.4250秒、命中0.0966秒，两次仅一遍组件计算；这是小输入测量。源码、返回capture及producer关系见[缓存绑定](../assets/research_resume_20261012/joint_history_score_cache_20261016.json)。
 
@@ -89,7 +93,7 @@ BNCI binary的120个目标拟合和128个保存预测均已完成；原最终JSO
 
 P1 stationary panel 的基础实现与两处Path修复已合入 `929334a/71ab581`。strict export在原capsule独立进程核保存M/R/原Σ/F与noise，worker从新冻结source编 `/3` root，原scorer、requested与pair owner接最终指标。新freeze通过独立真实A01 export与7项focused gate；本地stage05两次/stage06一次均resource_blocked、完整cell0/16、进程退役，实际partial root/候选计数见[执行绑定](../assets/research_resume_20261011/stationary_program_execution_binding.json)。全部8人Windows原态出口现已完成，33成员原态/实际退出包通过独立复审与root逐成员核验，见[跨主机出口绑定](../assets/research_resume_20261011/stationary_crosshost_export_binding.json)。本地停止重复启动；新cloud IO factory保留原plan056/export script/loader身份，科学评分另绑新consumer plan。
 
-CloudExecutor的IO调度切片已在科研WIP通过Windows19个相关case。Linux迟到fork修复`c45be40e…`被独审拒绝：出生时间与空token不能唯一证明任务归属；新owner版本正在按exec-time token、真实双peer和历史pool覆盖修复，长科学callback期间ready补位也须保留。P1首版`4742f6ea…`的原held数值自签及跨attempt互斥缺口已由`db46076…`关闭，root逐读并按原字节接入：独审33facts与科研树lease/path5项分别通过，见[科学接受绑定](../assets/research_resume_20261011/stationary_cloud_scientific_acceptance_binding.json)。实际factory/controller/Linux平台门闭合后再冻结并直接执行完整16格；已有出口包不重签，旧controller receipts各自保原执行源码。
+CloudExecutor的IO调度切片已在科研WIP通过Windows19个相关case。Linux迟到fork修复`c45be40e…`被独审拒绝：出生时间与空token不能唯一证明任务归属；该次审阅要求以exec-time token、真实双peer和历史pool补齐归属证据，并保留长科学callback期间的ready补位。P1首版`4742f6ea…`的原held数值自签及跨attempt互斥缺口已由`db46076…`关闭，root逐读并按原字节接入：独审33facts与科研树lease/path5项分别通过，见[科学接受绑定](../assets/research_resume_20261011/stationary_cloud_scientific_acceptance_binding.json)。实际factory/controller/Linux平台门闭合后再冻结并直接执行完整16格；已有出口包不重签，旧controller receipts各自保原执行源码。
 
 旧prefix/P1 software binding继续证明各自历史快照；当前HEAD的CLI、compute admission与stationary `/3`依赖已有后续变化，新执行绑定真实frozen source。stage06展开计划和日志留在本地，误纳入的四个未推送Git提交已先保存并验证恢复bundle，再从分发历史移出；原执行HEAD仍由bundle保留，源码和结果没有改签。Git保紧凑绑定及主题页，恢复base/旧HEAD/bundle SHA见上述执行绑定。
 
@@ -127,7 +131,7 @@ Windows实际adapter的K400程序有14项同源通过：闭包0/120/240/400，se
 
 中央CUDA资源下限已从科研接受的`2dc48dd`移入本树，默认25CPU/4GPU；nested admission只分配实际ready jobs。恢复source transition新增五个精确transport路径，仍核每个实际source SHA；三个replay资源参数与自动补入的floor不改变科学K、seed和candidate authority。verified original_source_root直接来自原已核请求及source freeze，供旧compiler定位。
 
-源码、独审、实际XML与待办见[重放底座绑定](../assets/research_resume_20261011/prefix_replay_foundation_binding.json)。科研窗口已按用户要求暂停在`e0a33d7`；云窗口继续自己的独立任务。下一云freeze需审最新科研scope/diagnostic接口与本窗口调用链，原public producer及结果保持原身份。
+源码、独审、实际XML与待办见[重放底座绑定](../assets/research_resume_20261011/prefix_replay_foundation_binding.json)。该次科研暂停记录关联`e0a33d7`，云窗口任务独立保存来源。下一云freeze需审最新科研scope/diagnostic接口与本窗口调用链，原public producer及结果保持原身份。
 
 2026-10-12实际entry005的串行恢复baseline：plan/executed_source写入到old4全部重放完成为2994.64秒（49.91分钟）。
 后三位完成间隔746.05、739.62、755.77秒；这段期间科学进程约一核、RSS约2.2–2.7 GiB、GPU0，
@@ -178,7 +182,7 @@ Recovery21的fixture Path类型错误保留；其10个既有caller/CLI验证与R
 
 ## 恢复身份与文件所有权
 
-原`wishlist-integration`工作树已被应用归档。最后已接受科研提交为`1ca4619a79d5a8e4b536ae1960ea7029604801ad`；Git恢复快照`99352070d267141db8651c26c5749a564f6762c6`以它为直接父提交，保存12文件的待审增量。恢复快照不是科研验收。本次从该快照建立`codex/research-integration-20261011`，实际路径为`C:/Users/chent/.codex/worktrees/research-integration/n2p3-net`。原ignored暂停检查点、旧独立review与诊断目录在原路径未找到，不将其称作已恢复产物。
+原`wishlist-integration`工作树已被应用归档。最后已接受科研提交为`1ca4619a79d5a8e4b536ae1960ea7029604801ad`；Git恢复快照`99352070d267141db8651c26c5749a564f6762c6`以它为直接父提交，保存12文件的待审增量。恢复快照不是科研验收。该次从此快照建立`codex/research-integration-20261011`，实际路径为`C:/Users/chent/.codex/worktrees/research-integration/n2p3-net`。原ignored暂停检查点、旧独立review与诊断目录在原路径未找到，不将其称作已恢复产物。
 
 用户原`D:/BCI/n2p3-net`并发dirty保持；云端`deep-research-plan`与accepted496归另一窗口独占。本科研源码没有替换其producer。云accepted496 archive为`4b075a2df69b781f03844ad7efe2e3d4a2b64342118ea291bb85e1aa99dc2127`、manifest为`04ff8a07a7a801fca4d46904572ea9a2acd6696570c72454de280d773900f12e`，其原四source模型及结果由云窗口按原身份解释。
 
@@ -188,7 +192,7 @@ Recovery21的fixture Path类型错误保留；其10个既有caller/CLI验证与R
 
 下列记录对应当时的源码与执行阶段；当前状态见本页开头。
 
-本页的作者和独立审阅产物在`tmp/RESEARCH_DIRECTOR_20261011/`；源身份、必要验证、原MAT重放与最终接受状态由同目录和本页后续结构化binding保存。目前正在完成交换复审与真实native组合验收，未把本页当最终签收。
+本页的作者和独立审阅产物在`tmp/RESEARCH_DIRECTOR_20261011/`；源身份、必要验证、原MAT重放与最终接受状态由同目录和本页后续结构化binding保存。该记录描述交换复审与真实native组合验收阶段，最终接受范围由对应binding给出。
 
 全局优先序：保B12基础公共执行独立前进；补nested inner持久重放及prefix/runner consumer；真实source效应权限与跨布局transport在接learn前明确；B07后续wavelet/off-grid/history按实际数学依赖进入。TemporalNoise当前`/5`从保存编译态安装，旧startup再生成RED不能当当前未修事实；完整同版本跨host模型重放仍待实测。B05/B11时间相关失配与ERP/span是竞争解释，不让一个数值门阻塞其它愿望，也不从拟合更好选择产品默认。
 

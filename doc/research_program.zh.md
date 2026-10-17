@@ -1,23 +1,14 @@
 # N2P3-Net：公开ERP预训练辅助成人猜数字
 
-科研最终目标是成人BrainSync九选一。方法统一以候选集合、实际event×candidate membership、时间支持、观测算子和已授权校准为输入，数学推导使用一般候选数J；九选一作为主任务检验，公共32/36候选任务用于考察同一方法的迁移。方法采用依据是估计量正确、跨候选重标号及不同校准量/历史/噪声成立、完整任务可计算和实际九选一结果。状态预算、局部误差门与特定样例数值处理各归工程记录，主科研持续解决通用模型和推断问题。
+本页维护长期科学规则。模块、输入、工程和工作站合同按[文档索引](README.md)各归其位；实验结论进入[主题证据](evidence/README.md#当前主题结论)，当前状态由索引中的checkpoint提供。
 
-2026-10-10[愿望清单科研进展](evidence/wishlist_progress_20261010.zh.md)将已有设计、数学参考、代码整合与效能分别验收。最大置信度、错误唯一赢家置信度、实际J的uniform风险contrast及分箱ECE已接候选报告，诊断保持原requested分母与tie拒判；ECE依赖分箱，不能独立决定晋升。W08.04正式风险阈值、W10.07最终边界保真以及成人确认仍需各自出口；不根据已见M1或同C角向诊断选择新默认。
+科研最终目标是成人BrainSync九选一。方法以一般候选数J、实际event×candidate membership、时间支持、观测算子和授权校准为输入。九选一是主任务，公共32/36候选用于同一方法的迁移研究。采用依据是估计量、通用性、完整任务可计算性和实际九选一读数；局部数值与状态预算归工程验证。
 
-2026-10-08用户更新：科研云端训练只用一个完整source→target seed；大版本校验才用三个独立完整程序。用户2026-10-14在云端聊天直接授权“可以换seed进行”，下一完整base矩阵source/target使用20261014；旧20260918结果保原programme。大版本三个独立seed由其冻结计划声明，旧20260918/19/20列表保持历史来源。阶段和声明集合由实际冻结计划绑定，不能复制单seed产物补成三seed，也不能将日常研究改称大版本。单seed参与者区间只说明条件于该冻结程序的参与者不确定性。[科研与集成状态](evidence/research_integration_20261008.zh.md)记录职责、源码与未完成出口。
+日常科研使用一个完整source→target seed；大版本校验使用三个独立完整程序。具体seed值与完整请求集合由各冻结计划声明，结果保留实际执行来源。
 
-[当前目标风险](evidence/current_public_consumers_20261008.zh.md)按完整C的固定class mass定义balanced CE，避免小batch随机分母改变目标；actualβ/π/Z来自fitC，OOF不消费held标签。posterior forecast与LLR分别输出，有限NN校准需实测而非Bayes等式保证。primary机制类权重固定，scratch仅替换迁移初始化作对照，wave/native信息控制不额外计票或影响primary温度失败分母。
+科研按“理念→数学→公式→反例→调用链→验收”推进。总监审阅实际模块、保存加载与消费者后集成；子代理以质量为先，不设我方时间或额度上限。科研窗口持有科学合同和最终集成，云端窗口持有唯一云端执行调度；临时并发限额与运行安排写入checkpoint。
 
-[当前公共源程序](evidence/public_source_pipeline_20261008.zh.md)定义等库、库内等participant、观察行内等权CE，显式β1。旧β8按participant class-mass归一后减ln8仍改变原混合测度，不签proper等人源概率。实际participant-only内选轮与fresh全源refit每seed独立；32周期cap是预声明有限开发程序/右删失范围，不称最优或已收敛。源posterior、LLR、目标概率和真实candidate证据各按自己的prior/fit测度解释。
-
-[独立前缀公共入口](evidence/independent_prefix_20261008.zh.md)在实际K和共同later-test上保存requested→actualK及失败分母；fixed/grouped分别声明并共享最终专家，K0只消费冻结源状态。source与consumer证据角色分开，每seed选择/refit由真实producer绑定。软件交付和公共效能/成人确认分别验收。
-
-响应形状研究将原模板、平均shape、同完整一二阶矩Gaussian与完整finite law作为四个明确对照，共享原source prior/noise。其引擎、真实C/history权限、因果nested选择与保存重放已取得软件全链出口；whole与conditional按自己的估计量和数值预算记录结果。公共比较先完成原MAT来源准入和实际尺度资源计划，保留全部预声明模型、候选及失败分母。当前读数与来源统一维护在[响应与噪声](evidence/response_and_noise.zh.md)。
-
-版本：2026-09-06d，作者拒收被试排除版。唯一活动研究规范，负责目标与科学约束。
-公开BI等数据用于学习可迁移P300/ERP特征；目标硬件为七路头皮EEG和一路独立EOG。
-阶段、配方和验收统一见[执行计划](roadmap.zh.md)，实际接口见[技术结构](technical_structure.zh.md)，
-时间/信号推导见[输入合同](input_contract_math.zh.md)，实测与文献见[证据索引](evidence/README.md)。
+授权范围内直接完成必要实施与验证。请求训练时执行完整约定矩阵，已有明确的范围限制沿原请求落实；必要短探针完成后继续全程序。验证聚焦区分性行为，既有绿色证据按实际源码关系复用。
 
 ## 1. 产品目标与数据角色
 

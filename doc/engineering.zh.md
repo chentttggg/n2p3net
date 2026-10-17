@@ -1,39 +1,26 @@
 # 工程指南
 
-新版构建确认可用后，删除已无复用价值的旧构建。先核实际运行引用、当前版本和恢复来源，再清理对应旧输出；仍持有科研producer、原模型/数据/结果或必要失败证据的载荷保在其稳定位置。用户最新要求删除使用cmd，批量失败后按明确绝对目标逐项处理；不改用另一shell删除。科研工作树以D盘代码副本为主，完成整合及必要交接后移除，环境与数据共用。可无损压缩的完成派生大JSON按解码SHA核同一原bytes，更新稳定locator后退休裸副本。
+本页维护环境、验证、资源和交付规则。研究纪律见[主规范](research_program.zh.md)，证据见[执行与集成](evidence/execution_and_integration.zh.md)；当前工作树、并发限额和运行安排从[文档入口](README.md#当前状态与续接)读取。
 
-2026-10-16用户临时限制本科研窗口最多6个并发执行（含总监）；总监按实际活跃状态暂停、续接代理，保留既有上下文和产物。其余窗口的明确用户任务由对应owner协调，原总并发约束继续维护。
+## 文档维护
 
-当前科研恢复树为`codex/research-director-resume-20261013`，位置`D:/BCI/worktrees/research-director`，从保留的科研提交`f1d0ec0`恢复；原D树dirty checkout保其并发修改。旧checkout目录及ignored大载荷定位已失效，历史Git提交/完成绑定与原始载荷恢复分列，云owner继续核恢复来源。实际模块、调用链与能区分对错的反例优先，已通过范围有新改动或疑点才复验。研究结论维护在四个[主题页](evidence/README.md#当前主题结论)，工作树整理保恢复证据；活动科研源的行尾通过`.gitattributes`明确LF，冻结仍按实际执行raw bytes。当前云状态以唯一云窗口的实际凭证为准。
+稳定规则更新对应主指南；专题页维护结论、实验读数和来源链接；checkpoint维护当前状态与下一动作。交接和记忆引用这些入口。记忆保留长期偏好与检索指针，项目的PID、暂停位置、运行计数和临时SHA由项目记录持有。
 
-中央CUDA floor由`source_execution._resolved_cloud_resource_floor`统一供helper和direct resolver解释：非豁免计划的省略/null使用`configs/cloud_training_resources.json`最低值，显式override可提高两轴，低于中央CPU25/GPU4则拒绝；local/software probe须明确scope。CPU准备与单ready source依赖尾保持各自资源角色。两类入口旁路反例、31项定向检查及来源见[中央floor修复](assets/research_resume_20261012/cloud_floor_authority_repair.json)，未来云执行另核actual source/config/plan和真实利用率。
+同一规则或状态只维护一处，其他位置改用链接。替换历史指导前保留必要原文和哈希，归档按[分发规则](../frozen/README.md)管理。本次整理的原文恢复关系见[清单](../frozen/guidance_consolidation.manifest.json)。
 
-源矩阵失败补集使用`resume_source_run`与`n2p3_source_resume_inventory/1`冻结原记录、checkpoint及whole-fold cache；原写者退役后准入，恢复使用新输出。当前独立source的选轮+fresh refit是一个task，成功task完整复用，失败task补跑其整个程序。完整master/requested与remaining执行集合分开绑定；异构内存需求可作为真实单组依赖尾执行，最终`SourceSeedCatalog`按原三项加新一项逐producer核验。GPU4容量、CPU25预算和原失败记录保持，执行细节见[执行主题页](evidence/execution_and_integration.zh.md)。
+## 交付与旧构建清理
 
-Prefix恢复使用新输出和精确reviewed source transition，旧failed队列及producer只读。源码变化的角色白名单由恢复owner持有；科研主树的其它metadata/科学更新不会自动进入旧source10的恢复授权。一次调用内复用已准入包，下一调用重新准入原字节；原四人的真实parent replay仍保实际原输入和完整概率核验，新四人按原矩阵拟合。新增剩余actor输出边界已由两种原目录反例验证，见[集成证据](assets/research_resume_20261011/prefix_cloud_admission_acceptance_binding.json)。
+新构建确认可用后，删除已无复用价值的旧构建，这是交付完成条件。按以下顺序收尾：
 
-P1云数值程序使用原Windows全8人严格出口和新的score-source身份；原export plan、script、loader及原失败保持。科学接线修后独审33项、科研树lease/path集成5项分列通过，见[接受绑定](assets/research_resume_20261011/stationary_cloud_scientific_acceptance_binding.json)。入口持共享整run文件锁，复用统一历史树API；实际云factory和controller接受后，做实际Linux资源/路径窄门并直接完整16格，不重复本地RAM失败启动或旧全集。
+1. 记录新构建身份、实际验收结果及替代关系。验证针对交付行为，复用已成立的证据。
+2. 列出旧对象的绝对路径、类别和保留或删除依据，核实际运行、暂停恢复、共享依赖及其他作者的引用。
+3. 将可删除对象限定为确认退役的构建输出、构建缓存和冗余打包副本。原始数据、科研原始证据、冻结结果、producer快照、暂停checkpoint及其在途依赖独立保留。
+4. 核目标解析路径位于声明范围内，使用cmd工具删除。批量失败后对明确目标逐个处理；删除后复查路径。命令失败或自动审批拒绝时保留实际结果及原因。
+5. 在该交付已有的`cleanup.json`或清理清单中记录新构建凭证、候选类别/路径、执行命令、退出码、实际删除文件数与原字节数、删除后核验、保留对象及未完成项。文件字节数与物理释放空间分别解释。
 
-最终controller已接受为独立执行底座：固定540成员源码归档、Linux3.12 52例、WSL3.14 20例和本机Windows15项窄验证均通过，另有同诊断根实际Windows Job成功后的第二轮准入。平台凭证、源码SHA与scope见[controller绑定](assets/research_resume_20261011/controller_execution_acceptance_binding.json)；旧controller receipts不重签，正式矩阵吞吐仍单独验收。
+清理结果使用`completed`、`incomplete`或`not_applicable`。已确认的旧对象全部退休或有明确保留用途，且结果已记录，才能将清理项记为完成；没有替代构建或退役对象时记录不适用及实际检查范围。后续清理不隐含恢复暂停的科研进程。
 
-2026-10-10科研成果在独立`wishlist-integration`工作树（base `7bd984a`）整合，公共云执行继续绑定accepted496。逐读实际owner与完整调用链，迁移必要反例并执行受影响合同；已通过的旧矩阵、大probe与全集不因整理或方法更名重复运行。过程性材料只在当前仍必要时保留，本轮遵照用户最新要求不重复清理。源码、验证和剩余出口见[当前进展](evidence/wishlist_progress_20261010.zh.md)。
-
-2026-10-08用户更新：科研与代码最终集成由科研窗口持有，云端窗口持有唯一资源调度、准备、启动、监控和既有结果验收。两窗口总并发最多10，按双方实际工作与活跃数分配，不固定窗口配额；增开或恢复先核总量。科研子代理不设我方期限或额度；以完整源码审查、真实调用链和必要反例验证推进，不重复本地全集或无依据门禁。集成须仔细审阅实际模块逻辑，可交详细handoff给独立子代理，不能凭作者摘要或测试数量直接合入。当前科研云训练单seed，大版本才三seed；具体作用域见[当前集成状态](evidence/research_integration_20261008.zh.md)。外部文件、fit/时间授权和执行身份的检查保留，已准入不可变内部状态由唯一owner消费。
-
-两窗口在职责范围内自主处理小决定，只同步共享接口/所有权变化、关键阻塞或失败及可集成候选，不逐步报告常规排障。历史按已实现的大架构版本保留，验明恢复后删除已落地成果的微冻结、已解决失败记录和一次性过程工具；当前未关闭问题只留仍必要的证据。不可把所有小版本再套一层ZIP充作精简，范围见[归档分发规则](../frozen/README.md)。
-
-2026-10-09用户已在云端窗口授权恢复训练；该窗口先核实际资源/锁定环境，最终接受源码只执行一次整仓验证，再继续约定完整单seed公共程序。科研修复在隔离树审阅，运行中的历史矩阵从自己的物理源码消费，不能因当前工作树更新改变其producer。长记录compiler绑定原Y/D字节并一次full-record白化，公开边界验证一次，内部抽样消费已准入不可变R/count/map；不再每draw重复大数组验证。必要反例/相关合同先执行，完整套件由云端唯一执行权按最终实际源码与原资源声明验收。
-
-当前云端一次性491软件验证已经保存完整失败和环境复验材料，正式公共训练尚未启动；用户已获告知可以关闭云端。关闭后不再启动新的SSH或云任务，保留原suite、11项锁定环境复验、存储准入和基础设施局部修复的独立来源。原491 source/producers不因局部修复改签；下一次公共执行须使用新的完整源码冻结和一次性定向门禁。
-
-最终493成员冻结相对原491还包含数据digests/domain/euclidean alignment、binary/transfer接点、source vector与predictive-prior测试、freeze helper以及已确认无调用者的历史 `candidate_set_loss` 退役；因此它是独立源码版本，不能追签原491的3180项结果。493只完成来源成员/哈希准入，新的Linux范围只需对新增生产接点和剩余失败修复做定向验证，再决定是否需要完整suite。
-
-[当前公共source实施](evidence/public_source_pipeline_20261008.zh.md)共享准备/合并/load/fit预算，并保存原prepared方法与每seed实际producer。五项恢复/准入/账本修复经源码两轴和必要定向验证；未重复全集。云真实16/16数据准备成功，25CPU/4GPU完整源程序继续；只读释放完成文件页的内存提示与原数据删除不同，任何吞吐结论须读真实阶段/资源日志。科研子代理不设我方额度上限或人为期限，质量优先。
-
-[B12切片](evidence/independent_prefix_20261008.zh.md)采用一次授权验证、共享final fit与单份数值包。独立两轴后只补相关consumer回归与B07组合/原生重放，没有重复全集。B08原progress、包和producer链保持原字节，普通用户Task Scheduler服务启动的完整1344格复用436个原封包并继续拟合；实际进程与终态凭证作为续接权威。[CPU限流续接证据](evidence/prior_control_20261006.zh.md#后台运行与本机cpu余量)记录资源控制器接管，该记录属于旧执行时期，当前云实例已由用户关闭；实际旧矩阵producer与未完成出口保持原身份。
-
-更新：2026-09-07。合并原工程流程与环境指导，设备策略集中于本文件。
-先读[研究规范](research_program.zh.md)与[技术结构](technical_structure.zh.md)，再看实际调用链。
+工作树优先放D盘并仅复制代码，环境与数据共用。整合后保留提交和必要交接，核无执行/恢复依赖，再按上述流程退休完成树。
 
 ## 环境与入口
 

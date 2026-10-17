@@ -7,11 +7,10 @@ and the producers those results used. Verify member hashes and recovery before
 retiring superseded material. A source snapshot or EXE launch does not prove an
 integrated training release or adult performance.
 
-Once an outcome is accepted, delete its redundant micro-freezes, source-before/
-after copies, resolved failure/debug logs, intermediate validation bundles and
-one-off helpers. Current unfinished research keeps its necessary backbone and
-evidence until the issue closes. Bundling every minor snapshot into another ZIP
-is not version reduction.
+Retirement follows the engineering guide's
+[delivery and old-build cleanup procedure](../doc/engineering.zh.md#交付与旧构建清理).
+Retain substantive recovery versions and unique evidence; use the cleanup receipt
+to identify redundant generated copies and record their actual removal.
 
 Original acquisitions, unique scientific inputs, final models/predictions/results,
 credentials and other authors' WIP remain separate from disposable process files.

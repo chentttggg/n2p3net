@@ -1,0 +1,106 @@
+{
+  "schema": "n2p3_guidance_build_cleanup/1",
+  "status": "completed",
+  "delivery_scope": "documentation_consolidation_and_one_task_owned_generated_cache",
+  "new_release_build": "not_applicable_no_new_binary_build_in_this_task",
+  "confirmed_replacement": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\SOURCE_MAP.json",
+    "sha256": "ec6688b65902eee5f0d623ce2c72884116c9316f8390d2cef99fb9151dd241e0",
+    "actual_confirmation": "retained_source_and_saved_successful_oracle_match_the_final_source_identity"
+  },
+  "candidates": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\__pycache__\\independent_frontier_oracle.cpython-314.pyc",
+      "classification": "rebuildable_python_bytecode_cache",
+      "bytes_before": 36550,
+      "sha256_before": "2206584cfeec13de58a5273bdd7e66439b0edce2b7bd3215bd9501ac8872e505",
+      "decision": "delete",
+      "reason": "unreferenced_generated_import_cache_outside_preserved_source_and_evidence_roster",
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\__pycache__\\independent_frontier_oracle.cpython-314.pyc\"",
+      "exit_code": 0,
+      "absent_after": true,
+      "files_deleted": 1
+    }
+  ],
+  "retained_scientific_files": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\conditional_response_frontier.py",
+      "sha256": "4263e166492e5cd3d43d5b93f9ce928d784d61dd4a08dd34f1dc1b882a84d72b"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\independent_frontier_oracle.py",
+      "sha256": "042cb99f31822ac51106c39d879769d7ee5e8eeb81f1ee6445041cd9d6a37dfe"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\generic_membership_oracle.py",
+      "sha256": "9d8d57d47a05247ab067fe6add9e2b667ef862c4d823c273e22541094c4bbb89"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\ORACLE_RESULT.json",
+      "sha256": "db6533fac2f063e992b7a12aae1138d1e3aca663b8771451e0b3fcbd649afb35"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\GENERIC_MEMBERSHIP_RESULT.json",
+      "sha256": "340c44df1b267fa8bfdc7a34d9fb2d74351bde238f0d596b726d2b4f0de5a3ee"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\INDEPENDENT_COUNTEREXAMPLES.json",
+      "sha256": "5868203908867afcf56518626ce55bffcdfdf22ef139baf097776cc41726c50e"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\REVIEW_PRODUCT_PROTOCOL_SCHEDULE.json",
+      "sha256": "63eee5664a7bae805f70d96c7cd806a55760f82de45b1ea0720f54a8d013b832"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\HANDOFF.md",
+      "sha256": "d2febc529799e361c2e5367409b0a0a2543e6f612f374d0641e251643863ddb1"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\SOURCE_MAP.json",
+      "sha256": "ec6688b65902eee5f0d623ce2c72884116c9316f8390d2cef99fb9151dd241e0"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\INDEPENDENT_REVIEW.md",
+      "sha256": "70f4adcfd0faab6c72c2c8eb0c8f0bf264dbd267e21c61ebd0830121863d0e88"
+    }
+  ],
+  "protected_categories": [
+    "original_data",
+    "raw_scientific_evidence",
+    "frozen_results_and_producer_snapshots",
+    "pause_checkpoints_and_in_memory_resume_dependencies",
+    "shared_environments_and_active_dependency_builds",
+    "concurrent_dirty_work"
+  ],
+  "previous_cleanup_receipts_rechecked": [
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\lean_personal_20261016\\cleanup.json",
+      "sha256": "77082846681e4ba71ae6a41c6bbcd38a628911ee2fdc39585cb4ed203a09419d",
+      "original_command_exit_code": 0,
+      "declared_removed_directories": 14,
+      "verified_still_absent": 14,
+      "new_deletions_counted_from_prior_receipt": 0
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\lean_joint_state_20261016\\cleanup.json",
+      "sha256": "684f63db67f725d3cbce7e1245ff13dd575788b631f04793eb86e25d7b50de2e",
+      "original_command_exit_code": 0,
+      "declared_removed_directories": 6,
+      "verified_still_absent": 6,
+      "new_deletions_counted_from_prior_receipt": 0
+    }
+  ],
+  "process_resumes_new_builds_fits_or_numeric_tests": 0,
+  "empty_cache_directory": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\__pycache__",
+    "empty_verified_before_command": true,
+    "command": "cmd.exe /d /c rd \"D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\frontier-draft\\__pycache__\"",
+    "exit_code": 0,
+    "absent_after": true
+  },
+  "actual_files_deleted": 1,
+  "actual_original_file_bytes_deleted": 36550,
+  "physical_free_space_change_measured": false,
+  "preserved_scientific_files_unchanged": true,
+  "new_release_build_cleanup_status": "not_applicable_no_new_release_build_or_retired_release_selected"
+}

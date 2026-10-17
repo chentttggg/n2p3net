@@ -1,57 +1,12 @@
 # BrainSync工作站指南
 
-成人九选一是科研与产品共同终点：完整45-flash block的全部可用重复参与一次1–9判断，分类使用七路EEG，EOG保独立角色。新数学方法以一般J与实际membership为参数，先取得真实九候选时钟/权限/完整支持的同公式出口，再进入独立校准与保存后只读推理。公共32/36候选和局部数值样例用于跨任务验证；其工程可用性与九选一效能各按真实产物记录。
+本页维护采集、个人校准和只读推理流程。最终九选一目标及数据角色由[研究规范](research_program.zh.md#1-产品目标与数据角色)定义，通道/参考/时钟由[输入合同](input_contract_math.zh.md)维护。
 
-2026-10-10新增[愿望清单研究成果](evidence/wishlist_progress_20261010.zh.md)先在后端科研树验收。置信度/ECE为候选诊断；有限潜伏期/宽度随机效应和固定graph先验仍需独立的产品任务合同、持久包与新数据效能，未自动成为日常BrainSync默认程序。
+采集端位于`D:/BCI/BrainSync_Tool_newest/BrainSync_Tool`，通过结构化argv调用后端项目虚拟环境。个人包保存完整输入合同、拟合状态和决策程序；推理按包内声明处理完整scheduled timeline，模型在独立测试前冻结。
 
-[B12后端独立前缀包](evidence/independent_prefix_20261008.zh.md)可只读载入固定或C内OOF温度程序，共用原数值状态。公共candidate预算/词表与实际时间支持保存在研究包；日常BrainSync个人入口和新成人九选一仍沿自身任务合同接入并独立确认。
+研究`FittedEnsemble`与日常`CalibratedPredictor`各持自己的模型接口。新研究方法通过实际九候选membership、45flash协议、合法raw/history权限、保存加载及新记录推理接入工作站。各机制的实验结论与接受范围见[响应与噪声](evidence/response_and_noise.zh.md)和[公共评估](evidence/public_evaluation.zh.md)，当前任务从[checkpoint入口](README.md#当前状态与续接)读取。
 
-[B07物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已接后端研究ensemble/operator入口与实际包重放；raw研究包保存函数grid、E/N、prior与真实C信息。当前日常个人包、未知边界state及新成人九选一须另接工作站任务合同，公共三包验收不构成已部署产品。
-
-[calibration g-prior raw研究程序](evidence/calibration_g_prior_20261006.zh.md)仅在后端研究FittedEnsemble接通，保存全C/reference/root/fit身份；工作站日常CalibratedPredictor与新成人九选一确认仍按原计划，不能把该软件包直接作为已验证工作站程序。
-[trace控制及28臂先验对照](evidence/prior_control_20261006.zh.md)沿用后端只读研究入口；模型`/5`与`/6`各自保存真实prior程序与C编译状态。未知目标score不重估λ或g，开发矩阵的公共36选一结果不替代工作站九选一确认。
-
-2026-10-05 [多专家分块研究](evidence/deep_research_plan_20261005.zh.md)已完成本轮[后端代码与独立软件验收](evidence/ensemble_implementation_20261005.zh.md)，工作站接入仍在后续范围。
-研究`FittedEnsemble`保存一份包含真实专家state/profile/固定池/校准温度的包，load后score只接无标签view；
-BrainSync日常入口仍消费已有CalibratedPredictor，不把公共36选一模型包当九选一工作站模型。
-后续[fixed32 raw条件模型](evidence/continuous_fixed_prefix_20261005.zh.md)属于该后端研究路径；prefix、真实过去事件与candidate prior按研究协议解释，尚未成为个人默认程序。
-该研究包绑定实际noise估计器、prefix支持、QR/gradient源码与求值记录；只读score和load不重新拟合noise、kernel或温度。真实A01重放通过仍只属公共开发软件证据。
-边界框架的short-only映射与完整增量测量仍是后端native-grid研究参考；工作站预处理、可部署state拟合和未知目标程序须另接完整时间/通道合同，不将observed-long teacher用于真实推理。
-[B06 conditional operator/CLI](evidence/conditional_state_20261006.zh.md)已提供后端只读研究调用；当前native探针的state仅为已观察续段，不作为工作站未知边界state部署程序。个人推理仍需另接真实九选一任务、采集通道与可用时间合同。
-未来统一个人包由现有calibrated owner保存各专家冻结状态、候选词表、校准/输入来源与概率校准程序，
-未知目标score不提供真值；K0不拟合目标温度/统计/gating。四库或BNCI36选一开发不能替代新成人九选一确认。
-
-2026-09-16统一模型后端已接通固定预算个人训练。一份自足个人包贯通同一前向图。
-研究校准入口为`brainsync_model_task.py --task calibrate --selector-mode unified
---calibration-recipe <TargetRecipe.json> --training-budget configs/unified_training_budget.json`。
-其余录制、source和输出参数沿用现有CLI；recipe epochs与budget的target_epochs一致，默认90轮。
-一条完整的授权校准录制即可执行一次全C拟合，预检不再要求个人inner验证。
-输入统计、BN重估、可拟合QC和自动EOG均绑定实际完整校准范围；保存模式为`fixed_unified_program`。
-recipe明确decision系数及源中心强度，scratch的源罚项为0；不能同时声明固定updates或内部refit。
-新个人包保存sum membership评分、温度、严格coverage及质量状态，推理不读目标标签；该分数未认证为校准概率。
-操作和实测见[预算执行器验收](evidence/domain_transfer_major_20260920.zh.md)，完整科研设计见
-[精简训练方案](evidence/domain_transfer_major_20260920.zh.md)。真人九选一效能仍待验证。
-
-2026-09-16个人校准正式执行与预检查共用质量模型拟合范围门禁；用于内部选方的QC不能包含验证会话。
-旧非逐导QC也执行相同检查。固定本人LDA使用完整授权校准范围；冻结模型与需最终重拟合的quality policy各保存实际状态。
-QC开关可以改变可用数据和预测，但不会暗中改变同一legacy配方的输入统计、BN和训练策略。
-不合格范围在训练前说明原因；新修复不会为旧模型补写缺失证据。软件验证见
-[算法链验收](evidence/domain_transfer_major_20260920.zh.md)。
-
-更新：2026-09-06。活动采集端为`D:/BCI/BrainSync_Tool_newest/BrainSync_Tool`，
-后端为`D:/BCI/n2p3-net`。两个版本的增强已整合到newest，不在旧目录同步开发。
-本指南汇总当前使用方式，历史测试次数和修改细节见[整合证据](evidence/brainsync_app_integration_20260906.zh.md)。
-
-2026-09-15后端统一执行保存的完整预处理合同，新个人模型记录实际执行凭证；
-后续不同长度/源时间的合法录制按算子语义核验，不要求原始文件相同。
-旧个体包继续按其冻结声明解释，缺少历史执行证据不自动补造。
-显式`--preprocessing-config`必须给完整配置，不能用空对象或局部参数继承隐含默认；
-从现行`configs/brainsync_bidirectional_preprocessing.json`复制后修改所需字段。
-实现与软件验收见[预处理执行落地](evidence/preprocessing_execution_20260915.zh.md)。
-
-2026-09-16后端研究interface支持空间、时间及残差适配配方；新个人包保存实际架构与配方，
-加载时重建并核对，预测继续只读。工作站日常默认仍按已保存配方运行；软件支持不等于新方法已完成真人验证。
-首批实现见[验收记录](evidence/domain_transfer_implementation_20260916.zh.md)。
+统一个人校准入口为`brainsync_model_task.py --task calibrate --selector-mode unified --calibration-recipe <TargetRecipe.json> --training-budget configs/unified_training_budget.json`。配方、预算与输入声明一致；QC、EOG和统计拟合按实际授权校准范围保存，后续推理读取完整冻结状态。显式`--preprocessing-config`使用完整配置，示例见`configs/brainsync_bidirectional_preprocessing.json`。
 
 ## 启动与环境
 
