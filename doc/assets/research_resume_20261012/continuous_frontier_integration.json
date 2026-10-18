@@ -97,10 +97,10 @@
   "quality_identity": "binary64_reference_and_replicated_MC_estimate_not_finite_sample_certificate",
   "replay_scope": "saved_integral_layer_only_for_this_integration",
   "next_owners": [
-    "prepared_structured_factor_cache",
-    "model_only_and_original_input_replay",
-    "registered_BrainSync_raw_C_capability",
-    "typed_prediction_and_predeclared_quality_policy"
+    "registered_BrainSync_raw_C_and_all_physical_exposures",
+    "physical_time_response_design_and_explicit_noise_drift_groups",
+    "typed_session_prediction_quality_policy",
+    "actual_source_geometry_transport_and_admission"
   ],
   "scientific_fits_by_root_integration": 0,
   "old_build_retirement": {
@@ -112,5 +112,202 @@
       "live_recovery_process_dependencies"
     ],
     "classification": "active_source_modules_added_external_compiler_work_still_uses_reference_cache"
+  },
+  "prepared_and_structured_proposal": {
+    "scope": "native structured records with explicitly independent physical drifts; generic physical-time and shared-drift groups handled by the separate new owner",
+    "integrated_source": [
+      {
+        "path": "D:/BCI/worktrees/research-director/src/research/prepared_continuous_frontier.py",
+        "bytes": 23027,
+        "sha256": "2a71826015fe3d12c50cc6d31f3a413418fbeb42e7f6b78598897134405aa751"
+      },
+      {
+        "path": "D:/BCI/worktrees/research-director/src/research/structured_continuous_proposal.py",
+        "bytes": 16178,
+        "sha256": "aa8bca2c37942ac462955e6bbfa381c709bc7933b7bbbcbd5df8d675e44d535e"
+      },
+      {
+        "path": "D:/BCI/worktrees/research-director/tests/test_structured_continuous_proposal.py",
+        "bytes": 6810,
+        "sha256": "f7b17d753fdf434ad708295c9d66db46c15349775c098951fa0a10eae12e6737"
+      }
+    ],
+    "original_cache_source": {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/prepared_continuous_frontier.py",
+      "bytes": 23017,
+      "sha256": "4495139870c61b8a00545f7db5407d2f37129786de4922ae3d1d91cc4bfcdad7"
+    },
+    "code_relation": "nine_original_cache_definitions_preserved_after_canonical_nested_imports_proposal_decoder_owned_by_structured_continuous_proposal",
+    "independent_reviews": [
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/PREPARED_REVIEW.md",
+        "bytes": 4414,
+        "sha256": "a2b9b8bb60e2e725910e76a42d90c0e26fc5265b91449edaaa6b1159894a2a1f"
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/STRUCTURED_PROPOSAL_REVIEW.md",
+        "bytes": 8238,
+        "sha256": "441f01aaa20aaed1e7f742249ea8f0bc0f9a8d1f099dfab3fb5da9c205d98a74"
+      }
+    ],
+    "actual_evidence": [
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/PREPARED_GRAPH_RESULT.json",
+        "bytes": 106252,
+        "sha256": "e9b7fe9fcdae2492124eea4b94222b939950513d8360a441db66ae8935406ac6"
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/PREPARED_FLAT_ADMISSION_RESULT.json",
+        "bytes": 2087,
+        "sha256": "70d01e04a61bd3ed79b59cd6c5a37ed80f22a2acced2729fe7c93986a8a92808"
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-proposal/MULTI_RECORD_001/PLAN.json",
+        "bytes": 1690,
+        "sha256": "fbbecbea5e2f73c3b3e2cd17fcf4b3cdaa12cde7cf45b2780f1923ecb1cb0898"
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-proposal/MULTI_RECORD_001/RESULT.json",
+        "bytes": 500463,
+        "sha256": "ade6803dcfaf83d20115c762d2c6f6d127deecfe360f655aaf68d5647760fbb3"
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-proposal/MULTI_RECORD_001/CLOUD.npz",
+        "bytes": 59850,
+        "sha256": "4b6fa5ac69beb2460fb64735ad377d705fb9538a46549580da254a1b1c9f2772"
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-proposal/HEAVY_REFERENCE_001/PLAN.json",
+        "bytes": 1349,
+        "sha256": "c77defe0bac881eca62099c41c24ef15476bd52ff04f9a1583b48022ba47d0c5"
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-proposal/HEAVY_REFERENCE_001/RESULT.json",
+        "bytes": 501542,
+        "sha256": "334e192c6168caebd2575bdffabf2c083e8f4f935404c704542699a4b17a62c3"
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-proposal/HEAVY_REFERENCE_001/CLOUD.npz",
+        "bytes": 8713,
+        "sha256": "da472ca521403821d32bae9bdc12c68a24480559cc4f00031bf85917d42fec86"
+      },
+      {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-proposal/CANONICAL_STUDENT_GREEN.txt",
+        "bytes": 80,
+        "sha256": "423b1d0e014eb1eab96f4420f7b344c2615be505dd574b756ac884826ca74f2d"
+      }
+    ],
+    "new_validation": {
+      "unique_passed": 4,
+      "gaussian_cases_reused": 3,
+      "new_student_case": {
+        "command": [
+          "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+          "-m",
+          "pytest",
+          "tests/test_structured_continuous_proposal.py::test_shared_gamma_t_reference_matches_independent_multivariate_t_and_codec",
+          "-q",
+          "--basetemp",
+          "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\structured-proposal\\pytest-canonical-student"
+        ],
+        "cwd": "D:/BCI/worktrees/research-director",
+        "exit_code": 0,
+        "passed": 1,
+        "previous_three_gaussian_cases": "reused after AST-identical Gaussian definitions and previous codec branches were verified"
+      },
+      "source_relation": {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-proposal/CANONICAL_SOURCE_RELATION.json",
+        "bytes": 1458,
+        "sha256": "81bffa4f770b006e2cd11e5db01f77b62a6ecba4f9a84ed8566acb40a103eb88"
+      },
+      "ruff_exit_code": 0,
+      "review": "root module/caller/codec math read and independent source review; actual original Gaussian and t source maps verified"
+    },
+    "new_graph_case": {
+      "records": 12,
+      "current_candidates": 9,
+      "shared_source_rank": 2,
+      "total_continuous_dimension": 50,
+      "proposal_array_bytes": 76896,
+      "comparable_dense_proposal_mean_root_bytes": 367200,
+      "likelihood_cache_bytes": 94080,
+      "all_log_probability_finite": true,
+      "weak_candidate_log_prior": -900,
+      "original_point_max_log_difference": 1.4836132322670892e-11,
+      "model_only_replay": "bitexact",
+      "numeric_parent_replay": "bitexact_twelve_records_recompiled",
+      "source_and_target_fits": 0,
+      "replay_resampling": 0
+    },
+    "remaining_real_data_owner": "registered_raw_C_source_authority_physical_exposure_and_clock_proof_are_separate_from_this_numeric_parent",
+    "gaussian_baseline_validation": {
+      "command": "D:/BCI/n2p3-net/.venv/Scripts/python.exe -m pytest tests/test_structured_continuous_proposal.py -q",
+      "exit_code": 0,
+      "passed": 3,
+      "contracts": [
+        "physical_chart_density_draw_and_pCN_vs_independent_dense_Gaussian",
+        "structured_positive_pilot_and_recursive_codec_absolute_component_integrals",
+        "zero_source_rank_proper_drift"
+      ],
+      "executed_test_source": {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-proposal/executed_sources/test_structured_continuous_proposal_gaussian_001.py",
+        "bytes": 5115,
+        "sha256": "db760870ab0a1d1b628def298872d1fc086fc5a3f84e3b0267777a8eefce589e"
+      }
+    },
+    "previous_proposal_review": {
+      "archive": {
+        "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/REVIEW_HISTORY.zip",
+        "bytes": 28741,
+        "sha256": "9c37b1dc350db294e961c275a6b973f0f84696519de52f637911dff0231bbd57"
+      },
+      "member": "STRUCTURED_PROPOSAL_REVIEW.08fd1a09ccd7d8c18a4c2a44562956d13474ee89cf7ac65d211c30e99732415a.md",
+      "member_sha256": "08fd1a09ccd7d8c18a4c2a44562956d13474ee89cf7ac65d211c30e99732415a"
+    },
+    "heavy_reference": {
+      "source_sha256": "aa8bca2c37942ac462955e6bbfa381c709bc7933b7bbbcbd5df8d675e44d535e",
+      "density": "one multivariate Student-t shared Gamma scale across head and all local blocks, in original du da",
+      "matrix_role": "scale, covariance is scale*nu/(nu-2)",
+      "reference_mass": 0.1,
+      "degrees_of_freedom": 4.0,
+      "role": "numerical proposal with original target density correction",
+      "fixed_model_tail_property": "proper finite Gaussian-mixture target divided by full-rank t is bounded; positive t mixture mass preserves finite second moment structure",
+      "quality": "replicated Monte Carlo standard error remains a statistical estimate",
+      "actual_window": {
+        "seed": 618033,
+        "particles": 24,
+        "replicates": 3,
+        "new_native_or_Q_compilations": 0,
+        "new_pilot_draws": 0,
+        "scientific_fits": 0,
+        "whole_max_log_error": 0.12314724965904134,
+        "conditional_max_log_error": 0.13130762005636143,
+        "model_replay": "bitexact"
+      }
+    },
+    "source_byte_policy": {
+      "prepared_compiler": "pinned CRLF physical bytes retain 2a718260 original numeric producer across checkout",
+      "proposal_and_test": "pinned LF physical bytes"
+    },
+    "old_build_cleanup": {
+      "status": "not_applicable",
+      "inspected_paths": [
+        {
+          "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-proposal/__pycache__",
+          "exists": false
+        },
+        {
+          "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-proposal/.ruff_cache",
+          "exists": false
+        },
+        {
+          "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-proposal/pytest-canonical-student",
+          "exists": false
+        }
+      ],
+      "new_executable_builds": 0,
+      "actual_deleted_files": 0,
+      "protected": "original Gaussian/t producers, cached numeric models/clouds/results and review archives"
+    }
   }
 }

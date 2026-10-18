@@ -32,6 +32,8 @@ B07 `research.multichannel_c_latent`新增明确外部固定参数的finite C pr
 
 `research.collapsed_continuous_inference`消费上述共同离散partition，按原source Gaussian与每record物理漂移测度计算完整候选概率。可枚举Gaussian分支提供解析reference；一般图使用正权SMC（逐步调整采样权重的数值积分），每个前缀/完整观测及候选有自己的计算scale，最终恢复原积分。`research.continuous_integration_pilot`仅学习数值proposal与scale，独立于正式采样随机流；全部密度校正、各次非归一积分及统计误差身份保留。`replay_saved_cloud`持有保存积分归约层，实际模型和原输入重放沿各自接点验证，来源见[连续积分接受](assets/research_resume_20261012/continuous_frontier_integration.json)。
 
+`research.prepared_continuous_frontier`按原启动root及PARCOR halo逐块编译每record的局部二次型，保存完整scope、normalizer与原flat准入；后续积分点复用这些因子。`research.structured_continuous_proposal`保存共同u与各record条件漂移的Gaussian及共享尺度Student-t proposal，在每record的`v=Ra`坐标内计算并恢复原`da`的Jacobian，避免全record的dense covariance。其递归codec恢复完整混合分布，prepared的model-only与原numeric-parent重放共同消费。该native接口显式使用每record独立漂移；物理时间、共享漂移组及registered raw/source权限由相应实际owner接入。
+
 `research.original_continuous_source_stage`将一次原source拟合、独立进程观察和只读目录导出分开。worker在拟合内部发start，原NPZ及完整codec读回后发saved；observer以真实PID/birth、Windows Job和scientific OS handle核完整生命周期及源码归档。stage终态与导出aggregate终态独立；`--admit-only`向新目录恢复只读导出，复用原模型和原stage。首个实际genesis属于software correctness，公共原始数据由独立issuer准入。
 
 `transfer.information_bound`持有`/2`完整activation/模型诊断、raw plug-in估计量及不可变JSON报告，`save/load/replay_model`保护全部输出与原producer。`transfer.exact_covariance/2`持有raw传播、resolved SPD/显式identified support及独立ridge诊断，当前是内存诊断接口。二者没有生产调用；来源、反例和完整性验收见[数学整合](assets/research_resume_20261012/diagnostic_mathematics_integration.json)。原D树local-only `run_information_bound.py`保原字节，迁移membership、actual activation和报告schema后才可复用。

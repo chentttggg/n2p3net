@@ -20,6 +20,18 @@
 
 独立预采样版本从原物理坐标的proper参考分布学习proposal（已知密度的采样分布）及scale，正式采样使用另一个随机流，解析答案在正式结果完成后才构造。两个独立record、矩形source因子、C-only记录和共享q/各block独立h的真实图调用，whole/conditional完整候选最大log误差分别0.02364/0.02390；source/目标模型拟合均0。各重复运行的非归一积分先合并，再归一成概率；标准误是统计精度估计。保存积分重放逐bit一致。科研树新增的两个解析合同还核回跨1600 nats的P/F绝对积分、非均匀scale恢复及独立预采样校正。原执行、独审和代码关系见[连续积分接受](../assets/research_resume_20261012/continuous_frontier_integration.json)。
 
+### 局部二次型与按记录组织的积分proposal
+
+每record的观测设计、白化与局部状态关系只编译一次，保存共同项、单scope项和真实重叠项的二次型。共享q在pair中只占一个轴；图上的完整求和及source prior仍各一次。新九候选小例在12个相同参数点上，native调用与缓存最大log差2.84e-14；该例点调用由2.464秒降到0.03134秒，编译0.506秒。缓存还保存原flat QR/体积及拒绝状态，短P的可积性由原owner判定。
+
+多record的proposal保共同u，并令每record的白化漂移满足`v_r=m_r+B_r(u−m_u)+L_rε_r`。这保留各记录通过u建立的联系，参数存储随record数线性增长。原物理漂移为`a_r=R_r^-1 v_r`，proposal密度加回`log|det R_r|`；独立预采样仅估计该数值分布，原likelihood与prior继续完整校正。三个新增合同以独立dense Gaussian核密度、抽样和pCN移动，另核弱候选绝对积分、保存codec及零source-rank情形。
+
+新的12record完整九候选链已实际完成：source rank2、总连续维数50、含约−900 nats的弱候选。18个proposal component共76896B，同维度dense均值/平方根为367200B；局部likelihood cache共94080B。native与缓存点上最大log差1.48e-11，独立预采样后的whole/conditional全候选log误差分别0.11643/0.10852，均保统计估计身份。冷模型重放含完整proposal密度；原numeric-parent重编12个record后逐bit一致，重放拟合和重采样均0。这一出口使用显式合成数值输入，真实采集权限由后续registered caller承接；来源同[连续积分接受](../assets/research_resume_20261012/continuous_frontier_integration.json)。
+
+完整数值proposal现可加入预先声明的Student-t厚尾分量：共享head与全部局部漂移共用一个Gamma尺度，离中心较远的区域仍获得抽样机会。实际密度保留原物理坐标的Jacobian，正式权重继续按原目标密度校正。对每个原flat已识别的完整有限模型，所有Gaussian分支的联合precision正定；厚尾t给出有限的目标/采样密度比上界，从而保有有限二阶矩结构。数值精度继续由独立重复的标准误描述。
+
+新窗口复用原12份Q、原pilot及所有候选scale，加入质量0.1、自由度4的t分量，以seed618033执行24粒子×3重复；native/Q编译、pilot抽样及科学拟合均0。whole/conditional全候选最大log误差0.12315/0.13131，冷模型重放逐bit相同。采用依据为一般尾部覆盖与有限矩结构，原Gaussian窗口的结果和producer完整保留；同一[接受绑定](../assets/research_resume_20261012/continuous_frontier_integration.json)保存当前源码、原测试复用关系和独立审阅。
+
 ## 实际31导联合校准与保存root准入
 
 B11联合模型已在原Huebner记录的500个授权标签上完成采样。直观上，它让各记录共享一套响应系数，同时分别估计噪声尺度。原128次预热、128次保存、两条链保持；独立重算全部622坐标的最大Rhat为1.0413，最小bulk ESS为52.14、tail ESS为98.97。Rhat衡量两条链是否走到相近分布，接近1较好；ESS把相关样本折算为有效独立样本数。三项均满足预声明1.2/5/5政策，原C500模型和样本已按完整fit绑定复用于后续OOF与future程序。source仍是唯一原C68拟合，participant2供source、participant1作target，属于同研究内排除目标参与者的设计。

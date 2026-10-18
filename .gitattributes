@@ -147,3 +147,8 @@ tests/research/test_prefix_replay_execution.py text eol=lf
 tests/research/test_prefix_replay_dispatch.py text eol=lf
 tests/research/test_prefix_recovery_provenance.py text eol=lf
 tests/support/prefix_recovery.py text eol=lf
+
+# Preserve the accepted prepared compiler source bytes used by saved caches.
+src/research/prepared_continuous_frontier.py text eol=crlf
+src/research/structured_continuous_proposal.py text eol=lf
+tests/test_structured_continuous_proposal.py text eol=lf
