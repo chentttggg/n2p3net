@@ -1,5 +1,7 @@
 # P300 模型输入合同：离散时间、单位与分组
 
+物理响应设计分别声明观测时钟、source字典时钟、噪声启动段、物理漂移组、target-lock与shape-block。暂停保留真实秒数及前段响应尾；共同漂移组沿同一参考原点使用`a_g+b_g*t_seconds`，其参数与物理平坦测度`da_g db_g`在联合积分中各进入一次。噪声段重启与漂移组归属由各自模型字段决定。completed、interrupted及未知身份曝光共同进入实际历史；未知身份的联合law由调用者显式提供。
+
 source-informed响应四臂共用原source `β=μ+Fu`、Gaussian噪声`ηK`及每导物理漂移`a+b·t_seconds`，λ固定为1。原source先验进入C一次。非空C的whole evidence由保存的归一C后验直接积分`p(F\C|C,q)`；conditional另计算`p(T|C,P,q)`，保各自完整支持与误差证书。C0保共同平坦测度，完整观测识别漂移即可产生whole概率，conditional还要求P可识别。当前q的完整正质量状态与候选分母沿真实issuer权限保留，预算不足作为原请求的不可用结果。
 
 source程序与当前selection输入的数值family相容由`validate_selection_checkpoint_execution`集中核验。已验证原source recipe重新生成的order4 Butterworth bandpass，只对正normal binary64总增益`[k,2k,k]`声明最多4 ULP关系；归一分子形状、全部denominator/其他SOS/notch/padding保持exact，unsupported shape走原exact路径。ULP是相邻可表示浮点数的一步。实际同版本Linux/Windows六rate最多3步，独立Fraction核最大双向增益差约`1.09649e-15`；这是明确的family准入政策。原source系数、执行字节和保存数值保持，target实际变换、有限支持及model replay继续精确核。原数据和准入关系见[执行主题](evidence/execution_and_integration.zh.md)。

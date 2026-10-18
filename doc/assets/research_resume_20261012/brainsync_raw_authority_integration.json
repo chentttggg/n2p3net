@@ -1,0 +1,80 @@
+{
+  "schema": "n2p3_brainsync_raw_authority_integration/1",
+  "status": "accepted",
+  "scope": "original native BrainSync seven-EEG plus EOG path/BIDS/clock ingress, independent C labels and exact physical-time chart",
+  "integrated_source": [
+    {
+      "path": "D:/BCI/worktrees/research-director/src/data/brainsync_raw_authority.py",
+      "bytes": 32388,
+      "sha256": "3a1c0ebc1549a58acab7f6e7c3c2fe77cbf1d17794fb7cc1c9cfacc947afcf05"
+    },
+    {
+      "path": "D:/BCI/worktrees/research-director/tests/data/test_brainsync_raw_authority.py",
+      "bytes": 12256,
+      "sha256": "818dc169a5ca65a541d12d475d831659800eab30e287796bd1c39956aa943743"
+    }
+  ],
+  "original_delivery": {
+    "path": "D:/BCI/artifacts/research-deliveries/source-response-states/brainsync-authority/SOURCE_MAP.json",
+    "bytes": 11228,
+    "sha256": "3de60651a0cb8a1e8e409d3f797a5612af24455683bf83e44cf3386054413698"
+  },
+  "original_final_source": {
+    "path": "D:/BCI/artifacts/research-deliveries/source-response-states/brainsync-authority/brainsync_authority_final.py",
+    "bytes": 32388,
+    "sha256": "3a1c0ebc1549a58acab7f6e7c3c2fe77cbf1d17794fb7cc1c9cfacc947afcf05"
+  },
+  "original_source_bytes_preserved": true,
+  "validation_receipt": {
+    "path": "D:/BCI/artifacts/research-deliveries/source-response-states/brainsync-authority/CANONICAL_INGRESS_FOCUSED_CHECK.json",
+    "bytes": 5883,
+    "sha256": "a2e27ea14a41182771e8946a90ff80c6bdcf07b1ca9c11ec59a41da5648d5cb5"
+  },
+  "canonical_namespace_review": [
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/brainsync-authority/CANONICAL_IMPORT_HANDOFF.md",
+      "bytes": 7790,
+      "sha256": "9d35de985fff57b06c27d03231a14ac4086bbce20545b676d9203ae340b5d63e"
+    },
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/brainsync-authority/CANONICAL_IMPORT_RELATION.json",
+      "bytes": 2449,
+      "sha256": "81d017213cc91b51deef723bf2b3fb4fe42aae0749a43eddc006ced47c20ed01"
+    }
+  ],
+  "root_review": "actual private issuer, raw and C registrations, file ingress, frontend validators, selected EEG/EOG, public requests/history and Fraction clocks plus full canonical tests read",
+  "focused_validation": {
+    "passed": 3,
+    "new_scientific_fits": 0,
+    "human_EEG_reads": 0,
+    "old_suite_repeated": false,
+    "contracts": [
+      "C0 truth-free native ingress and original full request denominator",
+      "C0/C3/C90 original labels and raw segment permissions",
+      "baseline and cross-pause Fraction clocks with complete/interrupted/unknown exposure ledger"
+    ]
+  },
+  "module_ownership": {
+    "raw": "path and full manifest/private truth stay in issuer; caps contain immutable admitted numeric/public operands",
+    "labels": "confirmed original session owner grants only earliest requested binary bits",
+    "noise": "segment identity is observed metadata; cross-segment stochastic law is owned by model",
+    "physical_clock": "two explicit original clock programs; response dictionary clock remains separate",
+    "unknown_exposure": "explicit candidate options with no invented prior"
+  },
+  "namespace": "all new active consumers use data.brainsync_raw_authority class and issuer registry; original external producers keep their original module identities",
+  "cleanup": {
+    "target": "D:/BCI/tmp/brainsync-raw-authority-focused",
+    "classification": "reproducible generated pytest EDF/BIDS fixtures, not original research inputs or frozen evidence",
+    "files_before": 30,
+    "bytes_before": 2951652,
+    "path_verified_by": "cmd for %I emitted resolved absolute D:/BCI/tmp/brainsync-raw-authority-focused; cmd dir /s /a-d /-c counted exact files and bytes",
+    "status": "deleted_and_verified_absent",
+    "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\tmp\\brainsync-raw-authority-focused\"",
+    "exit_code": 0,
+    "verification": "cmd if exist returned absent; independent Path.exists is false",
+    "removed_files": 30,
+    "removed_bytes": 2951652,
+    "scientific_evidence": "original delivery fixtures, source snapshots and receipts preserved; new canonical test source retained"
+  },
+  "remaining_caller": "general physical affine/grouped-drift numeric compiler, actual source transport and complete target noise remain separate owners"
+}

@@ -152,3 +152,5 @@ tests/support/prefix_recovery.py text eol=lf
 src/research/prepared_continuous_frontier.py text eol=crlf
 src/research/structured_continuous_proposal.py text eol=lf
 tests/test_structured_continuous_proposal.py text eol=lf
+src/data/brainsync_raw_authority.py text eol=lf
+tests/data/test_brainsync_raw_authority.py text eol=lf
