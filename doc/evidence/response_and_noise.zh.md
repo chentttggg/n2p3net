@@ -8,6 +8,14 @@
 
 participant、原EEG字节与whole-study排除现由同一source owner处理，原native几何检查继续保留。实际原保存源的12项metadata控制验证了独立target、同participant、原source字节及整库策略；fresh source-data准入和raw/C权限分别由各自live issuer提供。
 
+## 共享物理漂移与完整候选积分
+
+噪声分段和物理漂移分组分别声明。同一录制的噪声可以在暂停边界独立启动，而电压基线与慢漂移继续共享；各段likelihood先相乘，再对同一组物理参数积分一次，共同source及每个离散先验也各进入一次。独立四行绝对积分反例中，错误逐段独立漂移使完整九候选logp变化约0.08659；两段各一行在不同exact时刻联合识别基线和斜率，其积分体积为1/10。同一exact时刻的rank1数据由结构证据拒绝，浮点QR负责已识别空间内的数值坐标。
+
+原external完整链为合成EDF/BIDS的90次completed与1次interrupted曝光、七EEG、两个private-AR2噪声段、一个14参数漂移组及rank3 source，完整枚举9q×2h1×2h2×9d=324分支。按每次曝光独立Fraction插值、完整段白化及增广QR的9条reference分支与新积分最大logZ差4.66e−10；两条额外非reference形状/未知身份分支逐bit相同。不同target-lock的C-only记录通过共同source改变当前完整logp约0.008754，独立dense QR差2.31e−14。保存积分、cold模型与原raw-parent重编均逐bit一致。原producer、原Q与结果保持实际执行身份。
+
+canonical迁移的7个完整模块在规范化import、顺序和模块说明后AST一致，原outer其余15个定义保持。两项聚合回归实际经过新canonical四行绝对积分、弱候选logprior−900、联合秩、重复noise-ID、保存冷读及原parent重编；Ruff与diff检查通过。完整90次例复用原执行证据，新产品45次任务沿新manifest/issuer连接实际源与完整噪声。源码、原证据、独审及cmd清理结果见[共享漂移整合](../assets/research_resume_20261012/physical_frontier_integration.json)。
+
 ## BrainSync原始权限与暂停时钟
 
 canonical入口已通过三项以合成EDF/BIDS文件执行的MNE入口合同：无C标签时保完整九候选及全部会话请求，推理cap对隐藏target字段变化保持相同；部分C只用最早已授权事件，完整90个标签的候选约束需要两个实际segment的raw权限。七EEG与独立EOG逐数组等于原MNE读取，复制公开dataclass不会获得issuer注册。

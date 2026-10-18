@@ -3223,5 +3223,22 @@
     },
     "commit": "14307fd",
     "accepted_scope": "original native raw/C capabilities and Fraction physical clock; actual generic numerical model caller separate"
+  },
+  "physical_grouped_frontier": {
+    "binding": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\physical_frontier_integration.json",
+      "bytes": 8603,
+      "sha256": "af4394ed91ede415f986b6f39b0d1e278bb48e8946258ddbb57581fada3db0f4"
+    },
+    "scope": "explicit_noise_segments_shared_physical_drift_full_discrete_scopes_and_canonical_typed_raw_publication",
+    "current_execution_state": "pause_checkpoint_current.json#/general_inference"
+  },
+  "source_functional_transport": {
+    "binding": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\source_transport_integration.json",
+      "bytes": 5986,
+      "sha256": "fe694b062582e80f57a2eeae5b1a97acea6f4f7bdf517c60032b6ff62edb652c"
+    },
+    "commit": "849457b"
   }
 }

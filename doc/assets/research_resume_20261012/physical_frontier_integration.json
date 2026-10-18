@@ -1,0 +1,181 @@
+{
+  "schema": "n2p3_physical_grouped_frontier_integration/1",
+  "status": "accepted",
+  "scope": "explicit_noise_segments_shared_physical_drift_full_discrete_scopes_and_canonical_typed_raw_publication",
+  "integration_base_head": "849457b",
+  "source_after": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\collapsed_continuous_inference.py",
+      "bytes": 31528,
+      "sha256": "34ba846c4e391472c76e734848f19b569571aeeeae8cc8037c6f8ab04f535cd9"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\physical_response_design.py",
+      "bytes": 11004,
+      "sha256": "53c42dbcdd64a5282994f7504e6a7be49685f88e1663411b024aa6edf27b1851"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\scoped_physical_response.py",
+      "bytes": 2942,
+      "sha256": "9dfaa177a16d73eb415a415429469bca2dea91c16ab888fbd3bee2ff42dda85f"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\physical_affine_frontier.py",
+      "bytes": 41518,
+      "sha256": "13847421e874424da8b03fdc4a4ace343be36310df315ef9064672715e3c227b"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\finite_quadratic_integration.py",
+      "bytes": 11584,
+      "sha256": "943cb6a7161f8246a3f4a8235c6ba30ccd2cdeabf906a7e4b5ddb701a8279772"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\collapsed_continuous_prediction.py",
+      "bytes": 16240,
+      "sha256": "ae7297d943b1a690b7d05f1d8f10ec9002ee4ee101765d7996cf15691881936b"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\grouped_physical_prediction.py",
+      "bytes": 7222,
+      "sha256": "d16474b591d8a87af7c19f5e8042d47e4a912e2d82b3905312d6175fe40c9869"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\research\\test_physical_affine_frontier.py",
+      "bytes": 6329,
+      "sha256": "c65211b4e8de490c0bec8574e421058c0b7e094da7cfa1d6a9bc58dd3367e315"
+    }
+  ],
+  "source_relation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-physical-integration\\SOURCE_RELATION.json",
+    "bytes": 4757,
+    "sha256": "f8a410407ccd9886c00a7fa751f0e8d626c63337995373a75e196c968b9c0d27"
+  },
+  "canonical_validation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-physical-integration\\CANONICAL_CHECKS.json",
+    "bytes": 3225,
+    "sha256": "8f726e1e6e79d0fa09e27b8fbf1c699e34df5f3810973e7e24fc58f729bd7963"
+  },
+  "canonical_independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-physical-integration\\INDEPENDENT_REVIEW.md",
+    "bytes": 7814,
+    "sha256": "06bb49bcfc43d3697b7a93b9233967ae73ff9b46bd9483243d35f16dccfada33"
+  },
+  "original_external_manifest": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\continuous-integration-spec\\DELIVERY_MANIFEST.json",
+    "bytes": 54045,
+    "sha256": "52b94cc1039296cf44d38a3671eca12b3c9c85b36f5b08f287b2d7b6f5072024"
+  },
+  "original_independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\continuous-integration-spec\\GENERAL_PHYSICAL_GROUP_REVIEW.md",
+    "bytes": 14105,
+    "sha256": "18e9b2df602604eeca682eb08e49b1cc20cf15f10e1e1ce09be3f399f9420118"
+  },
+  "before_archive": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-physical-integration\\BEFORE_SOURCES.zip",
+    "bytes": 10458,
+    "sha256": "38f10ddb0f86c6baeb5d0441f59fe0e7be2c0fbceb2251b5099a61d5fd51317f"
+  },
+  "canonical_source_archive": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-physical-integration\\FINAL_SOURCES.zip",
+    "bytes": 36576,
+    "sha256": "0ed7ac278a29ef916b2cc49697ca55e1a3471b230d0fbe743b5ac01ca6f4a057"
+  },
+  "reused_original_execution": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\continuous-integration-spec\\GROUPED_PHYSICAL_SESSION_RESULT.json",
+      "bytes": 6503,
+      "sha256": "e41469586f26ce4499187c1bd58c771acefdeef798c60eafce467139dcc56ce4"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\continuous-integration-spec\\GROUPED_PHYSICAL_EXTRA_ORACLE_RESULT.json",
+      "bytes": 1675,
+      "sha256": "01978b69021d9b5485e89918984b8728c5531fef004e34af8a53df97dcd2fb3d"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\continuous-integration-spec\\GROUPED_C_RECORD_AUDIT.json",
+      "bytes": 921,
+      "sha256": "ac1c435d5363283242ebaf2ccefe59179e73ac745da076dca891aefc1cc324e7"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\continuous-integration-spec\\GROUPED_SCOPE_REFINEMENT_RESULT.json",
+      "bytes": 2190,
+      "sha256": "64e9cfdd38ba64864b3b5c9f473246397fb3b6291c31ad78dc3db2fa65636ae8"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\continuous-integration-spec\\GROUPED_PHYSICAL_SESSION_FINITE_RESULT.json",
+      "bytes": 72422,
+      "sha256": "32399d73db94dc510c6234daa215d98393bab4e3584b5cc268073a4c5a8cdb23"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\continuous-integration-spec\\GROUPED_PHYSICAL_SESSION_WHOLE_PREDICTION.json",
+      "bytes": 3833,
+      "sha256": "d1b0dde965967ca6acf634328e0f9cf13f94d253c5a9f6945fcb41d84127116b"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\continuous-integration-spec\\GROUPED_PHYSICAL_SESSION_CONDITIONAL_PREDICTION.json",
+      "bytes": 3850,
+      "sha256": "d5ab7af073bf3ef754529f9bae93d17c1c06067b8ac6cb165942a1454a68f39c"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\continuous-integration-spec\\REVIEW_HISTORY.zip",
+      "bytes": 169121,
+      "sha256": "2e234130dc2284778331aa88379584d3416089836ca6bdfe75c3e512612f176d"
+    }
+  ],
+  "original_session_scope": {
+    "input_role": "synthetic_EDF_BIDS_original_canonical_issuer",
+    "completed_protocol_flashes": 90,
+    "interrupted_physical_exposures": 1,
+    "EEG_channels": 7,
+    "source_rank": 3,
+    "noise_segments": 2,
+    "shared_physical_drift_groups": 1,
+    "drift_coordinates": 14,
+    "continuous_dimensions": 17,
+    "complete_discrete_branches": 324,
+    "reference_q_branch_absolute_log_integral_error": 4.656612873077393e-10,
+    "nonreference_branch_log_integral_error": 0.0,
+    "saved_cold_original_raw_parent_bitexact": true,
+    "is_new_actual_source_45_flash_performance_case": false
+  },
+  "canonical_new_execution": {
+    "aggregate_tests_passed": 2,
+    "covers": [
+      "independent_four_row_absolute_integral",
+      "all_nine_with_logprior_minus900",
+      "wrong_independent_drift_control",
+      "one_row_each_joint_rank_and_absolute_volume",
+      "zero_row_shared_prefix",
+      "exact_constant_time_rank_refusal",
+      "duplicate_noise_segment_refusal",
+      "canonical_save_cold_and_original_parent"
+    ],
+    "ruff_exit": 0,
+    "diff_check_exit": 0,
+    "source_or_target_model_fits": 0,
+    "old_full_session_reruns": 0
+  },
+  "interfaces": {
+    "source_prior": "one_shared_complete_standard_normal_u",
+    "drift_measure": "one_original_physical_da_per_explicit_group",
+    "noise": "independent_segment_original_stationary_startup_explicit_declaration",
+    "assignment_reference": "complete_positive_joint_target_independent_assignment_roster",
+    "raw_registry": "data.brainsync_raw_authority",
+    "verified_numeric_registry": "research.collapsed_continuous_prediction",
+    "model_cold_load": "numeric_parameters_only; original_raw_source_C_permissions_remain_with_live_owners",
+    "native_prepared_compiler": "unchanged_original_independent_record_drift_scope"
+  },
+  "producer_policy": "new_canonical_source_has_new_identity; original_producers_Q_and_results_not_resigned",
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-physical-integration\\CLEANUP_RECEIPT.json",
+    "bytes": 1118,
+    "sha256": "92ff9fc99459ae32bdd048a6b90c36a4dda2e874b81c8e55a3bb71b926f97fc0"
+  },
+  "remaining_full_programme": [
+    "admit_live_original_source_for_actual_target",
+    "complete_seven_channel_C_noise_operand",
+    "original_source_prior_plus_C_response_update_once",
+    "actual_source_k8_complete_45_flash_nine_choice",
+    "generic_long_history_continuous_proposal_and_declared_precision_policy"
+  ]
+}

@@ -27,6 +27,22 @@ class FlatEndpointUnidentifiedError(ValueError):
     pass
 
 
+def admit_physical_flat_root(root, columns):
+    """Original physical-flat QR admission, shared by native and grouped charts."""
+    if (root.shape != (columns, columns) or np.any(np.diag(root) == 0)
+            or not np.isfinite(root).all()):
+        raise FlatEndpointUnidentifiedError('physical_flat_reference_qr_unresolved')
+    return float(np.log(np.abs(np.diag(root))).sum())
+
+
+def physical_flat_geometry_from_white_blocks(blocks, columns):
+    """One QR/volume for a physical group; individual segments may lack rank."""
+    root = np.empty((0, columns))
+    for block in blocks:
+        root = np.linalg.qr(np.vstack((root, block)), mode='reduced')[1]
+    return root, admit_physical_flat_root(root, columns)
+
+
 @dataclass(frozen=True)
 class RecordEndpoints:
     model: object
@@ -50,9 +66,7 @@ def _flat_geometry(model, stop):
         raw[:, channel, c+channel] = t
     white = _white(model, raw).reshape(stop*c, 2*c)
     q, r = np.linalg.qr(white, mode='reduced')
-    if r.shape != (2*c, 2*c) or np.any(np.diag(r) == 0) or not np.isfinite(r).all():
-        raise FlatEndpointUnidentifiedError('physical_flat_reference_qr_unresolved')
-    return q, r, float(np.log(np.abs(np.diag(r))).sum())
+    return q, r, admit_physical_flat_root(r, 2*c)
 
 
 class ContinuousFrontierTarget:
