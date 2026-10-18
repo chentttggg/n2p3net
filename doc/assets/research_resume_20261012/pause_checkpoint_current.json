@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_general_nine_choice_scientific_evaluation_readiness",
-  "recorded_at": "2026-10-18T17:04:00.614373+08:00",
+  "recorded_at": "2026-10-18T17:43:42.520981+08:00",
   "user_request": "continue_full_research_goal_after_ERP_source_review",
   "research_worktree": "D:/BCI/worktrees/research-director",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -422,7 +422,7 @@
       "sha256": "871b18b3af18428d6609b961fd3ce77f58a2fcb94a5c958ffe2b109b1de82908"
     },
     "state": "canonical_complete_source_C_noise_one_response_C_held45_software_accepted",
-    "next_required_slice": "general_known_membership_and_blank_response_then_public_raw_clock_and_label_K_bridge",
+    "next_required_slice": "general_membership_and_public_native_clock_K_grants_then_source_C_noise_and_public_publisher",
     "full45_comparison": {
       "state": "544_and112_complete_independent_cold_and_root_artifact_review_accepted",
       "comparison": {
@@ -477,12 +477,20 @@
       "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\full_task_science_direction.json",
       "bytes": 3632,
       "sha256": "ad26771b16ac96d128c992c663b2012c1dfcdc2771aec170a62fcc427ea88e3b"
-    }
+    },
+    "public_evaluation_readiness": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\public_evaluation_readiness.json",
+      "bytes": 3634,
+      "sha256": "b20eb6163619b3b6c4eca75f6ca46ffca4f60db213c493e83a117ea9d36c7a43"
+    },
+    "source_plan_state": "independent_review_of_matched_external_roster_or_H13_LOSO_and_full_response_forecast"
   },
   "active_agents": {
-    "general_frontier_implementation": "general_known_membership_direct_template_cache_candidate_in_external_public_membership_bridge",
-    "marginal_codec_review": "independent_known_membership_blank_unknown_state_and_producer_migration_review",
-    "general_continuous_inference": "actual_public_and_BrainSync_metadata_clock_K_budget_readiness_delivery"
+    "general_frontier_implementation": "known_membership_direct_template_cache_and_native_clock_candidate",
+    "marginal_codec_review": "independent_known_membership_blank_cache_and_C_positive_control_review",
+    "general_continuous_inference": "original_public_raw_history_native_clock_and_K_grant_physical_bridge",
+    "recovery_review": "independent_public_cap_clock_K_scope_save_cold_and_original_owner_review",
+    "frontier_science_review": "matched_source_cohort_dose_and_new_participant_forecast_design"
   },
   "cloud": {
     "state": "not_used_no_SSH",

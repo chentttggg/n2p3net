@@ -1,0 +1,79 @@
+{
+  "schema": "n2p3_public_complete_learner_readiness_integration/1",
+  "status": "accepted_metadata_and_source_review",
+  "scope": "original candidate data and source/checkpoint inventory; pending physical bridge and frozen source-cohort execution",
+  "delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\data-evaluation-readiness\\DELIVERY_MANIFEST.json",
+    "bytes": 1796,
+    "sha256": "ebba72f7c9be473062ac0fcdaac73100599331af0adbd7c6babcccb6c1f67ec4"
+  },
+  "report": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\data-evaluation-readiness\\READINESS.zh.md",
+    "bytes": 15487,
+    "sha256": "c1d780eff1b6edde771ffaa21a5ae23de644ef4ba0b239a78e1d388c29b603aa"
+  },
+  "metadata": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\data-evaluation-readiness\\METADATA_INVENTORY.json",
+    "bytes": 41654,
+    "sha256": "f70d4ad3652be503ff487cc47cd05f1405848e7c8ea0aaea3052ca4cce16e3b0"
+  },
+  "matrix_design": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\data-evaluation-readiness\\MINIMUM_MATRIX.json",
+    "bytes": 5462,
+    "sha256": "b677ecaa42698a4421bf66159dd3d027d5b8fc05e4a9cc78070b4ffae3616e91"
+  },
+  "inspector": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\data-evaluation-readiness\\INSPECT_METADATA.py",
+    "bytes": 11975,
+    "sha256": "8e24d372204eb00d16925013c19e9def6878aed64a782b206ed3cdee6d1d8071"
+  },
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\data-evaluation-readiness\\cleanup.json",
+    "bytes": 601,
+    "sha256": "33dddd3c6be1d8d91c9f1e234d5729b60927d7673219c86dd6d24796270a8299"
+  },
+  "current_canonical_source_references_checked": 10,
+  "root_review": "read report, matrix, metadata inspector and actual original decoder/prefix/history ownership; reused sealed inventory; no duplicate EEG or NN hash scan",
+  "full_public_panel": {
+    "dataset": "Huebner2017",
+    "candidate_count": 32,
+    "participants": 13,
+    "requested_futures": 819,
+    "original_frames_per_character": 68,
+    "positive_K": [
+      200,
+      800,
+      2000
+    ],
+    "source_design": "freeze matched cohort/dose or declare complete-pipeline source differences before execution"
+  },
+  "first_actual_vertical_slice": {
+    "source": "preserved Huebner participant2 C68",
+    "target": "Huebner participant1",
+    "K": [
+      200,
+      800
+    ],
+    "requested_session2_futures": 63,
+    "target_participant_exclusion": "required"
+  },
+  "model_scaling": "K200/800/2000 spans approximately3/12/30 C selection-shape variables; keep all past unknown q axes and joint masses",
+  "next_interfaces": [
+    "general event membership shared by design and template cache",
+    "original public raw/history/native clock and K cap to physical inputs",
+    "native geometry C-noise/source/C-response and public typed publication",
+    "matched source cohort/dose and complete requested public execution"
+  ],
+  "metadata_clock_forecasts": "7 held unresolved optic frames in5 characters may affect28 complete-record histories; actual issuer outcomes retain all819 requests",
+  "recorded_C6_K2000_metadata_raw_usable": 1524,
+  "adult_input_readiness": "old same-P001 BLE development records need original age and finalized sample-clock evidence or new declared adult acquisition",
+  "actions": {
+    "EEG_array_reads": 0,
+    "raw_EEG_hash_scans": 0,
+    "new_fits": 0,
+    "SSH_calls": 0,
+    "training_launches": 0,
+    "payload_open_attempts_rejected": [],
+    "saved_NN_checkpoint_hashes_only": 2
+  }
+}

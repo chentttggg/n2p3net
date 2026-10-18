@@ -3294,5 +3294,14 @@
     },
     "scope": "complete block normalized evidence under a common nuisance measure; fixed-prior conditional remains a declared comparison",
     "current_execution_state": "pause_checkpoint_current.json#/general_inference"
+  },
+  "public_complete_learner_readiness": {
+    "binding": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\public_evaluation_readiness.json",
+      "bytes": 3634,
+      "sha256": "b20eb6163619b3b6c4eca75f6ca46ffca4f60db213c493e83a117ea9d36c7a43"
+    },
+    "scope": "original candidate data and source/checkpoint inventory; pending physical bridge and frozen source-cohort execution",
+    "current_execution_state": "pause_checkpoint_current.json#/general_inference"
   }
 }

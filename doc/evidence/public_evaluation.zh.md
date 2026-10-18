@@ -1,5 +1,17 @@
 # 公共数据评估与配对分析
 
+## 完整学习程序的真实输入与比较设计
+
+原输入盘点已核Huebner 13人、351个独立BDF声明，其中342段有EEG，9段缺失均在第6人第二session。末session每人9个run×7字符，共819个请求，均有EEG声明；每字符68次物理集合刺激、32个候选，每候选16次曝光。各原文件保自己的1000Hz时钟，42个视觉位置中的10个blank继续保物理作用。BI原61份ZIP提供另一种36候选行列机制，按项目原C-prefix/后续episode计划解释。
+
+元数据推演发现末session 7个未解Optic分布在5个字符；保全record历史时，可能影响同run当前及后续28个请求。实际issuer继续给typed结果，819个请求保留。第6人K2000的原C raw准入预计使用1524个标签，requested/granted/raw used/epoch used分别记录。以上是输入与工作量证据，新模型效能由实际完整程序评价。
+
+完整正K设计为K200/800/2000、五个拟合程序及六个评分臂：生成式whole与同一fit的续段conditional、原波形收缩LDA、真xDAWN、source NN及匹配scratch NN。现成H/BI两个NN留库checkpoint已核实际SHA，成熟60epoch目标入口和共同请求/保存/重放owner可复用。生成式当前H2/C68源与NN的来源和剂量不同；完整面板先冻结匹配source roster/dose或明确完整算法包的来源差异。13折LOSO是另一项具名source设计，原C-session切分保持原名。
+
+第一条真实纵向链采用原H2/C68→H1，K200/800和H1末session全部63请求；随后接完整面板。新增接点为原public raw/history/native clock/K grant到物理模型、原生几何C-noise与响应更新，以及原请求owner上的typed发布。规模上K200/800/2000约覆盖3/12/30个C selection，独立两shape会有8/4096/2^30个组合；历史的32候选变量继续保留，推断方案按真实结构处理。
+
+五份旧BrainSync BLE会话是同一P001的开发材料，年龄与最终sample clock仍需原证据或新采集补齐；新成人连续评价沿既有前瞻采集计划接独立C/held记录。盘点只读metadata、源代码与两个具名NN哈希，EEG读取、拟合和训练启动均0；来源见[真实输入就绪性绑定](../assets/research_resume_20261012/public_evaluation_readiness.json)。
+
 ## Huebner原32候选程序的完整保存态恢复
 
 原C500程序的七个future请求已全部获得终态，fixed与OOF温度两策略均保留全部七题：各四题有概率、三题明确拒绝，操作命中均为0/7。下表概率损失按原四题有概率的范围计算；NLL衡量给真答案的概率，Brier衡量整组概率与答案的距离，均越小越好。

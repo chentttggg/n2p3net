@@ -1,5 +1,11 @@
 # 校准、温度与整程序选择
 
+## 真实label-K与连续观测支持
+
+原`RecordCalibrationPrefixCompiler.compile`将全局K分配给各独立record，授予原binary bits和raw支持；每record右界为`min(next_unlabelled_onset, last_authorized_onset+response_samples, native_sample_count)`。新连续模型接这份实际grant，最后响应按同一预声明边界右删失。若读取更长raw，则未标曝光进入单独声明的潜变量程序；缺bit与non-target分开，held目标不参与C赋值。labels requested、granted、raw used及各epoch profile used分别保存。
+
+现成完整C3软件实例的三个bit均0，已贯通共同响应与共享先验更新；有正bit的真实C及数值反例会直接检验target增量列。K0另按source-only定义，目标raw不用于估noise、reference、shape或scale；正K的C-noise保持其原预算身份。原公共输入、源差异及全请求比较设计见[真实输入就绪性绑定](../assets/research_resume_20261012/public_evaluation_readiness.json)，数值完整程序见[响应与噪声](response_and_noise.zh.md#一次响应c更新到完整九选一)。
+
 新seed20261014的BNCI八人binary给出明确的低剂量概率线索：K200时，预声明0.5NN+0.5xDAWN的source池和scratch池各八人NLL/Brier均劣于各自单NN。source池平均NLL由0.435648增至0.513829、Brier由0.130122增至0.160667；K2000同source池则小幅改善。直觉上，固定平均也给概率误差更大的专家一半权重；专家互补性、概率尺度和校准量需要共同处理。后续沿已实现的C-only OOF温度、ε与整程序选择评价，各预声明固定池保留原结果。这里OOF表示某组样本由未用该组训练的程序预测，避免拿已经练过的题评价学习规则；执行与分析见[公共评估](public_evaluation.zh.md#本轮bnci二分类与个人校准量)。
 
 本文按主题维护已复核的结论、代码接点和下一步。运行日期与源码身份留在各证据及绑定中；使用方式和工程规则由原六指南维护。
