@@ -1,5 +1,16 @@
 # 公共数据评估与配对分析
 
+## Huebner原32候选程序的完整保存态恢复
+
+原C500程序的七个future请求已全部获得终态，fixed与OOF温度两策略均保留全部七题：各四题有概率、三题明确拒绝，操作命中均为0/7。下表概率损失按原四题有概率的范围计算；NLL衡量给真答案的概率，Brier衡量整组概率与答案的距离，均越小越好。
+
+| 原概率程序 | 全请求命中 | 概率覆盖 | 可用题NLL | 可用题Brier |
+|---|---:|---:|---:|---:|
+| fixed | 0/7 | 4/7 | 154.45724 | 1.99894 |
+| grouped_temperature | 0/7 | 4/7 | 8.50790 | 1.37056 |
+
+温度校准改善了已出概率的损失，最终选择仍需改善。原坐标混合门及两条原拒绝保持原规则，未用重采样或改阈值替换结果；原始source、C和七行OOF均复用。完整组装和原输入重放的来源见[保存态恢复绑定](../assets/research_resume_20261012/actual004_complete_recovery.json)。
+
 本轮seed20261014完整source程序已完成，原f3f32f8、四fold最终模型和八次成功fit经原SourceSeedCatalog逐项准入。原三个成功模型保持，Huebner selected14的fresh refit作为补集完成；原失败attempt的38,820steps/19,875,840draws及未知refit曝光单列。源闭包为独立programme状态，原queue exit1和新tail exit0/owned0各保来源，目标训练结果沿自身receipt验收。完整SHA、原producer合同和root审阅见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)；下文原20260918读数保持。
 
 ## BI原MAT label-K的首个完整开发样例

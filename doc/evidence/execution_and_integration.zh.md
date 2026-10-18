@@ -12,6 +12,8 @@ actual004的C500模型、完整七行OOF（逐题只用更早校准数据的预�
 
 原七个进程在续接检查时均已不存在，旧操作系统退出状态保留unknown。首恢复封装完成耗时28.28秒；外层venv启动器退出0、耗时29.60秒，其RSS采样只覆盖启动器。后续observer已持有实际后代进程的Windows句柄；新exit17合同同时核回启动器与真正Python进程的退出17及各自RSS，后续运行按实际worker身份记录。原始结果与新消费者分别留证，运行位置和剩余请求由唯一checkpoint维护。
 
+完整恢复包保留七行OOF、七个原future请求与两策略14项输出。新组装消费者从保存完整组件进行11次summary归约，复用9次缓存，核6项已存pool输出；通过原始source/raw/C权限的parent完成21项精确评分检查。source/C/OOF拟合、新采样及新组件积分均为零；29个同盘硬链接复用原模型与capture，大文件复制为零。实际worker退出0，原历史进程的未知退出码继续保留原身份。数值效能读数集中在[公共评估](public_evaluation.zh.md#huebner原32候选程序的完整保存态恢复)，恢复来源见[绑定](../assets/research_resume_20261012/actual004_complete_recovery.json)。
+
 ## 规范入口与交付清理证据
 
 本次整理将规则归入对应主指南，运行状态归入checkpoint，交接保留续接指针。整理前十三份文档已按原字节归档，见[原文清单](../../frozen/guidance_consolidation.manifest.json)。清理实际删除一份可重建字节码缓存及其空目录，共36550字节原文件；二十个先前已退休构建目录复核仍不存在，这些不计本次删除量。[实际清理记录](../assets/research_resume_20261012/guidance_cleanup_receipt.json)区分生成缓存与原始科研证据、冻结结果、producer和暂停依赖。200份冻结科学源码及四项暂停载荷核同原SHA，科研暂停保持。
