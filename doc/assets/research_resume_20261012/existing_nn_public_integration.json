@@ -1,0 +1,284 @@
+{
+  "schema": "n2p3_existing_NN_public_integration/1",
+  "status": "accepted_H1_full504_public_development",
+  "base_head": "54997c8868d2d19d344be70220ab5b8da6e06fe7",
+  "canonical_sources": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\existing_nn_public_learner.py",
+      "bytes": 20758,
+      "sha256": "ddc2b02ed2b55bf31bf415d310d3a8e4ba40825a3be250858c2f1f68b27645f2"
+    }
+  ],
+  "source_installation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-existing-NN-integration\\SOURCE_INSTALLATION.json",
+    "bytes": 1253,
+    "sha256": "3eef266b8ec4409024ba07c1ee7e8bad5d5cb65e3a511b892f22311ae81f5f67"
+  },
+  "delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-learner-reuse\\DELIVERY_MANIFEST.json",
+    "bytes": 10364,
+    "sha256": "76c4c9e0cd97120dc2c49c99e860f1834202c0ad47732bf4035e38ddbe8c0417"
+  },
+  "independent_final_revision": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-learner-reuse\\independent-review\\SOURCE_PROFILE_REVISION_RECEIPT.json",
+    "bytes": 4065,
+    "sha256": "e4435a07e49e0a73e88b0c6c15f068ca55c31950ffb0a791c09ed73e9d0da012"
+  },
+  "profile_addendum": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-learner-reuse\\independent-review\\SOURCE_PROFILE_CONTRACT_ADDENDUM.zh.md",
+    "bytes": 4734,
+    "sha256": "b938632faec8c0ee42d53239075af7c747b485dba733d6215cbd6f147bd62bd9"
+  },
+  "result": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-learner-reuse\\actual-H1-source-input\\RESULT.json",
+    "bytes": 11109,
+    "sha256": "a922aa2a9eb3c2dd57eeb628830c48cb3ba57ec88f752c12d689d7c51f5159cd"
+  },
+  "metrics": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-learner-reuse\\actual-H1-source-input\\METRICS.json",
+    "bytes": 2048866,
+    "sha256": "3792fb740f40d550e5e4bdc818330de603373ed4d5b63a35c22267f1f42af2da"
+  },
+  "report": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-learner-reuse\\ACTUAL_RESULT.zh.md",
+    "bytes": 4561,
+    "sha256": "616b94c075407a603a01927fb82aa90cc464733a29bd10ff0edb0feb1a04c00e"
+  },
+  "cases": [
+    {
+      "K": 200,
+      "saved_prediction": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-learner-reuse\\actual-H1-source-input\\K200\\predictions.json",
+        "bytes": 1453608,
+        "sha256": "c803ae9742cd76f3104275f57e1afdd86103210e84eba226582901975e6b2f5e"
+      },
+      "requested_decisions": 63,
+      "exact_parent_checks": 63,
+      "epoch_selection_replay": {
+        "status": "replayed",
+        "source_fits": 0,
+        "target_fits": 0,
+        "neural_learners": [
+          {
+            "expert_id": "n2p3_leave_H_11study_Cz6_seed20261014_full_fine",
+            "selected_epochs": 60,
+            "selection_evidence": false,
+            "all_C_refit_replayed": true,
+            "inner_numeric_state_replayed": false
+          },
+          {
+            "expert_id": "n2p3_matched_Cz6_scratch",
+            "selected_epochs": 60,
+            "selection_evidence": false,
+            "all_C_refit_replayed": true,
+            "inner_numeric_state_replayed": false
+          }
+        ]
+      },
+      "one_incomplete_per_method": true
+    },
+    {
+      "K": 800,
+      "saved_prediction": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-learner-reuse\\actual-H1-source-input\\K800\\predictions.json",
+        "bytes": 1454977,
+        "sha256": "0fae29b2d33756b92d2880313cf362c12b6adf36403f9da4b6738285d6968bc7"
+      },
+      "requested_decisions": 63,
+      "exact_parent_checks": 63,
+      "epoch_selection_replay": {
+        "status": "replayed",
+        "source_fits": 0,
+        "target_fits": 0,
+        "neural_learners": [
+          {
+            "expert_id": "n2p3_leave_H_11study_Cz6_seed20261014_full_fine",
+            "selected_epochs": 41,
+            "selection_evidence": true,
+            "all_C_refit_replayed": true,
+            "inner_numeric_state_replayed": true
+          },
+          {
+            "expert_id": "n2p3_matched_Cz6_scratch",
+            "selected_epochs": 60,
+            "selection_evidence": true,
+            "all_C_refit_replayed": true,
+            "inner_numeric_state_replayed": true
+          }
+        ]
+      },
+      "one_incomplete_per_method": true
+    }
+  ],
+  "summary": [
+    {
+      "K": 200,
+      "method": "n2p3_leave_H_11study_Cz6_seed20261014_full_fine",
+      "requested": 63,
+      "correct": 10,
+      "hit_at_all": 0.15873015873015872,
+      "prediction_coverage": 0.9841269841269841,
+      "probability_coverage": 0.9841269841269841,
+      "not_available": 0,
+      "ties": 0,
+      "NLL_on_available": 4.650236062016089
+    },
+    {
+      "K": 200,
+      "method": "n2p3_matched_Cz6_scratch",
+      "requested": 63,
+      "correct": 36,
+      "hit_at_all": 0.5714285714285714,
+      "prediction_coverage": 0.9841269841269841,
+      "probability_coverage": 0.9841269841269841,
+      "not_available": 0,
+      "ties": 0,
+      "NLL_on_available": 1.3312593912232822
+    },
+    {
+      "K": 200,
+      "method": "waveform_shrinkage_lda_Cz6",
+      "requested": 63,
+      "correct": 27,
+      "hit_at_all": 0.42857142857142855,
+      "prediction_coverage": 0.9841269841269841,
+      "probability_coverage": 0.9841269841269841,
+      "not_available": 0,
+      "ties": 0,
+      "NLL_on_available": 4.591501077497811
+    },
+    {
+      "K": 200,
+      "method": "xdawn_erp_covariance_Cz6",
+      "requested": 63,
+      "correct": 18,
+      "hit_at_all": 0.2857142857142857,
+      "prediction_coverage": 0.9841269841269841,
+      "probability_coverage": 0.9841269841269841,
+      "not_available": 0,
+      "ties": 0,
+      "NLL_on_available": 18.994761278179922
+    },
+    {
+      "K": 800,
+      "method": "n2p3_leave_H_11study_Cz6_seed20261014_full_fine",
+      "requested": 63,
+      "correct": 18,
+      "hit_at_all": 0.2857142857142857,
+      "prediction_coverage": 0.9841269841269841,
+      "probability_coverage": 0.9841269841269841,
+      "not_available": 0,
+      "ties": 0,
+      "NLL_on_available": 3.248058043741035
+    },
+    {
+      "K": 800,
+      "method": "n2p3_matched_Cz6_scratch",
+      "requested": 63,
+      "correct": 56,
+      "hit_at_all": 0.8888888888888888,
+      "prediction_coverage": 0.9841269841269841,
+      "probability_coverage": 0.9841269841269841,
+      "not_available": 0,
+      "ties": 0,
+      "NLL_on_available": 0.514311529199643
+    },
+    {
+      "K": 800,
+      "method": "waveform_shrinkage_lda_Cz6",
+      "requested": 63,
+      "correct": 54,
+      "hit_at_all": 0.8571428571428571,
+      "prediction_coverage": 0.9841269841269841,
+      "probability_coverage": 0.9841269841269841,
+      "not_available": 0,
+      "ties": 0,
+      "NLL_on_available": 0.45591611975981344
+    },
+    {
+      "K": 800,
+      "method": "xdawn_erp_covariance_Cz6",
+      "requested": 63,
+      "correct": 47,
+      "hit_at_all": 0.746031746031746,
+      "prediction_coverage": 0.9841269841269841,
+      "probability_coverage": 0.9841269841269841,
+      "not_available": 0,
+      "ties": 0,
+      "NLL_on_available": 1.4169111269221826
+    }
+  ],
+  "root_review": "complete caller/driver/source domain/mature epoch learner/inner state/cold parent/typed evidence/metric writer",
+  "source_checkpoint_sha256": "134a5bc1beef8a64870bae7f2ca3a29da33ddad689ccc90b5419170f9c467236",
+  "input": "original6-slot Cz/128Hz179/baseline none; PO8 missing mask and five observed channels",
+  "policy": {
+    "target_seed": 20261014,
+    "epochs": 60,
+    "batch_size": 512,
+    "epoch_selection": {
+      "mode": "patience",
+      "patience": 6,
+      "min_delta": 1e-06
+    },
+    "recipes": [
+      {
+        "name": "es_full_high",
+        "initialization": "source",
+        "input_statistics": "target_prefix",
+        "bn_buffers": "online",
+        "bn_affine": "trainable",
+        "weights": "non_bn",
+        "dropout": "checkpoint",
+        "batch_size": 512,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "epochs": 60,
+        "max_updates": null,
+        "seed": 20261014,
+        "refit_full_prefix": false,
+        "trial_loss_reduction": "calibration_balanced_fixed_mass"
+      },
+      {
+        "name": "es_scratch_high",
+        "initialization": "scratch",
+        "input_statistics": "target_prefix",
+        "bn_buffers": "online",
+        "bn_affine": "trainable",
+        "weights": "non_bn",
+        "dropout": "checkpoint",
+        "batch_size": 512,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "epochs": 60,
+        "max_updates": null,
+        "seed": 20261014,
+        "refit_full_prefix": false,
+        "trial_loss_reduction": "calibration_balanced_fixed_mass"
+      }
+    ]
+  },
+  "validation": {
+    "ruff_exit": 0,
+    "requested_score_cells": 504,
+    "scientific_source_fits": 0,
+    "raw_EEG_or_training_repeated_by_root": false
+  },
+  "full_panel": {
+    "participants": 13,
+    "K": [
+      200,
+      800,
+      2000
+    ],
+    "requested_decisions_per_K": 819,
+    "methods": 4,
+    "score_cells": 9828,
+    "completed_H1_score_cells_reused": 504,
+    "new_participant_K_cells": 37
+  },
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-existing-NN-integration\\CLEANUP_RECEIPT.json",
+    "bytes": 707,
+    "sha256": "b85081058b660c276f06b349159aec8028b5b60a3f1d6e768341aeacd588bd9e"
+  }
+}

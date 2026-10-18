@@ -1,5 +1,13 @@
 # 响应模型、空间先验与噪声数值
 
+## 共享函数与字符变化的机制比较
+
+完整Gaussian系数描述一个人跨字符共享的响应不确定性；给每字符新增零均值函数效应，才产生字符间独立变化。其跨字符covariance保共享项，字符内再加local项。独立反例表明，即使每字符总variance相同，错共享或错独立仍改变J2/9/32/36的完整候选概率；同一C观测乘两次也会虚增精度。Gaussian functional变化与exact时间warp有不同分布和支持，完整一二阶矩不等于warp mixture。
+
+总监据此选择G0/G1作为第一项机制实验，分别以一次授权C联合定标响应与噪声；旧fixed-source-mean residualnoise另保开发baseline。原B07非线性delay/width四臂继续保留，H1的8.273秒间隔只用于law冻结后的支持核验。研究问题、七类数学反例、proper warp候选、联合marginal及可复用代码图见[科学裁决绑定](../assets/research_resume_20261012/response_law_science_direction.json)。
+
+G1的外部物理reference以原dictionary和noise定义两个独立、零漂移的unit响应记录，non-target设计`[Phi,0]`、target设计`[Phi,Phi]`。若单曝光GLS误差根为F，则完整common/increment reference根为`[[F,0],[-F,F]]`，保负crosscovariance且不随source重复数作1/n收缩。它是prior的物理刻度，实际within尺度由授权C联合估计；原个人posterior F不作生理within协方差。该reference的完整秩、坐标pushforward、proper logvariance policy与新fit来源由具名联合校准owner保存。
+
 ## 原生C均值的精确整数累计
 
 实际热点来自重复事件的Fraction构造和累加。新路径复用原相对时间的dictionary查询，在共同有理分母下累计整数，再用原均值编译器收缩并正确舍入。三个完整C记录共356,031行×31通道的mean/error字节及原物理事件关系相同，原编译器cache命中/驱逐也相同。K800无profiler数学路径176.736→82.955秒，约快2.13倍；live授权与完整learner另按其执行计时。

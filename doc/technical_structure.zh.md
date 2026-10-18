@@ -1,5 +1,7 @@
 # 当前技术结构与完整链条
 
+`research.existing_nn_public_learner`把原留整库H源权重接入原public compiler、`fit_with_epoch_selection`、`FrozenTrialPredictor`和完整prefix parent回放；source/scratch共用原profile与C选择政策，scratch仅借架构并重新估计目标统计。原source输入的baseline为none，按保存合同逐字段核；六槽中的PO8缺测保mask，经典方法只用实测五导。wrapper复用原LDA/xDAWN和CandidateEvidence，保存真正selected inner state并回放原停止规则，完整请求顺序随fit context绑定。实际首批与来源见[现成NN整合](assets/research_resume_20261012/existing_nn_public_integration.json)。
+
 `research.native_c_mean_design`在每次live C均值调用内部复用相同native相对查询，将原basis值和误差提升到共同有理分母后累计整数，最后交回原`NativeTemporalMeanSource`作均值收缩与正确舍入。helper、原owner及真实query分别入稳定身份，计时仅存运行诊断；原C位、完整basis/通道、窗口与误差关系保留。旧noise复用沿原Y与完整D相等的显式关系，原fit provenance保持。来源见[精确C均值加速整合](assets/research_resume_20261012/native_mean_performance_integration.json)。
 
 `research.markov_stationary_factor`持有一般逐channel AR(p)的精确创新递推与保存根的law证书；前p点完整平稳联合根及其后完整创新Q均保留。`FittedChannelNoise`显式`prefix_root_program='markov_innovations'`选择新`/5` producer，旧private `/3`通过consumer witness加速准入而保持原record/root。没有创新尾时沿原精确入口，运行时白化继续使用保存的完整根；外层新fit须显式传入该选择。数学、测量及原producer恢复见[前缀整合](assets/research_resume_20261012/markov_prefix_integration.json)。

@@ -3327,5 +3327,15 @@
     "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\native_mean_performance_integration.json",
     "bytes": 4051,
     "sha256": "286ce9c2954e54eb8c7cc5504f2f26e3e418207acb4ba290123ea7e007fbec3a"
+  },
+  "response_law_science_direction": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\response_law_science_direction.json",
+    "bytes": 2884,
+    "sha256": "f2b205656b5a0e090de2a8628b92e65534f9c10148518de2e14270498297dd67"
+  },
+  "existing_nn_public_integration": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\existing_nn_public_integration.json",
+    "bytes": 9695,
+    "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
   }
 }

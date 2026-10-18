@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
-  "status": "active_public_complete_learner_and_existing_NN_reuse_after_native_input_integration",
-  "recorded_at": "2026-10-18T19:52:47.926603+08:00",
+  "status": "active_full13_existing_NN_panel_and_joint_response_noise_calibration",
+  "recorded_at": "2026-10-18T20:40:33.328163+08:00",
   "user_request": "continue_full_research_goal_after_ERP_source_review",
   "research_worktree": "D:/BCI/worktrees/research-director",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -556,25 +556,33 @@
       "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\native_mean_performance_integration.json",
       "bytes": 4051,
       "sha256": "286ce9c2954e54eb8c7cc5504f2f26e3e418207acb4ba290123ea7e007fbec3a"
+    },
+    "response_law_science_direction": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\response_law_science_direction.json",
+      "bytes": 2884,
+      "sha256": "f2b205656b5a0e090de2a8628b92e65534f9c10148518de2e14270498297dd67"
+    },
+    "integrated_existing_NN_public": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\existing_nn_public_integration.json",
+      "bytes": 9695,
+      "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
     }
   },
   "active_agents": {
-    "general_frontier_implementation": "public_native_complete_learner_and_once_union_C_bit_inference",
-    "frontier_science_review": "original_data_likelihood_export_and_coefficient_coordinate_bridge",
-    "recovery_review": "generic_response_state_law_and_identifiability_design",
-    "saved_execution_recovery": "existing_leave_H_NN_target_fullfine_scratch_and_complete_public_reuse",
-    "marginal_codec_review": "independent_exact_C_mean_accumulation_and_original_noise_reuse_relation_review",
-    "general_continuous_inference": "independent_existing_NN_complete_504_caller_review"
+    "saved_execution_recovery": "actual_existing_source_NN_scratch_LDA_xDAWN_full504_and_original_parent_replay",
+    "general_continuous_inference": "independent_NN_source_profile_none_addendum",
+    "frontier_science_review": "saved_original_C_noise_to_current_live_residual_semantic_reuse",
+    "recovery_review": "joint_response_noise_C_calibration_and_physical_within_reference"
   },
   "cloud": {
     "state": "not_used_no_SSH",
     "ownership": "separate_cloud_chat"
   },
   "next_actions": [
-    "Reuse existing leave-H source NN and original target fullfine/scratch code for all H1 K200/K800 requests; no prerequisite of 26 new source fits.",
-    "Integrate independently reviewed Markov prefix producer/consumer and population forecast core with original recovery bytes preserved.",
-    "Freeze scientifically identified proper response law; connect single response C observation and full public once-union likelihood/CandidateEvidence.",
-    "Finish source data-likelihood export and original coordinate permutation; retain H13 LOSO31 as matched controlled source experiment with819 full futures."
+    "Complete existing source NN/scratch/LDA/xDAWN all504 requested cells and exact saved/inner/parent replay; preserve failed input-profile attempt and corrected producer.",
+    "Review/integrate full response population core and corrected data-likelihood exporter; retain source raw/label and normalizer ownership.",
+    "Review/integrate public full-history foundation and Gaussian-local compact factor, then connect new joint response/noise calibration and full current-J inference.",
+    "Retain H13LOSO31 matched source comparison and original nonlinear W four-arm study; reuse completed code and original source artefacts."
   ],
   "erp_runtime_repairs": {
     "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\erp_runtime_repairs.json",
@@ -582,8 +590,31 @@
     "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
     "commit": "a6f5750"
   },
-  "integration_head": "811fb18dcbde94b9903ee8cce0df4bee16466e4a",
+  "integration_head": "54997c8868d2d19d344be70220ab5b8da6e06fe7",
   "concurrency_authorization": "later user allowed more threads after the temporary six-agent limit; seven actual parallel roles used for independent scientific slices",
   "execution_priority": "existing_NN_weights_and_target_pipeline_first_H13_new_source_training_deferred_until_controlled_comparison",
-  "accepted_native_input_source_commit": "811fb18dcbde94b9903ee8cce0df4bee16466e4a"
+  "accepted_native_input_source_commit": "811fb18dcbde94b9903ee8cce0df4bee16466e4a",
+  "worktree_housekeeping": {
+    "observed_worktrees": 5,
+    "all_on_D_drive": true,
+    "new_worktrees_this_slice": 0,
+    "active_research_tree_retained": true,
+    "original_joint_flat_recovery_evidence_retained": true
+  },
+  "existing_NN_H1": {
+    "state": "complete504_accepted",
+    "binding": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\existing_nn_public_integration.json",
+      "bytes": 9695,
+      "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
+    },
+    "same_live_process_resume_needed": false
+  },
+  "existing_NN_full_panel": {
+    "state": "new_scope_runner_and_shared_admission_review_in_progress",
+    "requested_score_cells": 9828,
+    "completed_reusable_score_cells": 504,
+    "new_participant_K_cells": 37,
+    "source_fits_required": 0
+  }
 }

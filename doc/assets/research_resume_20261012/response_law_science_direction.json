@@ -1,0 +1,53 @@
+{
+  "schema": "n2p3_response_law_scientific_direction/1",
+  "status": "design_accepted_implementation_and_parameter_fits_are_separate_dependencies",
+  "decision": "first G0 shared-function versus G1 independent-selection functional effect; preserve original W four-arm comparison",
+  "source_evidence": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-response-law-design\\DELIVERY_MANIFEST.json",
+    "bytes": 6227,
+    "sha256": "5e60971b7b9949d5bfd22df34f3fab892cdcd7ba6811f8e144a8af78cdc411ac"
+  },
+  "scientific_specification": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-response-law-design\\RESPONSE_LAW_SPEC.zh.md",
+    "bytes": 20988,
+    "sha256": "db72037445bed6ba91881bba81e87b7691c684ad7e754964547bfed99f11d087"
+  },
+  "selected_models": {
+    "G0": "one complete proper shared source response, Qwithin=0",
+    "G1": "same shared response plus independent zero-mean full functional local per selection",
+    "effect_unit": "selection; same latent reused across C/P/F",
+    "calibration": "new named joint response/noise marginal on original C union, with original flat drift measure",
+    "old_fixed_mean_C_noise": "preserved development baseline and parameter provenance",
+    "W_delay_width": "nominal,mean,full_moment_Gaussian,exact under one declared nonlinear law"
+  },
+  "within_reference": {
+    "role": "external physical prior reference, not fitted physiological variance",
+    "designs": [
+      "[Phi,0]",
+      "[Phi,Phi]"
+    ],
+    "independent_reference_records": 2,
+    "reference_drift": "fixed zero",
+    "actual_C_drift": "original per-record flat measure",
+    "full_support_condition": "Phi full column rank and proper original noise law",
+    "root": "[[F,0],[-F,F]], F=R^-1 from single-exposure whitened Phi QR",
+    "scale_measure": "x=log variance",
+    "proper_scale_prior": "Normal(0,1) in declared dimensionless reference coordinates",
+    "source_repeat_count_shrinkage": false,
+    "individual_posterior_used_as_within_covariance": false
+  },
+  "execution_scope": {
+    "initial_public_target": "H1 K200/K800 complete63 requests per K",
+    "source_anchor": "original H2/C68 development source retained",
+    "same_candidate_vocabulary_and_history": "all original J; no pruning for computation",
+    "NN_existing_source_program": "runs independently; no new H13 source training prerequisite",
+    "new_parameter_fits_started_for_this_decision": 0
+  },
+  "implementation_dependencies": [
+    "source/target law identity and physical reference compiler",
+    "joint noise/within parameter marginal and actual once-C posterior",
+    "Gaussian local QR kernel plus full-history current-J inference",
+    "original public typed publication and full-request replay",
+    "W nonlinear conditional-Gaussian/mixture owner remains its own programme"
+  ]
+}
