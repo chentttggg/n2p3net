@@ -444,6 +444,7 @@ loader在原始域计算诊断摘要，写入`continuous_quality_ledger.signal_d
 - head对照：`SubjectAdapter.predict_features`输出冻结推理状态下的head输入；
   `transfer.binary`复用scaler/收缩LDA，并提供等价复制到二分类线性头的接口。
   后置LDA与LDA初始化的顺序实验见证据索引，未设为工作站默认方法。
+- 冻结LDA/ERP推理：LDA参数宽度须匹配所选通道及冻结降采样映射的实际输出；构造与加载共用该关系。xDAWN加载拒绝没有有效输入域的状态，预测在矩阵对数前检查每行实际协方差有限且正定。算子LDA逐行缩放后按原相对容差判断支持空间，批量其他样本不改变该行结果；任一行越界时拒绝本次调用。
 - 候选聚合：`models.candidate_evidence`持有词表、membership和覆盖规则；
   不因缺少候选、校准目标范围或试验的测试队列而缩小解码词表。
 - 结果写入：复用`research.execution.atomic_write_json`。失败时保留原结果，

@@ -1262,3 +1262,30 @@ def test_cli_failure_is_structured_and_does_not_create_a_model(tmp_path, session
     assert result["error"]["type"] == "ValueError"
     assert "at least two" in result["error"]["message"]
     assert not artifact.exists()
+
+
+def test_lda_constructor_binds_parameter_width_to_actual_frozen_feature_map(tmp_path, sessions):
+    from baselines.features import downsampled_time_points
+    from transfer.binary import target_shrinkage_features
+    from transfer.calibrated import CalibratedPredictor
+
+    for channels, times, sfreq in ((3, 128, 128.), (2, 179, 128.), (3, 7, 10.)):
+        actual = target_shrinkage_features(np.zeros((1, channels, times)), sfreq=sfreq)
+        assert actual.shape == (1, channels*downsampled_time_points(times, sfreq, target_hz=20.))
+    assert target_shrinkage_features(np.zeros((1, 3, 128)), sfreq=128.).shape[1] == 60
+    roots, _ = sessions
+    fitted = fit_calibrated_predictor(load_brainsync_sessions((roots[0],)))
+    assert fitted.metadata["model_kind"] == "target_only_shrinkage_lda"
+    for difference in (-1, 1):
+        state = {key: value.clone() for key, value in fitted.state.items()}
+        for key in ("coefficient", "feature_mean", "feature_scale"):
+            state[key] = (state[key][:-1] if difference < 0 else
+                          torch.cat((state[key], torch.ones(1, dtype=state[key].dtype))))
+        with pytest.raises(ValueError, match="feature"):
+            CalibratedPredictor(fitted.metadata, state)
+    state = {key: value.clone() for key, value in fitted.state.items()}
+    state["waveform_channels"] = torch.arange(fitted.metadata["input_contract"]["n_channels"]-1)
+    with pytest.raises(ValueError, match="feature"):
+        CalibratedPredictor(fitted.metadata, state)
+    restored = load_calibrated_predictor(save_calibrated_predictor(tmp_path/"valid-shape.pt", fitted))
+    assert restored.state["coefficient"].shape == fitted.state["coefficient"].shape

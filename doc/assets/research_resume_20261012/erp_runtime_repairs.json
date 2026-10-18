@@ -1,0 +1,160 @@
+{
+  "schema": "n2p3_erp_runtime_repair_integration/1",
+  "status": "accepted",
+  "scope": "LDA feature-map geometry, xDAWN covariance domain, per-sample operator support",
+  "source_after": [
+    {
+      "tree": "main",
+      "path": "D:/BCI/n2p3-net/src/baselines/features.py",
+      "member": "main/src/baselines/features.py",
+      "bytes": 4322,
+      "sha256": "ea45bed71508c936efee232a84fcf32ba77739576e4d983a4f6a7c09f05fb8d7"
+    },
+    {
+      "tree": "main",
+      "path": "D:/BCI/n2p3-net/src/baselines/structured_erp.py",
+      "member": "main/src/baselines/structured_erp.py",
+      "bytes": 12786,
+      "sha256": "b99c34d51aa606e4079c20a546583a2520372699f1960bc7ca2c7af0ec04e310"
+    },
+    {
+      "tree": "main",
+      "path": "D:/BCI/n2p3-net/src/transfer/calibrated.py",
+      "member": "main/src/transfer/calibrated.py",
+      "bytes": 75152,
+      "sha256": "75473f5c0327d4042318a71b8643a33d0c1141cdf683c9cbbef6c458c8c760d4"
+    },
+    {
+      "tree": "main",
+      "path": "D:/BCI/n2p3-net/src/transfer/operator_lda.py",
+      "member": "main/src/transfer/operator_lda.py",
+      "bytes": 11170,
+      "sha256": "41e555fd7c888f588112f14d96f3741d75f158d58c60793484094f4b65a93b4f"
+    },
+    {
+      "tree": "main",
+      "path": "D:/BCI/n2p3-net/tests/brainsync/test_calibrated_predictor.py",
+      "member": "main/tests/brainsync/test_calibrated_predictor.py",
+      "bytes": 64858,
+      "sha256": "d11e5a0f49c37ba563ff804bb6a02467a2586e6dd9c0135edc92b4fbc6f6e8b5"
+    },
+    {
+      "tree": "main",
+      "path": "D:/BCI/n2p3-net/tests/transfer/test_operator_lda.py",
+      "member": "main/tests/transfer/test_operator_lda.py",
+      "bytes": 6821,
+      "sha256": "f48a8e4ca886ed4f43af4a3f0b5b698082f9cd7d9bfa20b155efc1785cb86667"
+    },
+    {
+      "tree": "main",
+      "path": "D:/BCI/n2p3-net/tests/models/test_xdawn_covariance_boundary.py",
+      "member": "main/tests/models/test_xdawn_covariance_boundary.py",
+      "bytes": 3141,
+      "sha256": "ea127f8ca25407c75b311281f40907c1b27e671c9d415576f7f5e3c0fddc9c4f"
+    },
+    {
+      "tree": "research",
+      "path": "D:/BCI/worktrees/research-director/src/baselines/features.py",
+      "member": "research/src/baselines/features.py",
+      "bytes": 4322,
+      "sha256": "ea45bed71508c936efee232a84fcf32ba77739576e4d983a4f6a7c09f05fb8d7"
+    },
+    {
+      "tree": "research",
+      "path": "D:/BCI/worktrees/research-director/src/baselines/structured_erp.py",
+      "member": "research/src/baselines/structured_erp.py",
+      "bytes": 12685,
+      "sha256": "10f399bd36f1474689e658635cac6a77f372918152cb36c08254d29e60ca56d3"
+    },
+    {
+      "tree": "research",
+      "path": "D:/BCI/worktrees/research-director/src/transfer/calibrated.py",
+      "member": "research/src/transfer/calibrated.py",
+      "bytes": 71156,
+      "sha256": "0d096b2f80240adcc2e970bdf478bf415918d9a438d1458ed3bbc63e7c2696fe"
+    },
+    {
+      "tree": "research",
+      "path": "D:/BCI/worktrees/research-director/src/transfer/operator_lda.py",
+      "member": "research/src/transfer/operator_lda.py",
+      "bytes": 18896,
+      "sha256": "a49da88567c77d51d0967ea89e490aa0c4fa4e79ae274f3d65e13fd1c9024f50"
+    },
+    {
+      "tree": "research",
+      "path": "D:/BCI/worktrees/research-director/tests/brainsync/test_calibrated_predictor.py",
+      "member": "research/tests/brainsync/test_calibrated_predictor.py",
+      "bytes": 65249,
+      "sha256": "971fbb37be05f58b9f1f93931e396c836218fafd71cd5e9a5d4d92d02765b331"
+    },
+    {
+      "tree": "research",
+      "path": "D:/BCI/worktrees/research-director/tests/transfer/test_operator_lda.py",
+      "member": "research/tests/transfer/test_operator_lda.py",
+      "bytes": 7374,
+      "sha256": "542d04e57f96ec5a3c1272fb7aeb4111e190d821ae1a0921bc3ffaca8eda64ed"
+    },
+    {
+      "tree": "research",
+      "path": "D:/BCI/worktrees/research-director/tests/models/test_xdawn_covariance_boundary.py",
+      "member": "research/tests/models/test_xdawn_covariance_boundary.py",
+      "bytes": 3141,
+      "sha256": "ea127f8ca25407c75b311281f40907c1b27e671c9d415576f7f5e3c0fddc9c4f"
+    }
+  ],
+  "evidence": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\erp-contract-repairs\\REPAIR_RECEIPT.json",
+    "bytes": 6942,
+    "sha256": "a5a4ad0e7cc8976be2ed28238bb3b9dd1333fefd849a36aa46441bc51d326119"
+  },
+  "before_archive": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\erp-contract-repairs\\BEFORE_SOURCES.zip",
+    "sha256": "a49feb4210b58a0a324809b06ce6935e1f9d7fe5faad8add60fcfc634da46ced"
+  },
+  "after_archive": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\erp-contract-repairs\\FINAL_SOURCES.zip",
+    "bytes": 86865,
+    "sha256": "574f1bc160f330115c059d8cfd712a67da105ce04984b069912a39e05dedac20"
+  },
+  "original_lean_probe": {
+    "path": "D:\\BCI\\n2p3-net\\doc\\assets\\lean_erp_20261018\\source_probe_01.json",
+    "sha256": "faadb49d47ecce93664948d63dc568de477e5537fbb5a57fca8c19534ba2c1c5",
+    "role": "unchanged pre-repair evidence"
+  },
+  "validation": {
+    "per_tree": {
+      "new_lda_contracts": 2,
+      "xdawn_focused_cases": 17
+    },
+    "exit_codes": 0,
+    "ruff": "both trees passed",
+    "diff_check": "research repair delta passed",
+    "scope": "software, no fits or training",
+    "unique_cases": {
+      "main": 21,
+      "research": 23
+    },
+    "finite_scale_refusals": "1e-200 and 1e200 failed before row normalization; both now reject; valid supported rows stay finite"
+  },
+  "cleanup": {
+    "status": "completed",
+    "scope": "eight task-owned synthetic pytest scratch trees; no replacement executable build",
+    "receipt": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\erp-contract-repairs\\CLEANUP_RECEIPT.json",
+      "sha256": "9abaab5165e523b5cc4ffcbfe3cff5c15493964a1dc2ff5e3c688ac11cca848a"
+    },
+    "actual_deleted_files": 137,
+    "actual_deleted_original_bytes": 2923585
+  },
+  "ownership": "main minimal deltas retained; research named repairs committed separately from ongoing inference work",
+  "design": "per-row normalization preserves original support predicate and tiny floor, prevents squared norm overflow/underflow, and removes batch coupling; no tolerance change, ridge or jitter",
+  "initial_repairs_archive": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\erp-contract-repairs\\AFTER_SOURCES.zip",
+    "sha256": "5351aaedb01165127f5f443d2fb4d8c57977e2def4fd2106fe42d65360e1e37c"
+  },
+  "independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\erp-contract-repairs\\INDEPENDENT_REVIEW.md",
+    "bytes": 1461,
+    "sha256": "0dafd3fc68e939854af02fcee1573372069d27fc01a7a4b8bf244b27a8e0cdab"
+  }
+}

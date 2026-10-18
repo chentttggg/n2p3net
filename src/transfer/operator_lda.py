@@ -217,9 +217,15 @@ class OperatorAwareLDA:
         return model
 
     def _validate_support(self, centered):
-        residual = centered - centered @ self.identifiable_projector
+        # Scale each row before projection and norm evaluation: the relative
+        # support geometry is unchanged without overflow/underflow in squares.
+        tiny = np.finfo(float).tiny
+        scale = np.maximum(np.max(np.abs(centered), axis=-1, keepdims=True), tiny)
+        normalized = centered / scale
+        residual = normalized - normalized @ self.identifiable_projector
         relative = 64*np.finfo(float).eps*len(self.weights) if self.conditioning_gain is not None else 1e-6
-        if np.any(np.linalg.norm(residual, axis=-1) > np.maximum(np.linalg.norm(centered, axis=-1), np.finfo(float).tiny)*relative):
+        limit = np.maximum(np.linalg.norm(normalized, axis=-1), (tiny / scale)[..., 0]) * relative
+        if np.any(np.linalg.norm(residual, axis=-1) > limit):
             raise ValueError("features outside frozen covariance identifiable support")
 
     def predict_logit(self, features, *, input_identity, observed_raw=None):

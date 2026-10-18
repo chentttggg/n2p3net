@@ -26,13 +26,18 @@ def time_to_index(ms: float, sfreq: float, tmin: float) -> int:
     return int(round((ms / 1000.0 - tmin) * sfreq))
 
 
+def downsampled_time_points(n_times: int, sfreq: float, target_hz: float = 20.0) -> int:
+    """Output length of the frozen FFT downsampling map, including no upsampling."""
+    return min(n_times, int(round(n_times * target_hz / sfreq)))
+
+
 def downsample_epochs(X: np.ndarray, sfreq: float, target_hz: float = 20.0) -> np.ndarray:
     """downsample 单试次 (N,C,T) → (N,C,T_down)，目标 target_hz（D-downsample）。"""
     X = np.asarray(X, dtype=float)
     if X.ndim != 3:
         raise ValueError(f"X 须为 (N,C,T)，得到 {X.shape}。")
     T = X.shape[2]
-    T_down = int(round(T * target_hz / sfreq))
+    T_down = downsampled_time_points(T, sfreq, target_hz)
     if T_down >= T:
         return X.astype(np.float32, copy=False)
     return resample(X, T_down, axis=2).astype(np.float32)

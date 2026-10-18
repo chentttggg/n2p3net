@@ -18,6 +18,7 @@ from uuid import uuid4
 import numpy as np
 import torch
 
+from baselines.features import downsampled_time_points
 from baselines.structured_erp import ERP_FAMILIES, StructuredERP
 from baselines.temporal_transfer import resolve_temporal_basis
 from data.brainsync import (
@@ -653,7 +654,10 @@ class CalibratedPredictor:
             ):
                 raise ValueError("calibrated LDA channel selection is invalid")
             feature_shape = self.state["coefficient"].shape
-            if len(feature_shape) != 1 or self.state["feature_mean"].shape != feature_shape or (
+            selected_count = contract["n_channels"] if selected is None else selected.numel()
+            expected_features = selected_count * downsampled_time_points(
+                contract["n_times"], contract["preprocessing"]["sfreq"], target_hz=20.0)
+            if feature_shape != (expected_features,) or self.state["feature_mean"].shape != feature_shape or (
                 self.state["feature_scale"].shape != feature_shape
                 or not bool((self.state["feature_scale"] > 0).all())
                 or self.state["intercept"].numel() != 1

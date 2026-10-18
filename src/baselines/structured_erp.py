@@ -138,9 +138,18 @@ class StructuredERP(Baseline):
             transformed = np.einsum("vc,nct->nvt", self._state["filters"], A)
             P = self._state["prototypes"]
             augmented = np.concatenate((np.broadcast_to(P, (len(A), *P.shape)), transformed), axis=1)
+            covariance = _oas_covariances_vectorized(augmented)
+            # OAS redistributes existing variance; a time-constant augmented
+            # trial still has zero covariance and lies outside the matrix log.
+            if not np.isfinite(covariance).all():
+                raise ValueError("xDAWN augmented covariance must be finite and positive definite")
+            try:
+                np.linalg.cholesky(covariance)
+            except np.linalg.LinAlgError as exc:
+                raise ValueError("xDAWN augmented covariance must be positive definite") from exc
             tangent = TangentSpace(metric="riemann")
             tangent.reference_ = self._state["reference"]
-            features = tangent.transform(_oas_covariances_vectorized(augmented))
+            features = tangent.transform(covariance)
         else:
             features = A.transpose(0, 2, 1).reshape(len(A), -1)
         return features @ self._state["coefficient"] + self._state["intercept"]
@@ -202,4 +211,9 @@ class StructuredERP(Baseline):
                     raise ValueError("temporal basis state differs from its declared artifact")
         if any(model._state[key].shape != shape for key, shape in shapes.items()):
             raise ValueError("ERP state shape differs from the frozen geometry")
+        if model.family == "xdawn_erp":
+            filters, prototypes = model._state["filters"], model._state["prototypes"]
+            # These states have zero centered augmented energy for every input.
+            if b == 1 or (not np.any(filters) and np.all(prototypes == prototypes[:, :1])):
+                raise ValueError("xDAWN state has no positive definite augmented covariance for any input")
         return model
