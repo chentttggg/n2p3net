@@ -339,7 +339,14 @@ class FrozenJointFlatSource:
         object.__setattr__(result, "parameters", _parameters(prior, hyper, basis, noise, freeze_metadata(binding)))
         return result
 
-    def assert_target(self, target):
+    def assert_target_exclusion(self, target, *, scope):
+        """Check the actual cohort before an explicitly transported observation.
+
+        The target contract comes from its original input owner; physical
+        geometry is checked by the native or transported caller separately.
+        """
+        if scope not in {"target_participant", "whole_target_dataset"}:
+            raise ValueError("joint source requires an explicit target exclusion scope")
         participant = target["participant_key"]
         rows = self.parameters.binding["source_prefixes"]
         target_sources = {target["source_sha256"]} if target.get("source_sha256") else set()
@@ -351,6 +358,12 @@ class FrozenJointFlatSource:
         if (participant in {row["target_contract"]["participant_key"] for row in rows}
                 or target_sources & source_inputs):
             raise ValueError("joint source cohort consumed the target participant or original input bytes")
+        if scope == "whole_target_dataset" and any(
+                row["target_contract"]["source_dataset_id"] == target["source_dataset_id"] for row in rows):
+            raise ValueError("joint source whole-study exclusion includes the actual target study")
+
+    def assert_target(self, target, *, exclusion_scope="target_participant"):
+        self.assert_target_exclusion(target, scope=exclusion_scope)
         geometry = self.parameters.noise.geometry
         if (tuple(target["channel_names"]) != geometry.channels or target["sample_rate_hz"] != geometry.sfreq
                 or target["reference"] != geometry.reference or target["signal_unit"] != geometry.unit):

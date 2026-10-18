@@ -1,0 +1,121 @@
+{
+  "schema": "n2p3_source_transport_integration/1",
+  "status": "accepted",
+  "scope": "exact physical source-geometry Gaussian completion, actual functional affine images and self-contained parameter-model codec; original target exclusion shared with native programmes",
+  "source": [
+    {
+      "path": "D:/BCI/worktrees/research-director/src/research/conditional_response_graph.py",
+      "bytes": 10075,
+      "sha256": "8d485cb3106177b7e5a078eb52bcc2571ec4bc9bc6b06e8a71b20c2dfa33c613"
+    },
+    {
+      "path": "D:/BCI/worktrees/research-director/src/transfer/source_response_transport.py",
+      "bytes": 26153,
+      "sha256": "10835eeaafb4ac9717576041209e096ac9fab7ad7cfb5b855d6422227e3ea07b"
+    },
+    {
+      "path": "D:/BCI/worktrees/research-director/src/research/numeric_response_consumer.py",
+      "bytes": 12136,
+      "sha256": "a3769794c069959c5ac66e38c4106cbed164a6a439d9f3b1e46a4518cef9c741"
+    },
+    {
+      "path": "D:/BCI/worktrees/research-director/src/transfer/transport_graph_model.py",
+      "bytes": 5570,
+      "sha256": "5b56d8adf7f5fbb521db5f6148991b14b60c1f81e27e7ce64833d01f59f61286"
+    },
+    {
+      "path": "D:/BCI/worktrees/research-director/src/transfer/joint_flat_programme.py",
+      "bytes": 23453,
+      "sha256": "62c73349c4c3423f3c7e449a25037b07c8c24162a74be54070c207a2d102efee"
+    },
+    {
+      "path": "D:/BCI/worktrees/research-director/src/transfer/source_response_programme.py",
+      "bytes": 10445,
+      "sha256": "e4029077574c12dc90ac8210876480411ec2d6a8a3ccf9f949fbf58c0fd7aecd"
+    },
+    {
+      "path": "D:/BCI/worktrees/research-director/tests/transfer/test_source_response_transport.py",
+      "bytes": 5192,
+      "sha256": "4cdda5d4a4adbd0f6fd3f87aa0a6962389fb3ad809e35edc46ab08c02f8ced4a"
+    }
+  ],
+  "source_relation": {
+    "path": "D:/BCI/artifacts/research-deliveries/source-response-states/canonical-source-transport/SOURCE_RELATION.json",
+    "bytes": 2997,
+    "sha256": "0d5e31bd380c26a8f32c7736439d45e96e6dfdb413414e3e02d52f226b9c9e5b"
+  },
+  "original_delivery": {
+    "path": "D:/BCI/artifacts/research-deliveries/source-response-states/product-source-geometry/SOURCE_MAP.json",
+    "bytes": 19416,
+    "sha256": "1a1665c2cbd5a9a262ced9ad74d737cfd59ab487ecb407d87df3ada8bbb44733"
+  },
+  "original_numerical_review": {
+    "path": "D:/BCI/artifacts/research-deliveries/source-response-states/product-source-geometry/INDEPENDENT_REVIEW.zh.md",
+    "bytes": 18689,
+    "sha256": "ddba9fc3ac89368510e29b3f439b3ab29944fa348ce759196427f307a085be3e"
+  },
+  "canonical_independent_review": {
+    "path": "D:/BCI/artifacts/research-deliveries/source-response-states/canonical-source-transport/INDEPENDENT_REVIEW.md",
+    "bytes": 8374,
+    "sha256": "a35208fc1f435dd168caac321a197346eb43271e73b0ebb06ca4f775925ba26b"
+  },
+  "canonical_transition": {
+    "path": "D:/BCI/artifacts/research-deliveries/source-response-states/canonical-source-transport/TRANSITION_RECEIPT.json",
+    "bytes": 233930,
+    "sha256": "1d9c2b1a40d40bf8f5ff1de559034377aafa8e52b18b27bc274c5363393bf6e3"
+  },
+  "cohort_metadata_gate": {
+    "path": "D:/BCI/artifacts/research-deliveries/source-response-states/canonical-source-transport/COHORT_GATE_RECEIPT.json",
+    "bytes": 4497,
+    "sha256": "344a71f21f67de0e7226e1fbfb296ef4b4d3b7eb469451f9ebd94e92e1ed1acc"
+  },
+  "gate_original_source_archive": {
+    "path": "D:/BCI/artifacts/research-deliveries/source-response-states/canonical-source-transport/COHORT_GATE_BEFORE.zip",
+    "bytes": 8895,
+    "sha256": "e75b53af9054e13a4c6034bc050ee6afce6f482688ec198aac23eeded391bf6a"
+  },
+  "canonical_model": {
+    "path": "D:/BCI/artifacts/research-deliveries/source-response-states/canonical-source-transport/CANONICAL_TRANSPORT_GRAPH_MODEL.json",
+    "bytes": 41288279,
+    "sha256": "c0723058561449a85532e3510fe1b1ad93d5b4b24dabca9d7d9b2780c4303028"
+  },
+  "parameter_law": {
+    "source_common": "original full mean/F and exact named spatial map",
+    "completion": "exact proper reference conditional law, saved H tensor spatial covariance",
+    "latent_variables": {
+      "original_source": 496,
+      "independent_conditional": 48,
+      "total": 544
+    },
+    "clocks_hz": {
+      "source_function": 1000,
+      "target_observation": 250
+    },
+    "entry_error": "outward absolute error after composition of actual functional; state/reference difference occurs before rounding"
+  },
+  "validation": {
+    "canonical_focused_passed": 3,
+    "metadata_gate_controls_passed": 12,
+    "cold_model": "isolated I/B process blocks old author/source trees; exact moments and numerical values/error bytes equal for three actual 544-dimensional mixed queries",
+    "existing_nine_candidate_bridge": "rank3,16rows,one analytic contrast; independent closed Gaussian score oracle; original execution reused under verified mathematical AST relation",
+    "root_review": "all four modules, original owners, source fields, source/target vectorizations and clocks, old/native cohort geometry and test assertions inspected",
+    "ruff_exit_code": 0,
+    "diff_check_exit_code": 0,
+    "new_scientific_fits": 0
+  },
+  "authority_ownership": {
+    "parameter_model": "complete saved original source/B09/completion/dictionary states; expected external artifact identity required on load",
+    "original_source_data": "fresh registered cohort/data admission is held by its explicit source-data owner",
+    "target_raw_C": "original canonical BrainSync issuer remains the raw and label owner",
+    "target_noise": "complete seven-channel noise supplied by its own programme; reference-free four-coordinate AR1 push keeps its original scope"
+  },
+  "cleanup": {
+    "status": "not_applicable",
+    "new_executable_builds": 0,
+    "new_canonical_model_copies": 1,
+    "new_canonical_model_bytes": 41288279,
+    "original_70_model": "active source-performance reference retained",
+    "original_source_parameter_bytes_and_results": "preserved",
+    "obsolete_local_generated_builds_identified": []
+  }
+}

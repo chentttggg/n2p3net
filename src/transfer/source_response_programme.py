@@ -89,11 +89,7 @@ class SourceResponseSourceRef:
             continuation=dictionary, continuation_role=self.continuation_role)
 
     def check_source(self, source, target_contract):
-        source.assert_target(target_contract)
-        if self.source_exclusion_scope == 'whole_target_dataset' and any(
-                row['target_contract']['source_dataset_id'] == target_contract['source_dataset_id']
-                for row in source.parameters.binding['source_prefixes']):
-            raise ValueError('source response whole-study exclusion includes the actual target study')
+        source.assert_target(target_contract, exclusion_scope=self.source_exclusion_scope)
 
     def check_continuation(self, source, dictionary):
         """Check the saved function's declared relation without recompiling it."""

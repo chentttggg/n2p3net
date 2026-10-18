@@ -154,3 +154,19 @@ src/research/structured_continuous_proposal.py text eol=lf
 tests/test_structured_continuous_proposal.py text eol=lf
 src/data/brainsync_raw_authority.py text eol=lf
 tests/data/test_brainsync_raw_authority.py text eol=lf
+src/research/conditional_response_graph.py text eol=lf
+src/transfer/source_response_transport.py text eol=crlf
+src/research/numeric_response_consumer.py text eol=lf
+src/transfer/transport_graph_model.py text eol=lf
+
+# Keep active scientific callers and integration binding bytes stable.
+src/transfer/joint_flat_programme.py text eol=lf
+src/transfer/source_response_programme.py text eol=lf
+tests/transfer/test_source_response_transport.py text eol=lf
+doc/assets/research_resume_20261012/source_transport_integration.json text eol=lf
+doc/assets/research_resume_20261012/continuous_frontier_integration.json text eol=lf
+doc/assets/research_resume_20261012/brainsync_raw_authority_integration.json text eol=lf
+doc/assets/research_resume_20261012/erp_runtime_repairs.json text eol=lf
+doc/assets/research_resume_20261012/actual004_complete_recovery.json text eol=lf
+doc/assets/research_resume_20261012/research_integration_acceptance.json text eol=lf
+doc/assets/research_resume_20261012/pause_checkpoint_current.json text eol=lf

@@ -1,5 +1,13 @@
 # 响应模型、空间先验与噪声数值
 
+## 源几何、实际电压差与完整参数冷读
+
+源响应以真实共同电极的电压差进入目标坐标，其余方向保留明确的proper条件方差。新入口先合并真正要计算的泛函，再转换为浮点图像：source公共尺度为`2^60`时，两个条件残差仍具有方差`2/3`和交叉协方差`−1/3`；近共线源方向的差保留两个独立项及方差`2e²`。state-reference也在此时相减，逐项误差随图像交给后续数值owner。
+
+三个canonical数学回归通过。实际保存源的496个潜变量加48个独立条件方向，共544维；完整source/B09/completion/dictionary由同原owners构造新canonical模型，在禁止旧作者及旧源目录读取的独立进程中冷读，三组混合泛函的exact矩、数值及误差数组逐bit相同。原九候选Gaussian桥另以rank3、16行和单一analytic contrast对照独立闭式积分，最大对数似然差约`1.07e−14`。各自作用域、代码规范迁移及原producer保持在[整合绑定](../assets/research_resume_20261012/source_transport_integration.json)。
+
+participant、原EEG字节与whole-study排除现由同一source owner处理，原native几何检查继续保留。实际原保存源的12项metadata控制验证了独立target、同participant、原source字节及整库策略；fresh source-data准入和raw/C权限分别由各自live issuer提供。
+
 ## BrainSync原始权限与暂停时钟
 
 canonical入口已通过三项以合成EDF/BIDS文件执行的MNE入口合同：无C标签时保完整九候选及全部会话请求，推理cap对隐藏target字段变化保持相同；部分C只用最早已授权事件，完整90个标签的候选约束需要两个实际segment的raw权限。七EEG与独立EOG逐数组等于原MNE读取，复制公开dataclass不会获得issuer注册。
