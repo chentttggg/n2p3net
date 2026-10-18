@@ -1,5 +1,11 @@
 # 响应模型、空间先验与噪声数值
 
+## 原生公共校准噪声的完整拟合
+
+原H2 source均值固定后，H1的K200、K800分别沿原fitter完成一次private AR1拟合：31条时间规律、完整31×31创新协方差、31维平稳初态及32点992维前缀因子均保留。原授权200与800个bits构造残差，η=1；两次fit/save为399.467、396.640秒，独立原codec cold/live核验为265.238、263.633秒。完整程序1057.886秒，进程树RSS峰2.339GB。
+
+独审核原权限、全部参数、初态与992前缀的leading block，并以两通道手算例确认同record续接只用一次startup。source μ/F/prior前后相同，响应C更新在下一统一likelihood执行；原执行源码、完整结果、cold和清理均保其身份。来源见[原生公共整合](../assets/research_resume_20261012/public_native_input_integration.json)。
+
 ## 集合刺激的通用membership与缓存
 
 物理响应现以原有序`membership[event,q]`决定target增量；一次集合刺激的全部成员各保完整增量，不除以成员数，common只加一次。known blank的membership全0，仍保共同响应；原未知中断曝光的`None`继续使用显式联合assignment及原质量。新public列轴由原history声明，旧BrainSync一热行逐项核candidate_id映射。

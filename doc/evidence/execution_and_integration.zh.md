@@ -1,5 +1,11 @@
 # 执行、保存重放与代码集成
 
+## 实际物理算子接线与原生公共输入
+
+原实际raw-parent反例显示：同一合法cap接入错一采样点的clock，响应可从`[1,2,0,0]`变为`[0,1,2,0]`，旧Plan与segment身份仍相同；错误membership也能通过。修复后factory核原owner重新派生的完整clock/history/membership，复用时重新核实际callback关系。12类factory错接、6类reuse替换及C公开Plan重接已被拒绝；正常direct/template与原value/error数组保持。
+
+原完整程序的代码恢复组装包包含236个代码/依赖声明成员，已逐成员核验后在新算子producer接入前保留。旧Prepared及结果沿原producer恢复，新caller持新身份。总监组合检查与源码格式关系、原真实公共输入证据、独审和清理分类见[整合绑定](../assets/research_resume_20261012/public_native_input_integration.json)，公共数据接线结果集中见[公共评估](public_evaluation.zh.md#原生公共输入与源参数纵向接线)。
+
 ## Membership数值入口与旧缓存清理
 
 新membership三owner逐字节整合前，原plan和physical-template源码已物理归档并核zip成员SHA。canonical四项新手算回归及相关Ruff通过；原参数descriptor九个producer保持原字节，旧完整运行与codec身份沿原接受证据保存。本次没有新增worktree或模型载荷副本。

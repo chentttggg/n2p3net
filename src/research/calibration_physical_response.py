@@ -19,6 +19,7 @@ from data.brainsync_raw_authority import (
 )
 from research.frozen_metadata import freeze_metadata
 from research.physical_affine_frontier import PhysicalAffineSegment
+from research.physical_operator_binding import require_brainsync_clock, require_brainsync_plans
 from research.physical_response_design import PhysicalResponsePlan
 from research.target_noise_operand import geometry_from_capability
 from transfer.noise_model import array_digest, metadata_digest
@@ -196,12 +197,13 @@ def calibration_segment_from_capabilities(cap, labels, carrier, responses, roste
         raise ValueError("C model must consider every original available completed/interrupted exposure")
     if noise_segment_declaration["acquisition_segment_id"] != b["segment_id"]:
         raise ValueError("C-noise segment declaration differs from the original acquisition segment")
+    operators = require_brainsync_plans((response.plan for response in responses), cap, clock_program=clock_program)
     model = PhysicalAffineSegment(cap.eeg, carrier, compile_physical_clock(cap), responses, rosters, drift_group,
         record_id=b["record_segment_id"], origin_sample=b["sample_start"], clock_program=clock_program,
         current_variable=current_variable, q_values=q_values,
         maximum_intermediate_entries=maximum_intermediate_entries, original_input_identity=cap.identity_sha256,
         noise_segment_declaration=noise_segment_declaration)
-    _C_SEGMENTS[model] = (model.identity, cap, labels, tuple(r.identity for r in responses))
+    _C_SEGMENTS[model] = (model.identity, cap, labels, tuple(r.identity for r in responses), operators)
     return model
 
 
@@ -211,4 +213,9 @@ def require_calibration_physical_segment(model, cap, labels):
     if (original is None or original[:3] != (model.identity, cap, labels)
             or original[3] != tuple(r.identity for r in model.responses)):
         raise ValueError("C response update requires its original live raw/label/model compilation relation")
+    require_brainsync_clock(model.clock, cap)
+    operators = require_brainsync_plans((response.plan for response in model.responses), cap,
+        clock_program=model.clock_program)
+    if metadata_digest(operators) != metadata_digest(original[4]):
+        raise ValueError("the original C raw-bound physical operator changed after parent admission")
     return model

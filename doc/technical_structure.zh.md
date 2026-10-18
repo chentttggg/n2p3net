@@ -1,5 +1,9 @@
 # 当前技术结构与完整链条
 
+`research.physical_operator_binding`将实际Plan/chart/history、有效membership与callback参数接回原BrainSync raw owner；factory准入及live复用分别核当前关系。Plan身份记录真实数值操作数，缓存与计时不入身份。公共记录由`public_record_physical_bridge`回原compiler/registry授权，按原生采样点提供精确时钟，每字符保独立目标变量；同record的C/history按原观测并集消费一次，startup和drift各一次。
+
+`transfer.native_source_response_model`在完全相同的原生通道、参考、单位和时钟下保原source全部均值/因子，completion为0；`public_native_source_admission`连接原source与目标C/held文件并集排除，cold codec只恢复数值。`public_native_source_mean`按原C bits、逐selection状态和真实曝光时钟将完整temporal design与source均值收缩，不投影随机因子或先更新响应。来源与原producer恢复关系见[原生公共输入整合](assets/research_resume_20261012/public_native_input_integration.json)。
+
 `research.exposure_membership`持有唯一有序event×candidate解释：known集合/blank用原binary membership，unknown继续消费原显式assignment。`physical_response_design`与`physical_source_templates`的设计、active cache key和差分共用同一解释；原BrainSync一热输入逐行核原candidate_id对应关系，public集合输入声明原列轴。common每曝光一次，target按对应membership列；数值clock token与raw权限分属原owner。来源见[membership整合](assets/research_resume_20261012/physical_membership_integration.json)。
 
 `research.source_metadata_store`持有完整原NN source bytes的一次共享发布及每独立ingress的真实准入；typed ref保存source SHA/size、原training contract与当前target identity/geometry/study exclusion。事务首次decode沿原source procedure/metadata门，之后每bind核当前target并生成fresh trunk/BN/C statistics。`FrozenTrialPredictor/3`的K0模型可共享原blob或独立嵌入完整闭包，positive `/2`保持小包；binary report `/3`与pool origins持同dependency，fresh public loader要求完整ref并重新准入。candidate模型、prefix、graph、chunk及parent现也持完整依赖闭包，独立导出后仍核原source，pool退役后最后复核原blob。

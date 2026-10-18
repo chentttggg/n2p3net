@@ -42,7 +42,7 @@ class PhysicalDriftGroup:
 
     def __post_init__(self):
         if (not self.group_id or not self.channels or len(set(self.channels)) != len(self.channels)
-                or self.clock_program not in {'timeline_wall', 'delivery_anchor'} or not self.clock_domain):
+                or self.clock_program not in {'timeline_wall', 'delivery_anchor', 'native_sample_index'} or not self.clock_domain):
             raise ValueError('physical drift group requires its unique coordinate channel names')
         object.__setattr__(self, 'reference_origin_seconds', Fraction(self.reference_origin_seconds))
 
@@ -206,6 +206,7 @@ def physical_segment_from_raw_capability(cap, carrier, responses, rosters, drift
                                         q_values, maximum_intermediate_entries):
     """Trusted parent seam: one canonical raw registry and complete history."""
     from data.brainsync_raw_authority import compile_physical_clock, require_raw_capability
+    from research.physical_operator_binding import brainsync_segment_operator
 
     cap = require_raw_capability(cap)
     binding, geometry = cap.public_binding, carrier.noise.geometry
@@ -239,13 +240,21 @@ def physical_segment_from_raw_capability(cap, carrier, responses, rosters, drift
         record_id=binding['record_segment_id'], origin_sample=binding['sample_start'], clock_program=clock_program,
         current_variable=current_variable, q_values=q_values, maximum_intermediate_entries=maximum_intermediate_entries,
         original_input_identity=cap.identity_sha256, noise_segment_declaration=noise_segment_declaration)
-    _RAW_SEGMENT_ADMISSIONS[segment] = (segment.identity, cap.identity_sha256)
+    operator = brainsync_segment_operator(segment, cap)
+    _RAW_SEGMENT_ADMISSIONS[segment] = (segment.identity, cap, operator)
     return segment
 
 
 def require_raw_physical_segment(segment, cap):
-    if _RAW_SEGMENT_ADMISSIONS.get(segment) != (segment.identity, cap.identity_sha256):
+    from data.brainsync_raw_authority import require_raw_capability
+    from research.physical_operator_binding import brainsync_segment_operator
+
+    cap = require_raw_capability(cap)
+    admitted = _RAW_SEGMENT_ADMISSIONS.get(segment)
+    if admitted is None or admitted[:2] != (segment.identity, cap):
         raise ValueError('physical publication requires the original canonical-cap callback compilation admission')
+    if metadata_digest(brainsync_segment_operator(segment, cap)) != metadata_digest(admitted[2]):
+        raise ValueError('the original raw-bound physical operator changed after parent admission')
     return segment
 
 

@@ -208,3 +208,17 @@ doc/assets/research_resume_20261012/public_evaluation_readiness.json text eol=lf
 src/research/exposure_membership.py text eol=lf
 tests/research/test_physical_membership.py text eol=lf
 doc/assets/research_resume_20261012/physical_membership_integration.json text eol=lf
+
+src/research/physical_operator_binding.py text eol=lf
+
+src/research/public_record_physical_bridge.py text eol=lf
+
+src/transfer/native_source_response_model.py text eol=lf
+
+src/research/public_native_source_admission.py text eol=lf
+
+src/research/public_native_source_mean.py text eol=lf
+
+src/research/public_native_target_noise.py text eol=lf
+doc/assets/research_resume_20261012/public_native_input_integration.json text eol=lf
+frozen/complete_learner_code_recovery.manifest.json text eol=lf

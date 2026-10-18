@@ -1,0 +1,158 @@
+{
+  "schema": "n2p3_public_native_input_integration/1",
+  "status": "accepted",
+  "scope": "actual physical operator join, original public grants/native clocks, full native source, fixed C mean and complete C-noise consumption",
+  "base_head": "91b9ee37f21ee16f374b10d85b3d82efc28fec78",
+  "canonical_sources": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\physical_operator_binding.py",
+      "bytes": 9139,
+      "sha256": "858c518d3666cbcda536f2a4448e109a15be17282c6222b2e6d8f386b8e0309b"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\physical_response_design.py",
+      "bytes": 10864,
+      "sha256": "7a61d9de7a5534001a403ec1dbb49597661b7458e0e17aaa189f18de0750a0c0"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\physical_affine_frontier.py",
+      "bytes": 42084,
+      "sha256": "c45afc3ee343cb02755dcc6a68e1ef6c004b7ed818c8dec7e13333e64cc3b32e"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\calibration_physical_response.py",
+      "bytes": 14041,
+      "sha256": "63e0d0d1b9c37f13ac2ebfa1d95c89ebeaa2426b94d7b05cc7d8b0ae7615b65f"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\public_record_physical_bridge.py",
+      "bytes": 23573,
+      "sha256": "05ac13577a5c1be5ef650950a579062bee6d2bead1fdd4ab1ceaf19ac3ba51fa"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\native_source_response_model.py",
+      "bytes": 9658,
+      "sha256": "f91f95210ff5a308deb4a040a9ac77b3bfad5432c5b347db1ec4e92b017c7cb2"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\public_native_source_admission.py",
+      "bytes": 7813,
+      "sha256": "7bbf090e9a322bcd48b52760c1179f3b200c1f18174a29b98218c210b8c38e54"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\public_native_source_mean.py",
+      "bytes": 11067,
+      "sha256": "95b2505a1752549fc99fb7aa0b98ef9b8d502b006fdd16a8fadde85cb1b0cf7d"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\public_native_target_noise.py",
+      "bytes": 13147,
+      "sha256": "1be1086187e2e5c4eec620c560a0bb7219b0f672bd570101196aa0ffeda83c48"
+    }
+  ],
+  "root_review": "complete eight input/source modules and ninth C-noise adapter; actual callers, numeric recovery, original grant owners and independent reviews",
+  "source_installation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-public-native-integration\\SOURCE_INSTALLATION.json",
+    "bytes": 4311,
+    "sha256": "63f1876ae02aac04dfbc4d237b8c42a412c517b9899f8a716c47704f808257a4"
+  },
+  "import_refinement": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-public-native-integration\\IMPORT_ONLY_SOURCE_RELATION.json",
+    "bytes": 6193,
+    "sha256": "937b5c335cfd36ca9ea6decf8cc47027005da22168380b687ef7f341e60a8364"
+  },
+  "independent_evidence": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\physical-operator-binding-repair\\MANIFEST.json",
+      "bytes": 14925,
+      "sha256": "d04191551e9745119c246e59a75ef65051d14b13977306d68b8214990bf3011f"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\physical-operator-binding-review\\INDEPENDENT_OPERATOR_BINDING_REPAIR_REVIEW.md",
+      "bytes": 9966,
+      "sha256": "75e4a0d0c9b3e800b107aad57ab5093deecef52055bbfc913a4eb781898962ca"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-record-physical-bridge\\DELIVERY_MANIFEST.json",
+      "bytes": 5783,
+      "sha256": "aac874dc9c46a09e2489f8aeb4a6444afdf64da38d0194540613339137c63712"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-record-physical-bridge\\independent-review\\INDEPENDENT_REVIEW.zh.md",
+      "bytes": 6773,
+      "sha256": "6ef2d5075c12fd68735f40479f513f52e941345d5c101f9c9c6b2442103b95a3"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-source-admission\\DELIVERY_MANIFEST.json",
+      "bytes": 15263,
+      "sha256": "934129bbdd125cfd029f4efd0a4234c3142e07d95c4afbe16863753463e1d375"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-source-admission\\independent-review\\INDEPENDENT_REVIEW.zh.md",
+      "bytes": 7766,
+      "sha256": "ee4ecd6b6705486ce282a2fbb7cec2370ac12437daadb1c725a05843004e1639"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\complete-learner-recovery-code\\COMPLETE_LEARNER_RECOVERY_CODE.zip",
+      "bytes": 1669695,
+      "sha256": "a70f2144dc20f8c2f928bd69258dd282e4e8583a651be19ad7ae487b5d6a088a"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-target-noise\\DELIVERY_MANIFEST.json",
+      "bytes": 9720,
+      "sha256": "3616d0025fa8c07224d5a439463e342da311ff975c3176b7b8b1436052483100"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-target-noise\\independent-review\\INDEPENDENT_REVIEW.zh.md",
+      "bytes": 7434,
+      "sha256": "b645110bdcacbdcc55974324e6e498c15c489e4293039683f1b53ac9a89de87c"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-target-noise\\independent-review\\REVIEW_RECEIPT.json",
+      "bytes": 3753,
+      "sha256": "0ab8af77566f2af5582ce27c795eb272673efffc30b65c1b4d3daac8fb19fa01"
+    }
+  ],
+  "new_composition_check": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-public-native-integration\\CANONICAL_JOIN.json",
+    "bytes": 579,
+    "sha256": "c78b05865d0966152fa8e60ae1b3a7d300094b6758dcd0070c3c86575e17c924"
+  },
+  "current_namespace": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-public-native-integration\\CANONICAL_IMPORTS.json",
+    "bytes": 2898,
+    "sha256": "38900208c2d27dab479c0aa51087e7c84cab53bdef7e6231687b7f5e768509c0"
+  },
+  "validation": {
+    "ruff": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-public-native-integration\\RUFF.json",
+      "bytes": 664,
+      "sha256": "c95b5b58da334e3a10a650279a3f5b55ff7074ac6ab9a109ffcdbf78dd49677a"
+    },
+    "diff_check": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-public-native-integration\\DIFF_CHECK.json",
+      "bytes": 501,
+      "sha256": "f4a399921b322d0b819aa7da6cdeb3072f80f7ec4bbb4f91a6a1662cd862ea09"
+    },
+    "prior_actual_126_grants_source87s_and_two_noise_fits_repeated": false,
+    "full_suite_run": false,
+    "fresh_composition_EEG_or_fit_count": 0
+  },
+  "noise_fit_scope": "original complete private AR1 C200/C800, full31 Q and saved992 prefix; response C updates0",
+  "recovery": {
+    "path": "D:\\BCI\\worktrees\\research-director\\frozen\\complete_learner_code_recovery.manifest.json",
+    "bytes": 1861,
+    "sha256": "28c28578b29c86fa8447a95da704d9c33ca31b8f98395dec54634cda1c7b1878"
+  },
+  "numerical_producer_note": "delivered bytes and active import-refined bytes are separately pinned; whole-file producer identities remain distinct, original parameters/results are not relabelled",
+  "next_dependencies": [
+    "same-residual/parameter-law reuse across new consumer metadata",
+    "declared full response-state law and public once-union learner",
+    "original public CandidateEvidence publication and full requested denominator"
+  ],
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-public-native-integration\\CLEANUP_RECEIPT.json",
+    "bytes": 2402,
+    "sha256": "ee07c3e1c8b9f445c0324dd1d661f54bf125391550b31c65e9d6a721f63319e9"
+  }
+}

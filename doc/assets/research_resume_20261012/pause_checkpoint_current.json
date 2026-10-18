@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
-  "status": "active_general_public_membership_source_and_native_C_noise_integration",
-  "recorded_at": "2026-10-18T18:39:35.911992+08:00",
+  "status": "active_public_complete_learner_and_existing_NN_reuse_after_native_input_integration",
+  "recorded_at": "2026-10-18T19:49:28.853548+08:00",
   "user_request": "continue_full_research_goal_after_ERP_source_review",
   "research_worktree": "D:/BCI/worktrees/research-director",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -9,12 +9,11 @@
   "research_priority": "general_candidate_mathematics_with_final_adult_BrainSync_nine_choice_primary",
   "previous_checkpoint": {
     "archive": {
-      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-complete-learner-integration\\CHECKPOINT_BEFORE_COMPLETE_LEARNER.zip",
-      "bytes": 7112,
-      "sha256": "94a8578ef38c699a267c88e7058b93e5349b1880c182d4b2f16dda5c28b09aa5"
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-public-native-integration\\BEFORE_PUBLIC_NATIVE_INTEGRATION.zip",
+      "bytes": 27265,
+      "sha256": "66017e495b31b59a16ac296705c0e423ffbc486253a1c8804d2b17760d3ebd3e"
     },
-    "member": "pause_checkpoint_current.json",
-    "original_sha256": "d5f32eaf1ebb88061697999214d62aa507ee2b4a91af77e3991bf52302c01804"
+    "member": "doc/assets/research_resume_20261012/pause_checkpoint_current.json"
   },
   "resume_observation": {
     "original_processes": [
@@ -422,7 +421,7 @@
       "sha256": "871b18b3af18428d6609b961fd3ce77f58a2fcb94a5c958ffe2b109b1de82908"
     },
     "state": "canonical_complete_source_C_noise_one_response_C_held45_software_accepted",
-    "next_required_slice": "combine_public_cap_native_clock_and_actual_operator_gate_then_native_source_C_noise_once_response_and_all63_prediction",
+    "next_required_slice": "complete_public_response_law_once_union_inference_and_existing_NN_public_scoring",
     "full45_comparison": {
       "state": "544_and112_complete_independent_cold_and_root_artifact_review_accepted",
       "comparison": {
@@ -483,14 +482,14 @@
       "bytes": 3634,
       "sha256": "b20eb6163619b3b6c4eca75f6ca46ffca4f60db213c493e83a117ea9d36c7a43"
     },
-    "source_plan_state": "independent_review_of_matched_external_roster_or_H13_LOSO_and_full_response_forecast",
+    "source_plan_state": "reuse_existing_leave_H_NN_now_H13_LOSO31_remains_later_matched_controlled_comparison",
     "integrated_membership": {
       "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\physical_membership_integration.json",
       "bytes": 6909,
       "sha256": "3414e50ae141ea304f616a563c64b50f40caa423bf608c102b6c70edb8606e7b"
     },
     "public_record_physical_delivery": {
-      "state": "independently_accepted_pending_root_full_source_review_and_combined_drift_operator_gate",
+      "state": "canonical_integrated_with_actual_operator_gate_and_full_native_source",
       "manifest": {
         "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-record-physical-bridge\\DELIVERY_MANIFEST.json",
         "bytes": 5783,
@@ -516,33 +515,50 @@
       }
     },
     "physical_operator_join": {
-      "state": "actual_clock_and_membership_join_gap_reproduced_repair_and_independent_review_active",
+      "state": "fixed_independently_reviewed_and_canonical_integrated",
       "evidence": {
         "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\physical-operator-binding-review\\INDEPENDENT_OPERATOR_BINDING_FINDINGS.md",
         "bytes": 9087,
         "sha256": "54d6fe25c872bcc8e220f0e2ded70c61f1a630a565a732008748b2794fc7ac85"
       },
       "old_traced_complete_results": "preserved; original actual callers used their original canonical clock construction"
+    },
+    "integrated_public_native_inputs": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\public_native_input_integration.json",
+      "bytes": 7967,
+      "sha256": "1241edd3de508a13744e9e52d9b00a71f4183b9913fb61393bd14fa8071f0769"
+    },
+    "native_C_noise": {
+      "state": "two_original_fits_cold_and_independent_review_complete_adapter_integrated",
+      "manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-target-noise\\DELIVERY_MANIFEST.json",
+        "bytes": 9720,
+        "sha256": "3616d0025fa8c07224d5a439463e342da311ff975c3176b7b8b1436052483100"
+      },
+      "review": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-target-noise\\independent-review\\REVIEW_RECEIPT.json",
+        "bytes": 3753,
+        "sha256": "0ab8af77566f2af5582ce27c795eb272673efffc30b65c1b4d3daac8fb19fa01"
+      },
+      "original_fit_restarted": false
     }
   },
   "active_agents": {
-    "general_frontier_implementation": "actual_physical_clock_membership_operator_binding_repair_with_public_native_enum",
-    "marginal_codec_review": "independent_actual_operator_binding_repair_and_old_producer_recovery_review",
-    "general_continuous_inference": "generic_public_native_C_noise_SPEC_and_complete_K200_K800_local_fits",
-    "saved_execution_recovery": "actual_H2_native496_source_to_H1_live_target_union_mean_and_codec",
-    "recovery_review": "independent_public_native_source_mean_codec_and_leakage_review",
-    "frontier_science_review": "full_response_likelihood_to_population_forecast_QR_core_and_fold_hyperlearning"
+    "general_frontier_implementation": "public_native_complete_learner_and_once_union_C_bit_inference",
+    "general_continuous_inference": "source_bound_C_mean_actual_profile_and_exact_accumulation",
+    "frontier_science_review": "original_data_likelihood_export_and_coefficient_coordinate_bridge",
+    "recovery_review": "generic_response_state_law_and_identifiability_design",
+    "saved_execution_recovery": "existing_leave_H_NN_target_fullfine_scratch_and_complete_public_reuse"
   },
   "cloud": {
     "state": "not_used_no_SSH",
     "ownership": "separate_cloud_chat"
   },
   "next_actions": [
-    "Commit accepted general membership/cache owners and new hand-law regressions; retain old producer source archive and recorded cmd cleanup.",
-    "Review and integrate original public grant module with the combined native-clock/actual-operator gate; reuse the completed126 real request ledger.",
-    "Integrate the actual native H2 source and source-bound C mean; complete the two original K-specific native noise fits.",
-    "Connect one response-C update and generic full-history inference/public typed publication for all H1 session2 requests under the same declared inputs.",
-    "Implement full-response cohort forecast and participant-fold source/NN owner for the frozen H13LOSO31 plan; preserve819 futures and source missing-unit ledger."
+    "Integrate independently reviewed Markov prefix producer/consumer and population forecast core with original recovery bytes preserved.",
+    "Reuse existing leave-H source NN and original target fullfine/scratch code for all H1 K200/K800 requests; no prerequisite of 26 new source fits.",
+    "Freeze scientifically identified proper response law; connect single response C observation and full public once-union likelihood/CandidateEvidence.",
+    "Finish source data-likelihood export and original coordinate permutation; retain H13 LOSO31 as matched controlled source experiment with819 full futures."
   ],
   "erp_runtime_repairs": {
     "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\erp_runtime_repairs.json",
@@ -550,6 +566,7 @@
     "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
     "commit": "a6f5750"
   },
-  "integration_head": "d9c7b8ebba6f517d99f196544f0fd8c9a7238a47",
-  "concurrency_authorization": "later user allowed more threads after the temporary six-agent limit; seven actual parallel roles used for independent scientific slices"
+  "integration_head": "91b9ee37f21ee16f374b10d85b3d82efc28fec78",
+  "concurrency_authorization": "later user allowed more threads after the temporary six-agent limit; seven actual parallel roles used for independent scientific slices",
+  "execution_priority": "existing_NN_weights_and_target_pipeline_first_H13_new_source_training_deferred_until_controlled_comparison"
 }

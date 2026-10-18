@@ -17,6 +17,7 @@ from research.exposure_membership import (
     MissingExposureIdentityError as MissingExposureIdentityError,
 )
 from research.latent_response_reference import ResponseState
+from research.physical_operator_binding import plan_operator_inputs
 from transfer.native_response_dictionary import NativeResponseDictionary
 from transfer.noise_model import array_digest, metadata_digest
 
@@ -57,6 +58,7 @@ class PhysicalResponsePlan:
             'dictionary': dictionary.digest(), 'clock_program': clock_program,
             'exposure_response_law': exposure_response_law, 'candidate_vocabulary': self.vocabulary,
             'actual_exposure_membership_programme': self.membership.identity,
+            'actual_physical_operator_inputs': plan_operator_inputs(self),
             'compiler_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
 
     def target_indicator(self, exposure, candidate, unknown_assignments=None):
