@@ -1,5 +1,9 @@
 # 执行、保存重放与代码集成
 
+## 保存噪声的当前权限接入
+
+saved-public候选以原字节整合；root审完整模块与执行脚本，两格实际接入/保存重放完成并正常退出。成功执行与首启监测hook错误分别保留原源码和记录；两套code-only producer的508成员已独立逐byte核验，再用cmd删除514个冗余展开文件/缓存，共12118330字节。原数据、参数、实际programme和冻结producer保留。接受范围及清理回执见[绑定](../assets/research_resume_20261012/saved_public_noise_integration.json)。
+
 ## Lean确认错误的科研侧接收
 
 SplitBN缺导安装在科研树的既有祖先中已经修复；本次重新核实helper和两处真实caller，并新增两项完整fit→refit小回归：缺导initial/refit为16/32个观测、方差1，全观察为32/64、方差0.5，保存加载和缺导占位变化逐bit保持。原Lean19项的13失败准确分为2个统计反例与11个未支持API，未重复旧测试或覆盖主目录dirty代码。

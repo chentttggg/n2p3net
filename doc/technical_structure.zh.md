@@ -1,5 +1,7 @@
 # 当前技术结构与完整链条
 
+`research.saved_public_noise_reuse`连接原保存噪声与当前source/C权限：原witness固定旧programme/完整参数，当前compiler重编实际C均值和残差并核完整关系，新issuer持本次live使用权限。独立数值重放恢复保存关系；运行状态和下一步仍由checkpoint维护。实际K200/K800来源见[整合绑定](assets/research_resume_20261012/saved_public_noise_integration.json)。
+
 `models.candidate_ties`统一generic、membership、row/column及`CandidateEvidence`的operational平局规则：最高分与候选分差不超过原绝对floor `1e-12` 时不可区分，公共分数原点不放大该floor。它保原score单位；log score中即log odds的数值分辨率，不作统计置信度。完整tie仍保概率供NLL/Brier，缺失/coverage权限由原owner处理。原连续/算子/SelectionERP的`1e-10`规则保各自含义；历史操作结果按原冻结consumer重放，新规则用于新执行。
 
 `research.population_response_forecast`消费个人data likelihood的完整A/r/c，分别保人群均值不确定性与真实人际差异；`source_likelihood_export`从原同次source blocks导出数据因子、绝对常数与显式F→C列置换，每人一个shared数值包供不同fold引用。个人posterior的prior信息不进入data likelihood。

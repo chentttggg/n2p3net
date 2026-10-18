@@ -1,17 +1,17 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
-  "status": "active_general_response_population_joint_calibration_and_full_history_inference",
-  "recorded_at": "2026-10-18T22:32:41.748239+08:00",
-  "user_request": "reuse_good_LOSO_components_reconcile_actual_data_then_continue_original_general_research; accept_confirmed_Lean_errors",
+  "status": "paused_at_user_request",
+  "recorded_at": "2026-10-19T00:04:26.746727+08:00",
+  "user_request": "pause_and_wrap_up",
   "research_worktree": "D:/BCI/worktrees/research-director",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
   "concurrency_limit_including_root": 8,
   "research_priority": "general_candidate_mathematics_with_final_adult_BrainSync_nine_choice_primary",
   "previous_checkpoint": {
     "archive": {
-      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-population-integration\\BEFORE_INTEGRATION.zip",
-      "bytes": 143017,
-      "sha256": "66fa02b7ddf173fad3d31428aab71fcf88ffe4013471c4081e45a2da126bce2c"
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-saved-noise-integration\\BEFORE_PAUSE_WRAPUP.zip",
+      "bytes": 118310,
+      "sha256": "758f0d0fa68b0c6e15e1145a02808aec68098dbb5b679f94787e726a8bb1bebb"
     },
     "member": "doc/assets/research_resume_20261012/pause_checkpoint_current.json"
   },
@@ -281,21 +281,11 @@
       "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
     }
   },
-  "active_agents": {
-    "stationary_prefix_factor": "full_source_issuer_fit_with_blocks_shared_population_forecast_codec",
-    "general_frontier_implementation": "public_native_joint_G0_G1_factory_and_codec",
-    "recovery_review": "scope_based_exact_discrete_elimination_and_outer_shared_state_inference"
-  },
+  "active_agents": {},
   "cloud": {
     "state": "not_used_no_SSH",
     "ownership": "separate_cloud_chat"
   },
-  "next_actions": [
-    "Review actual full-source issuer, fit_with_blocks and shared forecast-codec candidate; then execute all accepted 13 person fits and 13 leave-person folds.",
-    "Complete actual native G0/G1 response/noise sufficient-statistic factory, new live fit issuer and codec; then full declared C budgets.",
-    "Review actual frozen-law component scopes; default to exact discrete sum_product and integrate shared response/record drift outside it, then full typed history replay.",
-    "Old NN/source-scale audit remains external diagnostic; source cache pinpoint has no mainline prerequisite."
-  ],
   "erp_runtime_repairs": {
     "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\erp_runtime_repairs.json",
     "bytes": 6648,
@@ -401,22 +391,7 @@
     "process_state": "parent and workers exited normally; original handle33930 exit0",
     "extra_legacy_NN_tuning_planned": false
   },
-  "pending_root_integrations": {
-    "saved_C_noise_reuse": {
-      "manifest": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\saved-public-noise-reuse\\DELIVERY_MANIFEST.json",
-        "bytes": 9346,
-        "sha256": "2dd8ec3175088a9ab486470cee9bcadb5ae16c2d0a8474aa2f3df572a6d6c3f7"
-      },
-      "state": "independent_source_review_accepted; root_source_read_and_explicit_saved_public_consumer_pending",
-      "root_full_source_read": false,
-      "independent_review": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\saved-public-noise-reuse\\independent-review\\INDEPENDENT_REVIEW_MANIFEST.json",
-        "bytes": 1760,
-        "sha256": "53ba44e38d519cb6f7a585664e376274a7de88296ce37555a440f327ff2eea12"
-      }
-    }
-  },
+  "pending_root_integrations": {},
   "confirmed_Lean_error_handoff": {
     "input": {
       "path": "D:\\BCI\\n2p3-net\\doc\\assets\\lean_gaussian_20261016\\research_error_handoff_01.json",
@@ -441,5 +416,126 @@
     "bytes": 2453,
     "sha256": "db443b5ce6302c3f43fabb659dd4953c3517d877024ab4bd434038c1150b8b02"
   },
-  "concurrency_current_roles_including_root": 4
+  "concurrency_current_roles_including_root": 0,
+  "resume_requires_explicit_user_instruction": true,
+  "accepted_saved_public_noise_reuse": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\saved_public_noise_integration.json",
+    "bytes": 3382,
+    "sha256": "c265e0f4ab5b3f286b69d6cddbf3f10d71104eda79a4378163d2b0c1dda1f40a"
+  },
+  "paused_scientific_work": {
+    "population_source": {
+      "checkpoint": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\PAUSE_CHECKPOINT.json",
+        "bytes": 3472,
+        "sha256": "9351e63306b170c22a018cfc24f11f2faf0bc845359c5b28d7301fb40c493830"
+      },
+      "handoff": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\PAUSE_HANDOFF.zh.md",
+        "bytes": 2940,
+        "sha256": "47f6a20fa86f7e14627fed6c5fe67dbb9e1e7855000ecb153a7bf2fb8ef2bc44"
+      },
+      "independent_review_handoff": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-review\\HANDOFF.zh.md",
+        "bytes": 4503,
+        "sha256": "c3a1f7dfcf58a04aaf3a68053719b4be330e074bdfcd2622c8a0310238c4950c"
+      },
+      "actual_source_fits": 0,
+      "actual_population_complete_hyperfits": 0,
+      "latest_helper_and_eleventh_test": "unexecuted_WIP",
+      "candidate_integration": "not_accepted"
+    },
+    "joint_response_noise": {
+      "checkpoint": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-response-noise\\PAUSE_CHECKPOINT.json",
+        "bytes": 4778,
+        "sha256": "78978b89464a3a3c73e085024ebf56f841bb24d841a5ba631fd377dc3dfa9ffd"
+      },
+      "handoff": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-response-noise\\HANDOFF.zh.md",
+        "bytes": 3918,
+        "sha256": "06e3b0708c32214a5febe334734b0f87c348ff2824c1fd992bf815376c188c05"
+      },
+      "independent_pause": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-response-noise\\independent-review\\PAUSE_HANDOFF.json",
+        "bytes": 3033,
+        "sha256": "6210932013d6bbb65976bda8694ca1612525007d39d324704f5c2a9fa555b47c"
+      },
+      "G0_C8_v3": {
+        "state": "OS_exit1_optimization_precision_loss_no_fitted_artifact",
+        "iterations": 615,
+        "evaluations": 876,
+        "optimizer_status": 2,
+        "gtol": 0.001,
+        "returned_gradient_max": 75.32,
+        "former_leaf_pid": 41112,
+        "former_wrapper_pid": 2988,
+        "former_session": 41289,
+        "both_processes_currently_absent": true,
+        "recovery": "named_warm_start_only; BFGS Hessian and accepted-step state not retained"
+      },
+      "old_v2_parameters": "not_saved_unknown",
+      "G1_and_held": "not_executed",
+      "latest_narrow_exception_revision": "unverified_WIP"
+    },
+    "history": {
+      "handoff": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\INTERFACE_HANDOFF.zh.md",
+        "bytes": 9245,
+        "sha256": "2964d4a8829cdb1ee0412c587b16f4f1a23c8d6b4915d90155b4df3ed1197809"
+      },
+      "partial_manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\PARTIAL_DELIVERY_MANIFEST.json",
+        "bytes": 7189,
+        "sha256": "31c2ed85dedc88d0ccbc01bd62300c37efa6312fd82c6367b853d608e4c43c85"
+      },
+      "independent_handoff": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\independent-review\\HANDOFF.zh.md",
+        "bytes": 2396,
+        "sha256": "bd2d921b3e2a5078c40599687a5fc083f987e86bf33577640ebb312b249b6a17"
+      },
+      "genuine_fit_to_held": "not_executed",
+      "latest_recipe": "not_independently_accepted",
+      "remaining": "compact native statistics, transition trace integration, batch throughput and actual byte envelope"
+    },
+    "transition_trace": {
+      "checkpoint": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\common-cloud-transition-trace\\PAUSE_STATE.json",
+        "bytes": 5225,
+        "sha256": "3b8173f3fbaf2e1020f5c6fe5a5f6895248c8fc267458f77bc1e93fec145c0c9"
+      },
+      "handoff": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\common-cloud-transition-trace\\PAUSE_HANDOFF.zh.md",
+        "bytes": 4198,
+        "sha256": "d3c9a52b18d20a37d72654c43e3154110b230b78eb725c6be1adf43608ddb3ae"
+      },
+      "candidate_integration": "not_accepted",
+      "complete_original_science_arrays": "preserved in existing golden and fresh-process evidence"
+    }
+  },
+  "final_matrix_on_resume": {
+    "participants": 13,
+    "requested_future_selections_per_K": 819,
+    "K": [
+      200,
+      800,
+      2000
+    ],
+    "new_methods": [
+      "G0",
+      "G1"
+    ],
+    "new_requested_score_cells": 4914,
+    "completed_external_four_method_anchor_cells": 9828,
+    "total_six_method_cells": 14742,
+    "new_source_programme": "13 person likelihood fits once,13 folds each other12; actual fits not started",
+    "H2_C68_scope": "small development connection only"
+  },
+  "next_actions_on_explicit_resume": [
+    "Read this checkpoint, actual handoffs and Git/source/process identities; do not relaunch solely from old session status.",
+    "Review latest private-AR1 domain/finite-score revision and diagnose C8 G0 precision loss using preserved returned/last-valid state; any continuation is a named warm start.",
+    "Finish source-only reference helper/test and complete plan/independent acceptance before executing13 person fits and13 source-only folds.",
+    "Close genuine fitted artifact -> full history -> typed save/replay; finish source-context, compact statistics, proposal recipe, lossless transition trace and batch evaluation.",
+    "Execute complete final4914 requested G0/G1 cells after those implementations are accepted; keep existing9828 anchors as cross-study diagnostics."
+  ]
 }

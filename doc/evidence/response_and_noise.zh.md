@@ -1,5 +1,11 @@
 # 响应模型、空间先验与噪声数值
 
+## 原保存C噪声的真实复用
+
+H1的K200/K800已由当前原source/C owner实际重新准入：分别200位/47正例/68570行，以及800位/188正例/171569＋115892行。原固定source均值、完整随机因子、均值误差、残差与噪声参数关系一致，source/noise/响应C新拟合均为0；两格保存关系和数值重放完成，各7项权限反控通过。
+
+完整执行165.46秒，峰值RSS1.15GB、整机CPU最高42.9%，数值线程2；原完整noise加载约6.26/5.97秒。该复用保原fixed-source-mean开发对照身份，新G0/G1由各自联合校准程序给出参数。原producer、独审、真实执行及canonical关系见[整合绑定](../assets/research_resume_20261012/saved_public_noise_integration.json)。
+
 ## 人群先验与字符变化的通用核心
 
 人群层直接消费每个人的测量likelihood，预测新人时把“人本来就不同”和“人群平均尚有估计误差”两组完整factor拼接。原个人posterior里的先验不再当作新测量；F-order到native C-order的列置换、绝对likelihood常数与每record观测范围明确保存。个人compact数据包在不同留人fold间只引用一次。

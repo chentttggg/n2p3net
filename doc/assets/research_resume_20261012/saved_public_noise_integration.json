@@ -1,0 +1,74 @@
+{
+  "schema": "n2p3_saved_public_noise_live_reuse_integration/1",
+  "status": "accepted_actual_two_C_joins_and_numeric_replay",
+  "scope": "original_H2_C68_fixed_mean_H1_K200_K800_development_baseline",
+  "canonical_source": {
+    "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\saved_public_noise_reuse.py",
+    "bytes": 16286,
+    "sha256": "79a37492008afecd66d5fcc533c5e13e60703755543ce26262a71e88ffba9702"
+  },
+  "candidate_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\saved-public-noise-reuse\\DELIVERY_MANIFEST.json",
+    "bytes": 9346,
+    "sha256": "2dd8ec3175088a9ab486470cee9bcadb5ae16c2d0a8474aa2f3df572a6d6c3f7"
+  },
+  "independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\saved-public-noise-reuse\\independent-review\\INDEPENDENT_REVIEW_MANIFEST.json",
+    "bytes": 1760,
+    "sha256": "53ba44e38d519cb6f7a585664e376274a7de88296ce37555a440f327ff2eea12"
+  },
+  "actual_terminal": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\saved-public-noise-reuse\\actual-join\\TERMINAL_BINDING.json",
+    "bytes": 5878,
+    "sha256": "aa2bec3fbb0ae12364a3a072a820da8c4cb51b9ee4a8aead487cf4e08e082f28"
+  },
+  "actual_result": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\saved-public-noise-reuse\\actual-join\\revision1\\RESULT.json",
+    "bytes": 17067,
+    "sha256": "c09cddeb17f7b51ea6c808e5e7236b6acf3102ceff44bd84fd987764236a550a"
+  },
+  "canonical_numeric_relation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\saved-public-noise-reuse\\actual-join\\ROOT_CANONICAL_RELATION.json",
+    "bytes": 470,
+    "sha256": "08bb17f9966c111c2a9b9c8435f7ee216d8b94bab104d8d152e960f309cc718f"
+  },
+  "OS_exit": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\saved-public-noise-reuse\\actual-join\\revision1\\OS_EXIT_RECEIPT.json",
+    "bytes": 899,
+    "sha256": "951b9bc90ce947dd198c1189bba73b3d3cc6974735d4d988c4815f2a1c8b34fc"
+  },
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\saved-public-noise-reuse\\actual-join\\cleanup.json",
+    "bytes": 4925,
+    "sha256": "383b9dd84e71a990e46824c25d3998005bc8ae73589ad568080f31efe973285c"
+  },
+  "root_source_review": "full candidate and frozen driver/revision inspected; two producer archives508 members independently byte-checked; canonical source identical to candidate",
+  "Ruff": "passed before pause",
+  "actual_fit_counts": {
+    "source": 0,
+    "noise": 0,
+    "response_C_update": 0
+  },
+  "held_raw_or_scoring_reads": 0,
+  "source_full_mean_factor_and_original_noise_ledger": "preserved",
+  "evidence_reuse": "original18+4 software controls and independent review retained; no suite rerun",
+  "actual_labels": {
+    "K200": {
+      "bits": 200,
+      "positive": 47,
+      "native_rows": [
+        68570
+      ]
+    },
+    "K800": {
+      "bits": 800,
+      "positive": 188,
+      "native_rows": [
+        171569,
+        115892
+      ]
+    }
+  },
+  "issuer_scope": "explicit SavedPublicCNoiseReuse; actual current source/C permissions required",
+  "G0_G1": "new joint calibration owner retains its distinct programme; this module is the old fixed-mean baseline"
+}

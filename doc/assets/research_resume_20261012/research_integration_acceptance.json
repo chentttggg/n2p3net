@@ -3362,5 +3362,10 @@
     "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\lean_confirmed_error_resolution.json",
     "bytes": 1188,
     "sha256": "b425a628f98eafc14c270e2a91b883151d6965e749e5d89d5a119013c9a2c795"
+  },
+  "saved_public_noise_integration": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\saved_public_noise_integration.json",
+    "bytes": 3382,
+    "sha256": "c265e0f4ab5b3f286b69d6cddbf3f10d71104eda79a4378163d2b0c1dda1f40a"
   }
 }
