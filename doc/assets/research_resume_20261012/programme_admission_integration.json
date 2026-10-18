@@ -1,0 +1,97 @@
+{
+  "schema": "n2p3_canonical_C_held_union_admission_integration/1",
+  "status": "accepted",
+  "scope": "actual_C_and_independent_held_EEG_byte_union_before_source_exclusion_and_one_held_parameter_graph",
+  "canonical_source": {
+    "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\brainsync_programme_admission.py",
+    "bytes": 12371,
+    "sha256": "3d38daa7498e6c20a76915c8a6fd83463a7583f8cb9f77090c0a34ba17e6dd4a"
+  },
+  "byte_identical_accepted_source": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\programme-union-candidate\\brainsync_programme_admission.py",
+    "bytes": 12371,
+    "sha256": "3d38daa7498e6c20a76915c8a6fd83463a7583f8cb9f77090c0a34ba17e6dd4a"
+  },
+  "manifest": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\programme-union-candidate\\DELIVERY_MANIFEST.json",
+    "bytes": 5270,
+    "sha256": "d3ffd0f6f091b52708107e37d66a2be5af5e338487d9bbf97fca37bab162021c"
+  },
+  "independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\programme-union-candidate\\INDEPENDENT_PROGRAMME_REVIEW.zh.md",
+    "bytes": 4191,
+    "sha256": "fd9f4e9d2e77b0382ffad1d4c769fc52b03d09802beecdc6450d8e7df7b91d76"
+  },
+  "canonical_join": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-source-admission-integration\\CANONICAL_PROGRAMME_IMPORT.json",
+    "bytes": 881,
+    "sha256": "4664454cd50a56f71f5fd8a06ad6d94ec27afdf0b848551de436111bbc886db8"
+  },
+  "ruff": {
+    "exit_code": 0,
+    "log": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-source-admission-integration\\PROGRAMME_RUFF.txt",
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    }
+  },
+  "original_execution_evidence": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\programme-union-candidate\\PROGRAMME_RESULT.json",
+      "bytes": 12355,
+      "sha256": "390403ecb4df77dffee106485d438f4418db7ea3d7bbfb5e257c39730f41d2c6"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\programme-union-candidate\\COLD_RELATION_RESULT.json",
+      "bytes": 2275,
+      "sha256": "700c2d37cfa6c59c3e1fdb2bd513cbe520d7123161b34d8a1edf852becb95018"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\programme-union-candidate\\INDEPENDENT_EEG_RELATION_RESULT.json",
+      "bytes": 1986,
+      "sha256": "1bd9c7d262f3f3b28da0c633f0cf263d7587da12eaafc5563518e394465ad0c6"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\programme-union-candidate\\INDEPENDENT_PROGRAMME_REVIEW_RESULT.json",
+      "bytes": 1734,
+      "sha256": "08ffcefebc17b340143f1404626143ef91af751922dcd7b9a980bf09da03d1e9"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\programme-union-candidate\\PROGRAMME_BINDING.json",
+      "bytes": 6783,
+      "sha256": "eb158b0c8156bca4546ef2829a24ac4af7c31a44478bd361937f6b324c51a2c3"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\programme-union-candidate\\HELD_NUMERIC_BINDING.json",
+      "bytes": 5352,
+      "sha256": "17010301bb9a8c08530d7075340c001b9d68e0a4b3b18f2b7599021d029147c3"
+    }
+  ],
+  "producer_roles": {
+    "original_live_source_C_held_union": "ab57711_original_source_EEG_reissued10_ranges_actual_run",
+    "cold_inner_held_outer_union_relation": "96a7_original_refinement",
+    "current_live_EEG_byte_mutual_exclusion": "3d38_final_gate_original_positive_and_two_narrow_negative_controls"
+  },
+  "original_execution_scope": {
+    "actual_union_programme_seconds": 24.631,
+    "source_ranges": 10,
+    "source_read_support": [
+      0,
+      19947
+    ],
+    "C_label_count": 3,
+    "held_completed_flashes": 45,
+    "original_held_prefix_rows": 250,
+    "source_fits": 0,
+    "noise_fits": 0,
+    "large_model_copies": 0,
+    "new_full_learner_prefix_2500": "separate_programme_and_execution"
+  },
+  "cold_role": "complete_numeric_relation_only; no_raw_C_source_or_programme_capability",
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\programme-union-candidate\\cleanup.json",
+    "bytes": 1525,
+    "sha256": "47f4c4cc5026dc003694ef4d6cb48b95a5a1e1b6a73d38110e9da6869781fb3c"
+  },
+  "canonical_migration_cleanup": "not_applicable_byte_copy_and_B_import_create_no_generated_build_or_parameter_copy"
+}

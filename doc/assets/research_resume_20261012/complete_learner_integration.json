@@ -1,0 +1,168 @@
+{
+  "schema": "n2p3_complete_source_C_noise_response_C_held45_integration/1",
+  "status": "accepted",
+  "scope": "actual public source and synthetic BrainSync C/held complete software programme",
+  "canonical_sources": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\calibration_physical_response.py",
+      "bytes": 13465,
+      "sha256": "5b0fa3b0c51994a11b69d7876f819765356070aae51b82ce7874d98883ce3a6b"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\noise_reuse_relation.py",
+      "bytes": 12190,
+      "sha256": "5f6765278bb8640ff2d395ff8300ccdfccb0a3010f64dddddb217c8e22880777"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\full_learner_prediction.py",
+      "bytes": 5047,
+      "sha256": "127b7f75b63c6ece4fdc6e6a0111e20771bb62d3647f7ef5818f30bdec179f26"
+    }
+  ],
+  "accepted_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\DELIVERY_MANIFEST.json",
+    "bytes": 9529,
+    "sha256": "3b5d5c86e86feb3d23d9e27aaa9dfdc16cb9fd572406c06b9d1edd9877c1a14b"
+  },
+  "canonical_join": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-complete-learner-integration\\CANONICAL_JOIN.json",
+    "bytes": 2832,
+    "sha256": "4aa038e67b8192a916cdb330457a9bbd26264e47fb863396179d8048ad44c8cc"
+  },
+  "independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\independent-review\\INDEPENDENT_REVIEW.md",
+    "bytes": 15527,
+    "sha256": "e2bcb1914856b54be7ce5b4cb1778ebe4d4e42efa40a92ed097360a92ffab32b"
+  },
+  "actual": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\COMPLETE_PROGRAMME_RESULT.json",
+    "sha256": "d04ac4a57bd006dde9cf791f92b1c542bfb0047f914c30a0bf1209943b4b1927",
+    "bytes": 14334
+  },
+  "independent_cold": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\COLD_NUMERIC_REPLAY.json",
+    "sha256": "253f314db1323cb51b291ec66b1cac603e3c4a3a14d912aec9af0ee4c18578dc",
+    "bytes": 2339
+  },
+  "fresh_raw_parent": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\RAW_PARENT_REPLAY.json",
+    "sha256": "0f4c9a6fb249d28cd49eba0d5130997b26bb873a4cb7376e47241b4380268c2e",
+    "bytes": 3349
+  },
+  "independent_artifact_audit": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\independent-review\\ARTIFACT_RELATIONS.json",
+    "sha256": "ad75132c6f075af7e0c03b8073164a18d81da9d86d4c739c2dcd0f039d786fa0",
+    "bytes": 1501
+  },
+  "mathematical_oracles": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\CHECK_C_POSTERIOR_EQUIVALENCE.py",
+      "sha256": "f576dbe04ba291cf8a76e10631270572b0cdd3c1e3da0f889b3b66ee490b1340",
+      "bytes": 7885
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\ABSOLUTE_C_POSTERIOR_EQUIVALENCE.json",
+      "sha256": "e6270d9b0ae6b079f079acf371f4418f92acb7e175a24174f476a9bedce37ee7",
+      "bytes": 3444
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\CHECK_NOISE_CALLBACK_GRAPH.py",
+      "sha256": "25153c96bf35bae600109f67d531a26fd42d1ba2f806f2b7c256d82e469d1656",
+      "bytes": 3836
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\NOISE_CALLBACK_GRAPH_COUNTEREXAMPLE.json",
+      "sha256": "eb103e5a261868f428a66e3c9e035f24f6c29197b621d3d647b32f383d664d73",
+      "bytes": 909
+    }
+  ],
+  "accepted_numeric_bundle": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\NUMERIC_BUNDLE.json",
+    "sha256": "ae316ac86949bb2926e0822dce78ef723a00e6d454570ebfc3db70e89549676a",
+    "bytes": 8403
+  },
+  "predeclared_plan": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\PROGRAMME_PLAN.json",
+    "sha256": "eca7e94d79641b68280b110a50699f102759976ba2fd843023baaf7a08611a8a",
+    "bytes": 2573
+  },
+  "joint": "J_E(q)=pi(q)*integral phi(u)*L_C(u)*L_H,E(q,u) du, E=P,F",
+  "C_scope": "actual C bits and C shape variables; no held-q assignment; same full C at P and F",
+  "acceptance": {
+    "complete_positive_branches": 324,
+    "all_nine_candidates": true,
+    "held_requested_completed_denominator": 45,
+    "held_expected_observed_counts": [
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5
+    ],
+    "physical_drift_measures": 2,
+    "noise_startups": 3,
+    "source_prior_count": 1,
+    "response_C_update_count": 1,
+    "source_fits": 0,
+    "noise_parameter_refits": 0,
+    "source_rank": 112,
+    "compact_source_programme_bytes": 5355,
+    "new_large_source_model_copies": 0,
+    "worktrees_created": 0,
+    "actual_wall_seconds": 204.3664043000026,
+    "cold_wall_seconds": 11.612981400001445,
+    "fresh_parent_wall_seconds": 278.029535099995,
+    "original_producer_parameters_and_artifacts_preserved": true
+  },
+  "replay": {
+    "cold_bitexact": true,
+    "fresh_parent_bitexact": true,
+    "all_three_prepared_identities_bitexact": true,
+    "canonical_full_run_repeated": false
+  },
+  "held_prefix_rows": [
+    2500,
+    0
+  ],
+  "held_full_rows": [
+    7625,
+    9875
+  ],
+  "C_full_rows": 1375,
+  "held_exposure_counts": {
+    "completed": 45,
+    "unknown_interrupted": 1
+  },
+  "canonical_dependencies": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\programme_admission_integration.json",
+      "bytes": 5061,
+      "sha256": "68d343d9156f84f61b67ffac9f8f2b5a14752b6d149acbbf1884d5416449ec85"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\marginal_response_integration.json",
+      "bytes": 5927,
+      "sha256": "541f9d1825f6e6108e843212441a8a7b722f91e2894ea5f7fe4256c1fc3d391e"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\source_admission_integration.json",
+      "bytes": 7342,
+      "sha256": "8b982d258469870ab6c348654d4e82a43c2da8eec55a87f534b15b68cceab946"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\target_noise_integration.json",
+      "bytes": 6302,
+      "sha256": "69bb31ad6ad2d8d00e4c6cfa7c33507473a878e7e384386f6d241c1ada530c37"
+    }
+  ],
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-complete-learner-integration\\CLEANUP_RECEIPT.json",
+    "bytes": 791,
+    "sha256": "7fe3b5ce08954ceda5bb9c63ac1c69a7ccf0f5d1745acce6a0416ca3b6f356d0"
+  },
+  "next_scientific_use": "predeclare full45 scoring law and matched complete-learner public/adult evaluation"
+}

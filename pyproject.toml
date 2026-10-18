@@ -44,3 +44,10 @@ select = ["E", "F", "I", "N", "W", "UP", "B"]
 # Preserve conventional mathematical tensor names (X, H, W, etc.) used throughout
 # the EEG model equations and implementations.
 ignore = ["E501", "N803", "N806", "N812"]
+
+[tool.ruff.lint.per-file-ignores]
+# Preserve numerical producer bytes used by saved descriptors and replay.
+"src/research/exact_common_marginal.py" = ["I001"]
+"src/research/exact_template_response_consumer.py" = ["I001"]
+"src/research/memo_prepared_physical.py" = ["I001"]
+"src/research/physical_source_templates.py" = ["I001"]

@@ -1,0 +1,128 @@
+{
+  "schema": "n2p3_exact_common_marginal_canonical_integration/1",
+  "status": "accepted",
+  "scope": "exact Gaussian marginal plus general physical template acceleration and complete dependency codec",
+  "canonical_sources": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\exact_common_marginal.py",
+      "bytes": 9137,
+      "sha256": "e1307ea0bed9a5e97b8778956ab91c30ae25d2c70d44348d1c79f56fdd691c82"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\exact_template_response_consumer.py",
+      "bytes": 14803,
+      "sha256": "7e4d714e583ab43543f4586597e9aa8768c1f094b069e0c9c8867e13dd74e6d5"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\fast_exact_surd.py",
+      "bytes": 2062,
+      "sha256": "af4f29b411ff41f4ce3f66650f90156afdecfa5ca623e9714a06c44caef32127"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\fast_marginal_template.py",
+      "bytes": 3066,
+      "sha256": "86dd850519b244df4304191e529137022f02dfd093ad509efc501ae54ec0ab78"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\memo_prepared_physical.py",
+      "bytes": 8255,
+      "sha256": "edfd19663690f8d893fb109a73fa177ead77dbb6b12e885edae34e6f25cd99c0"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\physical_source_templates.py",
+      "bytes": 9964,
+      "sha256": "9465ef502929ca2d5e2dd836cadce9f9c1d3c8071b31ab4b8d0481a4372a35a0"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\marginal_response_model.py",
+      "bytes": 9499,
+      "sha256": "b36ce066daf746d898a9afa975e30bdff602733a3de56e635189aef460afde74"
+    }
+  ],
+  "accepted_candidate": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\canonical-candidate\\MANIFEST.json",
+    "bytes": 20543,
+    "sha256": "2292cb302de239d0361544329a64254826991a5598b0ee75b886eb0a6798145f"
+  },
+  "canonical_join": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-complete-learner-integration\\CANONICAL_JOIN.json",
+    "bytes": 2832,
+    "sha256": "4aa038e67b8192a916cdb330457a9bbd26264e47fb863396179d8048ad44c8cc"
+  },
+  "focused_validation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-marginal-integration\\VALIDATION.json",
+    "bytes": 5636,
+    "sha256": "5898d27b52d0f1f7a1f212445d447d0e1b32b15029900dbdc445a14d3e7b44d0"
+  },
+  "mathematical_reviews": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\independent-review\\EXACT_COMMON_MARGINAL_REVIEW.md",
+      "bytes": 7156,
+      "sha256": "2635f197c2f9c2d28fe1fbc046fd36d618a1cb7ebbde17cfac9addabaa0f14bb"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\independent-review\\INTEGER_SURD_REVIEW.md",
+      "bytes": 4309,
+      "sha256": "04c2e6d03dc53b2b38590ba6537d375160702ceec27d96682909e659bd245f57"
+    }
+  ],
+  "codec_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\canonical-candidate\\INDEPENDENT_CODEC_REVIEW.md",
+    "bytes": 7879,
+    "sha256": "392c4bba418ffd7c8242f8be6d0f193023146e3b8e9a8fc39b4004289fb62992"
+  },
+  "generic_boundary_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\canonical-candidate\\INDEPENDENT_GENERIC_BOUNDARY_REVIEW.md",
+    "bytes": 7620,
+    "sha256": "899d130dd940aa86b8bd8fb3318a908bc477052fe8644026922250537b47a246"
+  },
+  "law": {
+    "original_source_latents": 496,
+    "common_image_rank": 64,
+    "conditional_latents": 48,
+    "retained_rank": 112,
+    "exact_unobserved_Gaussian_integral": 1,
+    "positive_pivots_retained": "all; no singular-value or variance cutoff",
+    "zero_native_rows": "exact generic fallback and explicit temporal zero images",
+    "missing_optional_difference_hook": "original PreparedPhysicalSegment fallback"
+  },
+  "original_full45_comparison": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\FULL45_CHART_COMPARISON.json",
+    "bytes": 1411,
+    "sha256": "dd1e354a49da95fc7bf1ffc4dd3ff6ee4e5f41ac09c9153715159e34967172f2"
+  },
+  "root_full45_artifact_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\ROOT_FULL45_RESULT_REVIEW.json",
+    "bytes": 659,
+    "sha256": "c19ce4c4af7397bd6642a9815917ad15a2fd8681c21d0041e38fe2f99e7bcedb"
+  },
+  "original_execution_manifests": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\FULL45_544_EXECUTION_MANIFEST.json",
+      "bytes": 6823,
+      "sha256": "809cb1e579ffcb5713028a25b665a0631624ece83a360963e6703de8bf7334e4"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\FULL45_112_EXECUTION_MANIFEST.json",
+      "bytes": 9967,
+      "sha256": "940c4e3d79bfcfad70785734f655645bded252745dab435c5321bbab9aa170ab"
+    }
+  ],
+  "comparison_scope": "held-only synthetic full45; all162 branch P/F integrals and nine probabilities identical in this fixture",
+  "comparison": {
+    "seconds": [
+      253.65121640000143,
+      137.92145710000477
+    ],
+    "peak_working_set_bytes": [
+      2927976448,
+      884031488
+    ]
+  },
+  "producer_identity_policy": "original runs keep original source snapshots; current canonical migration is a byte relation, not a new run",
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-complete-learner-integration\\CLEANUP_RECEIPT.json",
+    "bytes": 791,
+    "sha256": "7fe3b5ce08954ceda5bb9c63ac1c69a7ccf0f5d1745acce6a0416ca3b6f356d0"
+  }
+}

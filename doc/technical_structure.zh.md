@@ -12,6 +12,12 @@
 
 `research.brainsync_source_admission`用显式`FrozenArtifactReference/HuebnerC68SourceConfiguration`选择原entry、native target、reader和拟合声明，沿原catalog/cohort/data owner重新准入C68。BrainSync目标由canonical issuer的实际EEG文件和原identity table构造；source数据、目标和输运关系各持live注册。原source/native几何及排除目标保留，新七导关系由B09/conditional graph承接；compact binding引用完整model依赖，cold只重建数值。该入口的单录制目标范围和实际原source/marker验证见[源准入整合](assets/research_resume_20261012/source_admission_integration.json)。
 
+`research.brainsync_programme_admission`把实际C与held接入同一声明scope，分别保C raw/label与held权限，核参与者、几何及全部EEG文件字节互斥；source排除先消费两者的真实EEG roster并集，再由原held入口构造同一参数图。programme/transport持独立live注册，compact关系连到原完整model和held binding，cold核内外关系并恢复数值。来源与范围见[联合准入整合](assets/research_resume_20261012/programme_admission_integration.json)。
+
+`research.exact_common_marginal`对实际source因子图像的integer Gram作exact分解，保全部正pivot，将共同source的不可见Gaussian方向精确积分。`physical_source_templates/exact_template_response_consumer`复用实际物理时间模板及共享latent，非可分泛函、零空间映射走exact通用入口；`fast_exact_surd/fast_marginal_template`保持正确舍入，`memo_prepared_physical`在缺可选差分hook时回原Prepared。`transfer.marginal_response_model`显式选择原或边缘化law，保存完整模型闭包或带SHA的外部依赖。原544维默认及原执行身份保持；数学、112维实现和七项边界回归见[边缘化整合](assets/research_resume_20261012/marginal_response_integration.json)。
+
+`research.calibration_physical_response`只消费实际C标签和C形状变量，C完整观测同时进入P/F；`noise_reuse_relation`先核原C-noise父链，再核新旧实际均值、误差、残差和完整参数law，保原拟合身份。`full_learner_prediction`连接唯一programme/C/noise注册、共同source engine及完整C/held段，沿原grouped publisher发布九候选结果。C与held独立漂移，同一held录制跨噪声段共享漂移；响应C似然进入一次。完整软件程序、独立冷读与原始父链逐bit恢复见[完整学习程序整合](assets/research_resume_20261012/complete_learner_integration.json)。
+
 空间后验现由`spatial_signal_prior/6`持有原物理A/D/Z因子及同次source QR/noise生成凭证，exact结构null取因子乘积，数值后验和BLUE沿原算法。`SpatialObservation/3`保存原Q、归一map、scale/volume/诊断，load集中核关系并恢复原态；general可识别reference-free效应也进入同一个source输运入口。
 
 B09结构识别先对每record原joint `[Z D]`取exact rowspace、消其独立nuisance，再stream空间/时间约束到shared beta canonical rowspace；普通fit/load/BLUE按compact结构准入。`transfer.spatial_programme`连接原Continuous baseline噪声、真实source/C raw response refit、BLUE/common effect、source group与target OOF/ensemble。保存模型持有immutable原producer SHA/digest，current consumer另记，`dataclass.replace`与OOF绑定保原身份；root组合旧包零fit/QR重放通过。

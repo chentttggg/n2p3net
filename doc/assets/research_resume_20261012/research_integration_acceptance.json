@@ -3258,5 +3258,32 @@
     },
     "scope": "explicit_original_Huebner_C68_source_live_admission_and_one_BrainSync_record_transport_target",
     "current_execution_state": "pause_checkpoint_current.json#/general_inference"
+  },
+  "brainsync_C_held_programme_admission": {
+    "binding": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\programme_admission_integration.json",
+      "bytes": 5061,
+      "sha256": "68d343d9156f84f61b67ffac9f8f2b5a14752b6d149acbbf1884d5416449ec85"
+    },
+    "scope": "actual C/held EEG union source exclusion",
+    "current_execution_state": "pause_checkpoint_current.json#/general_inference"
+  },
+  "exact_common_marginal_response": {
+    "binding": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\marginal_response_integration.json",
+      "bytes": 5927,
+      "sha256": "541f9d1825f6e6108e843212441a8a7b722f91e2894ea5f7fe4256c1fc3d391e"
+    },
+    "scope": "exact Gaussian marginal plus general physical template acceleration and complete dependency codec",
+    "current_execution_state": "pause_checkpoint_current.json#/general_inference"
+  },
+  "complete_source_C_held_learner": {
+    "binding": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\complete_learner_integration.json",
+      "bytes": 7258,
+      "sha256": "72d4033006eccb11c69d77fef834636648ae0c0b4cee3f2295da36bf7da2c11d"
+    },
+    "scope": "actual public source and synthetic BrainSync C/held complete software programme",
+    "current_execution_state": "pause_checkpoint_current.json#/general_inference"
   }
 }

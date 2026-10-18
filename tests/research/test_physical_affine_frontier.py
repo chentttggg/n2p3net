@@ -129,3 +129,22 @@ def test_shared_drift_uses_exact_joint_time_rank_and_unique_noise_segments():
         'noise_segment_id': records[0][0].noise_segment_declaration['noise_segment_id']}
     with pytest.raises(ValueError, match='one declared noise segment'):
         GroupedPhysicalTarget(records)
+
+
+def test_memo_preserves_legal_affine_callback_without_optional_difference():
+    from research.memo_prepared_physical import MemoPreparedPhysicalSegment
+
+    original = _segment([0., 1., 0.], (0, 1, 2), (0, 1, 1), 0,
+        _group(), _rosters(), 'only_affine')
+    options = {'block_rows': 1, 'maximum_cache_bytes': 4_000_000}
+    reference = PreparedPhysicalSegment(original, (1, 3), **options)
+    memo = MemoPreparedPhysicalSegment(original, (1, 3), **options)
+    for stop in (1, 3):
+        actual, expected = memo.endpoints[stop], reference.endpoints[stop]
+        np.testing.assert_array_equal(actual.common, expected.common)
+        np.testing.assert_array_equal(memo.flat_roots[stop], reference.flat_roots[stop])
+        assert actual.log_normalizer == expected.log_normalizer
+        assert len(actual.factors) == len(expected.factors)
+        for actual_factor, expected_factor in zip(actual.factors, expected.factors, strict=True):
+            assert actual_factor.scope == expected_factor.scope
+            np.testing.assert_array_equal(actual_factor.coefficients, expected_factor.coefficients)

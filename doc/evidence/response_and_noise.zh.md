@@ -12,6 +12,25 @@ participant、原EEG字节与whole-study排除现由同一source owner处理，�
 
 规范入口要求显式artifact路径和期待SHA，原marker/prefix谓词与数据owner继续核其科学含义。新目标使用canonical合成EDF/BIDS issuer的真实七导几何、identity table和EEG字节；原31导native入口继续拒绝几何替代，新关系引用原完整model，compact绑定约5.4KB，无41MB新副本。七项排除/权限反例、实际target/cold配置验证及canonical正常namespace核验分别保存；cold参数不增加live权限。原29秒source实读证据复用，没有重新拟合，来源见[源准入整合](../assets/research_resume_20261012/source_admission_integration.json)。
 
+C与held联合准入另以实际C3及新45次held录制执行：原source C68读取10次，完整24.63秒，拟合0。两者的实际EEG字节并集交原source排除；参与者、几何和同一声明scope共同核验。独审补齐了主EEG及伴随EEG文件的重复消费检查，防止不同session名把同一文件当成两份录制；原执行正例的字节集合已互斥，新窄反例直接区分旧错新对。保存关系另核inner held、outer union和原source一致，cold保持数值角色。原执行P250、cold修订与最终字节检查各保其producer，后续完整C-response/P2500程序单独执行，证据见[联合准入整合](../assets/research_resume_20261012/programme_admission_integration.json)。
+
+## 精确Gaussian边缘化与完整任务开销
+
+实际source的496个标准Gaussian潜变量经共同观测映射后，只有64个方向参与目标泛函；其余432个方向的正规密度积分恰为1。对实际因子图像的integer Gram作exact、无开方PSD分解，保留每个严格正pivot，再加48个独立条件方向，得到112维同一预测law。直觉上，它先算清“哪些随机方向根本照不到传感器”，再把这些方向解析积分；弱而可见的方向仍保留，1e−600正方差反例也通过。
+
+模板与正确舍入加速保同一泛函。零M行、全零M和非可分泛函有exact通用路径；callback只提供affine时保原Prepared行为。七个正式边界案例通过，独审核数学、舍入、codec和泛用边界。保存描述符引用原完整模型并核SHA，原source时钟1000Hz与目标250Hz分别保留。
+
+同一合成held-only完整45闪烁任务的544/112两程序分别耗时253.65/137.92秒，峰working set为2.93/0.884 GB；全部162个分支的P/F绝对积分及九候选概率在该fixture逐bit相同。两程序各有独立进程冷读，原producer快照保留。数学等价依据exact边缘化，计时与逐bit结论限于这份完整任务；来源见[边缘化整合](../assets/research_resume_20261012/marginal_response_integration.json)。
+
+## 一次响应C更新到完整九选一
+
+完整软件程序已连接实际公开source、合成BrainSync校准C、冻结七导C-noise、一次响应C更新，以及独立held完整45闪烁。每个端点使用
+`J_E(q)=π(q)∫φ(u)L_C(u)L_H,E(q,u)du`，`E=P,F`：共同source只出现一次，C标签只约束C自身响应，全部九个held候选继续参与。C完整1375行同时进入P/F；held预声明prefix为2500/0行、full为7625/9875行。两个录制各自漂移，held两个噪声段共享其物理漂移，三段各保独立noise startup。
+
+两种C形状×两种held形状×九种未知中断身份×九候选，共324个完整分支；每候选expected/observed均5次，45次completed及1次未知中断曝光全部保留。独立逐标量字典oracle核544项，最大差约2.48e−17，位于原误差界内。原noise参数和身份复用，source/noise新拟合均0，响应C更新计数1。
+
+实际完整运行204.37秒、峰working set1.10 GB；独立冷恢复11.61秒，fresh原始输入父链278.03秒。三份Prepared身份、324分支P/F积分与发布关系逐bit恢复，六项live及两项cold权限反例通过。原始公开source与合成C/held构成此次软件证据；下一效能出口按冻结完整学习程序进行公共配对与成人九选一评价。完整C链和上节held-only计时属于不同工作量，来源见[完整学习程序整合](../assets/research_resume_20261012/complete_learner_integration.json)。
+
 ## 共享物理漂移与完整候选积分
 
 噪声分段和物理漂移分组分别声明。同一录制的噪声可以在暂停边界独立启动，而电压基线与慢漂移继续共享；各段likelihood先相乘，再对同一组物理参数积分一次，共同source及每个离散先验也各进入一次。独立四行绝对积分反例中，错误逐段独立漂移使完整九候选logp变化约0.08659；两段各一行在不同exact时刻联合识别基线和斜率，其积分体积为1/10。同一exact时刻的rank1数据由结构证据拒绝，浮点QR负责已识别空间内的数值坐标。
