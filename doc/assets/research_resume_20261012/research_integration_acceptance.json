@@ -3249,5 +3249,14 @@
     },
     "scope": "exact_query_mean_and_complete_native_seven_channel_C_noise_operand_and_original_parameter_cold_read",
     "current_execution_state": "pause_checkpoint_current.json#/general_inference"
+  },
+  "brainsync_source_admission": {
+    "binding": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\source_admission_integration.json",
+      "bytes": 7342,
+      "sha256": "8b982d258469870ab6c348654d4e82a43c2da8eec55a87f534b15b68cceab946"
+    },
+    "scope": "explicit_original_Huebner_C68_source_live_admission_and_one_BrainSync_record_transport_target",
+    "current_execution_state": "pause_checkpoint_current.json#/general_inference"
   }
 }

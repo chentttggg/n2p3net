@@ -10,6 +10,8 @@
 
 `transfer.source_response_transport`沿实际B09电极差构造可逆chart，将原source Gaussian与声明的proper剩余条件law连接；`research.conditional_response_graph`保原均值/因子及exact命名关系。`research.numeric_response_consumer`先合并实际泛函或state-reference差，再输出共享source/conditional潜变量图像及逐项误差。`transfer.transport_graph_model`保存完整原source、B09、completion与dictionary，独立冷读重建同一关系。source的`assert_target_exclusion`集中participant、原输入字节及整库排除；原native `assert_target`继续核原生几何，实际transport/data权限由新caller分别连接。来源见[源几何整合](assets/research_resume_20261012/source_transport_integration.json)。
 
+`research.brainsync_source_admission`用显式`FrozenArtifactReference/HuebnerC68SourceConfiguration`选择原entry、native target、reader和拟合声明，沿原catalog/cohort/data owner重新准入C68。BrainSync目标由canonical issuer的实际EEG文件和原identity table构造；source数据、目标和输运关系各持live注册。原source/native几何及排除目标保留，新七导关系由B09/conditional graph承接；compact binding引用完整model依赖，cold只重建数值。该入口的单录制目标范围和实际原source/marker验证见[源准入整合](assets/research_resume_20261012/source_admission_integration.json)。
+
 空间后验现由`spatial_signal_prior/6`持有原物理A/D/Z因子及同次source QR/noise生成凭证，exact结构null取因子乘积，数值后验和BLUE沿原算法。`SpatialObservation/3`保存原Q、归一map、scale/volume/诊断，load集中核关系并恢复原态；general可识别reference-free效应也进入同一个source输运入口。
 
 B09结构识别先对每record原joint `[Z D]`取exact rowspace、消其独立nuisance，再stream空间/时间约束到shared beta canonical rowspace；普通fit/load/BLUE按compact结构准入。`transfer.spatial_programme`连接原Continuous baseline噪声、真实source/C raw response refit、BLUE/common effect、source group与target OOF/ensemble。保存模型持有immutable原producer SHA/digest，current consumer另记，`dataclass.replace`与OOF绑定保原身份；root组合旧包零fit/QR重放通过。

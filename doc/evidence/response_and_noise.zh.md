@@ -8,6 +8,10 @@
 
 participant、原EEG字节与whole-study排除现由同一source owner处理，原native几何检查继续保留。实际原保存源的12项metadata控制验证了独立target、同participant、原source字节及整库策略；fresh source-data准入和raw/C权限分别由各自live issuer提供。
 
+原Huebner participant2的C68已由原registered factory和catalog/data owner实际重新准入：20次source范围读取均在原`[0,19947)`内，68个onset/label及实际数组一致。旧ZIP中的213845字节marker与新提取文件逐byte相同；两套声明和三个实际reader/issuer关系复现原拟合prefix，唯一具名变化是声明aggregate `target_contract.source_sha256`。原source codec、模型、fit stage及原排除目标保持；新public data准入单独绑定。
+
+规范入口要求显式artifact路径和期待SHA，原marker/prefix谓词与数据owner继续核其科学含义。新目标使用canonical合成EDF/BIDS issuer的真实七导几何、identity table和EEG字节；原31导native入口继续拒绝几何替代，新关系引用原完整model，compact绑定约5.4KB，无41MB新副本。七项排除/权限反例、实际target/cold配置验证及canonical正常namespace核验分别保存；cold参数不增加live权限。原29秒source实读证据复用，没有重新拟合，来源见[源准入整合](../assets/research_resume_20261012/source_admission_integration.json)。
+
 ## 共享物理漂移与完整候选积分
 
 噪声分段和物理漂移分组分别声明。同一录制的噪声可以在暂停边界独立启动，而电压基线与慢漂移继续共享；各段likelihood先相乘，再对同一组物理参数积分一次，共同source及每个离散先验也各进入一次。独立四行绝对积分反例中，错误逐段独立漂移使完整九候选logp变化约0.08659；两段各一行在不同exact时刻联合识别基线和斜率，其积分体积为1/10。同一exact时刻的rank1数据由结构证据拒绝，浮点QR负责已识别空间内的数值坐标。

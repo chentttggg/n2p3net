@@ -1,0 +1,153 @@
+{
+  "schema": "n2p3_canonical_brainsync_source_admission_integration/1",
+  "status": "accepted",
+  "scope": "explicit_original_Huebner_C68_source_live_admission_and_one_BrainSync_record_transport_target",
+  "integration_base_head": "e1fc208",
+  "canonical_source": {
+    "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\brainsync_source_admission.py",
+    "bytes": 24346,
+    "sha256": "d272d1fb478836c161c95267aef180c903fe8155aa842dc9f4ef4b31f9eb715c"
+  },
+  "byte_identical_candidate": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\canonical-candidate\\brainsync_source_admission.py",
+    "bytes": 24346,
+    "sha256": "d272d1fb478836c161c95267aef180c903fe8155aa842dc9f4ef4b31f9eb715c"
+  },
+  "candidate_manifest": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\canonical-candidate\\DELIVERY_MANIFEST.json",
+    "bytes": 2340,
+    "sha256": "6d12ed47e6c9222ccc03ad75bc05716642bc1ddd069fdc22ea9c744197cc4d06"
+  },
+  "original_source_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\DELIVERY_MANIFEST.json",
+    "bytes": 16427,
+    "sha256": "6c66f045d119dfc9f6aac8b138c7f6606a982b90d40e4b6f11c2feef6b8e4b85"
+  },
+  "original_actual_source_target_execution": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\ACTUAL_SOURCE_TARGET_RESULT.json",
+    "bytes": 42517,
+    "sha256": "c23d412c04ab7883801523b197dec5f85bf30ad2bf2a88bfd2f49be64e2382b8"
+  },
+  "original_compact_numeric_binding": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\ACTUAL_TRANSPORT_TARGET_BINDING.json",
+    "bytes": 5352,
+    "sha256": "a2c642f6ed2bb0c8872c2f59d832c4cf336ef95c85cef7f782c3a96996856795"
+  },
+  "original_source_independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\INDEPENDENT_SOURCE_ADMISSION_REVIEW.md",
+    "bytes": 7598,
+    "sha256": "e5e6c385b7f07fdca06599c8fdedf7f87b747d30fb4a13074b851b18154f9efa"
+  },
+  "configuration_independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\INDEPENDENT_SOURCE_ADMISSION_CONFIGURATION_REVIEW.md",
+    "bytes": 10457,
+    "sha256": "866bf813964112af163730291209624c1d8b57d586498a5d6a510bb636176f17"
+  },
+  "review_history": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\CONFIGURATION_REVIEW_EXTENSION_HISTORY.zip",
+    "bytes": 10354,
+    "sha256": "38cba41f6f0ed6e118a86a72f8f8450c3579006e68504dd32f8f4cc0b85ac163"
+  },
+  "review_history_binding": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\REVIEW_HISTORY_BINDING.json",
+    "bytes": 1353,
+    "sha256": "6151d63bb1f2113a9911f46ee32e62cc368607a394821c5e4bbbd464d459ca49"
+  },
+  "configuration_inputs": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\canonical-candidate\\CONFIGURED_INPUTS.json",
+    "bytes": 3269,
+    "sha256": "1a4d7218d2d814d4f7f8e5926929135f63cadc9cb02bb8fd1a160093d7723a69"
+  },
+  "configuration_actual_target_cold_probe": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\canonical-candidate\\CONFIGURATION_RELATION.json",
+    "bytes": 3946,
+    "sha256": "86f7d390f164674a5be414d60fe5dd4a4e031a354ca528f78c4999e222626ace"
+  },
+  "configuration_final_source_relation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\canonical-candidate\\CORE_SOURCE_RELATION.json",
+    "bytes": 985,
+    "sha256": "a3455e2c65bbf85a5332e78f6c3e530efd7623d729045cfb8c57e340b1dfd96d"
+  },
+  "configuration_namespace_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\canonical-candidate\\INDEPENDENT_CONFIGURATION_REVIEW_RESULT.json",
+    "bytes": 1512,
+    "sha256": "515fb58bac8c0d1b74da2281fccbbbab5ea9f589c11ca42705fe0cbed965f77c"
+  },
+  "canonical_import": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-source-admission-integration\\CANONICAL_IMPORT.json",
+    "bytes": 902,
+    "sha256": "a12d2031c9e71bfb0990aa3d059f9baf83d3d011dbe422fad7fedf47e056d57e"
+  },
+  "checks": [
+    {
+      "command": [
+        "D:\\BCI\\n2p3-net\\.venv\\Scripts\\python.exe",
+        "-m",
+        "ruff",
+        "check",
+        "--no-cache",
+        "src/research/brainsync_source_admission.py"
+      ],
+      "exit_code": 0,
+      "log": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-source-admission-integration\\RUFF.txt",
+        "bytes": 19,
+        "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+      }
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "log": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-source-admission-integration\\DIFF_CHECK.txt",
+        "bytes": 359,
+        "sha256": "6a9aaaa463bd5fcd265d4a7b796974b1354eef955706aa1654c9b133daf37617"
+      }
+    }
+  ],
+  "preserved_owners": [
+    "original_registered_Huebner_factory_and_public_cohort_admission",
+    "original_entry_fit_stage_native_target_exclusion_and_source_model",
+    "original_marker_bytes_and_exact_source_C_prefix_relationship",
+    "data.brainsync_raw_authority",
+    "DatasetIdentityTable",
+    "native_assert_target_geometry_and_separate_assert_target_exclusion",
+    "complete_FrozenTransportGraphModel_codec_and_B09_completion"
+  ],
+  "source_data_evidence": {
+    "original_actual_source_execution_seconds": 29.038,
+    "source_native_ranges": 20,
+    "all_source_ranges_within_original_C68": [
+      0,
+      19947
+    ],
+    "old_and_current_marker_bytes_equal": 213845,
+    "source_fits": 0,
+    "canonicalization_new_source_EEG_reads": 0,
+    "canonicalization_new_fits": 0,
+    "new_complete_source_parameter_payload_copies": 0
+  },
+  "live_and_cold": {
+    "private_registries": "target_source_transport_separate_actual_live_objects",
+    "target_public_fields": [
+      "caps",
+      "contract",
+      "geometry",
+      "identity_table",
+      "identity"
+    ],
+    "private_receipts_and_reader": "private_target_registry_only",
+    "compact_cold_read": "numeric_model_only; does_not_create_raw_C_source_or_transport_admission",
+    "single_record_scope": true,
+    "C_plus_held_union_programme": "separate_owner_and_acceptance"
+  },
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-source-admission-integration\\CLEANUP_RECEIPT.json",
+    "bytes": 563,
+    "sha256": "bd21d8eec92093d6072c8180d679cd1fddee32b952ac36928d12a8cb85618984"
+  }
+}
