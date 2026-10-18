@@ -540,7 +540,17 @@
         "bytes": 3753,
         "sha256": "0ab8af77566f2af5582ce27c795eb272673efffc30b65c1b4d3daac8fb19fa01"
       },
-      "original_fit_restarted": false
+      "original_fit_restarted": false,
+      "current_canonical_fast_recovery": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-markov-prefix-integration\\ORIGINAL_OPERAND_REPLAY.json",
+        "bytes": 997,
+        "sha256": "2de2aed3118c9a78012593a748c762bc9485c56d4aa2a64b4d487aea482cf37b"
+      }
+    },
+    "integrated_markov_prefix": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\markov_prefix_integration.json",
+      "bytes": 4156,
+      "sha256": "096543df52e57415b04da1a9c665a09e2423eb748cf861005bb7b67b0fce524c"
     }
   },
   "active_agents": {

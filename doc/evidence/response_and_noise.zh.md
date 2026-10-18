@@ -1,5 +1,13 @@
 # 响应模型、空间先验与噪声数值
 
+## 一般AR(p)平稳启动的创新分解
+
+前p点服从原平稳联合分布，之后每时刻只加入新的跨channel创新。精确AR差分H满足`H K Hᵀ=diag(K_initial,Q,…)`，完整前缀根因而由两个小根和递推给出；实际保存根另用精确dyadic残差、checked inverse与原Decimal96误差验证同一law，保原门限和全部弱方向。p≥T沿原精确入口。
+
+同一实际K200参数的新根构造7.129秒，原构造及准入阶段397.801秒。旧K200完整operand沿新consumer的原测量为6.290秒；root在canonical及当前公共adapter下再接同一原参数，加载与核验7.735秒，原record、初始31维根和operand身份均相同，完整992因子未重新构造。K800原root的新consumer测量5.380秒。新根是同参数law的新舍入producer，原根与旧执行记录继续保留。
+
+作者27项新用例、4项既有codec例及独立手推AR2/重签错误law负控已通过；root仅增加canonical原参数接线及显式fit分派核验。测量对象为因子构造和加载，完整科研程序耗时按各自执行记录维护。数值范围、独审、来源和清理见[前缀整合](../assets/research_resume_20261012/markov_prefix_integration.json)。
+
 ## 原生公共校准噪声的完整拟合
 
 原H2 source均值固定后，H1的K200、K800分别沿原fitter完成一次private AR1拟合：31条时间规律、完整31×31创新协方差、31维平稳初态及32点992维前缀因子均保留。原授权200与800个bits构造残差，η=1；两次fit/save为399.467、396.640秒，独立原codec cold/live核验为265.238、263.633秒。完整程序1057.886秒，进程树RSS峰2.339GB。

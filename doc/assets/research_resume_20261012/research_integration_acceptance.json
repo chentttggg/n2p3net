@@ -3317,5 +3317,10 @@
     "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\public_native_input_integration.json",
     "bytes": 7967,
     "sha256": "1241edd3de508a13744e9e52d9b00a71f4183b9913fb61393bd14fa8071f0769"
+  },
+  "markov_prefix_integration": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\markov_prefix_integration.json",
+    "bytes": 4156,
+    "sha256": "096543df52e57415b04da1a9c665a09e2423eb748cf861005bb7b67b0fce524c"
   }
 }

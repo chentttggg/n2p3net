@@ -1,5 +1,7 @@
 # 当前技术结构与完整链条
 
+`research.markov_stationary_factor`持有一般逐channel AR(p)的精确创新递推与保存根的law证书；前p点完整平稳联合根及其后完整创新Q均保留。`FittedChannelNoise`显式`prefix_root_program='markov_innovations'`选择新`/5` producer，旧private `/3`通过consumer witness加速准入而保持原record/root。没有创新尾时沿原精确入口，运行时白化继续使用保存的完整根；外层新fit须显式传入该选择。数学、测量及原producer恢复见[前缀整合](assets/research_resume_20261012/markov_prefix_integration.json)。
+
 `research.physical_operator_binding`将实际Plan/chart/history、有效membership与callback参数接回原BrainSync raw owner；factory准入及live复用分别核当前关系。Plan身份记录真实数值操作数，缓存与计时不入身份。公共记录由`public_record_physical_bridge`回原compiler/registry授权，按原生采样点提供精确时钟，每字符保独立目标变量；同record的C/history按原观测并集消费一次，startup和drift各一次。
 
 `transfer.native_source_response_model`在完全相同的原生通道、参考、单位和时钟下保原source全部均值/因子，completion为0；`public_native_source_admission`连接原source与目标C/held文件并集排除，cold codec只恢复数值。`public_native_source_mean`按原C bits、逐selection状态和真实曝光时钟将完整temporal design与source均值收缩，不投影随机因子或先更新响应。来源与原producer恢复关系见[原生公共输入整合](assets/research_resume_20261012/public_native_input_integration.json)。

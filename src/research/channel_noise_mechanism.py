@@ -22,6 +22,11 @@ from scipy.special import logsumexp
 from sklearn.covariance import LedoitWolf
 
 from research.execution import UnidentifiableFitError
+from research.markov_stationary_factor import (
+    admit_markov_stationary_root,
+    admit_saved_markov_stationary_root,
+    compile_markov_stationary_root,
+)
 from research.shared_stationary_factor import (
     admit_saved_shared_stationary_root,
     admit_shared_stationary_root,
@@ -43,6 +48,7 @@ _IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _FIT_SCOPES = {"source_training", "target_calibration"}
 _SCHEMA = "n2p3_channel_noise_mechanism/3"
 _SHARED_FACTOR_SCHEMA = "n2p3_channel_noise_mechanism/4"
+_MARKOV_FACTOR_SCHEMA = "n2p3_channel_noise_mechanism/5"
 
 
 def _array(value, name, ndim):
@@ -396,6 +402,7 @@ class FittedChannelNoise:
     provenance: dict
     compiled_prefix_root: np.ndarray | None = field(default=None, repr=False)
     shared_factor_state: dict | None = field(default=None, repr=False, kw_only=True)
+    markov_factor_state: dict | None = field(default=None, repr=False, kw_only=True)
 
     def __post_init__(self):
         temporal = tuple(self.temporal)
@@ -444,6 +451,9 @@ class FittedChannelNoise:
         root = self.compiled_prefix_root
         supplied_root = root is not None
         factor_state = self.shared_factor_state
+        markov_state = self.markov_factor_state
+        if markov_state is not None and (factor_state is not None or not supplied_root):
+            raise ValueError("Markov factor state requires its original root and one unambiguous codec")
         saved_root_admission = None
         if factor_state is not None and (self.family != "shared" or not supplied_root):
             raise ValueError("shared factor state requires its original root and shared stored PARCOR")
@@ -453,13 +463,17 @@ class FittedChannelNoise:
         if (root.shape != (prefix * channels, prefix * channels)
                 or np.any(np.diag(root) <= 0) or np.any(np.triu(root, 1) != 0)):
             raise ValueError("compiled prefix root requires a positive lower-triangular factor")
-        if factor_state is not None:
+        if markov_state is not None:
+            admit_markov_stationary_root([item.reflection_coefficients for item in temporal],
+                covariance, prefix, root, markov_state)
+            prefix_compiler = markov_state
+        elif factor_state is not None:
             admit_shared_stationary_root(temporal[0].reflection_coefficients, covariance, prefix, root, factor_state)
             prefix_compiler = factor_state
         else:
             prefix_compiler = compiler_record(
                 [noise.reflection_coefficients for noise in temporal], covariance, prefix, root)
-        if supplied_root and factor_state is None:
+        if supplied_root and factor_state is None and markov_state is None:
             # A shared law admits a fast small-factor witness for the original
             # saved root. The witness is consumer metadata, never a /3 rewrite.
             if self.family == "shared":
@@ -473,13 +487,21 @@ class FittedChannelNoise:
                         "consumer_source_sha256": _IMPLEMENTATION_SHA256,
                         "saved_root_sha256": array_digest(root), "small_witness_unavailable": str(error)}
             else:
-                stationary_root([noise.reflection_coefficients for noise in temporal], covariance, prefix,
-                                supplied_root=root)
+                try:
+                    saved_root_admission = admit_saved_markov_stationary_root(
+                        [noise.reflection_coefficients for noise in temporal], covariance, prefix, root)
+                except UnidentifiableFitError as error:
+                    stationary_root([noise.reflection_coefficients for noise in temporal], covariance, prefix,
+                                    supplied_root=root)
+                    saved_root_admission = {"program": "canonical_pairwise_saved_root_admission/1",
+                        "consumer_source_sha256": _IMPLEMENTATION_SHA256,
+                        "saved_root_sha256": array_digest(root), "small_witness_unavailable": str(error)}
         object.__setattr__(self, "temporal", temporal)
         object.__setattr__(self, "innovation_covariance", frozen_array(covariance))
         object.__setattr__(self, "compiled_prefix_root", frozen_array(root))
         object.__setattr__(self, "_spatial_root", frozen_array(spatial))
         object.__setattr__(self, "shared_factor_state", freeze_metadata(factor_state))
+        object.__setattr__(self, "markov_factor_state", freeze_metadata(markov_state))
         object.__setattr__(self, "_prefix_compiler", freeze_metadata(prefix_compiler))
         object.__setattr__(self, "_saved_root_admission", freeze_metadata(saved_root_admission))
         object.__setattr__(self, "provenance", freeze_metadata(provenance))
@@ -516,8 +538,30 @@ class FittedChannelNoise:
                    root, shared_factor_state=state)
 
     @classmethod
+    def from_markov_stationary_factors(cls, temporal, covariance, *, geometry,
+                                       conditioning_samples, family, provenance):
+        """Explicit new exact-AR innovation root producer; fits no parameter.
+
+        When the prefix has no innovation tail, the original exact compiler
+        remains the entry point. Saved source roots use their original codec.
+        """
+        temporal = tuple(temporal)
+        if not temporal:
+            raise ValueError("Markov factor producer needs actual temporal parameters")
+        for item in temporal:
+            item.assert_integrity()
+        if temporal[0].order >= conditioning_samples:
+            return cls(temporal, covariance, geometry, conditioning_samples, family, provenance)
+        root, state = compile_markov_stationary_root(
+            [item.reflection_coefficients for item in temporal], covariance, conditioning_samples)
+        return cls(temporal, covariance, geometry, conditioning_samples, family, provenance,
+                   root, markov_factor_state=state)
+
+    @classmethod
     def fit(cls, records, *, family, order, conditioning_samples=32,
-            minimum_samples_per_parameter=20):
+            minimum_samples_per_parameter=20, prefix_root_program="canonical_joint"):
+        if prefix_root_program not in {"canonical_joint", "markov_innovations"}:
+            raise ValueError("noise prefix root producer must be explicitly declared")
         values = tuple(records)
         if not values:
             raise ValueError("noise fit needs actual training residual records")
@@ -562,6 +606,9 @@ class FittedChannelNoise:
                       "covariance_shrinkage": float(estimator.shrinkage_),
                       "shape_fits": [noise.record() for noise in temporal[:1 if family == "shared" else len(temporal)]],
                       "implementation_sha256": _IMPLEMENTATION_SHA256}
+        if prefix_root_program == "markov_innovations":
+            return cls.from_markov_stationary_factors(temporal, estimator.covariance_, geometry=geometry,
+                conditioning_samples=conditioning_samples, family=family, provenance=provenance)
         return cls(temporal, estimator.covariance_, geometry, conditioning_samples, family, provenance)
 
     @classmethod
@@ -644,6 +691,8 @@ class FittedChannelNoise:
         # prefix factor to JSON at every matrix map in a candidate loop.
         factor_binding = ({"shared_factor_state_sha256": metadata_digest(self.shared_factor_state)}
                           if self.shared_factor_state is not None else {})
+        if self.markov_factor_state is not None:
+            factor_binding["markov_factor_state_sha256"] = metadata_digest(self.markov_factor_state)
         return metadata_digest({"family": self.family, "geometry": self.geometry.record(), **factor_binding,
             "prefix": self.conditioning_samples, "provenance": self.provenance,
             "consumer_saved_root_admission": self._saved_root_admission,
@@ -654,7 +703,9 @@ class FittedChannelNoise:
 
     def record(self):
         channels = len(self.geometry.channels)
-        return {"schema": _SCHEMA if self.shared_factor_state is None else _SHARED_FACTOR_SCHEMA,
+        schema = (_MARKOV_FACTOR_SCHEMA if self.markov_factor_state is not None else
+                  _SCHEMA if self.shared_factor_state is None else _SHARED_FACTOR_SCHEMA)
+        return {"schema": schema,
                 "geometry": self.geometry.record(), "family": self.family,
                 "prefix_compiler": self._prefix_compiler,
                 "conditioning_samples": self.conditioning_samples,
@@ -685,9 +736,10 @@ class FittedChannelNoise:
         if set(payload) != {"state", "state_sha256"} or metadata_digest(payload["state"]) != payload["state_sha256"]:
             raise ValueError("channel noise artifact digest differs from its actual payload")
         state = payload["state"]
-        if state.get("schema") not in {_SCHEMA, _SHARED_FACTOR_SCHEMA}:
+        if state.get("schema") not in {_SCHEMA, _SHARED_FACTOR_SCHEMA, _MARKOV_FACTOR_SCHEMA}:
             raise ValueError("unsupported channel noise artifact schema; old compiled-W states require their original frozen owner")
         factor_state = state["prefix_compiler"] if state["schema"] == _SHARED_FACTOR_SCHEMA else None
+        markov_state = state["prefix_compiler"] if state["schema"] == _MARKOV_FACTOR_SCHEMA else None
         if state["schema"] == _SHARED_FACTOR_SCHEMA and (state["family"] != "shared" or factor_state is None):
             raise ValueError("factor codec requires the saved shared root compiler state")
         temporal_records = state["compiled_temporal_records"]
@@ -701,8 +753,10 @@ class FittedChannelNoise:
             raise ValueError("noise arrays disagree with their frozen compiled temporal records")
         fitted = cls(temporal, state["innovation_covariance"], NoiseGeometry(**state["geometry"]),
                      state["conditioning_samples"], state["family"], state["provenance"],
-                     state["compiled_prefix_root"], shared_factor_state=factor_state)
-        compiler_matches = (fitted._prefix_compiler == state.get("prefix_compiler") if factor_state is None
+                     state["compiled_prefix_root"], shared_factor_state=factor_state,
+                     markov_factor_state=markov_state)
+        compiler_matches = (fitted._prefix_compiler == state.get("prefix_compiler")
+                            if factor_state is None and markov_state is None
                             else metadata_digest(fitted._prefix_compiler) == metadata_digest(state["prefix_compiler"]))
         if not compiler_matches:
             raise ValueError("stationary prefix compiler or exact law identity differs from its saved state")

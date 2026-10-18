@@ -222,3 +222,9 @@ src/research/public_native_source_mean.py text eol=lf
 src/research/public_native_target_noise.py text eol=lf
 doc/assets/research_resume_20261012/public_native_input_integration.json text eol=lf
 frozen/complete_learner_code_recovery.manifest.json text eol=lf
+
+src/research/markov_stationary_factor.py text eol=lf
+
+tests/research/test_markov_stationary_factor.py text eol=lf
+
+doc/assets/research_resume_20261012/markov_prefix_integration.json text eol=lf

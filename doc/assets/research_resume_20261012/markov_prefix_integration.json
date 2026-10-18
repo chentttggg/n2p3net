@@ -1,0 +1,88 @@
+{
+  "schema": "n2p3_markov_prefix_integration/1",
+  "status": "accepted",
+  "scope": "general AR(p) exact innovation root producer and original private saved-root consumer",
+  "base_head": "912dae478674bee24beb438ddf527283136f6753",
+  "source_installation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-markov-prefix-integration\\SOURCE_INSTALLATION.json",
+    "bytes": 2591,
+    "sha256": "7f606dcfb8f047305e0dbdab06f5d5743920dd1468aa18b122384ca465c233b5"
+  },
+  "canonical_sources": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\markov_stationary_factor.py",
+      "bytes": 16192,
+      "sha256": "64a5e788573a39c927e9b191d7e1993dc8a994a58e7613f71d24243584d4e314"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\channel_noise_mechanism.py",
+      "bytes": 182166,
+      "sha256": "3658098cd7ce3b87e25dd9f5a27410fe55a596c92cfbe9c37aa9bbbe36b9ece9"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\research\\test_markov_stationary_factor.py",
+      "bytes": 11243,
+      "sha256": "8ff08ce1e875d3f56c393b9cbfabed11e4bde7c63f5a320cc518deefb14deaa7"
+    }
+  ],
+  "independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\stationary-prefix-factor\\independent-review\\INDEPENDENT_STATIONARY_PREFIX_REVIEW.zh.md",
+    "bytes": 9740,
+    "sha256": "34b0ddc28fb5f6edf4cbabb38fb5b0f7a4cc93effdb9c4ac921505216490ec8a"
+  },
+  "reviewed_manifest": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\stationary-prefix-factor\\DELIVERY_MANIFEST.json",
+    "bytes": 7825,
+    "sha256": "10b2b5f9f5f02e209e32974e631d0d554f3cc58027578144c4dcd42ca87110fa"
+  },
+  "root_review": "full Markov factor mathematics, complete channel diff, original stationary/shared tools, tail whitening and saved codec callers",
+  "mathematics": {
+    "identity": "H K H^T=diag(K_initial,Q,...)",
+    "root": "H^-1 diag(G,E,...)",
+    "saved_root_bound": "(e+2*rho+rho^2)/(1-rho)^2",
+    "old_policy_preserved": true,
+    "new_root_old_dense_bytes_claimed_equal": false
+  },
+  "entrypoints": {
+    "new_fit_opt_in": "FittedChannelNoise.fit(prefix_root_program=markov_innovations)",
+    "new_codec": "n2p3_channel_noise_mechanism/5",
+    "old_private_codec": "original /3 record and root preserved; consumer witness only",
+    "no_innovation_tail": "original exact compiler",
+    "runtime_whitening": "original full saved root"
+  },
+  "verification": {
+    "author_new_cases": 27,
+    "author_existing_codec_cases": 4,
+    "independent_AR2_and_rehashed_wrong_law": "passed",
+    "canonical_synthetic_dispatch_cases": 1,
+    "synthetic_small_fit_calls_in_dispatch_case": 2,
+    "canonical_pytest": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-markov-prefix-integration\\PYTEST.xml",
+      "bytes": 391,
+      "sha256": "659b4c6db4d90dc62d18ea21f430b5767a3171c25911aa2d12d885943602c80c"
+    },
+    "canonical_original_operand": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-markov-prefix-integration\\ORIGINAL_OPERAND_REPLAY.json",
+      "bytes": 997,
+      "sha256": "2de2aed3118c9a78012593a748c762bc9485c56d4aa2a64b4d487aea482cf37b"
+    },
+    "ruff": {
+      "exit_code": 0,
+      "no_cache": true
+    },
+    "scientific_new_fits": 0,
+    "new_EEG_reads": 0,
+    "repeated_dense992_or_full_programmes": 0
+  },
+  "original_recovery_code": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-markov-prefix-integration\\ORIGINAL_PREFIX_CONSUMER_SOURCES.zip",
+    "bytes": 64514,
+    "sha256": "144a15211b29a20d42fcb01987b813c96bc6cced0c3a394702f3fa1dba8bd63e"
+  },
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-markov-prefix-integration\\CLEANUP_RECEIPT.json",
+    "bytes": 766,
+    "sha256": "c2d485c1ea8aecdfbc603b5a9898ac835a058e45b2e0a5fba2e3394485a44c05"
+  },
+  "external_fit_callers": "future scientific programmes explicitly declare new producer; existing fit provenance remains unchanged"
+}
