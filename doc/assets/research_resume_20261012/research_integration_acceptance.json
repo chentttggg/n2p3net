@@ -3187,10 +3187,41 @@
       },
       "continuous_frontier": {
         "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/continuous_frontier_integration.json",
-        "bytes": 5210,
-        "sha256": "33d69c656ccf818561048bb4c4d429430e36d684273b99c50a923e099377c447"
+        "bytes": 9695,
+        "sha256": "7b0b86d4fc82e01e66b69763bfcc9fc6c53d3acbd08a08e9b4be65f7cb3c7fbf"
       }
     },
     "execution_checkpoint": "pause_checkpoint_current.json"
+  },
+  "erp_runtime_repairs": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\erp_runtime_repairs.json",
+    "bytes": 6648,
+    "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6"
+  },
+  "actual004_complete_recovery": {
+    "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/actual004_complete_recovery.json",
+    "bytes": 3190,
+    "sha256": "a5e255bf8d7f229c0eb973103b843f088f1f890973b432334d457e6e3d8d22cb"
+  },
+  "continuous_frontier_inference": {
+    "binding": {
+      "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/continuous_frontier_integration.json",
+      "bytes": 14642,
+      "sha256": "13e16e7c64a09bc58340ea46b3e1a4231d8e30e3ae31d5f8693e9775ee6a56fa"
+    },
+    "commits": [
+      "81a1890",
+      "6d32061"
+    ],
+    "accepted_scope": "native complete-discrete frontier, positive continuous integration, local Q and Gaussian/t proposal with numeric replay; physical/grouped extension separate"
+  },
+  "brainsync_raw_authority": {
+    "binding": {
+      "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/brainsync_raw_authority_integration.json",
+      "bytes": 4294,
+      "sha256": "fe908653b82a7648a5986590973255924da3c08de27bfd606e35261ba30c3ed5"
+    },
+    "commit": "14307fd",
+    "accepted_scope": "original native raw/C capabilities and Fraction physical clock; actual generic numerical model caller separate"
   }
 }

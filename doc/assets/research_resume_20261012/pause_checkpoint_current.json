@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_research_saved_artifact_recovery_and_general_nine_choice_inference",
-  "recorded_at": "2026-10-18T11:17:44.599136+08:00",
+  "recorded_at": "2026-10-18T13:19:38.006590+08:00",
   "user_request": "继续",
   "research_worktree": "D:/BCI/worktrees/research-director",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -67,17 +67,20 @@
     "conditional": "not_started_on_hold_for_nine_choice_priority"
   },
   "original_finite_actual004": {
-    "state": "three_original_future_requests_live_with_saved_model_and_P015_reuse",
+    "state": "complete_original_seven_request_package_parent_and_independent_result_accepted",
     "artifact_root": "D:/BCI/worktrees/joint-flat-ensemble/tmp/joint_flat_actual31",
     "completed_OOF_rows": 7,
     "completed_future_ordinals": [
       0,
       1,
       2,
-      3
+      3,
+      4,
+      5,
+      6
     ],
     "future4": {
-      "state": "active",
+      "state": "completed_typed_unavailable_coordinate_diagnostic",
       "output": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-004",
       "actual_pid": 31688,
       "create_time": 1792291504.8055253,
@@ -90,7 +93,7 @@
       "observer_exec_session": 75021,
       "costs_snapshot": {
         "ordinal": 4,
-        "phase": "components_started",
+        "phase": "one_original_future_request_completed",
         "costs": {
           "source_fits": 0,
           "target_C_fits": 0,
@@ -99,18 +102,25 @@
           "sampler_returned": 0,
           "saved_sampler_returns_loaded": 1,
           "components_started": 1,
-          "components_returned": 0,
+          "components_returned": 1,
           "saved_components_loaded": 0
         },
-        "updated_unix": 1792291627.022606
+        "updated_unix": 1792294095.5358574
+      },
+      "actual_OS_exit_code": 0,
+      "result": {
+        "path": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-004/FUTURE_RESULT.json",
+        "bytes": 410776,
+        "sha256": "0c9e0cb3f56fa6d11157f6d4cb3554559b5578dfa129ff6410f66b7358f72f67"
+      },
+      "independent_result_review": {
+        "path": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-004/INDEPENDENT_RESULT_REVIEW.json",
+        "bytes": 1588,
+        "sha256": "f9764b0cf6d00337072d8cd0f1bd041c0e4c791af2d602bcd55ad231aa2bc419"
       }
     },
-    "future5_6": "first_original_policy_P_samplers_active_each_native_budget_6",
-    "remaining_future_requested": [
-      4,
-      5,
-      6
-    ],
+    "future5_6": "completed_both_strategies_available_original_first_samplers_retained",
+    "remaining_future_requested": [],
     "reuse": "preserve_original_C_OOF_samples_captures_and_refusals_no_duplicate_fit_or_sampler",
     "wrapper_recovery": {
       "state": "accepted_actual_return_coldload_and_independent_saved_array_review",
@@ -136,7 +146,7 @@
     },
     "future_executions": {
       "4": {
-        "state": "active",
+        "state": "completed_typed_unavailable_coordinate_diagnostic",
         "output": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-004",
         "actual_pid": 31688,
         "create_time": 1792291504.8055253,
@@ -149,7 +159,7 @@
         "observer_exec_session": 75021,
         "costs_snapshot": {
           "ordinal": 4,
-          "phase": "components_started",
+          "phase": "one_original_future_request_completed",
           "costs": {
             "source_fits": 0,
             "target_C_fits": 0,
@@ -158,14 +168,25 @@
             "sampler_returned": 0,
             "saved_sampler_returns_loaded": 1,
             "components_started": 1,
-            "components_returned": 0,
+            "components_returned": 1,
             "saved_components_loaded": 0
           },
-          "updated_unix": 1792291627.022606
+          "updated_unix": 1792294095.5358574
+        },
+        "actual_OS_exit_code": 0,
+        "result": {
+          "path": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-004/FUTURE_RESULT.json",
+          "bytes": 410776,
+          "sha256": "0c9e0cb3f56fa6d11157f6d4cb3554559b5578dfa129ff6410f66b7358f72f67"
+        },
+        "independent_result_review": {
+          "path": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-004/INDEPENDENT_RESULT_REVIEW.json",
+          "bytes": 1588,
+          "sha256": "f9764b0cf6d00337072d8cd0f1bd041c0e4c791af2d602bcd55ad231aa2bc419"
         }
       },
       "5": {
-        "state": "active",
+        "state": "completed_both_strategies_available",
         "output": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-005",
         "actual_pid": 45440,
         "create_time": 1792293140.1361673,
@@ -176,26 +197,46 @@
         },
         "operational_native_threads": 6,
         "observer_exec_session": 70938,
-        "costs_snapshot": {
-          "ordinal": 5,
-          "phase": "P_sampler_started",
-          "costs": {
-            "source_fits": 0,
-            "target_C_fits": 0,
-            "OOF_fits": 0,
-            "sampler_started": 1,
-            "sampler_returned": 0,
-            "saved_sampler_returns_loaded": 0,
-            "components_started": 0,
-            "components_returned": 0,
-            "saved_components_loaded": 0
-          },
-          "operational_native_threads": 6,
-          "updated_unix": 1792293242.4107146
+        "sampler_return_review": {
+          "path": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-005/INDEPENDENT_SAMPLER_RETURN_REVIEW.json",
+          "bytes": 1467,
+          "sha256": "9d4773d835ca8c4ea0a95c83e2f7f1a1361a2fbebe28cff691374fd8ceb2808b"
+        },
+        "coordinate_gate": {
+          "path": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-005/INDEPENDENT_COORDINATE_GATE.json",
+          "bytes": 103898,
+          "sha256": "98a406f75758f9d9917070a759a7e3df185f894051b2fbb3c05a68472a9aafcb"
+        },
+        "actual_OS_exit_code": 0,
+        "result": {
+          "path": "D:\\BCI\\artifacts\\source-response-generic\\recovery\\actual004-future-005\\FUTURE_RESULT.json",
+          "bytes": 474602,
+          "sha256": "53d901ad33332266dfd190978c24f104b448296770c4231a07e50fbe5b8f06a7"
+        },
+        "independent_result_review": {
+          "path": "D:\\BCI\\artifacts\\source-response-generic\\recovery\\actual004-future-005\\INDEPENDENT_RESULT_REVIEW.json",
+          "bytes": 1586,
+          "sha256": "6bb66ef17d5428281d139b5a0bdb58551f07960630498281b969ab30be58643e"
+        },
+        "final_costs": {
+          "source_fits": 0,
+          "target_C_fits": 0,
+          "OOF_fits": 0,
+          "sampler_started": 1,
+          "sampler_returned": 1,
+          "saved_sampler_returns_loaded": 0,
+          "components_started": 1,
+          "components_returned": 1,
+          "saved_components_loaded": 0
+        },
+        "OS_observation": {
+          "path": "D:\\BCI\\artifacts\\source-response-generic\\recovery\\actual004-future-005-OS.json",
+          "bytes": 2029,
+          "sha256": "648753a9b5c0092500d3eb7081b6844470383f5b823732e2208ea02feb2bffff"
         }
       },
       "6": {
-        "state": "active",
+        "state": "completed_both_strategies_available",
         "output": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-006",
         "actual_pid": 36732,
         "create_time": 1792293140.1573963,
@@ -206,22 +247,42 @@
         },
         "operational_native_threads": 6,
         "observer_exec_session": 30286,
-        "costs_snapshot": {
-          "ordinal": 6,
-          "phase": "P_sampler_started",
-          "costs": {
-            "source_fits": 0,
-            "target_C_fits": 0,
-            "OOF_fits": 0,
-            "sampler_started": 1,
-            "sampler_returned": 0,
-            "saved_sampler_returns_loaded": 0,
-            "components_started": 0,
-            "components_returned": 0,
-            "saved_components_loaded": 0
-          },
-          "operational_native_threads": 6,
-          "updated_unix": 1792293237.8303893
+        "sampler_return_review": {
+          "path": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-006/INDEPENDENT_SAMPLER_RETURN_REVIEW.json",
+          "bytes": 1469,
+          "sha256": "0fe05f8ad37a991c992635290108416bd6cd7d87582229a6a837b7283e8ae0b4"
+        },
+        "coordinate_gate": {
+          "path": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-006/INDEPENDENT_COORDINATE_GATE.json",
+          "bytes": 103546,
+          "sha256": "a0b06f4e5e2fffc900efb37c8576ba673d905debb5da6ff383f17cf4342da294"
+        },
+        "actual_OS_exit_code": 0,
+        "result": {
+          "path": "D:\\BCI\\artifacts\\source-response-generic\\recovery\\actual004-future-006\\FUTURE_RESULT.json",
+          "bytes": 535228,
+          "sha256": "b5d4c12c7ab58576d4420e4f419e051417b498d165f655ef4f1d9ab7da9f2ca2"
+        },
+        "independent_result_review": {
+          "path": "D:\\BCI\\artifacts\\source-response-generic\\recovery\\actual004-future-006\\INDEPENDENT_RESULT_REVIEW.json",
+          "bytes": 1586,
+          "sha256": "744f5bc511a3d9c85bcfe502dc88da08614f7bc7b03633f17b2598e31d713247"
+        },
+        "final_costs": {
+          "source_fits": 0,
+          "target_C_fits": 0,
+          "OOF_fits": 0,
+          "sampler_started": 1,
+          "sampler_returned": 1,
+          "saved_sampler_returns_loaded": 0,
+          "components_started": 1,
+          "components_returned": 1,
+          "saved_components_loaded": 0
+        },
+        "OS_observation": {
+          "path": "D:\\BCI\\artifacts\\source-response-generic\\recovery\\actual004-future-006-OS.json",
+          "bytes": 2029,
+          "sha256": "209bcdb02c4c573ee1ca48e6ae02c5eeda419c976b97509f86849d2d3da6c0ae"
         }
       }
     },
@@ -244,14 +305,70 @@
       },
       "member": "HANDOFF.md",
       "role": "historical_method_pointer_only_executed_scientific_source_unmodified"
+    },
+    "complete_package": {
+      "state": "accepted_actual_original_input_parent_and_independent_result_review",
+      "assembly_result": {
+        "path": "D:\\BCI\\artifacts\\source-response-generic\\recovery\\actual004-complete-package-001\\ASSEMBLY_RESULT.json",
+        "bytes": 1302,
+        "sha256": "d53fe1989f50a95bc54f695c06d539f9a11568638d37a105e87e137975e0aae0"
+      },
+      "parent_result": {
+        "path": "D:\\BCI\\artifacts\\source-response-generic\\recovery\\actual004-complete-package-001\\PARENT_RESULT.json",
+        "bytes": 155259,
+        "sha256": "c37fd9bb6238d898503c77bf4bd8930b97ce1af2d16c7dbf9ed924d729dd6a92"
+      },
+      "OS_observation": {
+        "path": "D:\\BCI\\artifacts\\source-response-generic\\recovery\\actual004-complete-package-001-OS.json",
+        "bytes": 2240,
+        "sha256": "7bc648a4ee7545fead14f2f53fce074fbbaa25615394b7df897c03e21076990f"
+      },
+      "costs": {
+        "source_fits": 0,
+        "target_C_fits": 0,
+        "OOF_fits": 0,
+        "sampler_calls": 0,
+        "component_integrations": 0,
+        "saved_capture_summary_computations": 11,
+        "reused_summary_cache_hits": 9,
+        "new_future_saved_pool_checks": 6,
+        "restored_original_refusal_requests": 2,
+        "hardlinks_created": 29,
+        "large_artifact_bytes_copied": 0
+      },
+      "requested_OOF": 7,
+      "requested_future": 7,
+      "strategy_outputs": 14,
+      "parent_exact_score_checks": 21,
+      "independent_result_review": {
+        "path": "D:/BCI/artifacts/source-response-generic/recovery/actual004-complete-package-001/INDEPENDENT_RESULT_REVIEW.json",
+        "bytes": 3553,
+        "sha256": "e46c5648f80f68a0139050442dbd43a49b44bb710813336fffb071ab9706e0bd"
+      },
+      "accepted_binding": {
+        "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/actual004_complete_recovery.json",
+        "bytes": 3190,
+        "sha256": "a5e255bf8d7f229c0eb973103b843f088f1f890973b432334d457e6e3d8d22cb"
+      }
+    },
+    "retained_original_evidence_dependency": {
+      "path": "D:/BCI/worktrees/joint-flat-ensemble/tmp/joint_flat_actual31",
+      "role": "unique scientific evidence remains beyond the 29 final-package hardlinks",
+      "preserve": [
+        "original P013 refused samples",
+        "original P015 return",
+        "complete original logs, launch and pause receipts",
+        "original input declarations"
+      ],
+      "retirement_condition": "manifest-preserve unique evidence in a stable D-drive archive before removing the code worktree; never classify the whole tree as a build cache"
     }
   },
   "general_inference": {
     "accepted_reference": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft",
     "implementation": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-frontier",
-    "next_required_slice": "prepared_factor_cache_model_parent_replay_registered_BrainSync_raw_C_and_typed_prediction",
-    "protocol": "same_q_across_declared_blocks_independent_block_shapes_shared_beta_independent_record_noise",
-    "continuous_layer": "full45_analytic_anchor_completed_SMC_quality_and_general_interfaces_under_independent_review",
+    "next_required_slice": "general_physical_affine_compiler_joint_drift_group_integral_and_exact_source_functional_numeric_consumer_then_full_seven_channel_noise_and_raw_C_caller",
+    "protocol": "declared_target_lock_q_shape_block_h_and_joint_unknown_law_shared_source_Gaussian_explicit_noise_segments_and_physical_drift_groups",
+    "continuous_layer": "native_prepared_structured_Gaussian_and_positive_Student_reference_committed_and_independently_reviewed",
     "integrated_fixed_point": {
       "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/structured_frontier_integration.json",
       "bytes": 4738,
@@ -259,27 +376,48 @@
     },
     "integrated_continuous_reference": {
       "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/continuous_frontier_integration.json",
-      "bytes": 5210,
-      "sha256": "33d69c656ccf818561048bb4c4d429430e36d684273b99c50a923e099377c447"
+      "bytes": 14642,
+      "sha256": "13e16e7c64a09bc58340ea46b3e1a4231d8e30e3ae31d5f8693e9775ee6a56fa"
     },
-    "prepared_layer": "external_quadratic_cache_and_three_numeric_replay_layers_passed_new_nine_candidate_case_under_source_review",
-    "raw_authority": "external_actual_format_EDF_BIDS_clock_and_partial_C_vertical_passed_C0_supported_role_guard_update_pending"
+    "prepared_layer": "committed_native_independent_drift_scope_general_physical_shared_group_extension_in_progress",
+    "raw_authority": "canonical_original_file_ingress_C0_partial_C_and_Fraction_clock_accepted_three_focused_cases",
+    "physical_delivery": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\continuous-integration-spec\\DELIVERY_MANIFEST.json",
+      "bytes": 31428,
+      "sha256": "9224e2eb821a3b5f9fe8679a8cec054a863f20603da9d3efdf6bde018dfdb3dd"
+    },
+    "source_geometry_delivery": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\SOURCE_MAP.json",
+      "bytes": 14617,
+      "sha256": "8d1a57447936418cee84d01110addb7d0109cab16534b13a8893b118da0f9bb3"
+    },
+    "integrated_raw_authority": {
+      "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/brainsync_raw_authority_integration.json",
+      "bytes": 4294,
+      "sha256": "fe908653b82a7648a5986590973255924da3c08de27bfd606e35261ba30c3ed5"
+    }
   },
   "active_agents": {
-    "saved_execution_recovery": "product_source_to_native_seven_channel_reference_geometry_design",
-    "general_frontier_implementation": "registered_BrainSync_raw_C_scope_including_true_C0_and_session_roles",
-    "frontier_science_review": "outer_continuous_source_and_measure_independent_review",
-    "general_continuous_inference": "full_probability_integration_and_replay_quality",
-    "recovery_review": "new_future_outputs_and_complete_package_review"
+    "general_continuous_inference": "general_physical_affine_prepared_compiler_and_joint_drift_group_integral",
+    "frontier_science_review": "independent_group_measure_rank_and_pause_unknown_history_review",
+    "saved_execution_recovery": "exact_source_functional_numeric_consumer_difference_before_rounding_and_self_contained_codec",
+    "recovery_review": "independent_actual_functional_covariance_error_and_cold_codec_review"
   },
   "cloud": {
     "state": "not_used_no_SSH",
     "ownership": "separate_cloud_chat"
   },
   "next_actions": [
-    "Complete original future4 missing components from preserved P015, then first original-policy future5/6 samplers and complete seven-request package.",
-    "Review outer continuous implementation and full nine-choice probability quality against the saved analytic anchor.",
-    "Implement truth-free BrainSync raw/C authority and typed source-to-prediction/save/replay integration.",
-    "Preserve complete requests, source identity and sole live checkpoint; retire confirmed obsolete caches with cmd."
-  ]
+    "Integrate the externally reviewed general physical affine compiler with jointly identified shared physical drift groups, full q/h/joint-unknown scopes and all exposures.",
+    "Review exact source functional compilation before subtraction/whitening rounding, complete owner cold codec and actual nine-choice likelihood; keep complete target noise explicit.",
+    "Connect actual registered source/raw/C issuers and complete seven-channel target noise to the generic model/publisher, then run the declared complete adult nine-choice programme.",
+    "Retire only confirmed obsolete generated caches/builds; preserve original P013/P015/log/pause evidence before any recovery worktree retirement."
+  ],
+  "erp_runtime_repairs": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\erp_runtime_repairs.json",
+    "bytes": 6648,
+    "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
+    "commit": "a6f5750"
+  },
+  "integration_head": "14307fd638c1af15a751b867f08884f2c8081f7d"
 }
