@@ -1,8 +1,8 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
-  "status": "active_research_saved_artifact_recovery_and_general_nine_choice_inference",
-  "recorded_at": "2026-10-18T13:19:38.006590+08:00",
-  "user_request": "继续",
+  "status": "active_general_nine_choice_canonical_integration_and_full_task_evaluation",
+  "recorded_at": "2026-10-18T14:57:32.247852+08:00",
+  "user_request": "continue_full_research_goal_after_ERP_source_review",
   "research_worktree": "D:/BCI/worktrees/research-director",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
   "concurrency_limit_including_root": 6,
@@ -366,7 +366,7 @@
   "general_inference": {
     "accepted_reference": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft",
     "implementation": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-frontier",
-    "next_required_slice": "general_physical_affine_compiler_joint_drift_group_integral_and_exact_source_functional_numeric_consumer_then_full_seven_channel_noise_and_raw_C_caller",
+    "next_required_slice": "canonical_live_source_admission_and_complete_noise_then_actual45_full_raw_C_inference_and_typed_publication",
     "protocol": "declared_target_lock_q_shape_block_h_and_joint_unknown_law_shared_source_Gaussian_explicit_noise_segments_and_physical_drift_groups",
     "continuous_layer": "native_prepared_structured_Gaussian_and_positive_Student_reference_committed_and_independently_reviewed",
     "integrated_fixed_point": {
@@ -379,39 +379,155 @@
       "bytes": 14642,
       "sha256": "13e16e7c64a09bc58340ea46b3e1a4231d8e30e3ae31d5f8693e9775ee6a56fa"
     },
-    "prepared_layer": "committed_native_independent_drift_scope_general_physical_shared_group_extension_in_progress",
+    "prepared_layer": "native_independent_drift_and_generic_explicit_shared_physical_drift_groups_integrated",
     "raw_authority": "canonical_original_file_ingress_C0_partial_C_and_Fraction_clock_accepted_three_focused_cases",
     "physical_delivery": {
       "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\continuous-integration-spec\\DELIVERY_MANIFEST.json",
-      "bytes": 31428,
-      "sha256": "9224e2eb821a3b5f9fe8679a8cec054a863f20603da9d3efdf6bde018dfdb3dd"
+      "bytes": 54045,
+      "sha256": "52b94cc1039296cf44d38a3671eca12b3c9c85b36f5b08f287b2d7b6f5072024"
     },
     "source_geometry_delivery": {
       "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\SOURCE_MAP.json",
-      "bytes": 14617,
-      "sha256": "8d1a57447936418cee84d01110addb7d0109cab16534b13a8893b118da0f9bb3"
+      "bytes": 19416,
+      "sha256": "1a1665c2cbd5a9a262ced9ad74d737cfd59ab487ecb407d87df3ada8bbb44733"
     },
     "integrated_raw_authority": {
       "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/brainsync_raw_authority_integration.json",
       "bytes": 4294,
       "sha256": "fe908653b82a7648a5986590973255924da3c08de27bfd606e35261ba30c3ed5"
+    },
+    "integrated_source_transport": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\source_transport_integration.json",
+      "bytes": 5986,
+      "sha256": "fe694b062582e80f57a2eeae5b1a97acea6f4f7bdf517c60032b6ff62edb652c"
+    },
+    "integrated_physical_frontier": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\physical_frontier_integration.json",
+      "bytes": 8603,
+      "sha256": "af4394ed91ede415f986b6f39b0d1e278bb48e8946258ddbb57581fada3db0f4"
+    },
+    "source_admission_delivery": {
+      "state": "external_actual_source_and_target_admission_independently_accepted_canonical_configuration_migration_in_progress",
+      "manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\DELIVERY_MANIFEST.json",
+        "bytes": 16427,
+        "sha256": "6c66f045d119dfc9f6aac8b138c7f6606a982b90d40e4b6f11c2feef6b8e4b85"
+      },
+      "independent_review": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\source_admission_bridge\\INDEPENDENT_SOURCE_ADMISSION_REVIEW.md",
+        "bytes": 7598,
+        "sha256": "e5e6c385b7f07fdca06599c8fdedf7f87b747d30fb4a13074b851b18154f9efa"
+      },
+      "source_fits": 0,
+      "new_source_payload_copies": 0,
+      "fresh_source_parent_scope": "new_live_owners_in_same_process_actual_source_reread"
+    },
+    "complete_target_noise_delivery": {
+      "state": "external_seven_channel_fixed_mean_C_noise_and_dictionary_clock_fix_independently_accepted_canonical_integration_pending",
+      "original_manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\target-noise\\DELIVERY_MANIFEST.json",
+        "bytes": 15615,
+        "sha256": "145b8685817a5c3903fbb1c1742d4af23661f4a702998e06d501d4045a728c5d"
+      },
+      "dictionary_repair": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\target-noise\\DICTIONARY_BINDING_HANDOFF.json",
+        "bytes": 4996,
+        "sha256": "8478e69c332936458108f397e0132a6363dce365b609e518ae7a1d3e7ebe74ec"
+      },
+      "independent_review": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\target-noise\\INDEPENDENT_REVIEW.zh.md",
+        "bytes": 4324,
+        "sha256": "f556a0a09c0489476a8386a9fb5454efd58cdb77eca97207798058a566fc4fb7"
+      },
+      "response_C_updates_here": 0,
+      "next_response_update": "once_from_original_source_prior_under_the_frozen_C_plugin_noise"
+    },
+    "actual_source_full45_performance": {
+      "state": "complete_original544_owner_reported_exit0_result_present_112_comparison_in_progress",
+      "software_scope": "full_new45_completed46_exposures_7EEG_250Hz_complete9x2x9_162_saved_source_parameter_software",
+      "result": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\FULL45_PERFORMANCE_original544.json",
+        "bytes": 59460,
+        "sha256": "37e49d5968f1a5f0f2c204a39ddc5b00d9185a2ef26379d4122221985a536b02"
+      },
+      "cold_replay": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\FULL45_COLD_REPLAY_original544.json",
+        "bytes": 641,
+        "sha256": "85aed23122cd5957cfecb6db97df3c373c99637ac09e742b62d5b4c657237a98"
+      },
+      "complete_branches": 162,
+      "proper_latents": 544,
+      "whole_task_seconds": 253.65121640000143,
+      "integration_seconds": 5.41493569999875,
+      "peak_working_set_bytes": 2927976448,
+      "original544_runner_state": "both_full_and_cold_terminal_by_owner_no_original544_process_running",
+      "new_chart": "exact_common_source_Gaussian_image_rank64_plus48_conditional_equals112; no weak_direction_threshold",
+      "new_chart_state": "exact_Gaussian_marginal_mathematics_independently_accepted_integer_rounding_and_full_task_performance_in_progress",
+      "new_chart_mathematical_review": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\independent-review\\EXACT_COMMON_MARGINAL_REVIEW.md",
+        "bytes": 7156,
+        "sha256": "2635f197c2f9c2d28fe1fbc046fd36d618a1cb7ebbde17cfac9addabaa0f14bb"
+      },
+      "authority_scope": "pinned_saved_parameter_software; live_source_admission_separate_delivery",
+      "publication_integration": "pending_canonical_source_noise_raw_C_caller",
+      "new_chart_process_observation": {
+        "observed_at": "2026-10-18T14:57:32.247499+08:00",
+        "processes": [
+          {
+            "pid": 30792,
+            "expected_create_time": 1792306563.579642,
+            "actual_create_time": 1792306563.579642,
+            "birth_identity_matches": true,
+            "status": "running",
+            "command": [
+              "D:\\BCI\\n2p3-net\\.venv\\Scripts\\python.exe",
+              "-B",
+              "RUN_FAST45_PERFORMANCE.py",
+              "--chart",
+              "exact_common_marginal_fast"
+            ]
+          },
+          {
+            "pid": 54848,
+            "expected_create_time": 1792306563.5611424,
+            "actual_create_time": 1792306563.5611424,
+            "birth_identity_matches": true,
+            "status": "running",
+            "command": [
+              "D:\\BCI\\n2p3-net\\.venv\\Scripts\\python.exe",
+              "-B",
+              "RUN_FAST45_PERFORMANCE.py",
+              "--chart",
+              "exact_common_marginal_fast"
+            ]
+          }
+        ],
+        "observer_scope": "actual_psutil_birth_identity_and_command_no_restart",
+        "exec_session_by_owner": 34717
+      },
+      "original544_execution_manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\FULL45_544_EXECUTION_MANIFEST.json",
+        "bytes": 6823,
+        "sha256": "809cb1e579ffcb5713028a25b665a0631624ece83a360963e6703de8bf7334e4"
+      }
     }
   },
   "active_agents": {
-    "general_continuous_inference": "general_physical_affine_prepared_compiler_and_joint_drift_group_integral",
-    "frontier_science_review": "independent_group_measure_rank_and_pause_unknown_history_review",
-    "saved_execution_recovery": "exact_source_functional_numeric_consumer_difference_before_rounding_and_self_contained_codec",
-    "recovery_review": "independent_actual_functional_covariance_error_and_cold_codec_review"
+    "general_continuous_inference": "explicit_config_canonical_source_admission_candidate_without_hardcoded_artifact_defaults",
+    "recovery_review": "independent_source_admission_configuration_and_live_cold_scope_review",
+    "saved_execution_recovery": "complete_actual_source_full45_544_vs_exact112_all_candidate_performance",
+    "frontier_science_review": "independent_exact_common_Gaussian_marginal_and_integer_surd_rounding_review"
   },
   "cloud": {
     "state": "not_used_no_SSH",
     "ownership": "separate_cloud_chat"
   },
   "next_actions": [
-    "Integrate the externally reviewed general physical affine compiler with jointly identified shared physical drift groups, full q/h/joint-unknown scopes and all exposures.",
-    "Review exact source functional compilation before subtraction/whitening rounding, complete owner cold codec and actual nine-choice likelihood; keep complete target noise explicit.",
-    "Connect actual registered source/raw/C issuers and complete seven-channel target noise to the generic model/publisher, then run the declared complete adult nine-choice programme.",
-    "Retire only confirmed obsolete generated caches/builds; preserve original P013/P015/log/pause evidence before any recovery worktree retirement."
+    "Integrate the explicitly configured live source admission bridge, preserving original source/native31 identities and actual seven-channel target transport.",
+    "Integrate complete seven-channel frozen-mean C noise with actual dictionary/clock binding and its original fitted states; count response-C update separately.",
+    "Complete and independently review full45 original544 versus exact112 performance; preserve all candidate/state mass and original execution snapshots.",
+    "Connect original source prior, one response-C update, raw history, full nine-choice inference and typed publisher under the declared full task.",
+    "Retire only confirmed obsolete generated builds/caches; preserve original P013/P015/log/pause dependencies before worktree retirement."
   ],
   "erp_runtime_repairs": {
     "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\erp_runtime_repairs.json",
@@ -419,5 +535,5 @@
     "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
     "commit": "a6f5750"
   },
-  "integration_head": "14307fd638c1af15a751b867f08884f2c8081f7d"
+  "integration_head": "780a181"
 }
