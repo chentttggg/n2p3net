@@ -3322,5 +3322,10 @@
     "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\markov_prefix_integration.json",
     "bytes": 4156,
     "sha256": "096543df52e57415b04da1a9c665a09e2423eb748cf861005bb7b67b0fce524c"
+  },
+  "native_mean_performance_integration": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\native_mean_performance_integration.json",
+    "bytes": 4051,
+    "sha256": "286ce9c2954e54eb8c7cc5504f2f26e3e418207acb4ba290123ea7e007fbec3a"
   }
 }

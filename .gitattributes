@@ -228,3 +228,7 @@ src/research/markov_stationary_factor.py text eol=lf
 tests/research/test_markov_stationary_factor.py text eol=lf
 
 doc/assets/research_resume_20261012/markov_prefix_integration.json text eol=lf
+
+src/research/native_c_mean_design.py text eol=lf
+
+doc/assets/research_resume_20261012/native_mean_performance_integration.json text eol=lf

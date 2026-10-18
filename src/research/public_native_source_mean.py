@@ -13,6 +13,7 @@ from research.cached_response_consumer import ExactMeanResponseSource, _Rows
 from research.conditional_response_graph import exact
 from research.exact_template_response_consumer import _integer_columns, _integer_row
 from research.latent_response_reference import ResponseState
+from research.native_c_mean_design import IMPLEMENTATION_SHA256 as ASSEMBLY_SOURCE_SHA256
 from research.numeric_response_consumer import _round_rational
 from transfer.native_source_response_model import NativeSourceResponseModel
 from transfer.noise_model import array_digest, metadata_digest
@@ -98,7 +99,8 @@ class PublicNativeSourceCMean:
         self.identity = metadata_digest({'source_graph': model.graph().digest(),
             'states_by_original_selection': {name: vars(state) for name, state in self.states.items()},
             'clock_program': 'native_sample_index', 'role': 'fixed_original_source_prior_mean_before_C_response_update',
-            'producer_sha256': IMPLEMENTATION_SHA256})
+            'producer_sha256': IMPLEMENTATION_SHA256, 'assembly_source_sha256': ASSEMBLY_SOURCE_SHA256})
+        self.last_assembly_performance = None
 
     def evaluate(self, calibration_input, *, native_start=None, native_stop=None):
         from research.public_record_physical_bridge import require_public_physical_input
@@ -118,40 +120,12 @@ class PublicNativeSourceCMean:
         labels = {event_id: (onset, bit) for event_id, onset, bit in cap.label_rows}
         if len(labels) != len(cap.label_rows) or set(labels) != {event['event_id'] for event in events}:
             raise ValueError('source C mean requires every original exposure bit exactly once')
-        native_rows, k = tuple(range(start, stop)), self.model.source.parameters.basis.shape[1]
-        design = [[Fraction() for _ in range(2*k)] for _ in native_rows]
-        errors = [[Fraction() for _ in range(2*k)] for _ in native_rows]
-        ledgers = []
-        rate = Fraction(*b['sample_rate_hz_exact_ratio'])
-        duration = Fraction(len(self.model.continuation.matrix))/exact(self.model.continuation.sample_rate_hz)
-        for event in events:
-            event_id, selection = event['event_id'], event['block_id']
-            onset, bit = labels[event_id]
-            if onset != event['native_sample'] or bit not in (0, 1):
-                raise ValueError('source C bit changed its original exposure/native onset')
-            state = self.states[selection]
-            clock = cap.clock_for_selection(selection)
-            first_lag = clock.elapsed_seconds(start, event_id, clock_program='native_sample_index')
-            left = max(0, math.ceil((exact(state.latency_seconds)-first_lag)*rate))
-            right = min(len(native_rows), math.ceil((exact(state.latency_seconds)+
-                exact(state.width_multiplier)*duration-first_lag)*rate))
-            if left >= right:
-                ledgers.append({'event_id': event_id, 'original_selection': selection, 'native_onset': onset,
-                    'authorized_C_bit': int(bit), 'exact_zero_on_requested_rows': True})
-                continue
-            elapsed = clock.elapsed_seconds(native_rows[left:right], event_id, clock_program='native_sample_index')
-            query = tuple((lag-exact(state.latency_seconds))/exact(state.width_multiplier) for lag in elapsed)
-            basis = self.model.continuation.evaluate(query, coordinate='seconds', support='half_open')
-            common, target = exact(state.common_amplitude), exact(state.target_amplitude)*int(bit)
-            for i in range(left, right):
-                for j in range(k):
-                    value, error = exact(basis.matrix[i-left, j]), exact(basis.error[i-left, j])
-                    design[i][j] += common*value
-                    design[i][k+j] += target*value
-                    errors[i][j] += abs(common)*error
-                    errors[i][k+j] += abs(target)*error
-            ledgers.append({'event_id': event_id, 'original_selection': selection, 'native_onset': onset,
-                'authorized_C_bit': int(bit), 'dictionary_image': basis.identity_digest})
+        from research.native_c_mean_design import build_native_c_design
+
+        design, errors, ledgers, performance = build_native_c_design(
+            self.model.continuation, events, labels, self.states, start=start, stop=stop,
+            rate=Fraction(*b['sample_rate_hz_exact_ratio']), clock_for_selection=cap.clock_for_selection)
+        self.last_assembly_performance = performance
         values, bounds, compiled = self.compiler.compile_mean_temporal(design, temporal_error=errors,
             query_binding={'C_input_identity': cap.identity, 'fixed_source_mean_programme': self.identity,
                 'native_half_open_rows': [start, stop], 'physical_exposure_ledger': ledgers})
@@ -161,7 +135,8 @@ class PublicNativeSourceCMean:
             'clock_program': 'native_sample_index', 'source_function_clock_hz': self.model.continuation.sample_rate_hz,
             'used_label_event_ids': tuple(row['event_id'] for row in ledgers),
             'source_response_C_updates_before_noise_fit': 0, 'source_factor_projections': 0,
-            'mean_image_sha256': array_digest(values[:, :, 0], bounds[:, :, 0]), 'future_truth_consumed': False}
+            'mean_image_sha256': array_digest(values[:, :, 0], bounds[:, :, 0]), 'future_truth_consumed': False,
+            'mean_assembly_producer_sha256': ASSEMBLY_SOURCE_SHA256, 'mean_owner_producer_sha256': IMPLEMENTATION_SHA256}
 
     def __call__(self, calibration_input):
         return self.evaluate(calibration_input)

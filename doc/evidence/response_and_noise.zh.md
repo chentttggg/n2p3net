@@ -1,5 +1,11 @@
 # 响应模型、空间先验与噪声数值
 
+## 原生C均值的精确整数累计
+
+实际热点来自重复事件的Fraction构造和累加。新路径复用原相对时间的dictionary查询，在共同有理分母下累计整数，再用原均值编译器收缩并正确舍入。三个完整C记录共356,031行×31通道的mean/error字节及原物理事件关系相同，原编译器cache命中/驱逐也相同。K800无profiler数学路径176.736→82.955秒，约快2.13倍；live授权与完整learner另按其执行计时。
+
+独立9组Fraction插值/误差包络控制覆盖不同采样率、错开网格、重叠state、partial/blank、terminal半开边界及cache生命周期，70个约2^-1050弱项保留。完整测量prototype、稳定身份release与canonical导入分组修订分别保来源；计时不进入binding。每个新完整D的SHA等于旧residual的design SHA，在相同Y/I31/零nuisance程序下复用原noise参数与原fit身份。源码、独审及相等关系见[整合绑定](../assets/research_resume_20261012/native_mean_performance_integration.json)。
+
 ## 一般AR(p)平稳启动的创新分解
 
 前p点服从原平稳联合分布，之后每时刻只加入新的跨channel创新。精确AR差分H满足`H K Hᵀ=diag(K_initial,Q,…)`，完整前缀根因而由两个小根和递推给出；实际保存根另用精确dyadic残差、checked inverse与原Decimal96误差验证同一law，保原门限和全部弱方向。p≥T沿原精确入口。

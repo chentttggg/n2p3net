@@ -551,15 +551,20 @@
       "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\markov_prefix_integration.json",
       "bytes": 4156,
       "sha256": "096543df52e57415b04da1a9c665a09e2423eb748cf861005bb7b67b0fce524c"
+    },
+    "integrated_exact_C_mean": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\native_mean_performance_integration.json",
+      "bytes": 4051,
+      "sha256": "286ce9c2954e54eb8c7cc5504f2f26e3e418207acb4ba290123ea7e007fbec3a"
     }
   },
   "active_agents": {
     "general_frontier_implementation": "public_native_complete_learner_and_once_union_C_bit_inference",
-    "general_continuous_inference": "source_bound_C_mean_actual_profile_and_exact_accumulation",
     "frontier_science_review": "original_data_likelihood_export_and_coefficient_coordinate_bridge",
     "recovery_review": "generic_response_state_law_and_identifiability_design",
     "saved_execution_recovery": "existing_leave_H_NN_target_fullfine_scratch_and_complete_public_reuse",
-    "marginal_codec_review": "independent_exact_C_mean_accumulation_and_original_noise_reuse_relation_review"
+    "marginal_codec_review": "independent_exact_C_mean_accumulation_and_original_noise_reuse_relation_review",
+    "general_continuous_inference": "independent_existing_NN_complete_504_caller_review"
   },
   "cloud": {
     "state": "not_used_no_SSH",

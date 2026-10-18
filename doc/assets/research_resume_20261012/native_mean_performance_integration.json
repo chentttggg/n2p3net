@@ -1,0 +1,79 @@
+{
+  "schema": "n2p3_exact_native_C_mean_performance_integration/1",
+  "status": "accepted",
+  "scope": "exact rational event design accumulation and per-call native query reuse",
+  "canonical_sources": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\native_c_mean_design.py",
+      "bytes": 6340,
+      "sha256": "a6e7e59a82ed6ee587fd2d6a9e9276f3a73a28d8722b7b91b4d85fb8c3b7a6be"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\public_native_source_mean.py",
+      "bytes": 9332,
+      "sha256": "ded01ef64f59af7b1ce008be4e8eee665641b73bb2ec6a9249ab84d3d312b68a"
+    }
+  ],
+  "source_installation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-native-mean-integration\\SOURCE_INSTALLATION.json",
+    "bytes": 1735,
+    "sha256": "3dd674374c7598b321e6c83ac2eeaf91b7f8f8089ca4ce9aed35da52aa97f09b"
+  },
+  "reviewed_manifest": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-c-mean-performance\\DELIVERY_MANIFEST.json",
+    "bytes": 6221,
+    "sha256": "3bf784bf9ad0ce8285251c2157d7144e2270e3386beb6c7dffa189af7320689f"
+  },
+  "independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-c-mean-performance\\independent-review\\INDEPENDENT_C_MEAN_PERFORMANCE_REVIEW.zh.md",
+    "bytes": 9781,
+    "sha256": "50a71e7e400ac7a292e91961d725d92c05fafe7da5c3fbb8d55b6493e717703b"
+  },
+  "canonical_style_relation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-native-mean-integration\\CANONICAL_IMPORT_RELATION.json",
+    "bytes": 1328,
+    "sha256": "bbf1a674e4d72f03964e9ff35e25d83949ca7ce9b523d31734927cf60b4c6ce1"
+  },
+  "root_review": "complete helper arithmetic, native query cache key/lifetime, label/selection/window joins, live require and original contraction compiler AST",
+  "validation": {
+    "actual_rows": 356031,
+    "channels": 31,
+    "full_mean_error_bytes_equal_to_original_actual": true,
+    "independent_groups": 9,
+    "independent_mean_entries": 322,
+    "retained_nonzero_weak_entries": 70,
+    "weak_scale": "about 2^-1050",
+    "ruff_exit_code": 0,
+    "canonical_normal_namespace_and_helper_closure": "passed",
+    "full_record_math_or_EEG_repeated_by_root": false,
+    "scientific_new_fits": 0
+  },
+  "performance": {
+    "K800_original_math_seconds": 176.7357961999951,
+    "K800_new_math_seconds": 82.95503199999803,
+    "measurement": "same no-profiler complete mathematical inputs; original per-record producer receipts hold exact measured values",
+    "live_grant_or_whole_learner_speedup_claimed": false,
+    "speedup": 2.1305012117890487,
+    "original_measurement": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-c-mean-performance\\profile\\ORIGINAL_MATH_PROFILE_RESULT.json",
+      "bytes": 2470,
+      "sha256": "1da0cb811e09480be1fc9218c3c1627b0a92edc5bda6965f5bb6dfbc3fc963f2"
+    },
+    "new_measurement": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-c-mean-performance\\candidate-actual\\FULL_ACTUAL_C_NUMERIC_EQUALITY.json",
+      "bytes": 5866,
+      "sha256": "d8758f341e92b3c5cb155b7d340d259fb9e4634a050dc0231ef3c0d5e0dd1b9b"
+    }
+  },
+  "residual_reuse": "same original Y identity, whole new D bytes equal saved design SHA, I31 and zero nuisance; strict live saved-execution relation remains owned by complete programme",
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-native-mean-integration\\CLEANUP_RECEIPT.json",
+    "bytes": 789,
+    "sha256": "205895cf91b51eb529505a8719f0abf80f620dc800f742a1a5ae5c89ba7678e5"
+  },
+  "original_mean_archive": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-native-mean-integration\\ORIGINAL_CANONICAL_MEAN.zip",
+    "bytes": 3466,
+    "sha256": "f0786bd5c2c2d0d0ca6169bb32cd2180107bfc13eeb11f232e70f6c64b738322"
+  }
+}
