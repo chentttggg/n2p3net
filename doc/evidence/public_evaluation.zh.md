@@ -27,7 +27,7 @@ H1的K200、K800各63个原请求已由原compiler实读并建立物理grant账�
 
 原输入盘点已核Huebner 13人、351个独立BDF声明，其中342段有EEG，9段缺失均在第6人第二session。末session每人9个run×7字符，共819个请求，均有EEG声明；每字符68次物理集合刺激、32个候选，每候选16次曝光。各原文件保自己的1000Hz时钟，42个视觉位置中的10个blank继续保物理作用。BI原61份ZIP提供另一种36候选行列机制，按项目原C-prefix/后续episode计划解释。
 
-元数据推演发现末session 7个未解Optic分布在5个字符；保全record历史时，可能影响同run当前及后续28个请求。实际issuer继续给typed结果，819个请求保留。第6人K2000的原C raw准入预计使用1524个标签，requested/granted/raw used/epoch used分别记录。以上是输入与工作量证据，新模型效能由实际完整程序评价。
+元数据推演发现末session 7个未解Optic分布在5个字符；保全record历史时，可能影响同run当前及后续28个请求。实际issuer继续给typed结果，819个请求保留。完整27-record声明的最新metadata排程对13人均保K200/800/2000，requested/granted/raw used/epoch used分别按原issuer实账记录；见[完整面板排程](../assets/research_resume_20261012/existing_nn_panel_scope.json)。以上是输入与工作量证据，新模型效能由实际完整程序评价。
 
 完整正K设计为K200/800/2000、五个拟合程序及六个评分臂：生成式whole与同一fit的续段conditional、原波形收缩LDA、真xDAWN、source NN及匹配scratch NN。现成H/BI两个NN留库checkpoint已核实际SHA，成熟60epoch目标入口和共同请求/保存/重放owner可复用。生成式当前H2/C68源与NN的来源和剂量不同；完整面板先冻结匹配source roster/dose或明确完整算法包的来源差异。13折LOSO是另一项具名source设计，原C-session切分保持原名。
 

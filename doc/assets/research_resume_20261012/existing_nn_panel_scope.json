@@ -1,0 +1,24 @@
+{
+  "schema": "n2p3_existing_NN_full_panel_scope/1",
+  "role": "metadata-only complete request freeze",
+  "plan": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-panel\\PANEL_PLAN.json",
+    "bytes": 1634480,
+    "sha256": "2c13d1cb7a13b552848caa86e03040bee4b34a49c8e24af32fdcc1799843bc31"
+  },
+  "requested_participants": 13,
+  "requested_future_per_K": 819,
+  "K": [
+    200,
+    800,
+    2000
+  ],
+  "methods": 4,
+  "requested_score_cells": 9828,
+  "completed_H1_score_cells_reused": 504,
+  "new_score_cells": 9324,
+  "current_complete_27record_budget_mapping": "all13 declared200/800/2000; raw/epoch used recorded independently by original issuer",
+  "prior_short_collection_cap_used_as_panel_budget": false,
+  "metadata_freeze_EEG_weight_fit_reads": 0,
+  "source_training_required": 0
+}

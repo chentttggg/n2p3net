@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_full13_existing_NN_panel_and_joint_response_noise_calibration",
-  "recorded_at": "2026-10-18T20:40:33.328163+08:00",
+  "recorded_at": "2026-10-18T21:16:12.434771+08:00",
   "user_request": "continue_full_research_goal_after_ERP_source_review",
   "research_worktree": "D:/BCI/worktrees/research-director",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -569,20 +569,21 @@
     }
   },
   "active_agents": {
-    "saved_execution_recovery": "actual_existing_source_NN_scratch_LDA_xDAWN_full504_and_original_parent_replay",
-    "general_continuous_inference": "independent_NN_source_profile_none_addendum",
-    "frontier_science_review": "saved_original_C_noise_to_current_live_residual_semantic_reuse",
-    "recovery_review": "joint_response_noise_C_calibration_and_physical_within_reference"
+    "saved_execution_recovery": "full13_existing_NN_panel_scope_and_cached_original_runner",
+    "general_continuous_inference": "independent_full13_panel_ingress_cache_RNG_and_denominator_review",
+    "recovery_review": "joint_response_noise_calibration_and_physical_reference",
+    "frontier_science_review": "independent_Gaussian_local_QR_conditional_EeeT_review",
+    "marginal_codec_review": "independent_public_once_union_label_mask_and_zero_likelihood_foundation_review"
   },
   "cloud": {
     "state": "not_used_no_SSH",
     "ownership": "separate_cloud_chat"
   },
   "next_actions": [
-    "Complete existing source NN/scratch/LDA/xDAWN all504 requested cells and exact saved/inner/parent replay; preserve failed input-profile attempt and corrected producer.",
-    "Review/integrate full response population core and corrected data-likelihood exporter; retain source raw/label and normalizer ownership.",
-    "Review/integrate public full-history foundation and Gaussian-local compact factor, then connect new joint response/noise calibration and full current-J inference.",
-    "Retain H13LOSO31 matched source comparison and original nonlinear W four-arm study; reuse completed code and original source artefacts."
+    "Review final full13 existing-NN panel runner and independent admission/cache/RNG/NoC checks, then execute all new9324 cells and reuse original504.",
+    "Integrate reviewed population numeric core and corrected source data-likelihood export with shared dependencies, no repeated source fits.",
+    "Review/integrate public foundation, Gaussian-local/conditional QR and saved original C-noise semantic reuse; preserve original producer bytes and params.",
+    "Complete named G0/G1 joint response/noise calibration and full-history inference; keep original nonlinear W four-arm study and H13LOSO31 controlled comparison."
   ],
   "erp_runtime_repairs": {
     "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\erp_runtime_repairs.json",
@@ -590,7 +591,7 @@
     "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
     "commit": "a6f5750"
   },
-  "integration_head": "54997c8868d2d19d344be70220ab5b8da6e06fe7",
+  "integration_head": "e03c066fdae2df0fead83d3899d7f4a0d46aa82d",
   "concurrency_authorization": "later user allowed more threads after the temporary six-agent limit; seven actual parallel roles used for independent scientific slices",
   "execution_priority": "existing_NN_weights_and_target_pipeline_first_H13_new_source_training_deferred_until_controlled_comparison",
   "accepted_native_input_source_commit": "811fb18dcbde94b9903ee8cce0df4bee16466e4a",
@@ -615,6 +616,78 @@
     "requested_score_cells": 9828,
     "completed_reusable_score_cells": 504,
     "new_participant_K_cells": 37,
-    "source_fits_required": 0
+    "source_fits_required": 0,
+    "scope": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\existing_nn_panel_scope.json",
+      "bytes": 843,
+      "sha256": "72b73903876faa45a490bba48bb65d35b89144538c6f7fb210487d9fe9a34a95"
+    },
+    "resource_plan": "3 independent processes x4 CPU threads; original per-process admissions and per-participant targets; final runner in review"
+  },
+  "pending_root_integrations": {
+    "population_forecast_core": {
+      "manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\full-response-cohort-forecast\\DELIVERY_MANIFEST.json",
+        "bytes": 3555,
+        "sha256": "2bd1f492c743a569ae8f27e8fe7e55f6dedd147264895c26f9f45460638415c5"
+      },
+      "review": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\full-response-cohort-forecast\\independent-review\\INDEPENDENT_REVIEW.zh.md",
+        "bytes": 9267,
+        "sha256": "55f5f7689934002f4984e03f30bbd1dcd871f1e8ae84a45ddad7552ad2b486cd"
+      },
+      "root_full_source_read": true
+    },
+    "source_data_likelihood": {
+      "revision": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\source-likelihood-export\\REVISION_MANIFEST.json",
+        "bytes": 1959,
+        "sha256": "22cb8af04d7eec72f85290bded11b2ccee5cce59ceb8459d4340ca1fe892ef64"
+      },
+      "review": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\source-likelihood-export\\independent-review\\INDEPENDENT_SOURCE_LIKELIHOOD_REVIEW.zh.md",
+        "bytes": 10753,
+        "sha256": "05a59cbe24c69c16a24a3ce5222dab3315e1cd076e7c640b81517a357fbd0d57"
+      },
+      "root_full_source_read": true,
+      "accepted_vector_shape_fix": "ec9fe003"
+    },
+    "public_foundation": {
+      "manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-complete-learner\\MANIFEST.json",
+        "bytes": 4742,
+        "sha256": "aa5ca46f30d8ef0a9c31648f8e28a798e98c52cf34207bdf38ded43233838251"
+      },
+      "state": "independent_review_in_progress",
+      "root_full_source_read": false
+    },
+    "Gaussian_local": {
+      "manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\gaussian-local-compact-factor\\MANIFEST.json",
+        "bytes": 7524,
+        "sha256": "7c893b18b3bf57212dd7a2fb07d9799fc1309cef6ef34cf1b0f40805288e3d37"
+      },
+      "conditional_extension": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\gaussian-local-compact-factor\\CONDITIONAL_EXTENSION_MANIFEST.json",
+        "bytes": 2135,
+        "sha256": "ab7b88f6f3c92cb76e3d4ce94e4ecd852e1bd67637fe0c5eded0739e909b1519"
+      },
+      "newline_relation": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\gaussian-local-compact-factor\\MANIFEST_NEWLINE_RELATION.json",
+        "bytes": 1231,
+        "sha256": "3bda5a8acf7e9ad8269b141acea5a9865e6cf44f361dd24e29a472c21334dc40"
+      },
+      "state": "independent_review_in_progress",
+      "root_full_source_read": false
+    },
+    "saved_C_noise_reuse": {
+      "manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\saved-public-noise-reuse\\DELIVERY_MANIFEST.json",
+        "bytes": 9346,
+        "sha256": "2dd8ec3175088a9ab486470cee9bcadb5ae16c2d0a8474aa2f3df572a6d6c3f7"
+      },
+      "state": "metadata_and_toy_complete_root_source_review_then_actual_live_join_required",
+      "root_full_source_read": false
+    }
   }
 }
