@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_research_saved_artifact_recovery_and_general_nine_choice_inference",
-  "recorded_at": "2026-10-18T10:48:20.500765+08:00",
+  "recorded_at": "2026-10-18T11:17:44.599136+08:00",
   "user_request": "继续",
   "research_worktree": "D:/BCI/worktrees/research-director",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -67,7 +67,7 @@
     "conditional": "not_started_on_hold_for_nine_choice_priority"
   },
   "original_finite_actual004": {
-    "state": "accepted_wrapper_and_live_original_future4_saved_P015_continuation",
+    "state": "three_original_future_requests_live_with_saved_model_and_P015_reuse",
     "artifact_root": "D:/BCI/worktrees/joint-flat-ensemble/tmp/joint_flat_actual31",
     "completed_OOF_rows": 7,
     "completed_future_ordinals": [
@@ -78,14 +78,16 @@
     ],
     "future4": {
       "state": "active",
-      "pid": 31688,
-      "create_time": 1792291504.8055253,
       "output": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-004",
+      "actual_pid": 31688,
+      "create_time": 1792291504.8055253,
       "consumer": {
         "path": "D:/BCI/artifacts/source-response-generic/recovery/continue_actual004_future.py",
         "bytes": 19730,
         "sha256": "73c81587bd649a40d4b75d592b77f37e653c0c41c0eefddc249a45e6183f8092"
       },
+      "operational_native_threads": 1,
+      "observer_exec_session": 75021,
       "costs_snapshot": {
         "ordinal": 4,
         "phase": "components_started",
@@ -101,16 +103,9 @@
           "saved_components_loaded": 0
         },
         "updated_unix": 1792291627.022606
-      },
-      "external_observer": {
-        "path": "D:/BCI/artifacts/source-response-generic/recovery/observe_recovery.py",
-        "bytes": 6532,
-        "sha256": "f8f0dc4e1122db1d5f5335e18739778fe2537c7de4d2bbb0fd76e67e2d995dda"
-      },
-      "observer_exec_session": 75021,
-      "expected_new_sampler_calls": 0
+      }
     },
-    "future5_6": "first_sampler_execution_not_yet_done",
+    "future5_6": "first_original_policy_P_samplers_active_each_native_budget_6",
     "remaining_future_requested": [
       4,
       5,
@@ -138,23 +133,141 @@
         "OOF_temperature_optimizations": 1
       },
       "OS_observation_scope": "launcher_exit0_actual_worker_completed_receipt_direct_worker_exit_not_observed"
+    },
+    "future_executions": {
+      "4": {
+        "state": "active",
+        "output": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-004",
+        "actual_pid": 31688,
+        "create_time": 1792291504.8055253,
+        "consumer": {
+          "path": "D:/BCI/artifacts/source-response-generic/recovery/continue_actual004_future.py",
+          "bytes": 19730,
+          "sha256": "73c81587bd649a40d4b75d592b77f37e653c0c41c0eefddc249a45e6183f8092"
+        },
+        "operational_native_threads": 1,
+        "observer_exec_session": 75021,
+        "costs_snapshot": {
+          "ordinal": 4,
+          "phase": "components_started",
+          "costs": {
+            "source_fits": 0,
+            "target_C_fits": 0,
+            "OOF_fits": 0,
+            "sampler_started": 0,
+            "sampler_returned": 0,
+            "saved_sampler_returns_loaded": 1,
+            "components_started": 1,
+            "components_returned": 0,
+            "saved_components_loaded": 0
+          },
+          "updated_unix": 1792291627.022606
+        }
+      },
+      "5": {
+        "state": "active",
+        "output": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-005",
+        "actual_pid": 45440,
+        "create_time": 1792293140.1361673,
+        "consumer": {
+          "path": "D:/BCI/artifacts/source-response-generic/recovery/continue_actual004_future_parallel.py",
+          "bytes": 20721,
+          "sha256": "512fc1db8369343f66bddd36da36e16e6631527e41fda80ab9535b2abe86f339"
+        },
+        "operational_native_threads": 6,
+        "observer_exec_session": 70938,
+        "costs_snapshot": {
+          "ordinal": 5,
+          "phase": "P_sampler_started",
+          "costs": {
+            "source_fits": 0,
+            "target_C_fits": 0,
+            "OOF_fits": 0,
+            "sampler_started": 1,
+            "sampler_returned": 0,
+            "saved_sampler_returns_loaded": 0,
+            "components_started": 0,
+            "components_returned": 0,
+            "saved_components_loaded": 0
+          },
+          "operational_native_threads": 6,
+          "updated_unix": 1792293242.4107146
+        }
+      },
+      "6": {
+        "state": "active",
+        "output": "D:/BCI/artifacts/source-response-generic/recovery/actual004-future-006",
+        "actual_pid": 36732,
+        "create_time": 1792293140.1573963,
+        "consumer": {
+          "path": "D:/BCI/artifacts/source-response-generic/recovery/continue_actual004_future_parallel.py",
+          "bytes": 20721,
+          "sha256": "512fc1db8369343f66bddd36da36e16e6631527e41fda80ab9535b2abe86f339"
+        },
+        "operational_native_threads": 6,
+        "observer_exec_session": 30286,
+        "costs_snapshot": {
+          "ordinal": 6,
+          "phase": "P_sampler_started",
+          "costs": {
+            "source_fits": 0,
+            "target_C_fits": 0,
+            "OOF_fits": 0,
+            "sampler_started": 1,
+            "sampler_returned": 0,
+            "saved_sampler_returns_loaded": 0,
+            "components_started": 0,
+            "components_returned": 0,
+            "saved_components_loaded": 0
+          },
+          "operational_native_threads": 6,
+          "updated_unix": 1792293237.8303893
+        }
+      }
+    },
+    "continuation_plan": {
+      "path": "D:/BCI/artifacts/source-response-generic/recovery/FUTURE_CONTINUATION_PLAN.json",
+      "bytes": 13753,
+      "sha256": "c984d72000a121e7cf2a9b9e0293c0d47f9ecd8bedf19b67d6237a8686aa28c9"
+    },
+    "parallel_resources": {
+      "path": "D:/BCI/artifacts/source-response-generic/recovery/PARALLEL_RESOURCE_OBSERVATION.json",
+      "bytes": 1205,
+      "sha256": "443886c320b8e6c2101229e5e99d1faf25d546e4cb6aa409bbdb3fa9e7fc11fb"
+    },
+    "historical_handoff_retrieval": {
+      "future_plan_c984_handoff_sha256": "c0fe803ba26b2b346acf1a71a9308b030e8ef6139f4eafac9edd95acc6b60644",
+      "archive": {
+        "path": "D:/BCI/artifacts/source-response-generic/recovery/HANDOFF_FUTURE_PLAN.tar.gz",
+        "bytes": 3909,
+        "sha256": "88532f9b332d263bacc672495c8295bf77e8ecac28c20f6cd2e7613ef96ad0b2"
+      },
+      "member": "HANDOFF.md",
+      "role": "historical_method_pointer_only_executed_scientific_source_unmodified"
     }
   },
   "general_inference": {
     "accepted_reference": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft",
     "implementation": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-frontier",
-    "next_required_slice": "full_continuous_integration_and_truth_free_BrainSync_capability_then_typed_save_replay",
+    "next_required_slice": "prepared_factor_cache_model_parent_replay_registered_BrainSync_raw_C_and_typed_prediction",
     "protocol": "same_q_across_declared_blocks_independent_block_shapes_shared_beta_independent_record_noise",
     "continuous_layer": "full45_analytic_anchor_completed_SMC_quality_and_general_interfaces_under_independent_review",
     "integrated_fixed_point": {
       "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/structured_frontier_integration.json",
       "bytes": 4738,
       "sha256": "a383c4117cbb59989eee2a5f2f8c8bca42b1ed2ba800f40307618c6e89c0ea78"
-    }
+    },
+    "integrated_continuous_reference": {
+      "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/continuous_frontier_integration.json",
+      "bytes": 5210,
+      "sha256": "33d69c656ccf818561048bb4c4d429430e36d684273b99c50a923e099377c447"
+    },
+    "prepared_layer": "external_quadratic_cache_and_three_numeric_replay_layers_passed_new_nine_candidate_case_under_source_review",
+    "raw_authority": "external_actual_format_EDF_BIDS_clock_and_partial_C_vertical_passed_C0_supported_role_guard_update_pending"
   },
   "active_agents": {
-    "saved_execution_recovery": "complete_seven_request_package_and_saved_component_parent_consumer",
-    "general_frontier_implementation": "completed_accepted_and_integrated",
+    "saved_execution_recovery": "product_source_to_native_seven_channel_reference_geometry_design",
+    "general_frontier_implementation": "registered_BrainSync_raw_C_scope_including_true_C0_and_session_roles",
     "frontier_science_review": "outer_continuous_source_and_measure_independent_review",
     "general_continuous_inference": "full_probability_integration_and_replay_quality",
     "recovery_review": "new_future_outputs_and_complete_package_review"

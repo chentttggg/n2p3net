@@ -3184,6 +3184,11 @@
         "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/structured_frontier_integration.json",
         "bytes": 4738,
         "sha256": "a383c4117cbb59989eee2a5f2f8c8bca42b1ed2ba800f40307618c6e89c0ea78"
+      },
+      "continuous_frontier": {
+        "path": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/continuous_frontier_integration.json",
+        "bytes": 5210,
+        "sha256": "33d69c656ccf818561048bb4c4d429430e36d684273b99c50a923e099377c447"
       }
     },
     "execution_checkpoint": "pause_checkpoint_current.json"

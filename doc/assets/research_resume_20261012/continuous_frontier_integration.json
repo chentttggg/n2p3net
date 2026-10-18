@@ -1,0 +1,116 @@
+{
+  "schema": "n2p3_continuous_frontier_integration_acceptance/1",
+  "accepted_scope": "general_reference_integrator_independent_proposal_pilot_complete_current_probabilities_and_saved_integral_replay",
+  "integrated_source": [
+    {
+      "path": "D:/BCI/worktrees/research-director/src/research/collapsed_continuous_inference.py",
+      "bytes": 31564,
+      "sha256": "35dd80ed6f96c02533a2be57b537af00c4d1447ee9281dfefb3e169f7f0b86a7"
+    },
+    {
+      "path": "D:/BCI/worktrees/research-director/src/research/continuous_integration_pilot.py",
+      "bytes": 4083,
+      "sha256": "0ca6284d1bef4d06a34b01bb1e33511077ad6fa7d1a7ef4b64cfc1722cb566be"
+    },
+    {
+      "path": "D:/BCI/worktrees/research-director/tests/test_collapsed_continuous_inference.py",
+      "bytes": 3074,
+      "sha256": "b96b2cc0891885a76ef48a8a3eda247178a8b7646ade507f8138bf9b0a0b749c"
+    }
+  ],
+  "original_source": [
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/collapsed_continuous_inference.py",
+      "bytes": 30964,
+      "sha256": "ba796d29550d22d31528f5372a9dae9e4161fb3c017c4203fc7ae6cb97881fe4"
+    },
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/continuous_pilot.py",
+      "bytes": 3972,
+      "sha256": "c7a775eaf569525b9e9616e5ee702597368fe381e9e076c398bcc28bf4aebf61"
+    }
+  ],
+  "definitions_AST_preserved": true,
+  "independent_reviews": [
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/INDEPENDENT_REVIEW.md",
+      "bytes": 8081,
+      "sha256": "7c14af1597533b9bc3c3754bfd3a35534aa96fcb992b979bbdf5f0a312931076"
+    },
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/INTEGRATION_REVIEW.md",
+      "bytes": 1964,
+      "sha256": "677941abe1fc6ccc5ece0b887c6fc9b7d766881a05391a1cc51f7df9319a64e2"
+    }
+  ],
+  "actual_evidence": [
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/PRODUCT45_ANCHOR_RESULT.json",
+      "bytes": 12724,
+      "sha256": "7ffb7a67a7df8bf396b29dc6d93f0e40e0099edb1cead2f6530ea157e9b9eb93"
+    },
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/PRODUCT45_ANCHOR.json",
+      "bytes": 8057,
+      "sha256": "b543b69bbe93b31fe76d3f47ee1c32b322d700541e3c7db81fed7d4873822577"
+    },
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/PRODUCT45_SMC_RESULT.json",
+      "bytes": 571279,
+      "sha256": "a9bb4d3f75f661225ca005492cedf61e64bdb502ef9ee122a6ee96d0a1c55b67"
+    },
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/PRODUCT45_SMC_RESULT_002.json",
+      "bytes": 6860352,
+      "sha256": "b7b9ce089d91ac94f519c08d5c639d0c99768e536c813b98c70f971aa74e07b1"
+    },
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/GENERAL_PILOT_PRODUCTION_RESULT.json",
+      "bytes": 50394,
+      "sha256": "4d118bbcf485b78ab8f4e9b01fc43f44cbcfa936832edd9133e99bd55314f172"
+    },
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/continuous-integration-spec/INTERFACE_AND_PILOT_BINDING_AUDIT.json",
+      "bytes": 1953,
+      "sha256": "3f7895b5b8b2d9a8c28f19491ca19d10e7eec8cb14e5300e5837ba2a6ac2216f"
+    }
+  ],
+  "validation": {
+    "command": "D:/BCI/n2p3-net/.venv/Scripts/python.exe -m pytest tests/test_collapsed_continuous_inference.py -q",
+    "exit_code": 0,
+    "passed": 2,
+    "contracts": [
+      "absolute_integrals_across_1600_nat_gap_and_each_candidate_scale",
+      "fixed_current_prior_conditional",
+      "independent_positive_pilot_density_correction",
+      "saved_integral_replay"
+    ],
+    "Ruff_exit_code": 0
+  },
+  "mathematical_owner": {
+    "source_prior": "one_standard_normal_in_original_u",
+    "nuisance_measure": "original_physical_per_record_intercept_and_V_per_second_slope_da",
+    "discrete_prior": "one_global_product_roster_after_record_likelihood_merge",
+    "component_target": "positive_sum_Tq_J_Tq_div_s_Tq",
+    "pooling": "mean_unnormalized_component_estimates_then_probabilities"
+  },
+  "quality_identity": "binary64_reference_and_replicated_MC_estimate_not_finite_sample_certificate",
+  "replay_scope": "saved_integral_layer_only_for_this_integration",
+  "next_owners": [
+    "prepared_structured_factor_cache",
+    "model_only_and_original_input_replay",
+    "registered_BrainSync_raw_C_capability",
+    "typed_prediction_and_predeclared_quality_policy"
+  ],
+  "scientific_fits_by_root_integration": 0,
+  "old_build_retirement": {
+    "new_build_outputs_created": 0,
+    "disposable_retired_files": [],
+    "protected": [
+      "original_execution_producers",
+      "raw_and_frozen_evidence",
+      "live_recovery_process_dependencies"
+    ],
+    "classification": "active_source_modules_added_external_compiler_work_still_uses_reference_cache"
+  }
+}
