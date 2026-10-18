@@ -1,0 +1,133 @@
+{
+  "schema": "n2p3_canonical_complete_target_noise_integration/1",
+  "status": "accepted",
+  "scope": "exact_query_mean_and_complete_native_seven_channel_C_noise_operand_and_original_parameter_cold_read",
+  "integration_base_head": "265cd93",
+  "canonical_sources": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\cached_response_consumer.py",
+      "bytes": 8873,
+      "sha256": "3cad9d132738ddffde4d9f503348460250e5ab3ef3af681923e6a8c663d99685"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\target_noise_operand.py",
+      "bytes": 15903,
+      "sha256": "b142167b74457f9309bc4add212d78a409c1bf9bca8457c0367ca02148e58cf9"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\source_functional_c_mean.py",
+      "bytes": 10379,
+      "sha256": "6ad591a85f83a6c01c5f51cf620c4f813a3b299f340f79b583cde288bf5baf83"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\research\\test_brainsync_target_noise.py",
+      "bytes": 5897,
+      "sha256": "74c6711c229ec3e5aff17a2d46f5d2f519cc40954dd4b4e6d97a73243c2c958e"
+    }
+  ],
+  "source_relation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-target-noise-integration\\SOURCE_RELATION.json",
+    "bytes": 1769,
+    "sha256": "38e83469a08cb3203d59cca7e719fd0688fa4fcff954f267ec0540839aab1779"
+  },
+  "validation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-target-noise-integration\\VALIDATION.json",
+    "bytes": 4225,
+    "sha256": "b810548ef59e2a66437241cc621ebae47287c27e8ced6e3489e491a9a29e0173"
+  },
+  "independent_canonical_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-target-noise-integration\\INDEPENDENT_REVIEW.md",
+    "bytes": 9271,
+    "sha256": "a0ef2ef570349d332ce22fd9b58117dffc635818bdcc6c2dc23f41802a782e9e"
+  },
+  "canonical_source_archive": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-target-noise-integration\\CANONICAL_SOURCES.zip",
+    "bytes": 13437,
+    "sha256": "e94e6fbb411e901d981e74ac1f471356b4936c700df4248d0a065742f2df90b4"
+  },
+  "original_manifest": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\target-noise\\DELIVERY_MANIFEST.json",
+    "bytes": 15615,
+    "sha256": "145b8685817a5c3903fbb1c1742d4af23661f4a702998e06d501d4045a728c5d"
+  },
+  "dictionary_fix_handoff": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\target-noise\\DICTIONARY_BINDING_HANDOFF.json",
+    "bytes": 4996,
+    "sha256": "8478e69c332936458108f397e0132a6363dce365b609e518ae7a1d3e7ebe74ec"
+  },
+  "original_independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\target-noise\\INDEPENDENT_REVIEW.zh.md",
+    "bytes": 4324,
+    "sha256": "f556a0a09c0489476a8386a9fb5454efd58cdb77eca97207798058a566fc4fb7"
+  },
+  "original_execution_evidence": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\target-noise\\evidence\\RESULT.json",
+      "bytes": 32824,
+      "sha256": "9dd7285adb9fc1a4d307b898bf12e39d6bfedbf3aee07a28d8fc9e0eac9478f4"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\target-noise\\evidence\\SCOPE_RELATION.json",
+      "bytes": 3079,
+      "sha256": "05ad3f0bcf7fc9184b7e63b63e4e780073cab9ea958ba4a847aa57384d8c267c"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\target-noise\\evidence\\SOURCE_FUNCTIONAL_C_MEAN.json",
+      "bytes": 372256,
+      "sha256": "e2158dd459d4bc13fe96f85ae986241d54181651a4ee844d0d0350c225ab96cd"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\target-noise\\evidence\\SOURCE_MEAN_NOISE_CHAIN.json",
+      "bytes": 4737,
+      "sha256": "d0d125d00d9f5fc8b9f1bcdd2c4ed270bb266251422963885ec5d7420e24ff47"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\target-noise\\evidence\\DICTIONARY_BINDING_REPAIR.json",
+      "bytes": 3422,
+      "sha256": "698e11d3af72af5c5d62b7d92d9981c9c521f4112315c97028f19189f8a3ddef"
+    }
+  ],
+  "original_C_noise_artifact": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\target-noise\\evidence\\C_source_functional_operand.json",
+    "bytes": 987516,
+    "sha256": "05bf70f9a6eb58f358fae46db409ad1304c3abddd8011c0d90b4c973be649d8a"
+  },
+  "canonical_cold_read": {
+    "identity": "445eb5fc22cf0283aedf7acf7fa3770201735e646c0dd85ff868a65165f09cc2",
+    "temporal_components": 7,
+    "innovation_covariance_shape": [
+      7,
+      7
+    ],
+    "compiled_startup_root_shape": [
+      224,
+      224
+    ],
+    "eta": 1.7,
+    "original_fit_callback_and_mean_compiler_producers_retained": true,
+    "new_noise_fits": 0,
+    "response_C_updates_here": 0
+  },
+  "scientific_programme": {
+    "noise": "authorized_C_fixed_original_source_mean_residual_to_original_Burg_and_LedoitWolf",
+    "mean_dictionary": "actual_source_dictionary_digest_and_clock_bound_to_graph_before_compilation",
+    "eta": "variance_multiplier_once_in_carrier; source_mean_and_F_unscaled",
+    "next_response_update": "original_source_prior_plus_authorized_C_likelihood_once_under_frozen_plugin_noise",
+    "raw_and_C_permissions": "canonical_live_issuer_required; cold_numeric_state_grants_none",
+    "new_canonical_parent": "new_complete_producer_binding; old_C_inputs_strict_replay_preserved"
+  },
+  "checks": {
+    "canonical_discriminating_cases": 3,
+    "ruff_exit": 0,
+    "diff_check_exit": 0,
+    "new_source_or_noise_or_response_fits": 0,
+    "old1375_mean_reexecuted": false,
+    "full45_reexecuted": false,
+    "new_worktrees": 0
+  },
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-target-noise-integration\\CLEANUP_RECEIPT.json",
+    "bytes": 1124,
+    "sha256": "1d34e9a5175fd2d68452ca03e80dc31dd4006f00aa99de4ccb49033ecf3cdc15"
+  }
+}

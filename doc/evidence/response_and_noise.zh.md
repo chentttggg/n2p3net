@@ -16,6 +16,14 @@ participant、原EEG字节与whole-study排除现由同一source owner处理，�
 
 canonical迁移的7个完整模块在规范化import、顺序和模块说明后AST一致，原outer其余15个定义保持。两项聚合回归实际经过新canonical四行绝对积分、弱候选logprior−900、联合秩、重复noise-ID、保存冷读及原parent重编；Ruff与diff检查通过。完整90次例复用原执行证据，新产品45次任务沿新manifest/issuer连接实际源与完整噪声。源码、原证据、独审及cmd清理结果见[共享漂移整合](../assets/research_resume_20261012/physical_frontier_integration.json)。
 
+## C固定均值、七导噪声与响应更新
+
+C首先为噪声估计提供残差，再在已冻结的噪声下更新响应。固定均值来自原source函数和已授事件bit；原`ResidualRecord → FittedChannelNoise.fit`拟合七套时间结构及完整7×7空间协方差，保留实际224×224启动root。方差倍率eta只由carrier应用一次，原source均值和F保持。噪声出口登记响应C更新0；完整learner使用原source prior与C likelihood一次，显式后验和同一联合积分可以分别表达这一程序。
+
+新入口把字典内容和source时钟一起绑定到graph：相同列数但改标250Hz，或相同1000Hz却换基函数，均在mean编译前拒绝。exact查询缓存以完整有理行区分输入；`1/3`与`1/3+2^-100`虽舍入为同值，仍保各自误差。三项canonical聚合回归核这些边界、七导独立dense电压law中的eta和完整codec。canonical reader还在禁止fit下实际读取原C-noise，保同一identity、七套temporal、完整Σ/startup和eta=1.7。原1375×7 mean及其noise fit证据复用，未重新拟合。
+
+新canonical callback与原producer各有自己的完整C输入身份；原strict parent replay继续比较全binding，重新加载参数只恢复数值。原fit/C输入、迁移AST关系、实际冷读、独审和cmd清理见[七导噪声整合](../assets/research_resume_20261012/target_noise_integration.json)。
+
 ## BrainSync原始权限与暂停时钟
 
 canonical入口已通过三项以合成EDF/BIDS文件执行的MNE入口合同：无C标签时保完整九候选及全部会话请求，推理cap对隐藏target字段变化保持相同；部分C只用最早已授权事件，完整90个标签的候选约束需要两个实际segment的raw权限。七EEG与独立EOG逐数组等于原MNE读取，复制公开dataclass不会获得issuer注册。

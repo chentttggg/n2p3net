@@ -3240,5 +3240,14 @@
       "sha256": "fe694b062582e80f57a2eeae5b1a97acea6f4f7bdf517c60032b6ff62edb652c"
     },
     "commit": "849457b"
+  },
+  "complete_target_noise": {
+    "binding": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\target_noise_integration.json",
+      "bytes": 6302,
+      "sha256": "69bb31ad6ad2d8d00e4c6cfa7c33507473a878e7e384386f6d241c1ada530c37"
+    },
+    "scope": "exact_query_mean_and_complete_native_seven_channel_C_noise_operand_and_original_parameter_cold_read",
+    "current_execution_state": "pause_checkpoint_current.json#/general_inference"
   }
 }

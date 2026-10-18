@@ -40,6 +40,8 @@ B07 `research.multichannel_c_latent`新增明确外部固定参数的finite C pr
 
 `research.physical_response_design/scoped_physical_response`以原Fraction时钟和全部实际曝光生成完整q/h/联合未知身份的响应；`physical_affine_frontier`消费原source泛函图像与完整noise，编译每噪声段的局部二次型，并将同一物理漂移组的列映射到唯一坐标。`finite_quadratic_integration`先合并同组各段，再积分一次物理漂移及一次共同source；结构准入使用exact时间秩，QR提供数值坐标和体积。`collapsed_continuous_prediction`持唯一数值重放注册表，`grouped_physical_prediction`沿canonical raw注册表核全current记录和原请求分母；cold参数重建保持数值角色。代码迁移、原producer与完整验证范围见[共享漂移整合](assets/research_resume_20261012/physical_frontier_integration.json)。
 
+`research.cached_response_consumer`按完整exact泛函行复用原均值/因子图像；mean-only入口在原source均值和conditional intercept上计算，不投影全部因子。`source_functional_c_mean`核原字典digest与source时钟，再用canonical C事件bit和Fraction时钟构造固定均值。`target_noise_operand`把实际C residual交给原`FittedChannelNoise.fit`，保存完整七套时间参数、7×7空间协方差、启动root和显式eta；`carrier/segment_binding`连接后续物理积分。噪声拟合与一次响应C更新分别记账，原noise codec和已存producer保留；新callback身份的C-parent关系由实际输入owner建立。来源见[七导噪声整合](assets/research_resume_20261012/target_noise_integration.json)。
+
 `research.original_continuous_source_stage`将一次原source拟合、独立进程观察和只读目录导出分开。worker在拟合内部发start，原NPZ及完整codec读回后发saved；observer以真实PID/birth、Windows Job和scientific OS handle核完整生命周期及源码归档。stage终态与导出aggregate终态独立；`--admit-only`向新目录恢复只读导出，复用原模型和原stage。首个实际genesis属于software correctness，公共原始数据由独立issuer准入。
 
 `transfer.information_bound`持有`/2`完整activation/模型诊断、raw plug-in估计量及不可变JSON报告，`save/load/replay_model`保护全部输出与原producer。`transfer.exact_covariance/2`持有raw传播、resolved SPD/显式identified support及独立ridge诊断，当前是内存诊断接口。二者没有生产调用；来源、反例和完整性验收见[数学整合](assets/research_resume_20261012/diagnostic_mathematics_integration.json)。原D树local-only `run_information_bound.py`保原字节，迁移membership、actual activation和报告schema后才可复用。
