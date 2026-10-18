@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_general_response_population_joint_calibration_and_full_history_inference",
-  "recorded_at": "2026-10-18T22:30:00.458713+08:00",
+  "recorded_at": "2026-10-18T22:32:41.748239+08:00",
   "user_request": "reuse_good_LOSO_components_reconcile_actual_data_then_continue_original_general_research; accept_confirmed_Lean_errors",
   "research_worktree": "D:/BCI/worktrees/research-director",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -291,10 +291,10 @@
     "ownership": "separate_cloud_chat"
   },
   "next_actions": [
-    "Complete native G0/G1 joint source/C factory and new fit codec (general_frontier_implementation).",
-    "Complete frozen joint fit -> full-history candidate target/proposal/typed publication and replay (recovery_review).",
-    "Review explicit full-source issuer/fit_with_blocks and actual 13-person/13-fold population matrix (stationary_prefix_factor); then execute accepted actual source programme.",
-    "Use old NN/source-scale audit as external diagnostic; no additional legacy NN tuning or source rerun is prerequisite."
+    "Review actual full-source issuer, fit_with_blocks and shared forecast-codec candidate; then execute all accepted 13 person fits and 13 leave-person folds.",
+    "Complete actual native G0/G1 response/noise sufficient-statistic factory, new live fit issuer and codec; then full declared C budgets.",
+    "Review actual frozen-law component scopes; default to exact discrete sum_product and integrate shared response/record drift outside it, then full typed history replay.",
+    "Old NN/source-scale audit remains external diagnostic; source cache pinpoint has no mainline prerequisite."
   ],
   "erp_runtime_repairs": {
     "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\erp_runtime_repairs.json",
@@ -302,9 +302,9 @@
     "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
     "commit": "a6f5750"
   },
-  "integration_head": "e03c066fdae2df0fead83d3899d7f4a0d46aa82d",
+  "integration_head": "85f1cc1e762f5dccc5913aba64f5cfd4bd05ddbc",
   "concurrency_authorization": "later user allowed more threads after the temporary six-agent limit; seven actual parallel roles used for independent scientific slices",
-  "execution_priority": "general_G0_G1_response_noise_and_full_task_inference; reuse_qualified_LOSO_components_not_unconditional_old_weights",
+  "execution_priority": "general population response -> joint G0/G1 C calibration -> full history; scope-based exact discrete elimination before outer shared-state integration",
   "accepted_native_input_source_commit": "811fb18dcbde94b9903ee8cce0df4bee16466e4a",
   "worktree_housekeeping": {
     "observed_worktrees": 5,
