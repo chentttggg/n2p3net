@@ -28,6 +28,8 @@ B07 `research.multichannel_c_latent`新增明确外部固定参数的finite C pr
 
 `research.source_response_states`持有source-informed四臂的完整C后验、真实history派生权限及确定性评分。首次消费重建实际C的QR并比较保存root/RHS/权重；后续scope内复用验证，计数由独立operational receipt持有。`transfer.source_response_programme`只声明原source排除范围与连续延拓关系；`source_response_replay`连接typed ensemble、before-group nested、完整模型/证据保存、truth-free capsule与原source/MAT parent。首片明确支持BNCI单record、纯`source_response`名单和fixed策略；旧joint/Beta与trial路线由原owner保持。
 
+`research.response_frontier`持有给定共同连续参数时的完整离散求和，每个独立变量的先验进入一次，保留全部当前候选及正质量状态。`research.structured_response_frontier`用实际native设计、保存的启动噪声root及原PARCOR尾部运算生成有界支持的响应图像；候选q与每block的形状h分别声明。各record保留独立噪声与物理漂移，其likelihood先合并，再共同求和。连续积分、原始数据权限及产品调用链由各自owner连接；该接口当前返回带数值身份的点上partition。来源见[结构化推断接受](assets/research_resume_20261012/structured_frontier_integration.json)。
+
 `research.original_continuous_source_stage`将一次原source拟合、独立进程观察和只读目录导出分开。worker在拟合内部发start，原NPZ及完整codec读回后发saved；observer以真实PID/birth、Windows Job和scientific OS handle核完整生命周期及源码归档。stage终态与导出aggregate终态独立；`--admit-only`向新目录恢复只读导出，复用原模型和原stage。首个实际genesis属于software correctness，公共原始数据由独立issuer准入。
 
 `transfer.information_bound`持有`/2`完整activation/模型诊断、raw plug-in估计量及不可变JSON报告，`save/load/replay_model`保护全部输出与原producer。`transfer.exact_covariance/2`持有raw传播、resolved SPD/显式identified support及独立ridge诊断，当前是内存诊断接口。二者没有生产调用；来源、反例和完整性验收见[数学整合](assets/research_resume_20261012/diagnostic_mathematics_integration.json)。原D树local-only `run_information_bound.py`保原字节，迁移membership、actual activation和报告schema后才可复用。

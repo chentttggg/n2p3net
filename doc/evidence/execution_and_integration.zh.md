@@ -1,5 +1,11 @@
 # 执行、保存重放与代码集成
 
+## 保存校准封装的恢复
+
+actual004的C500模型、完整七行OOF（逐题只用更早校准数据的预测）及原future1/3捕获已由冻结187份科研源码的新消费者重新连接。恢复只做一次温度优化，source/C拟合、采样及组件积分均为零；effective模型摘要d3a9a0d7与两份原捕获精确相同，原base摘要076a6af6保留，保存后重新加载通过。独立消费者再核原七行、C数组、source字节及新包摘要，结果接受。来源见[恢复库存与审阅](D:/BCI/artifacts/source-response-generic/recovery/INDEPENDENT_WRAPPER_RESULT_REVIEW.json)。
+
+原七个进程在续接检查时均已不存在，旧操作系统退出状态保留unknown。首恢复封装完成耗时28.28秒；外层venv启动器退出0、耗时29.60秒，其RSS采样只覆盖启动器。后续observer已持有实际后代进程的Windows句柄；新exit17合同同时核回启动器与真正Python进程的退出17及各自RSS，后续运行按实际worker身份记录。原始结果与新消费者分别留证，运行位置和剩余请求由唯一checkpoint维护。
+
 ## 规范入口与交付清理证据
 
 本次整理将规则归入对应主指南，运行状态归入checkpoint，交接保留续接指针。整理前十三份文档已按原字节归档，见[原文清单](../../frozen/guidance_consolidation.manifest.json)。清理实际删除一份可重建字节码缓存及其空目录，共36550字节原文件；二十个先前已退休构建目录复核仍不存在，这些不计本次删除量。[实际清理记录](../assets/research_resume_20261012/guidance_cleanup_receipt.json)区分生成缓存与原始科研证据、冻结结果、producer和暂停依赖。200份冻结科学源码及四项暂停载荷核同原SHA，科研暂停保持。

@@ -1,0 +1,105 @@
+{
+  "schema": "n2p3_structured_frontier_integration_acceptance/1",
+  "scope": "complete_discrete_partition_at_shared_continuous_point_and_declared_synthetic_direct9_protocol",
+  "integrated_source": [
+    {
+      "path": "D:/BCI/worktrees/research-director/src/research/response_frontier.py",
+      "bytes": 7682,
+      "sha256": "a8fc875e78a6cd6c242eb6db667ad480ba62e85a62d79f22620167b7a685400a"
+    },
+    {
+      "path": "D:/BCI/worktrees/research-director/src/research/structured_response_frontier.py",
+      "bytes": 25301,
+      "sha256": "b0d183d8d62a03ce241c94f8b71b9a269bd3abfbf14e88ff1827731af22466c4"
+    },
+    {
+      "path": "D:/BCI/worktrees/research-director/tests/test_response_frontier.py",
+      "bytes": 5597,
+      "sha256": "4325feb1cfd3d68dde5e736f82f999e025a82d3751c43c2b69e4e7045ac110b0"
+    }
+  ],
+  "original_kernel": {
+    "path": "D:/BCI/artifacts/research-deliveries/source-response-states/frontier-draft/conditional_response_frontier.py",
+    "bytes": 19673,
+    "sha256": "4263e166492e5cd3d43d5b93f9ce928d784d61dd4a08dd34f1dc1b882a84d72b"
+  },
+  "original_carrier": {
+    "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-frontier/structured_response_frontier.py",
+    "bytes": 24896,
+    "sha256": "0017797fd5b29c57f421cf41989a5f986e7e8b41497c8d5f2eb710a976a13716"
+  },
+  "source_relationship": {
+    "kernel_eight_AST_definitions_identical": true,
+    "carrier_all_definition_AST_identical": true,
+    "integration_changes": [
+      "kernel_only_projection",
+      "module_documentation",
+      "canonical_research_import_owner"
+    ]
+  },
+  "original_evidence": [
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-frontier/SMALL_ORACLE_001.json",
+      "bytes": 6174,
+      "sha256": "075ae76fd499c7ac6ab57f0ae2ad26b30aab28da48a46502c4859ec5f5911e1d"
+    },
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-frontier/PRODUCT45_ORACLE_001.json",
+      "bytes": 43441,
+      "sha256": "6af5ccc75705aea68d0db1d36e9f7e398dbcc45bc1533c1a06de0b82015b0707"
+    },
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-frontier/PRODUCT45_RELABEL_CODEC_001.json",
+      "bytes": 2905,
+      "sha256": "36842e6052d0a80df2f85dd9a6c0cfe3d196df75bbecae5c5439b4634a709b42"
+    },
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-frontier/SAVED_FIXTURE_LOADER_CHECK.json",
+      "bytes": 377,
+      "sha256": "291a4e9b453e70d203ef9c268f4f6cdb6f2c521d80859ea7c85215f659661da6"
+    },
+    {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-frontier/SOURCE_MAP.json",
+      "bytes": 4051,
+      "sha256": "1b689f0e4c1e3fc734eefd667ac7483e90deb0b5de8fe96aad71c88dd915ee90"
+    }
+  ],
+  "original_source_map_files_verified": 21,
+  "review_extension": {
+    "original_review_retained": {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-frontier/executed_sources/INDEPENDENT_SCIENCE_REVIEW_BEFORE_INTEGRATION.md",
+      "bytes": 12945,
+      "sha256": "681bd3f7147e54a91e2ce50e6558c4f42240ef3d7df6e1e10d33c07a2d31d7a5"
+    },
+    "original_review_sha256_in_source_map": "681bd3f7147e54a91e2ce50e6558c4f42240ef3d7df6e1e10d33c07a2d31d7a5",
+    "review_with_integration_appendix": {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-frontier/INDEPENDENT_SCIENCE_REVIEW.md",
+      "bytes": 14262,
+      "sha256": "8ade12090974843164d1ce444b05eb4297fb620215db5bae33bbb5d74dd09ecc"
+    },
+    "transition": "initial_review_bytes_are_exact_prefix_of_appended_review"
+  },
+  "root_validation": {
+    "command": "D:/BCI/n2p3-net/.venv/Scripts/python.exe -m pytest tests/test_response_frontier.py -q",
+    "exit_code": 0,
+    "passed": 2,
+    "contracts": [
+      "complete_weak_candidate_mass_and_named_budget",
+      "independent_record_clocks_and_noise_shared_q_beta_local_shapes_prior_once_raw_Gaussian_enumeration"
+    ],
+    "Ruff_exit_code": 0,
+    "full_suite_scope": "isolated_new_modules_existing_production_callers_unchanged"
+  },
+  "new_scientific_fits": 0,
+  "cleanup": {
+    "path": "D:/BCI/artifacts/research-deliveries/source-response-states/structured-frontier/CLEANUP.json",
+    "bytes": 2515,
+    "sha256": "02bc2b24333fda3934d1af30a2e214f7e81e4e4a686cafc2280562d644d1e642"
+  },
+  "cleanup_deleted_bytes": 86157,
+  "remaining_integration_owners": [
+    "outer_continuous_programme_and_quality_policy",
+    "truth_free_BrainSync_raw_and_C_authority",
+    "source_C_future_save_replay_product_caller"
+  ]
+}
