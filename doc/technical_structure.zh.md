@@ -1,6 +1,14 @@
 # 当前技术结构与完整链条
 
-`research.existing_nn_public_learner`把原留整库H源权重接入原public compiler、`fit_with_epoch_selection`、`FrozenTrialPredictor`和完整prefix parent回放；source/scratch共用原profile与C选择政策，scratch仅借架构并重新估计目标统计。原source输入的baseline为none，按保存合同逐字段核；六槽中的PO8缺测保mask，经典方法只用实测五导。wrapper复用原LDA/xDAWN和CandidateEvidence，保存真正selected inner state并回放原停止规则，完整请求顺序随fit context绑定。实际首批与来源见[现成NN整合](assets/research_resume_20261012/existing_nn_public_integration.json)。
+`models.candidate_ties`统一generic、membership、row/column及`CandidateEvidence`的operational平局规则：最高分与候选分差不超过原绝对floor `1e-12` 时不可区分，公共分数原点不放大该floor。它保原score单位；log score中即log odds的数值分辨率，不作统计置信度。完整tie仍保概率供NLL/Brier，缺失/coverage权限由原owner处理。原连续/算子/SelectionERP的`1e-10`规则保各自含义；历史操作结果按原冻结consumer重放，新规则用于新执行。
+
+`research.population_response_forecast`消费个人data likelihood的完整A/r/c，分别保人群均值不确定性与真实人际差异；`source_likelihood_export`从原同次source blocks导出数据因子、绝对常数与显式F→C列置换，每人一个shared数值包供不同fold引用。个人posterior的prior信息不进入data likelihood。
+
+`gaussian_local_factor/gaussian_local_conditional`在同一次QR中积分selection独立变化并保其条件后验，shared响应与原record漂移留给外层各处理一次。`joint_response_noise_reference`持固定两曝光GLS刻度，`joint_response_noise_calibration`持完整C的响应/噪声联合边缘似然、残差二阶矩和private AR1/full-Q解析梯度。它们是数值owner；真实source/C factory、新fit artifact与held消费者沿同一权限链连接。源码、独审与组合检查见[通用响应核心整合](assets/research_resume_20261012/general_response_core_integration.json)。
+
+`public_native_learner_plan`持实际C/history的原record观测并集、完整q/shape/unknown变量与精确C标签因子；运行期对照初次封存的真实law、质量、scope和算子，正常缓存不进入科学身份。`public_native_noise_reuse`要求原、新两个live parent和完整实际残差关系；保存态复用由独立issuer处理。`response_frontier`保C排除候选的真实零似然及完整候选轴。
+
+`research.existing_nn_public_learner`把原留整库H源权重接入原public compiler、`fit_with_epoch_selection`、`FrozenTrialPredictor`和完整prefix parent回放；source/scratch共用原profile与C选择政策，scratch仅借架构并重新估计目标统计。原source输入的baseline为none，按保存合同逐字段核；H实际缺PO8和OZ，经典方法只用FZ/P3/PZ/P4四个实测信号槽，CZ只作参考。wrapper复用原LDA/xDAWN和CandidateEvidence，保存真正selected inner state并回放原停止规则，完整请求顺序随fit context绑定。该程序评价跨研究适配；首批来源见[现成NN整合](assets/research_resume_20261012/existing_nn_public_integration.json)，完整诊断与科学用途见[公共评估](evidence/public_evaluation.zh.md)。
 
 `research.native_c_mean_design`在每次live C均值调用内部复用相同native相对查询，将原basis值和误差提升到共同有理分母后累计整数，最后交回原`NativeTemporalMeanSource`作均值收缩与正确舍入。helper、原owner及真实query分别入稳定身份，计时仅存运行诊断；原C位、完整basis/通道、窗口与误差关系保留。旧noise复用沿原Y与完整D相等的显式关系，原fit provenance保持。来源见[精确C均值加速整合](assets/research_resume_20261012/native_mean_performance_integration.json)。
 

@@ -1,0 +1,77 @@
+{
+  "schema": "n2p3_candidate_score_shift_repair_integration/1",
+  "tie_policy": {
+    "id": "fixed_absolute_score_contrast/1",
+    "atol": 1e-12,
+    "rtol": 0.0,
+    "units": "existing score units; membership and normalized log probability use log odds",
+    "meaning": "numerical top-score resolution, not statistical confidence"
+  },
+  "canonical_sources": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\models\\candidate_ties.py",
+      "bytes": 751,
+      "sha256": "078575e5cd66474762b192fa69ce2da9c4e19613203d9dfc6b2513a01439d314"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\models\\candidate_evidence.py",
+      "bytes": 36635,
+      "sha256": "1d63a95b702af0a629b057f576d3560af052173bd95f4564375e81af0edbc668"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\candidate_decision.py",
+      "bytes": 13687,
+      "sha256": "1898ca716c4eed0fae3a0c3b865e538fb5a27e809658041a16f534884eea951d"
+    }
+  ],
+  "integrated_regression": {
+    "path": "D:\\BCI\\worktrees\\research-director\\tests\\models\\test_candidate_tie_invariance.py",
+    "bytes": 6642,
+    "sha256": "437ab2dce508762b8812bed862ef24e0371079aee3924146e7afb366802923fe"
+  },
+  "author_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\scorer-shift-repair\\DELIVERY_MANIFEST.json",
+    "bytes": 8453,
+    "sha256": "03273e232d859e760d9def987db38e2ab1f3ea967682c1d49354d7bd0c0dbf89"
+  },
+  "independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\scorer-shift-repair\\independent-review\\INDEPENDENT_SCORER_SHIFT_REVIEW.zh.md",
+    "bytes": 7897,
+    "sha256": "ab740db533cbd9c6b7d16aaf95518bf166416e917f7a13cc3c69d9c6c60f1352"
+  },
+  "independent_manifest": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\scorer-shift-repair\\independent-review\\INDEPENDENT_REVIEW_MANIFEST.json",
+    "bytes": 2121,
+    "sha256": "f9ad30500713d6a61448b05aef08ad66f4b46fc7219f8b9fb4f7e86273ef0454"
+  },
+  "canonical_source_relation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\scorer-shift-repair\\CANONICAL_INTEGRATION_RECEIPT.json",
+    "bytes": 1506,
+    "sha256": "015ed9e9980aea88286e5e507785d4c4f0840732a6dadc980f005fa45403ec6e"
+  },
+  "checks": {
+    "author_new_tests": 10,
+    "author_relevant_existing_tests_reused": 48,
+    "root_canonical_API_cases": 3,
+    "independent_additional_controls": "weighted Fraction; rectangular row/column shifts without torch; CE gradient at tie; unequal membership count domain; true-zero probability and publication/reload",
+    "Ruff": "passed after two import-only grouping fixes; executable AST equal to accepted candidate",
+    "real_fits_or_EEG_reads": 0
+  },
+  "numerical_outputs": "scores, posterior and probability arithmetic unchanged; only operational top/tie classification follows new fixed contrast rule",
+  "floating_domain": "invariance holds for represented contrasts preserved by a common shift, or when contrast error is smaller than the distance to the fixed tie boundary",
+  "historical_execution": "old probability records are unchanged; historical operational statuses replay with their original frozen owner. New from_record applies new consumer policy and is not a relabelling of old experiment outcomes.",
+  "unchanged_specialized_tie_rules": "ContinuousDecisionModel, OperatorGLS and SelectionERP retain existing rtol0/atol1e-10",
+  "old_sources": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\scorer-shift-repair\\before\\src\\models\\candidate_evidence.py",
+      "bytes": 36589,
+      "sha256": "ed132e58fb2ecd6d7ca1ce2a06b1f9dd2278b4528a582f0b145e218a70f47d5c"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\scorer-shift-repair\\before\\src\\transfer\\candidate_decision.py",
+      "bytes": 13751,
+      "sha256": "1f309d2063ae0c67082278e315231beb5615ccc01ea7d79ddbbf09b368bd584a"
+    }
+  ],
+  "primary_checkout": "no main-directory edits; integration is in the selected research worktree"
+}

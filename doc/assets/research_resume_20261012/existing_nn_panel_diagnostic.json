@@ -1,0 +1,64 @@
+{
+  "schema": "n2p3_existing_nn_full_panel_diagnostic/1",
+  "scientific_role": "cross_study_transfer_diagnostic; reusable engineering modules; not participant_LOSO_or_general_response_model_acceptance",
+  "requested_score_cells": 9828,
+  "source_checkpoint": "134a5bc1beef8a64870bae7f2ca3a29da33ddad689ccc90b5419170f9c467236",
+  "source_training_scope": "11 studies, whole Huebner excluded, 486 original source identities",
+  "actual_target_signal_channels": [
+    "FZ",
+    "P3",
+    "PZ",
+    "P4"
+  ],
+  "missing_signal_slots": [
+    "PO8",
+    "OZ"
+  ],
+  "reference": "measured_channel:CZ",
+  "terminal": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-panel\\TERMINAL_BINDING.json",
+    "bytes": 43702,
+    "sha256": "8ddce8a0205591da562f49e5dc6f9f99086afe1e1c7264af24b4f0b243b950e3"
+  },
+  "result": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-panel\\actual-full\\RESULT.json",
+    "bytes": 9835,
+    "sha256": "030b54e383d738c999a0ae80dced7d75e7f9e043569832b80133cd618780ac6f"
+  },
+  "metrics": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-panel\\actual-full\\METRICS.json",
+    "bytes": 37357447,
+    "sha256": "c23b3ff5a16f2ad722bb53aecc6c51f3f2caf093db0d48050e1c0558ca364c00"
+  },
+  "root_numeric_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-panel\\ROOT_TERMINAL_REVIEW.json",
+    "bytes": 2379,
+    "sha256": "93e9c37e82a2f1c34d965d3931c54dc0cb1bf294f1106359e3695374b7d49c2f"
+  },
+  "science_input_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-panel\\science-review\\SCIENTIFIC_INPUT_AUDIT.zh.md",
+    "bytes": 23024,
+    "sha256": "87f9b96b0d55e0d050a91b1a9c63759e0d134ecfa8990449ce56d7930eddb6dd"
+  },
+  "plan_revision": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-panel\\PLAN_REVISION_RELATION.json",
+    "bytes": 828,
+    "sha256": "b0a31d6067ac0b86c5005cb8ac42891dd88db06caba3c26cb45ba53a4269f285"
+  },
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-panel\\CLEANUP_RECEIPT.json",
+    "bytes": 1437,
+    "sha256": "a93eec6fe8f4ab2a4e8342f988ba2ee67f84554554f7dff100dc1dc7fd714bbd"
+  },
+  "frozen_executed_source_and_outputs_relabelled": false,
+  "source_scale_trace": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-panel\\science-review\\SOURCE_SCALE_TRACE.json",
+    "bytes": 25954,
+    "sha256": "4921180d89e6cc623403b3d64cc3b7349d5911d28a5ec1ff4e1807ff921dcb7b"
+  },
+  "science_report_revision": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-panel\\science-review\\REPORT_REVISION.json",
+    "bytes": 1187,
+    "sha256": "119e39b24018dfcb2caa251f8d0c3c5e659e3cc235c042ec90f0bff6afececbd"
+  }
+}

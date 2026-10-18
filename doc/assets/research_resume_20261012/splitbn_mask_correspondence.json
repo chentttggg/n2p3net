@@ -1,0 +1,53 @@
+{
+  "schema": "n2p3_splitbn_Lean_handoff_research_correspondence/1",
+  "production_repair": "already present in research HEAD ancestors ddcd834 and 49dea0d; no new production edit",
+  "existing_acceptance": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\splitbn_target_integration.json",
+    "bytes": 4572,
+    "sha256": "35b3ce29ca307422b4ac1903251f5e9a17e1485f8988328d219586516e7837ca"
+  },
+  "current_source_files": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\models\\splitbn.py",
+      "bytes": 41035,
+      "sha256": "b3a10587764e3925895c85caac85544121a33598317ec5d7be234183ffd338da"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\subject_adapter.py",
+      "bytes": 93161,
+      "sha256": "ca6bf48f9cf847c9d9236541a2ced6e00fe8d8fbcdee021bd499092d21e90de7"
+    }
+  ],
+  "external_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\splitbn-mask-repair\\DELIVERY_MANIFEST.json",
+    "bytes": 3394,
+    "sha256": "acb60c5069708bc4f144e0b8cff5417eecd14be218fdee249f792eaa19606451"
+  },
+  "checkout_identity": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\splitbn-mask-repair\\CHECKOUT_IDENTITY.json",
+    "bytes": 2116,
+    "sha256": "58556b986bf1ab28a654076b14c5ed443aa75110bf9cce6414311e9808f480e1"
+  },
+  "evidence": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\splitbn-mask-repair\\EVIDENCE_BINDING.json",
+    "bytes": 5441,
+    "sha256": "ec1b4b2fde378493b542e159b629effa2947bc61e46b938542cf3408ca049d6b"
+  },
+  "integrated_real_caller_test": {
+    "path": "D:\\BCI\\worktrees\\research-director\\tests\\transfer\\test_splitbn_mask_real_callers.py",
+    "bytes": 4729,
+    "sha256": "d35caa05e9ef4de67c07aec1cddb279ee0d7919a10de942720a9a808270f8bc8"
+  },
+  "new_tests_reused": {
+    "passed": 2,
+    "path": "actual SubjectAdapter.fit -> _refit_full_prefix, then state+receipt save/load and public forward",
+    "per_case_optimizer_updates": {
+      "initial": 1,
+      "refit": 1
+    },
+    "full_scientific_training": false
+  },
+  "historical_19_cases": "13 failures = 2 statistics counterexamples + 11 unsupported API cases; source identities retained",
+  "primary_checkout": "D:/BCI/n2p3-net remains separate old API/dirty; not overwritten",
+  "frozen_panel_unchanged": true
+}

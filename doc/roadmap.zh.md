@@ -36,6 +36,6 @@
 
 B07/B11的首项机制比较采用G0共享完整响应与G1 selection独立零均值functional变化，二者使用各自具名联合C/noise marginal定标。原非线性delay/width研究继续保nominal、mean、full-moment Gaussian、exact W四臂，G1另列为functional比较。两类law共用原权限、完整候选/历史、同record观测并集、一次startup/drift及whole/conditional同拟合评分。研究选择和数学反例见[响应与噪声](evidence/response_and_noise.zh.md#共享函数与字符变化的机制比较)。
 
-B04/B12优先复用已有source权重及成熟target微调/早停/保存重放，保其原输入和训练来源；新的同源同输入LOSO作为具名受控实验。可独立执行的完整评价无需等待新的source重新训练，来源剂量与配对scratch各自清楚记录。
+B04/B12复用成熟的数据权限、target微调、早停、保存重放和完整任务评价；源权重按实际数据合同与科学用途选择。逐人LOSO与整库留出的跨研究迁移分别命名，旧NN作为具名外部基线。通用响应、噪声与不确定性主线按自身依赖推进；需要同源受控比较时再声明逐折source人群、输入和剂量。
 
 原123项清单与设计检索见[分块方案](evidence/deep_research_plan_20261005.zh.md)和[愿望清单](evidence/wishlist_progress_20261010.zh.md)；整理前的路线图由[原文清单](../frozen/guidance_consolidation.manifest.json)保留。

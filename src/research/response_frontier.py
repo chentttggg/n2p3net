@@ -98,7 +98,7 @@ def sum_product(point, *, maximum_intermediate_entries):
         if (factor.scope != tuple(sorted(set(factor.scope))) or not factor.scope
                 or any(type(index) is not int or not 0 <= index < len(widths) for index in factor.scope)
                 or factor.values.shape != tuple(widths[index] for index in factor.scope)
-                or not np.isfinite(factor.values).all()):
+                or np.isnan(factor.values).any() or np.isposinf(factor.values).any()):
             raise ValueError("log factor does not preserve its complete declared scope")
         if factor.values.size > maximum_intermediate_entries:
             raise FrontierBudgetExceeded("declared factor already exceeds the complete-state table budget")
@@ -151,7 +151,7 @@ def sum_product(point, *, maximum_intermediate_entries):
         joint.append(logsumexp(values[selected]))
         prior.append(logsumexp(roster.log_mass[selected]))
     joint, prior = np.asarray(joint), np.asarray(prior)
-    if not np.isfinite(joint).all():
+    if np.isnan(joint).any() or np.isposinf(joint).any() or not np.isfinite(joint).any():
         raise ValueError("pointwise partition arithmetic is unresolved")
     return Partition(point.current_q_values, joint, prior, joint-prior,
         {**point.binding, "canonical_output": "joint_mass_including_current_prior_once",

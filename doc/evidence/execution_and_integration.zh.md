@@ -1,5 +1,19 @@
 # 执行、保存重放与代码集成
 
+## Lean确认错误的科研侧接收
+
+SplitBN缺导安装在科研树的既有祖先中已经修复；本次重新核实helper和两处真实caller，并新增两项完整fit→refit小回归：缺导initial/refit为16/32个观测、方差1，全观察为32/64、方差0.5，保存加载和缺导占位变化逐bit保持。原Lean19项的13失败准确分为2个统计反例与11个未支持API，未重复旧测试或覆盖主目录dirty代码。
+
+scorer统一使用原绝对`1e-12`分差floor，移除共同分数基线对平局容差的影响；generic、membership、row/column和概率发布/重载共用同一owner。作者新增10项和既有48项、独立Fraction/矩形轴平移/CE梯度控制通过；root另接三条实际API回归，随后只排序两组import并核执行AST相同，相关Ruff通过。scores与概率算术保持，原冻结实验继续用原consumer解释操作状态；浮点平移的适用范围按实际contrast误差到floor的距离声明。实际源码SHA、回归与两checkout关系集中在[科研修复交接](../assets/research_resume_20261012/lean_confirmed_error_resolution.json)。
+
+## 通用响应核心与科学用途纠正
+
+九个已源审的population、source-data likelihood、Gaussian-local/conditional、public programme/noise和joint response/noise模块以原字节接入正常research命名空间。旧frontier源码及修改前指南物理保存在ZIP并逐成员核验，旧执行producer与结果保持原身份。三项新组合检查和相关Ruff通过，原定向数学/保存证据按实际源码关系复用；少量导入排序沿既有producer保存规则声明。
+
+确认上述替代代码后，逐目录用cmd删除旧Ruff及三个模块目录的Python缓存，共140文件、5264870字节，四条命令均exit0且复查不存在。独立面板另已归档251成员的实际producer并删除6662916字节生成代码/缓存；科研输出及原H1证据保留。五个工作树均在D盘，本片未新建工作树；旧joint树仍含唯一恢复依赖，继续保留。
+
+既有NN面板按原冻结计划完整收敛，科学用途纠正集中在[公共评估](public_evaluation.zh.md#旧nn跨研究适配的完整诊断)。它提供跨研究迁移诊断及工程复用来源，通用响应/噪声主线继续按实际依赖推进。当前任务和进程只由checkpoint维护；源码、检查与清理回执见[核心整合绑定](../assets/research_resume_20261012/general_response_core_integration.json)。
+
 ## 实际物理算子接线与原生公共输入
 
 原实际raw-parent反例显示：同一合法cap接入错一采样点的clock，响应可从`[1,2,0,0]`变为`[0,1,2,0]`，旧Plan与segment身份仍相同；错误membership也能通过。修复后factory核原owner重新派生的完整clock/history/membership，复用时重新核实际callback关系。12类factory错接、6类reuse替换及C公开Plan重接已被拒绝；正常direct/template与原value/error数组保持。

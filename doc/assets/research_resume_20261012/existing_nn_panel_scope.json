@@ -20,5 +20,10 @@
   "current_complete_27record_budget_mapping": "all13 declared200/800/2000; raw/epoch used recorded independently by original issuer",
   "prior_short_collection_cap_used_as_panel_budget": false,
   "metadata_freeze_EEG_weight_fit_reads": 0,
-  "source_training_required": 0
+  "source_training_required": 0,
+  "plan_revision_relation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\existing-nn-public-panel\\PLAN_REVISION_RELATION.json",
+    "bytes": 828,
+    "sha256": "b0a31d6067ac0b86c5005cb8ac42891dd88db06caba3c26cb45ba53a4269f285"
+  }
 }

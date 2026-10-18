@@ -1,0 +1,22 @@
+{
+  "schema": "n2p3_confirmed_Lean_errors_research_resolution/1",
+  "original_handoff": {
+    "path": "D:\\BCI\\n2p3-net\\doc\\assets\\lean_gaussian_20261016\\research_error_handoff_01.json",
+    "bytes": 2148,
+    "sha256": "496f73649d468c53a0b3dc4e0be1b3a5ff2bcea272b76d01817c9d04c44cf48c"
+  },
+  "repair_checkout": "D:\\BCI\\worktrees\\research-director",
+  "SplitBN": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\splitbn_mask_correspondence.json",
+    "bytes": 2453,
+    "sha256": "db443b5ce6302c3f43fabb659dd4953c3517d877024ab4bd434038c1150b8b02"
+  },
+  "scorer_common_shift": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\scorer_shift_repairs.json",
+    "bytes": 4221,
+    "sha256": "bb770f19fd79801361222c1ce097950e5799ac50ff5674145596986e1e7dee98"
+  },
+  "original_Lean_source_v5_contract": "24146f3db60ec73b9d9ecb9b77fdc5cb1e607a210b541ebe61be38eced7e9e1f",
+  "original_Lean_source_or_running_snapshots_resigned": false,
+  "communication": "consolidated result artifact for source-correspondence follow-up; no routine progress message sent to the Lean thread"
+}

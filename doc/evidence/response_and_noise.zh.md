@@ -1,5 +1,13 @@
 # 响应模型、空间先验与噪声数值
 
+## 人群先验与字符变化的通用核心
+
+人群层直接消费每个人的测量likelihood，预测新人时把“人本来就不同”和“人群平均尚有估计误差”两组完整factor拼接。原个人posterior里的先验不再当作新测量；F-order到native C-order的列置换、绝对likelihood常数与每record观测范围明确保存。个人compact数据包在不同留人fold间只引用一次。
+
+字符局部Gaussian变化与shared响应分开：同一次QR积分局部变量并保其条件后验，共同响应和record漂移跨全部观测保持同一变量。完整残差二阶矩保shared/local的交叉项，供联合AR1/full-Q噪声校准使用；两曝光GLS reference在目标优化前固定。原有Gaussian-local 37+9项、人群17项、数据导出8项与各自独审按相同源码复用。
+
+canonical新增三项组合检查：原小数值模型的均值/完整factor逐bit冷读、两个fold共享相同个人对象；人口factor与local conditional组合对独立dense Gaussian最大误差5.55e-16；完整九候选C标签因子保8个真实零似然、候选先验只进入一次。新检查未读真实EEG或拟合模型，核心源码逐字节整合；真实public factory与完整held程序由各自执行验收。来源见[核心整合绑定](../assets/research_resume_20261012/general_response_core_integration.json)。
+
 ## 共享函数与字符变化的机制比较
 
 完整Gaussian系数描述一个人跨字符共享的响应不确定性；给每字符新增零均值函数效应，才产生字符间独立变化。其跨字符covariance保共享项，字符内再加local项。独立反例表明，即使每字符总variance相同，错共享或错独立仍改变J2/9/32/36的完整候选概率；同一C观测乘两次也会虚增精度。Gaussian functional变化与exact时间warp有不同分布和支持，完整一二阶矩不等于warp mixture。

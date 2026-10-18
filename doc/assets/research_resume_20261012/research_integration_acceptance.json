@@ -3337,5 +3337,30 @@
     "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\existing_nn_public_integration.json",
     "bytes": 9695,
     "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
+  },
+  "general_response_core_integration": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\general_response_core_integration.json",
+    "bytes": 7545,
+    "sha256": "a1dfcae9112c83d10799c025e8f24da0bc874e34aee782b0f082f69391703c43"
+  },
+  "existing_nn_panel_diagnostic": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\existing_nn_panel_diagnostic.json",
+    "bytes": 3087,
+    "sha256": "acaa029fe735e8fbbc1201a3b829cb63875f0092333a26c131588cfba0b8390b"
+  },
+  "splitbn_mask_correspondence": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\splitbn_mask_correspondence.json",
+    "bytes": 2453,
+    "sha256": "db443b5ce6302c3f43fabb659dd4953c3517d877024ab4bd434038c1150b8b02"
+  },
+  "scorer_shift_repairs": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\scorer_shift_repairs.json",
+    "bytes": 4221,
+    "sha256": "bb770f19fd79801361222c1ce097950e5799ac50ff5674145596986e1e7dee98"
+  },
+  "lean_confirmed_error_resolution": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\lean_confirmed_error_resolution.json",
+    "bytes": 1188,
+    "sha256": "b425a628f98eafc14c270e2a91b883151d6965e749e5d89d5a119013c9a2c795"
   }
 }

@@ -19,8 +19,9 @@ Semantics (frozen with the archived v3 evidence chain):
   weighted mean requiring finite positive per-trial variances.
 - Empty or zero-effective-weight candidates make the decision abstain; the
   frozen vocabulary never shrinks to the surviving evidence.
-- Exact ties (``rtol=atol=1e-12``) abstain: the winner is ``None``. Nothing
-  may break ties by candidate label.
+- Top score contrasts within the fixed absolute ``1e-12`` floor abstain:
+  the winner is ``None``. The common score origin and candidate labels do not
+  set the tie tolerance.
 - Candidate codes outside the declared vocabulary fail closed instead of
   being silently dropped from the bucket aggregation (audit D8).
 - With ``center_logits``, each decision group's logits are centered on their
@@ -38,6 +39,7 @@ import numpy as np
 import torch
 
 from data.candidate_task import MembershipDecision
+from models.candidate_ties import candidate_top_tie_mask
 
 EVIDENCE_AGGREGATIONS = frozenset({"sum", "mean", "tempered_evidence"})
 EXTENDED_EVIDENCE_AGGREGATIONS = EVIDENCE_AGGREGATIONS | {"trim0.2", "precision"}
@@ -189,7 +191,7 @@ class CandidateEvidence:
                 raise ValueError("log probabilities must be normalized on the complete vocabulary")
             values = np.frombuffer(values.tobytes(), dtype=np.float64)
             object.__setattr__(self, "log_probability", values)
-            winners = np.flatnonzero(np.isclose(values, maximum, rtol=1e-12, atol=1e-12))
+            winners = np.flatnonzero(candidate_top_tie_mask(values))
             top_candidate_indices = tuple(int(index) for index in winners)
             status = "tie" if len(winners) != 1 else "available"
             if status == "available":
@@ -439,7 +441,7 @@ def membership_decision_scores(evidence, decision: MembershipDecision, *, availa
               "unidentifiable_candidates" if not identifiable else None)
     predicted = None
     if reason is None:
-        winners = np.flatnonzero(np.isclose(detached, detached.max(), rtol=1e-12, atol=1e-12))
+        winners = np.flatnonzero(candidate_top_tie_mask(detached))
         if len(winners) == 1:
             predicted = decision.candidate_vocabulary[int(winners[0])]
         else:
@@ -540,7 +542,8 @@ def candidate_evidence_scores(
     -------
     CandidateScores
         Per-candidate scores (``-inf`` for empty candidates), observed trial
-        counts, and the argmax winner or ``None`` on an exact tie or abstain.
+        counts, and the argmax winner or ``None`` within the fixed contrast
+        tie floor or on incomplete evidence.
     """
 
     if aggregation not in EXTENDED_EVIDENCE_AGGREGATIONS:
@@ -622,8 +625,7 @@ def candidate_evidence_scores(
     if bool(np.isneginf(finite_scores).any()):
         predicted = None
     else:
-        maximum = float(np.max(finite_scores))
-        tied = np.flatnonzero(np.isclose(finite_scores, maximum, rtol=1e-12, atol=1e-12))
+        tied = np.flatnonzero(candidate_top_tie_mask(finite_scores))
         predicted = int(vocab[tied[0]]) if len(tied) == 1 else None
     return CandidateScores(scores=scores, counts=counts, predicted=predicted)
 

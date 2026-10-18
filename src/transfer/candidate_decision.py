@@ -13,6 +13,7 @@ from collections.abc import Sequence
 import numpy as np
 
 from data.candidate_task import CandidateTaskContract
+from models.candidate_ties import candidate_top_tie_mask
 from transfer.outcomes import (
     CandidateCoverage,
     DecisionKey,
@@ -150,7 +151,7 @@ def decision_outcomes_at_repetition(
     # Vectorized row/column scoring. Each event contributes to one (decision,
     # repetition, candidate) cell; a prefix sum over repetitions reproduces the
     # per-level cumulative sum aggregation without the per-(decision, level)
-    # Python loop, and a single isclose pass reproduces tie abstention. This is
+    # Python loop, and the shared contrast-floor pass applies tie abstention. This is
     # the hot path for every result task (single-subject decision ledger), so
     # it stays in numpy; the working set is a few hundred events, far below the
     # size where a GPU round-trip would pay for itself.
@@ -202,18 +203,16 @@ def decision_outcomes_at_repetition(
             truth_valid[index] = True
 
     # Row and column are two independent candidate sets; a non-unique maximum
-    # on either axis abstains (None), matching the historical rtol=atol=1e-12.
+    # on either axis abstains (None), using the shared fixed contrast floor.
     row_scores = cum_logits[:, :, :n_rows]
     col_scores = cum_logits[:, :, n_rows:]
-    row_max = row_scores.max(axis=2)
     row_predicted = np.where(
-        np.sum(np.isclose(row_scores, row_max[:, :, None], rtol=1e-12, atol=1e-12), axis=2) != 1,
+        np.sum(candidate_top_tie_mask(row_scores, axis=2), axis=2) != 1,
         -1,
         np.argmax(row_scores, axis=2),
     )
-    col_max = col_scores.max(axis=2)
     col_predicted = np.where(
-        np.sum(np.isclose(col_scores, col_max[:, :, None], rtol=1e-12, atol=1e-12), axis=2) != 1,
+        np.sum(candidate_top_tie_mask(col_scores, axis=2), axis=2) != 1,
         -1,
         np.argmax(col_scores, axis=2),
     )

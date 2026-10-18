@@ -1,0 +1,139 @@
+{
+  "schema": "n2p3_general_response_core_integration/1",
+  "scope": "population_data_likelihood_Gaussian_local_joint_noise_numeric_owners_and_public_foundation",
+  "canonical_sources": {
+    "population_response_forecast": {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\population_response_forecast.py",
+      "bytes": 29833,
+      "sha256": "876b23b2da3d39a6e382f8b1efc14917b8a6197fbc50ae49b7cc16d37c758f99"
+    },
+    "source_likelihood_export": {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\source_likelihood_export.py",
+      "bytes": 24527,
+      "sha256": "ec9fe0037f18f1d52c3bc5110070f0d47b6aef448ae00e158a7c706ad7af4ec1"
+    },
+    "gaussian_local_factor": {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\gaussian_local_factor.py",
+      "bytes": 24027,
+      "sha256": "441104a0e3bf19c7fa9e1eb6651439c8bfd1eb8dcd65e09acd46e4289feb62a8"
+    },
+    "gaussian_local_conditional": {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\gaussian_local_conditional.py",
+      "bytes": 6122,
+      "sha256": "1502b76f75eb94f67df6d27689fdeffa46ca56e09eb9ce9b5cff76d2f204bb92"
+    },
+    "public_native_learner_plan": {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\public_native_learner_plan.py",
+      "bytes": 25406,
+      "sha256": "67c092ffb45255241616c23ee5f65b90ddb076eaf9b7099525fd7152e47ece7b"
+    },
+    "public_native_noise_reuse": {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\public_native_noise_reuse.py",
+      "bytes": 8020,
+      "sha256": "5c5eb9d058804cfe2ce4a2e367d0c830f06ccb84dfcea8fcd217a7a6106d7d4c"
+    },
+    "response_frontier": {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\response_frontier.py",
+      "bytes": 7764,
+      "sha256": "2a72a25f538d50cbec7f4a3c6fd469045b8cc21be86ef420e782705987f464d4"
+    },
+    "joint_response_noise_calibration": {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\joint_response_noise_calibration.py",
+      "bytes": 22708,
+      "sha256": "ef58720a25b9b4396452a7f50ecca2756938154c6238cbea46e2684aa9317cb7"
+    },
+    "joint_response_noise_reference": {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\joint_response_noise_reference.py",
+      "bytes": 8755,
+      "sha256": "f3d66ca11bf6d1c82eb602fbb58ab8c9b6f6241376cbf2f62b655064ce07fda6"
+    }
+  },
+  "source_copy_relation": "all nine modules byte-identical to their reviewed candidate; response_frontier changes only two finite predicates",
+  "root_source_review": "population/export review reused from prior slice; full local/conditional, public original+snapshot revision and joint/reference code and actual dependency callers inspected in this slice",
+  "upstream_acceptance": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\full-response-cohort-forecast\\DELIVERY_MANIFEST.json",
+      "bytes": 3555,
+      "sha256": "2bd1f492c743a569ae8f27e8fe7e55f6dedd147264895c26f9f45460638415c5"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\full-response-cohort-forecast\\independent-review\\REVIEW_RECEIPT.json",
+      "bytes": 4389,
+      "sha256": "73728a89bf96b0455d55c939987fa42cb3c848bd5e993cee7777dd0747305bc4"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\source-likelihood-export\\REVISION_MANIFEST.json",
+      "bytes": 1959,
+      "sha256": "22cb8af04d7eec72f85290bded11b2ccee5cce59ceb8459d4340ca1fe892ef64"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\source-likelihood-export\\independent-review\\INDEPENDENT_REVIEW_MANIFEST.json",
+      "bytes": 2319,
+      "sha256": "7124ed3f5b557d50ee8944b2e736b10dfdf57ea70e71a7da30500fdbe0298081"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-complete-learner\\state-snapshot-revision\\REVISION_MANIFEST.json",
+      "bytes": 2605,
+      "sha256": "858611bcf98461383f4317d943ec1c9e0127d4ea7f1996ba8431dd3851dc118a"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-complete-learner\\independent-review\\INDEPENDENT_REVIEW_MANIFEST.json",
+      "bytes": 3071,
+      "sha256": "f9cbf770b431a88a95d1c4e488c9616708371bf082ab9946c26711d9f7500f6e"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\joint-response-noise-calibration\\DELIVERY_MANIFEST.json",
+      "bytes": 8026,
+      "sha256": "2c1d02a8d7915ff3277ded3b4323804abb6f1a1af96a7c9953187e95e5615bab"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\gaussian-local-compact-factor\\independent-review\\INDEPENDENT_REVIEW_MANIFEST.json",
+      "bytes": 5792,
+      "sha256": "900c2e8d220323115e2da49e145a21c6144f4750df5cbcffa16117e19436b311"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-native-complete-learner\\independent-review\\MANIFEST_AND_SCOPE_RESULT.json",
+      "bytes": 2449,
+      "sha256": "327ee2ce5164321da26bfebf32d45636d0fde61d7e413a220c7748c0c0476742"
+    }
+  ],
+  "canonical_join_checks": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-population-integration\\CANONICAL_JOIN_RECEIPT.json",
+      "bytes": 1572,
+      "sha256": "63bde025baa5ba637671dde8c29b2f1c4eb8a3640c8ff11aa58e48ecde86b9ad"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-population-integration\\CANONICAL_LOCAL_JOIN_RECEIPT.json",
+      "bytes": 475,
+      "sha256": "54d5239d54b79ed33abfd744cfec0905dd7444b1bc955e1a2c8f1c7e8bdd9c31"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-population-integration\\CANONICAL_PROGRAMME_JOIN_RECEIPT.json",
+      "bytes": 939,
+      "sha256": "f21f729ad77046bc45b4d0285d91bf5f213d05b3fdf7ec47ffea4310b394db8c"
+    }
+  ],
+  "root_check_scope": {
+    "new_namespace_combinations": 3,
+    "raw_EEG_reads": 0,
+    "new_source_or_C_fits": 0,
+    "old_test_suites_rerun": 0,
+    "optimizer_or_QR_calls_in_cold_join": 0,
+    "new_local_join_QR": 1
+  },
+  "Ruff": "all nine actual runtime modules passed; I001-only per-file producer-byte preservation follows existing config convention",
+  "historical_source_and_guidance": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-population-integration\\BEFORE_INTEGRATION.zip",
+    "bytes": 143017,
+    "sha256": "66fa02b7ddf173fad3d31428aab71fcf88ffe4013471c4081e45a2da126bce2c"
+  },
+  "remaining_live_slice": "genuine public source/C factory, persisted joint fit and full history typed publication; execution state in checkpoint",
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-population-integration\\CACHE_RETIREMENT_RECEIPT.json",
+    "bytes": 2209,
+    "sha256": "f4d40fdef1f9b1f2d2c611c4733855d0620e4a13a659ab12b107cd678bf57979"
+  },
+  "Spec_review": "accepted numerical laws, once-counted source/C/local/flat and native coordinate roles; live factory/publication remains separate",
+  "Standards_review": "actual full source/callers read; byte-preserved reviewed modules; three new namespace seams and Ruff passed"
+}
