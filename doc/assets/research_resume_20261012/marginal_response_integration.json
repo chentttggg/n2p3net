@@ -122,7 +122,7 @@
   "producer_identity_policy": "original runs keep original source snapshots; current canonical migration is a byte relation, not a new run",
   "cleanup": {
     "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-complete-learner-integration\\CLEANUP_RECEIPT.json",
-    "bytes": 791,
-    "sha256": "7fe3b5ce08954ceda5bb9c63ac1c69a7ccf0f5d1745acce6a0416ca3b6f356d0"
+    "bytes": 958,
+    "sha256": "08e0675ef150a00cb48e40291a3350240fe6d2df9a1c38288a28aee9533fff4f"
   }
 }

@@ -3272,7 +3272,7 @@
     "binding": {
       "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\marginal_response_integration.json",
       "bytes": 5927,
-      "sha256": "541f9d1825f6e6108e843212441a8a7b722f91e2894ea5f7fe4256c1fc3d391e"
+      "sha256": "b2215947ed471a1326cd40cec2adaf938fef30e0a29392beab513a2b4ae46385"
     },
     "scope": "exact Gaussian marginal plus general physical template acceleration and complete dependency codec",
     "current_execution_state": "pause_checkpoint_current.json#/general_inference"
@@ -3281,9 +3281,18 @@
     "binding": {
       "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\complete_learner_integration.json",
       "bytes": 7258,
-      "sha256": "72d4033006eccb11c69d77fef834636648ae0c0b4cee3f2295da36bf7da2c11d"
+      "sha256": "871b18b3af18428d6609b961fd3ce77f58a2fcb94a5c958ffe2b109b1de82908"
     },
     "scope": "actual public source and synthetic BrainSync C/held complete software programme",
+    "current_execution_state": "pause_checkpoint_current.json#/general_inference"
+  },
+  "full_task_scoring_semantics": {
+    "binding": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\full_task_science_direction.json",
+      "bytes": 3632,
+      "sha256": "ad26771b16ac96d128c992c663b2012c1dfcdc2771aec170a62fcc427ea88e3b"
+    },
+    "scope": "complete block normalized evidence under a common nuisance measure; fixed-prior conditional remains a declared comparison",
     "current_execution_state": "pause_checkpoint_current.json#/general_inference"
   }
 }

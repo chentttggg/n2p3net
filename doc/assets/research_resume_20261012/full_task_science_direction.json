@@ -1,0 +1,76 @@
+{
+  "schema": "n2p3_full_task_scientific_direction/1",
+  "status": "accepted_scoring_semantics",
+  "scope": "complete block normalized evidence under a common nuisance measure; fixed-prior conditional remains a declared comparison",
+  "primary_estimand": "normalize(J_F)",
+  "conditional_comparison": "normalize(pi * J_F / J_P)",
+  "sequential_identity": "normalize(normalize(J_P) * J_F / J_P) = normalize(J_F)",
+  "equivalence_condition": "J_P(q)/pi(q) constant across prior support",
+  "measure_conditions": [
+    "same calibration and frozen noise/plugin parameters",
+    "same proper source prior",
+    "same nuisance dimension coordinates and physical measure at P and F",
+    "positive finite integrals on prior support"
+  ],
+  "interpretation": "current physical flat Lebesgue measure gives generalized posterior; a proper conditional generative law gives ordinary Bayes posterior",
+  "oracle_source": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\independent-review\\WHOLE_CONDITIONAL_COUNTEREXAMPLE.py",
+    "bytes": 5047,
+    "sha256": "ec9635dc9b41d8e6eef9efdd2e90c6073c40f59525d08ba49edc546132e3a2b2"
+  },
+  "oracle_result": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\independent-review\\WHOLE_CONDITIONAL_COUNTEREXAMPLE.json",
+    "bytes": 10208,
+    "sha256": "760ba610262275a679b73e01af7725369271860829713c01834c3e27008eee07"
+  },
+  "actual_scoring_owner": {
+    "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\collapsed_continuous_inference.py",
+    "bytes": 31528,
+    "sha256": "34ba846c4e391472c76e734848f19b569571aeeeae8cc8037c6f8ab04f535cd9"
+  },
+  "counterexamples": {
+    "groups": 24,
+    "candidate_counts": [
+      2,
+      9,
+      32,
+      36
+    ],
+    "maximum_owner_probability_error": 2.220446049250313e-16,
+    "whole_partition_invariant": true,
+    "candidate_relabel_equivariant": true,
+    "sequential_weighting_recovers_whole": true
+  },
+  "root_review": "read complete oracle source; verified exact normalization algebra and current owner hash; no duplicate execution",
+  "new_EEG_reads_fits_model_replays": 0,
+  "independent_scientific_handoff": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\independent-review\\SCIENTIFIC_NEXT_HANDOFF.md",
+    "bytes": 20566,
+    "sha256": "e3342d08a5d08c231ecf4e42253ec3d997231cfad77cef95d27eac405cae796d"
+  },
+  "next_vertical_slice": "general known event membership and blank response; then public raw/history/clock and label-K authority bridge",
+  "complete_evaluation_design": {
+    "role": "candidate design requiring original source cohort dose and complete learner freeze",
+    "public_target": "Huebner32, 13 participants, 819 complete requested future characters",
+    "positive_label_K": [
+      200,
+      800,
+      2000
+    ],
+    "score_arms": [
+      "Gaussian whole",
+      "same Gaussian fixed-prior conditional",
+      "waveform shrinkage LDA",
+      "mature xDAWN augmented covariance TS LDA",
+      "source NN full fine-tune",
+      "matched scratch NN"
+    ],
+    "independent_fit_programmes": 5,
+    "source_design_alternatives": [
+      "matched external cohort excluding all H targets",
+      "13-fold H participant LOSO with matched admitted source roster"
+    ],
+    "current_P2_C68_source_role": "software source consumption; preserve P2 target exclusion",
+    "long_history_inference": "retain complete state scopes; optimize or sample based on actual full-budget scaling"
+  }
+}

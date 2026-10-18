@@ -146,7 +146,7 @@
     {
       "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\marginal_response_integration.json",
       "bytes": 5927,
-      "sha256": "541f9d1825f6e6108e843212441a8a7b722f91e2894ea5f7fe4256c1fc3d391e"
+      "sha256": "b2215947ed471a1326cd40cec2adaf938fef30e0a29392beab513a2b4ae46385"
     },
     {
       "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\source_admission_integration.json",
@@ -161,8 +161,8 @@
   ],
   "cleanup": {
     "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-complete-learner-integration\\CLEANUP_RECEIPT.json",
-    "bytes": 791,
-    "sha256": "7fe3b5ce08954ceda5bb9c63ac1c69a7ccf0f5d1745acce6a0416ca3b6f356d0"
+    "bytes": 958,
+    "sha256": "08e0675ef150a00cb48e40291a3350240fe6d2df9a1c38288a28aee9533fff4f"
   },
   "next_scientific_use": "predeclare full45 scoring law and matched complete-learner public/adult evaluation"
 }
