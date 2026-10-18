@@ -3303,5 +3303,14 @@
     },
     "scope": "original candidate data and source/checkpoint inventory; pending physical bridge and frozen source-cohort execution",
     "current_execution_state": "pause_checkpoint_current.json#/general_inference"
+  },
+  "generic_physical_membership": {
+    "binding": {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\physical_membership_integration.json",
+      "bytes": 6909,
+      "sha256": "3414e50ae141ea304f616a563c64b50f40caa423bf608c102b6c70edb8606e7b"
+    },
+    "scope": "known event membership, blank common response, original unknown assignments and shared design/cache semantics",
+    "current_execution_state": "pause_checkpoint_current.json#/general_inference"
   }
 }

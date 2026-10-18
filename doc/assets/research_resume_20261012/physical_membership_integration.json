@@ -1,0 +1,142 @@
+{
+  "schema": "n2p3_generic_physical_membership_integration/1",
+  "status": "accepted",
+  "scope": "known event membership, blank common response, original unknown assignments and shared design/cache semantics",
+  "source_copy": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-membership-integration\\SOURCE_COPY.json",
+    "bytes": 2326,
+    "sha256": "c063250fa1ee84427a2fdc7fb7ad3b4e2daa9e020c161e88b577123787ee6001"
+  },
+  "canonical_sources": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\exposure_membership.py",
+      "bytes": 5895,
+      "sha256": "2a16b968705ff921d4c767caebc653b4d56e68c72eb578332d5a340da2756116"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\physical_response_design.py",
+      "bytes": 10721,
+      "sha256": "b0dfd4f3b6bb8a53696312efca825af945e681609a5d3ea8efebfbabc0cac84c"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\physical_source_templates.py",
+      "bytes": 9923,
+      "sha256": "bea483cba88ea3672080a550f27ad44b142158c3c344b5ad43f027d495b78b99"
+    }
+  ],
+  "delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-membership-bridge\\MANIFEST.json",
+    "bytes": 11966,
+    "sha256": "3919b2e0a7af08eafbbd926aeec338f989d51f336eadcb11690e34a2defc141e"
+  },
+  "independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-membership-bridge\\independent-review\\INDEPENDENT_PUBLIC_MEMBERSHIP_REVIEW.md",
+    "bytes": 10608,
+    "sha256": "439e61a485eb9a84eca226b5e5ef1901606cce9823f8e22d09b8d8adc20f07f9"
+  },
+  "canonical_join": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-membership-integration\\CANONICAL_JOIN.json",
+    "bytes": 771,
+    "sha256": "27367961d9544489edc2754fc4caea8d5992a7910918cd883d9bd87aacc8e87b"
+  },
+  "canonical_hand_law_cases": 4,
+  "canonical_regressions": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-membership-integration\\PYTEST.json",
+    "bytes": 1460,
+    "sha256": "8e72e36cc1a04ae0d5b2d1b250b3bee569ee2ca9126fbd60b3f24d2d65595bdf"
+  },
+  "ruff": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-membership-integration\\RUFF.json",
+    "bytes": 1561,
+    "sha256": "c0c279b9e87889f7ea63d01afc9586d269e3b881557be395737cb9366fd7d03a"
+  },
+  "original_wrong_code_control": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-membership-bridge\\independent-review\\KNOWN_MEMBERSHIP_GAP.json",
+    "bytes": 1594,
+    "sha256": "5a9bd7ece0055a86a68d3ed8fee0a26ada94d5bd27eba307215815dc01890430"
+  },
+  "independent_gaussian_control": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-membership-bridge\\independent-review\\MEMBERSHIP_GAUSSIAN_HAND_LAW.json",
+    "bytes": 1790,
+    "sha256": "f606f8138ab186712b06f1de212cb0ddf9bb3001993cbb0679678bd434450f72"
+  },
+  "actual_generic_oracle": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-membership-bridge\\GENERIC_MEMBERSHIP_RESULT.json",
+    "sha256": "30f30ce3dbbb92e6c248a5da05f3764fb13a600fb8142c4ded4fc98d32136484",
+    "bytes": 12434
+  },
+  "original_authorized_positive_C_bit_kernel": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-membership-bridge\\C_POSITIVE_BIT_RESULT.json",
+    "sha256": "db190599a2e66c045a234f1e0ff2f49850fe053fc229d425b10419c8b86ba491",
+    "bytes": 2762
+  },
+  "original_parameter_producer_files_unchanged": [
+    {
+      "role": "programme",
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\marginal_response_model.py",
+      "sha256": "b36ce066daf746d898a9afa975e30bdff602733a3de56e635189aef460afde74",
+      "bytes": 9499
+    },
+    {
+      "role": "complete_model_codec",
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\transport_graph_model.py",
+      "sha256": "5b56d8adf7f5fbb521db5f6148991b14b60c1f81e27e7ce64833d01f59f61286",
+      "bytes": 5570
+    },
+    {
+      "role": "exact_graph",
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\conditional_response_graph.py",
+      "sha256": "8d485cb3106177b7e5a078eb52bcc2571ec4bc9bc6b06e8a71b20c2dfa33c613",
+      "bytes": 10075
+    },
+    {
+      "role": "reference_functional_compiler",
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\numeric_response_consumer.py",
+      "sha256": "a3769794c069959c5ac66e38c4106cbed164a6a439d9f3b1e46a4518cef9c741",
+      "bytes": 12136
+    },
+    {
+      "role": "exact_common_marginal",
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\exact_common_marginal.py",
+      "sha256": "e1307ea0bed9a5e97b8778956ab91c30ae25d2c70d44348d1c79f56fdd691c82",
+      "bytes": 9137
+    },
+    {
+      "role": "exact_template",
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\exact_template_response_consumer.py",
+      "sha256": "7e4d714e583ab43543f4586597e9aa8768c1f094b069e0c9c8867e13dd74e6d5",
+      "bytes": 14803
+    },
+    {
+      "role": "query_mean_cache",
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\cached_response_consumer.py",
+      "sha256": "3cad9d132738ddffde4d9f503348460250e5ab3ef3af681923e6a8c663d99685",
+      "bytes": 8873
+    },
+    {
+      "role": "integer_surd",
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\fast_exact_surd.py",
+      "sha256": "af4f29b411ff41f4ce3f66650f90156afdecfa5ca623e9714a06c44caef32127",
+      "bytes": 2062
+    },
+    {
+      "role": "integer_marginal_template",
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\fast_marginal_template.py",
+      "sha256": "86dd850519b244df4304191e529137022f02dfd093ad509efc501ae54ec0ab78",
+      "bytes": 3066
+    }
+  ],
+  "original_descriptor_unchanged": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\product-source-geometry\\c-held-programme\\RESPONSE_PROGRAMME.json",
+    "sha256": "52497edf9c067833d95824504b41a6a6104fc09b6f596f68b51b261639e1d1c0",
+    "bytes": 5355
+  },
+  "current_raw_parent_producer": "new membership plan and physical adapter; original complete runs retain original snapshots",
+  "public_authority_role": "numeric prerequisite; public original raw/K/native-clock grant is a separate live relation",
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\canonical-membership-integration\\CLEANUP_RECEIPT.json",
+    "bytes": 1890,
+    "sha256": "2e490c62a26b0469708d6f3c0abb24a40c1158074d0d924e00a2040075520bc0"
+  },
+  "root_review": "complete helper, plan constructor/design and full template cache/affine/difference flow read; copied accepted bytes; added independent hand-law regression"
+}

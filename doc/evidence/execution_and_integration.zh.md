@@ -1,5 +1,11 @@
 # 执行、保存重放与代码集成
 
+## Membership数值入口与旧缓存清理
+
+新membership三owner逐字节整合前，原plan和physical-template源码已物理归档并核zip成员SHA。canonical四项新手算回归及相关Ruff通过；原参数descriptor九个producer保持原字节，旧完整运行与codec身份沿原接受证据保存。本次没有新增worktree或模型载荷副本。
+
+新验证确认后，使用两条逐目录`cmd.exe /d /c rmdir /s /q`删除科研树旧`.pytest_cache`及`.ruff_cache`，均exit0并复查不存在，共33文件、87246原逻辑字节。原始数据、冻结结果、producer快照、参数依赖和checkpoint均保留；验收、命令与实际结果见[membership整合绑定](../assets/research_resume_20261012/physical_membership_integration.json)中的清理回执。
+
 ## ERP冻结状态与逐样本支持修复
 
 Lean源码反例暴露的三处接口问题已落实到主工作区和科研树：LDA现在按真实特征映射核参数宽度；xDAWN拒绝恒零协方差域的状态，并在预测矩阵对数前检查实际协方差；算子LDA沿每行自己的范数检查支持，并在计算前逐行缩放，避免大幅同伴耦合及范数平方上溢、下溢。原有相对容差和模型数值保持，未增加ridge或jitter。

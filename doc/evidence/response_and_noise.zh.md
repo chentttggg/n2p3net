@@ -1,5 +1,13 @@
 # 响应模型、空间先验与噪声数值
 
+## 集合刺激的通用membership与缓存
+
+物理响应现以原有序`membership[event,q]`决定target增量；一次集合刺激的全部成员各保完整增量，不除以成员数，common只加一次。known blank的membership全0，仍保共同响应；原未知中断曝光的`None`继续使用显式联合assignment及原质量。新public列轴由原history声明，旧BrainSync一热行逐项核candidate_id映射。
+
+独审先复现两个实际缺口：原singleton equality漏掉集合中的成员；只修direct公式仍让template缓存错误复用，差分可假为0并错误取消误差。现direct/cache/difference共用一个membership owner。J9/32/36的全部q×两shape×两unknown状态对独立Fraction插值oracle核11088个标量，原216个一热数组逐byte保持。root另加四项手算永久回归通过，覆盖集合/blank及有真实目标信号的缓存差分；真实相同物理泛函仍精确取消。
+
+原C issuer授权bit=1的数值贡献正控也已通过，两shape直接激励target列；该正控只消费原label权限和数值kernel，EEG样本读取、raw grant及C模型准入均0。原source参数codec/header保持，新plan/adapter另记producer，旧完整结果与恢复依赖保留。证据、独审、canonical验证和清理见[membership整合](../assets/research_resume_20261012/physical_membership_integration.json)。
+
 ## 源几何、实际电压差与完整参数冷读
 
 源响应以真实共同电极的电压差进入目标坐标，其余方向保留明确的proper条件方差。新入口先合并真正要计算的泛函，再转换为浮点图像：source公共尺度为`2^60`时，两个条件残差仍具有方差`2/3`和交叉协方差`−1/3`；近共线源方向的差保留两个独立项及方差`2e²`。state-reference也在此时相减，逐项误差随图像交给后续数值owner。

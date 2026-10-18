@@ -1,5 +1,7 @@
 # 当前技术结构与完整链条
 
+`research.exposure_membership`持有唯一有序event×candidate解释：known集合/blank用原binary membership，unknown继续消费原显式assignment。`physical_response_design`与`physical_source_templates`的设计、active cache key和差分共用同一解释；原BrainSync一热输入逐行核原candidate_id对应关系，public集合输入声明原列轴。common每曝光一次，target按对应membership列；数值clock token与raw权限分属原owner。来源见[membership整合](assets/research_resume_20261012/physical_membership_integration.json)。
+
 `research.source_metadata_store`持有完整原NN source bytes的一次共享发布及每独立ingress的真实准入；typed ref保存source SHA/size、原training contract与当前target identity/geometry/study exclusion。事务首次decode沿原source procedure/metadata门，之后每bind核当前target并生成fresh trunk/BN/C statistics。`FrozenTrialPredictor/3`的K0模型可共享原blob或独立嵌入完整闭包，positive `/2`保持小包；binary report `/3`与pool origins持同dependency，fresh public loader要求完整ref并重新准入。candidate模型、prefix、graph、chunk及parent现也持完整依赖闭包，独立导出后仍核原source，pool退役后最后复核原blob。
 
 `research.selection_graph_store`以`/2`将重复的完整不可变scope单独存一次，逻辑graph仍由原canonical语义定义；physical store SHA与logical graph SHA分别保存。compiler私有owner每次重核原数组/metadata身份，prepared/reducer消费实际store capability，独立ingress重新准入原字节。旧graph通过原raw SHA与token不变的空白精简导入，实际解码先取得资源预留；数字模型及原producer保持。正常parent调用`_validate_nested_prefix_prediction`核最终预测与重放的selected/future evidence，已完成阶段的聚焦反例也直接调用此相同关系。

@@ -205,3 +205,6 @@ src/research/full_learner_prediction.py text eol=lf
 doc/assets/research_resume_20261012/complete_learner_integration.json text eol=lf
 doc/assets/research_resume_20261012/full_task_science_direction.json text eol=lf
 doc/assets/research_resume_20261012/public_evaluation_readiness.json text eol=lf
+src/research/exposure_membership.py text eol=lf
+tests/research/test_physical_membership.py text eol=lf
+doc/assets/research_resume_20261012/physical_membership_integration.json text eol=lf

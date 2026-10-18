@@ -12,6 +12,7 @@ from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
+
 from transfer.noise_model import array_digest, metadata_digest
 
 IMPLEMENTATION_SHA256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
@@ -73,7 +74,7 @@ class PhysicalTemplateResponse:
         for event in response.plan.exposures:
             if event['block_id']!=response.block_id:
                 continue
-            included=(assignments[event['event_id']]==q if event['membership'] is None else event['candidate_id']==q)
+            included,_=response.plan.target_indicator(event,q,assignments)
             if event['event_id'] in active:
                 indicators.append((event['event_id'],included))
         key=(start,stop,h,tuple(indicators))

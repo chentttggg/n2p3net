@@ -12,16 +12,13 @@ from pathlib import Path
 
 import numpy as np
 
+from research.exposure_membership import ExposureCandidateMembership
+from research.exposure_membership import (
+    MissingExposureIdentityError as MissingExposureIdentityError,
+)
 from research.latent_response_reference import ResponseState
 from transfer.native_response_dictionary import NativeResponseDictionary
 from transfer.noise_model import array_digest, metadata_digest
-
-
-class MissingExposureIdentityError(ValueError):
-    def __init__(self, exposure):
-        self.exposure_id = exposure['event_id']
-        self.candidate_options = tuple(exposure['candidate_options'])
-        super().__init__('actual exposure needs its explicit latent identity/law; no implicit stimulus prior')
 
 
 def _ceil(value):
@@ -40,7 +37,7 @@ class PhysicalResponsePlan:
     def __init__(self, clock_chart, dictionary, *, clock_program, exposure_response_law, candidate_vocabulary):
         if not isinstance(dictionary, NativeResponseDictionary):
             raise TypeError('physical response uses the unique native rational continuation owner')
-        if clock_program not in {'timeline_wall', 'delivery_anchor'}:
+        if clock_program not in {'timeline_wall', 'delivery_anchor', 'native_sample_index'}:
             raise ValueError('choose one explicit original physical-clock programme')
         if exposure_response_law != 'onset_impulse_with_actual_duration_provenance/1':
             raise ValueError('an explicit supported exposure-response law is required')
@@ -52,16 +49,18 @@ class PhysicalResponsePlan:
         self._basis_cache = {}
         self._basis_rows = None
         self.vocabulary = tuple(candidate_vocabulary)
-        if (len(self.vocabulary) < 2 or len(set(self.vocabulary)) != len(self.vocabulary)
-                or any(event['membership'] is not None and len(event['membership']) != len(self.vocabulary)
-                    or not set(event['candidate_options']) <= set(self.vocabulary)
-                    for event in self.exposures)):
-            raise ValueError('physical exposure membership must retain the explicit complete candidate vocabulary')
+        self.membership = ExposureCandidateMembership(self.exposures, self.vocabulary,
+            declared_vocabulary=self.history.get('membership_candidate_vocabulary'))
+        self.vocabulary = self.membership.vocabulary
         self.identity = metadata_digest({'schema': 'n2p3_physical_response_plan/1',
             'clock_capability_identity': clock_chart.capability_identity_sha256,
             'dictionary': dictionary.digest(), 'clock_program': clock_program,
             'exposure_response_law': exposure_response_law, 'candidate_vocabulary': self.vocabulary,
+            'actual_exposure_membership_programme': self.membership.identity,
             'compiler_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
+
+    def target_indicator(self, exposure, candidate, unknown_assignments=None):
+        return self.membership.target_indicator(exposure['event_id'], candidate, unknown_assignments)
 
     @staticmethod
     def _shape(state):
@@ -98,7 +97,8 @@ class PhysicalResponsePlan:
         query = tuple((lag-delta)/width for lag in elapsed)
         evaluated = self.dictionary.evaluate(query, coordinate='seconds', support='half_open')
         result = evaluated, {'event_id': exposure_id, 'physical_exposure_role': exposure['exposure_role'],
-            'actual_duration_seconds_exact_ratio': list(exposure['duration_seconds_exact_ratio']),
+            'actual_duration_seconds_exact_ratio': (None if exposure['duration_seconds_exact_ratio'] is None
+                else list(exposure['duration_seconds_exact_ratio'])),
             'native_rows': list(rows), 'elapsed_seconds_exact_ratio': [[v.numerator, v.denominator] for v in elapsed],
             'dictionary_evaluation_identity': evaluated.identity_digest,
             'clock_program': self.clock_program, 'response_law': self.exposure_response_law,
@@ -120,13 +120,7 @@ class PhysicalResponsePlan:
         ledgers = []
         selected = [event for event in self.exposures if event['block_id'] == block_id]
         for event in selected:
-            if event['membership'] is None:
-                assigned = assignments.get(event['event_id'])
-                if assigned not in event['candidate_options']:
-                    raise MissingExposureIdentityError(event)
-                included, role = assigned == candidate, 'given_latent_exposure_state_no_prior_applied'
-            else:
-                included, role = event['candidate_id'] == candidate, 'original_public_membership'
+            included, role = self.target_indicator(event, candidate, assignments)
             basis, ledger = self.exposure_basis(rows, event['event_id'], state)
             common, target = state.common_amplitude*basis.matrix, float(included)*state.target_amplitude*basis.matrix
             matrix[:, :k] += common
@@ -141,6 +135,7 @@ class PhysicalResponsePlan:
         error += gamma*absolute
         return matrix, error, {'schema': 'n2p3_physical_exposure_selection_design/1',
             'plan_identity': self.identity, 'block_id': block_id, 'candidate': candidate,
+            'actual_exposure_membership_programme': self.membership.identity,
             'response_scope': self.response_scope(block_id), 'actual_exposures_used': additions,
             'completed_protocol_exposures': sum(e['exposure_role'] == 'completed_protocol_stimulus' for e in selected),
             'interrupted_physical_exposures': sum(e['exposure_role'] == 'interrupted_physical_stimulus' for e in selected),
