@@ -281,10 +281,7 @@
       "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
     }
   },
-  "active_agents": {
-    "history_slice_integration_review": "Investigating measured source JSON streaming bottleneck with original exact-byte protocols; current frozen programme continues.",
-    "audit_repository_convergence": "Prepare independent actual13person/13fold source execution acceptance; issue only after genuine complete outputs and owner retirement."
-  },
+  "active_agents": {},
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
     "ownership": "separate_cloud_chat",
@@ -296,7 +293,7 @@
     "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
     "commit": "a6f5750"
   },
-  "integration_head": "03974fb",
+  "integration_head": "3e8e81695b2f746174533293235bc7be042dbbf5",
   "concurrency_authorization": "later user allowed more threads after the temporary six-agent limit; seven actual parallel roles used for independent scientific slices",
   "execution_priority": "resolve_current_repository_audit_then_resume_full_population_and_joint_history_matrix",
   "accepted_native_input_source_commit": "811fb18dcbde94b9903ee8cce0df4bee16466e4a",
@@ -504,29 +501,33 @@
       "actual_population_complete_hyperfits": 0,
       "candidate_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
       "execution": {
-        "state": "running_full_programme_under_owned_local_supervision",
+        "state": "running_complete_programme_with_bounded_fast_codec",
         "launch": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\ROOT_LAUNCH.json",
-          "bytes": 1983,
-          "sha256": "3d9c1d218dc44cc84afaae8ff335db994cace65a683408a8923a2c7834b1f127"
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\streamed-source-execution\\ROOT_LAUNCH.json",
+          "bytes": 2262,
+          "sha256": "bd1661f265dd9be61d2c35389b67ddbbca76c5ae2fb195c7a012dfa4e7db567c"
         },
         "source_manifest": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\SOURCE_MANIFEST.json",
-          "bytes": 64072,
-          "sha256": "975b9ba33103f273adf5842a52a63fb1699ca1e972a16819eaa1a4f951073525"
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\streamed-source-execution\\SOURCE_MANIFEST.json",
+          "bytes": 64239,
+          "sha256": "67bff82923250af5c0b75eceb438ba333e19554c73a8ac50b3eeec174f3860f0"
         },
         "resources": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\RESOURCES.json",
-          "bytes": 2271,
-          "sha256": "e3438d233f1a9eed66b38da3c9d27309767229df32972e2077bbaec5370c0dc0"
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\streamed-source-execution\\RESOURCES.json",
+          "bytes": 2307,
+          "sha256": "d30a2c4268e23b25074d0f8c80cf19b8f437bd7bb755dc3f65c83efc475f4c36"
         },
-        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-bounded-source-programme\\checkpoint.json",
-        "supervision_progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\progress.json",
-        "supervision_terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\terminal.json",
         "supervisor": {
-          "pid": 11260,
-          "created": 1792402344.3164961
+          "pid": 69324,
+          "created": 1792404920.018267
         },
+        "scientific_process": {
+          "pid": 2468,
+          "created": 1792404924.1075904
+        },
+        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-streamed-source-programme\\checkpoint.json",
+        "supervision_progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\streamed-source-execution\\supervision\\progress.json",
+        "supervision_terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\streamed-source-execution\\supervision\\terminal.json",
         "requested_people": 13,
         "requested_folds": 13,
         "source_workers": 2,
@@ -536,33 +537,19 @@
         "completed_source_models": 0,
         "completed_folds": 0,
         "scientific_acceptance_issued": false,
-        "next_action": "Monitor real saved source/fold progress and utilization, then independently accept complete execution before target dispatch.",
-        "outer_python_launcher": {
-          "pid": 64940,
-          "created": 1792402344.285771
-        },
-        "owned_launch": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\launch.json",
-          "bytes": 2879,
-          "sha256": "4d1633da44e814ef00fd17e92099a4d998ad2de3979335c1d413f4d7f306e0b7"
-        },
         "last_observation": {
-          "time": 1792402735.0495615,
+          "time": 1792404972.2464948,
           "action": "running",
-          "host_cpu_percent": 19.3,
-          "host_memory_percent": 58.4,
-          "owned_cpu_percent_of_host": 3.125887693938113
+          "host_cpu_percent": 58.7,
+          "host_memory_percent": 71.6,
+          "owned_cpu_percent_of_host": 11.736899067277442
         },
-        "profile_evidence": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\SOURCE_PROFILE.raw",
-          "bytes": 93840,
-          "sha256": "e1bac9ea9f2016295b0784458603acc4d1c314198a429c3558050c2502357ac8"
-        }
+        "next_action": "Monitor actual source publications and utilisation; after complete execution and actual tree retirement run the prepared independent acceptance with this new launch/manifest pins."
       },
       "code_preparation": {
         "conditioning": "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
         "cloud_execution": "doc/assets/research_resume_20261012/source_cloud_execution_preparation.json",
-        "state": "memory_lifecycle_and_serialization_accepted_exact_source_frozen_full_local_execution_started",
+        "state": "complete_source_with_accepted_bounded_fast_codec_frozen_and_running",
         "local_training_allowed": true,
         "completed_source_models_in_stopped_attempt": 0,
         "user_cloud_response": "User subsequently authorized local computation first with whole-machine CPU/RAM/GPU each below80percent.",
@@ -644,6 +631,74 @@
         "completed_folds": 0,
         "profile_evidence": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\P1_OBSERVED_STACK_SCOPE.json",
         "next_action": "Reduce full-record augmented QR/copy peaks and posterior record/hash duplication, retaining complete scientific dimensions and inputs; review and freeze fixes before new full execution."
+      },
+      "independent_execution_acceptance_preparation": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-execution-acceptance\\PREPARATION_MANIFEST.json",
+        "bytes": 2988,
+        "sha256": "b34bc2cdb5063f161cd27cd338aa0c7498804718266118d9fbdf6d62335dda94"
+      },
+      "previous_bounded_supervised_local_execution": {
+        "state": "superseded_by_independently_reviewed_exact_byte_codec_performance_revision",
+        "launch": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\ROOT_LAUNCH.json",
+          "bytes": 1983,
+          "sha256": "3d9c1d218dc44cc84afaae8ff335db994cace65a683408a8923a2c7834b1f127"
+        },
+        "source_manifest": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\SOURCE_MANIFEST.json",
+          "bytes": 64072,
+          "sha256": "975b9ba33103f273adf5842a52a63fb1699ca1e972a16819eaa1a4f951073525"
+        },
+        "resources": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\RESOURCES.json",
+          "bytes": 2271,
+          "sha256": "e3438d233f1a9eed66b38da3c9d27309767229df32972e2077bbaec5370c0dc0"
+        },
+        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-bounded-source-programme\\checkpoint.json",
+        "supervision_progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\progress.json",
+        "supervision_terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\terminal.json",
+        "supervisor": {
+          "pid": 11260,
+          "created": 1792402344.3164961
+        },
+        "requested_people": 13,
+        "requested_folds": 13,
+        "source_workers": 2,
+        "fold_workers": 2,
+        "native_threads_per_worker": 10,
+        "cpu_threads_total": 21,
+        "completed_source_models": 0,
+        "completed_folds": 0,
+        "scientific_acceptance_issued": false,
+        "next_action": "Monitor real saved source/fold progress and utilization, then independently accept complete execution before target dispatch.",
+        "outer_python_launcher": {
+          "pid": 64940,
+          "created": 1792402344.285771
+        },
+        "owned_launch": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\launch.json",
+          "bytes": 2879,
+          "sha256": "4d1633da44e814ef00fd17e92099a4d998ad2de3979335c1d413f4d7f306e0b7"
+        },
+        "last_observation": {
+          "time": 1792402735.0495615,
+          "action": "running",
+          "host_cpu_percent": 19.3,
+          "host_memory_percent": 58.4,
+          "owned_cpu_percent_of_host": 3.125887693938113
+        },
+        "profile_evidence": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\SOURCE_PROFILE.raw",
+          "bytes": 93840,
+          "sha256": "e1bac9ea9f2016295b0784458603acc4d1c314198a429c3558050c2502357ac8"
+        },
+        "supersession": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\ROOT_SUPERSESSION.json",
+          "bytes": 2794,
+          "sha256": "bf35a32100e41db28df4316d1cd416c7f64b7579e00963f7491035f5e427d171"
+        },
+        "terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\terminal.json",
+        "all_recorded_owned_identities_verified_absent": 5
       }
     },
     "joint_response_noise": {
@@ -717,6 +772,16 @@
           "sha256": "844083da6b472f0855cc90985ebc2ee70c0b4e25f399bb3200508cf39922343a"
         },
         "fit_calls": 0
+      },
+      "adult_bridge_study": {
+        "state": "root_read_planning_handoff_not_implemented",
+        "handoff": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\ADULT_BRIDGE_HANDOFF.zh.md",
+          "bytes": 21184,
+          "sha256": "70dd629d5afcf60cb637927aa0209b4215675a6d0fd89ade06604fe69e2b7136"
+        },
+        "evidence_owner": "doc/evidence/response_and_noise.zh.md#成人七导的实际共同空间与完整接入",
+        "next_decision": "Use genuine public G0/G1 execution evidence to select the next complete adult bridge slice; preserve all native7 directions and generic candidate membership."
       }
     },
     "transition_trace": {
@@ -735,10 +800,10 @@
     }
   },
   "next_actions": [
-    "Monitor complete13person/13fold source below80percent whole-host usage; original819requested panel preparation is complete.",
-    "Review measured serialization throughput candidate when available; preserve running programme and original protocols.",
-    "Independently accept complete source execution, then execute genuine full78fit/4914cell target matrix with its accepted driver and frozen source.",
-    "Cloud input projection waits for actual authorized roots; existing9828baseline diagnostics retain original producers."
+    "Monitor new complete13person/13fold local source programme below80percent whole-host resources; original819panel is complete.",
+    "After actual complete source and owned-tree retirement, run prepared independent acceptance under explicit resource budget and new launch/manifest pins.",
+    "Freeze final target runtime and execute complete78Cfit/4914held matrix with accepted source and original819panel.",
+    "Use public execution and accepted adult bridge dependency study to implement the complete native7/nine-choice vertical chain."
   ],
   "active_local_checks": [],
   "folder_cleanup_review": {
@@ -749,7 +814,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T09:40:49.220841+00:00",
+  "last_updated_utc": "2026-10-19T10:16:12.465070+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
@@ -759,7 +824,7 @@
     "cloud_training_launch_requires_user_resource_authorization": true,
     "earlier_local_stop": "Original USER_STOP and failed/interrupted artifacts retain their own terminal identity; latest authorization applies to a new attempt."
   },
-  "integration_head_role": "Last committed code/retirement base before this metadata refresh; exact follow-up code is pinned in the integration bindings.",
+  "integration_head_role": "Base commit for the latest accepted working-byte revision; actual scientific files and review are pinned by the execution SOURCE_MANIFEST.",
   "subagent_service_observation": {
     "event": "source author and serialization reviewer turns ended with403insufficient balance",
     "resolution": "root continued concrete source inspection/sealing and independent prewritten controls; another existing independent reviewer received final source package.",

@@ -352,6 +352,12 @@ source group以participant为单位，对效应measurement covariance与人际va
 
 长记录结构识别已升级 `/6`：每record共同 `[Z D]` exact消自己的nuisance，再把原空间map配对时间quotient stream到shared beta；compact RREF/pivots保存，效应直接按exact rowspace membership判断。18000行实际posterior/BLUE/save-load和独立Fraction oracle已闭合，原numericQR/完整covariance保持。真实source/OOF/ensemble消费者已集成`ff131b8`，原producer保存修复已集成`138e2bf`；root在实际组合ensemble零fit/零QR载入旧包，原record、digest、baseline及文件字节保持，三项篡改反例拒绝。来源见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
 
+### 成人七导的实际共同空间与完整接入
+
+源码核对确认：本轮Huebner人群源的31导不含PO8/Oz，与BrainSync原生七导共享Fz/Cz/P3/Pz/P4五个电极。消去未知参考后，这一布局组合有四维共同差分；B09可逆chart与proper条件分布可将人群信息传入共同方向，同时保留其余三个方向和完整七导观测。共同秩应由实际观测行空间求出，具体电极数不成为算法常数。
+
+完整成人接入还需将全部13份已接受个人likelihood建立的新成人forecast、population transport、250Hz实际时钟、多C-session权限、joint保存后原C重新准入及typed个人入口连通。现个人入口消费epoch logits，新joint入口应直接发布候选证据；session共享目标与block独立响应分别由真实parent声明。数学关系、六类反例和A–E完整切片见[成人接入交接](D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/ADULT_BRIDGE_HANDOFF.zh.md)。这是代码与数学依赖研究，尚无本次成人拟合或评价。
+
 ## B11：同记录漂移与噪声尺度
 
 同record Gamma/flat科研程序已接受并集成`dd63d32`：global proper β prior一次，每真实record一个Gamma λ和原物理flat漂移测度。有效信息量按原raw行数减漂移rank计数，同一full-record白化用于C、prefix与tail。固定noise shape与动态λ分开，proper β不随test λ缩放。source参数从原保存Continuous模型恢复，原prior因子经等价QR转换，原noise-fit保持；C-plugin与source-only权限各用真实issuer。

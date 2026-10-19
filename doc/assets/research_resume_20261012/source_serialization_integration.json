@@ -1,76 +1,69 @@
 {
-  "schema": "source_serialization_memory_integration/1",
-  "status": "accepted_code_and_fixed_codec_lifecycle_contracts",
-  "recorded_utc": "2026-10-19T09:33:36.152161+00:00",
-  "canonical_base": "9536f979dbf073fec831fc8daeeac4a78cc5150d",
+  "schema": "source_serialization_memory_integration/2",
+  "status": "accepted_memory_revision_and_bounded_encoding_performance_revision",
+  "recorded_utc": "2026-10-19T10:14:26.073471+00:00",
+  "previous_memory_revision": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\source-serialization-memory\\performance\\ROOT_MEMORY_REV3_INTEGRATION.json",
+    "bytes": 4333,
+    "sha256": "534e22e8ffdf6b585b14b79dd700b2934b53f5ceb1d6f1940061a9c7afe55660"
+  },
+  "canonical_base": "3e8e81695b2f746174533293235bc7be042dbbf5",
   "author_delivery": {
-    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\source-serialization-memory\\DELIVERY_REV3.json",
-    "bytes": 4656,
-    "sha256": "910f574e6329936ab6039621e904b5a41452809a8aeb6bae97d1b44244239c28"
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\source-serialization-memory\\performance\\DELIVERY.json",
+    "bytes": 16757,
+    "sha256": "a6207e30fe646add5d8f431a18c3f74eca07158f2a3aaceb567da13ede33802d"
   },
   "independent_review": {
-    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-source-serialization-memory\\HISTORY_REV3_REVIEW_RECEIPT.json",
-    "bytes": 8446,
-    "sha256": "e639d3e948d37ec837212089838c96198619662dcbabfedcac4e9093f12e2030"
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-source-serialization-performance\\REVIEW_RECEIPT.json",
+    "bytes": 4795,
+    "sha256": "78da172382c6a82a4796725ddd420d6a83d37dab13a20b20321d5830894b4ec3"
   },
   "complete_source_review": {
-    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-source-serialization-memory\\HISTORY_COMPLETE_SOURCE_REVIEW.json",
-    "bytes": 26438,
-    "sha256": "a03d7a330a79c04a77e5a2c6016a5c09860f17ddeca04b9463e762671bc73f61"
-  },
-  "root_controls": {
-    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-source-serialization-memory\\ROOT_REV3_CONTROLS.json",
-    "bytes": 14370,
-    "sha256": "50aec9a63ad1bfffc19b0037b8941a206787762148b6f9218ed4a5a5c8693fd2"
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-source-serialization-performance\\COMPLETE_SOURCE_REVIEW.json",
+    "bytes": 25554,
+    "sha256": "f9b762795037f5882c86a32107ab16d47ba5d97623579308433453f41ce04b72"
   },
   "files": [
     {
-      "relative": "src/research/public_population_source.py",
-      "before_sha256": "792481bc2c542835cd5d289ebc02d0902fa93cdd22ccc4589200551e1213b9ae",
-      "after_sha256": "8190f7d5dcdc8e320b8edcf42db65f369f8bc3dd5b73c32d81340f219a1ed33e",
-      "frozen_actual_bytes_match_canonical": true
-    },
-    {
-      "relative": "src/research/source_likelihood_export.py",
-      "before_sha256": "ec9fe0037f18f1d52c3bc5110070f0d47b6aef448ae00e158a7c706ad7af4ec1",
-      "after_sha256": "390d8ae93aa27a51a56e828e42399133e9b09fb4b7b26ae22fd71420a1512801",
-      "frozen_actual_bytes_match_canonical": true
-    },
-    {
-      "relative": "src/transfer/spatial_programme.py",
-      "before_sha256": "6fff052996639ed489329a39012de9273e04f0bf4ad240431727bbd2b3a509f6",
-      "after_sha256": "5a29f7ed56d36e5b76a6226bdb67617d28eb653cb7f076097472a0817d2d2ef7",
-      "frozen_actual_bytes_match_canonical": true
-    },
-    {
       "relative": "src/transfer/spatial_serialization.py",
-      "before_sha256": null,
-      "after_sha256": "0d20718c7fca5ffa46efc2f9fb4e0b9592bf4cc391b6907d444a39ef1f8e9a14",
-      "frozen_actual_bytes_match_canonical": true
-    },
-    {
-      "relative": "src/transfer/spatial_signal_prior.py",
-      "before_sha256": "a0ae67e488f3cbc9698d9fe656e421502bbb9924570668bbd06f4e8c716c6690",
-      "after_sha256": "43e3f715439d79d48ca773f5462467867de5212f0d53d03b3530a704c3e109be",
+      "before_sha256": "0d20718c7fca5ffa46efc2f9fb4e0b9592bf4cc391b6907d444a39ef1f8e9a14",
+      "after_sha256": "8f07191f3465ce9908bcbdde20727633da03af8cf6f90755a506ff1d300712a3",
       "frozen_actual_bytes_match_canonical": true
     }
   ],
-  "root_review": "Full changed-code/caller/registry and cold/save/live-admission review; final independent reviewer accepted same rev3 bytes and 14 positive / 35 negative original fixed-packet controls. Full source closure separately binds 162 modules and three execution inputs.",
-  "preserved_contracts": [
-    "compact sorted ASCII artifact JSON and Unicode indented saved bytes, including signed zero",
-    "fresh mutable public record and detached public from_record snapshot",
-    "original A/r/absolute constant and all model metadata",
-    "cold model baseline and actual saved-byte checks",
-    "complete dimensions, inputs, precision, priors and requested denominators"
-  ],
-  "changed_lifecycle": "Stream internal immutable ndarray views; cache digests under frozen owner/view identity; same-fit saved-live admission validates the complete original save stream and releases model/posterior without waiting for cyclic GC.",
-  "verification_scope": {
-    "training_runs_by_code_controls": 0,
-    "realistic_peak_memory": "measured by separately frozen full programme",
-    "global_metadata_digest_changed": false
+  "root_review": "Read complete helper and original digest/count-save/saved-live chain. Keep dictionary key semantics and original container ordering; bounded conversion applies only to exact numeric ndarray ndim1/2. Subclasses, wide rows and other shapes retain legacy streaming. Other161 scientific modules and three execution inputs are exact reused bytes.",
+  "verification": {
+    "independent_protocol_cases": 70,
+    "owner_digest_save_admission_definitions_AST_unchanged": 9,
+    "actual_tolist_calls_observed": 26,
+    "maximum_block_rows": 512,
+    "maximum_block_numeric_values": 16384,
+    "both_protocols_full_bytes_and_EOF_equal": true,
+    "runtime": "Windows CPython3.14.3",
+    "benchmark": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\source-serialization-memory\\performance\\BENCHMARK_COMPARISON.json",
+      "bytes": 5244,
+      "sha256": "43dfc9f85c4663e42279a376000c8c8c6050a7454259f12bbc69672a080369df"
+    },
+    "median_serialization_chain_speedup": 4.091516448311308,
+    "scope": "Two fresh-process same-structure four-stage software codec repetitions; full scientific runtime measured separately."
   },
+  "preserved_contracts": [
+    "Original compact sorted ASCII artifact JSON and pretty Unicode indent2/newline bytes, including signed zero",
+    "Fresh mutable detached public record; immutable owner and ndarray-view guards",
+    "Original counted atomic save, complete saved-byte/EOF admission and cold ingress",
+    "Scientific dimensions, precision, priors, inputs and requested denominators"
+  ],
+  "scientific_execution_acceptance_issued": false,
   "cleanup": {
-    "status": "not_applicable",
-    "reason": "No replacement build/cache created by integration; source preimages, review controls and failed producer snapshots are required evidence."
+    "status": "completed",
+    "receipt": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\source-serialization-memory\\performance\\cleanup.json",
+      "bytes": 9356,
+      "sha256": "3bdf317c176516ec47d1794e60675b7bad3d26fb0b207681f220b5ea54f1ac1b"
+    },
+    "deleted_files": 10,
+    "deleted_logical_bytes": 429930160,
+    "original_producers_profiles_raw_data_frozen_results_and_checkpoints_preserved": true
   }
 }

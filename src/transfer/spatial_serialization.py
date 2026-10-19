@@ -129,13 +129,84 @@ def plain_record(value):
     return value
 
 
+_ARRAY_BLOCK_VALUES = 16384
+_ARRAY_BLOCK_ROWS = 512
+
+
+def _record_tokens(value, encoder, key_encoder, pretty, depth, active):
+    """Keep container formatting streaming; C-encode bounded numeric blocks.
+
+    Wide rows, ndarray subclasses and nonstandard dtypes retain the original
+    iterator. Its local pretty indentation is shifted to the record's depth.
+    """
+    indent = "  " * depth if pretty else ""
+    if type(value) is np.ndarray:
+        row_values = value.shape[1] if value.ndim == 2 else 1
+        numeric = value.dtype.kind in "biuf" and value.dtype.itemsize <= 8
+        if value.ndim in (1, 2) and numeric and row_values <= _ARRAY_BLOCK_VALUES:
+            if not len(value):
+                yield "[]"
+                return
+            rows = min(_ARRAY_BLOCK_ROWS, _ARRAY_BLOCK_VALUES // max(1, row_values))
+            yield "["
+            for start in range(0, len(value), rows):
+                if start:
+                    yield ","
+                # Both the Python scalar list and the C encoder's result are
+                # bounded by rows and scalar count, independently of T.
+                block = encoder.encode(value[start:start + rows].tolist())
+                if pretty:
+                    yield block[1:-2].replace("\n", "\n" + indent)
+                else:
+                    yield block[1:-1]
+            if pretty:
+                yield "\n" + indent
+            yield "]"
+            return
+    if isinstance(value, (dict, list, tuple)):
+        if not value:
+            yield "{}" if isinstance(value, dict) else "[]"
+            return
+        marker = id(value)
+        if marker in active:
+            raise ValueError("Circular reference detected")
+        active.add(marker)
+        try:
+            mapping = isinstance(value, dict)
+            yield "{" if mapping else "["
+            items = (sorted(value.items()) if encoder.sort_keys else value.items()) if mapping else value
+            first = True
+            for item in items:
+                if not first:
+                    yield ","
+                first = False
+                if pretty:
+                    yield "\n" + indent + "  "
+                if mapping:
+                    key, item = item
+                    # Delegate accepted key types, float spelling and escaping
+                    # to stdlib rather than inventing a second key protocol.
+                    yield key_encoder.encode({key: None})[1:-6]
+                    yield ": " if pretty else ":"
+                yield from _record_tokens(item, encoder, key_encoder, pretty, depth + 1, active)
+            if pretty:
+                yield "\n" + indent
+            yield "}" if mapping else "]"
+        finally:
+            active.remove(marker)
+        return
+    for chunk in encoder.iterencode(value):
+        yield chunk.replace("\n", "\n" + indent) if pretty else chunk
+
+
 def record_chunks(value, *, pretty=False):
     """Yield bounded UTF-8 chunks from the two existing raw JSON protocols."""
     encoder = (json.JSONEncoder(ensure_ascii=False, indent=2, allow_nan=False, default=_numeric_default)
                if pretty else json.JSONEncoder(sort_keys=True, separators=(",", ":"),
                                                 allow_nan=False, default=_numeric_default))
+    key_encoder = json.JSONEncoder(ensure_ascii=not pretty, separators=(",", ":"), allow_nan=False)
     pending, size = [], 0
-    for chunk in encoder.iterencode(value):
+    for chunk in _record_tokens(value, encoder, key_encoder, pretty, 0, set()):
         pending.append(chunk)
         size += len(chunk)
         if size >= 65536:
