@@ -1,0 +1,100 @@
+{
+  "schema": "adult_population_transport_science_integration/1",
+  "status": "accepted_science_and_interface_contract",
+  "recorded_utc": "2026-10-19T14:39:20.913775+00:00",
+  "canonical_base": "ad5bdfe36202f5eb5632675e40b1d8ac967e5e12",
+  "author_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\POPULATION_TRANSPORT_SCIENCE_MANIFEST.json",
+    "bytes": 8619,
+    "sha256": "b1f2c219d1e35bbb59b5dcd6a4edbfff86faa9ef277f0cfef6105c7c6ecebe8e"
+  },
+  "independent_acceptance": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\population-transport-independent\\ACCEPTANCE.json",
+    "bytes": 6207,
+    "sha256": "3924a05568b6abd18f0803f3f38b28b9f37345f8988e1543cd101499998cf913"
+  },
+  "scientific_topic": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\POPULATION_TRANSPORT_SCIENCE.zh.md",
+    "bytes": 33863,
+    "sha256": "e76b9a1bd4fa6dea56957175941a2a4b4cb9aae32d7fa6c7453f0e107541c0c6"
+  },
+  "independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\population-transport-independent\\REVIEW.zh.md",
+    "bytes": 11932,
+    "sha256": "4c75ac68bad11193db7295e95faeb129d31d4167aa5fa1f2a8ea62a2683f9f29"
+  },
+  "canonical_topic": "doc/evidence/response_and_noise.zh.md#成人七导的实际共同空间与完整接入",
+  "accepted_requirements": [
+    "actual_reference_geometry",
+    "generic_complete_source",
+    "common_recipe_submodel",
+    "normalization_and_support",
+    "conditional_KL",
+    "total_KL_finite_domain",
+    "zero_between_residual",
+    "coordinate_covariance",
+    "reference_law",
+    "cross_adult_population_mean",
+    "conditional_scale_score",
+    "moving_prior_score",
+    "gamma_scope",
+    "exact_null_scope",
+    "single_C_programme"
+  ],
+  "root_review": {
+    "full_science_and_independent_review_read": true,
+    "all_author_owned_artifacts_verified": 6,
+    "all_acceptance_references_verified": 5,
+    "source_pin_verification": [
+      {
+        "relative": "src/research/conditional_response_graph.py",
+        "sha256": "8d485cb3106177b7e5a078eb52bcc2571ec4bc9bc6b06e8a71b20c2dfa33c613"
+      },
+      {
+        "relative": "src/research/numeric_response_consumer.py",
+        "sha256": "a3769794c069959c5ac66e38c4106cbed164a6a439d9f3b1e46a4518cef9c741"
+      },
+      {
+        "relative": "src/research/exact_common_marginal.py",
+        "sha256": "e1307ea0bed9a5e97b8778956ab91c30ae25d2c70d44348d1c79f56fdd691c82"
+      },
+      {
+        "relative": "src/transfer/source_response_transport.py",
+        "sha256": "10835eeaafb4ac9717576041209e096ac9fab7ad7cfb5b855d6422227e3ea07b"
+      },
+      {
+        "relative": "src/transfer/spatial_signal_prior.py",
+        "sha256": "4f2e1a8a95687cd1e8f6e1faea2a162732fc290a16196cf472a91de4ba0c11e3"
+      },
+      {
+        "relative": "src/transfer/spatial_programme.py",
+        "sha256": "5a29f7ed56d36e5b76a6226bdb67617d28eb653cb7f076097472a0817d2d2ef7"
+      },
+      {
+        "relative": "src/research/joint_response_noise_reference.py",
+        "sha256": "f3d66ca11bf6d1c82eb602fbb58ab8c9b6f6241376cbf2f62b655064ce07fda6"
+      },
+      {
+        "relative": "src/research/population_response_forecast.py",
+        "sha256": "330320bbcd91889380c102a0d7b85cc88d1c6a8e3a2941a8d9981e6daed29db9"
+      }
+    ],
+    "author_controls_reexecuted": 0,
+    "independent_controls_reexecuted": 0,
+    "new_fits": 0,
+    "Spec": "pass_for_full_source_conditional_transport_design",
+    "Standards": "pass_for_parent_ownership_and_scientific_scope"
+  },
+  "scope": {
+    "implementation_acceptance": false,
+    "adult_performance_acceptance": false,
+    "fixed_proper_Gaussian_factory_and_codec": "next_implementation_slice",
+    "source_mean_and_between_families_preserved": true,
+    "general_candidate_membership_preserved": true
+  },
+  "cleanup": {
+    "status": "not_applicable",
+    "reason": "Documentation and evidence binding only; no generated builds or replaced execution artifacts."
+  },
+  "active_state_owner": "pause_checkpoint_current.json"
+}

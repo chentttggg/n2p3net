@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_at_user_request",
-  "recorded_at": "2026-10-19T20:57:33.147096+08:00",
+  "recorded_at": "2026-10-19T22:39:20.917468+08:00",
   "user_request": "resume_research_then_resolve_repository_audit_before_autonomous_continuation",
   "research_worktree": "D:\\BCI\\n2p3-net",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -282,7 +282,9 @@
     }
   },
   "active_agents": {
-    "/root/history_slice_integration_review": "General population transport/completion mathematical policy and independent oracles."
+    "/root/history_slice_integration_review": "Implement complete source population transport factory and codec against accepted science.",
+    "/root/zero_latent_graph_fix": "Repair exact zero-latent covariance and verify full cold/producer chain.",
+    "/root/audit_repository_convergence": "Independently review future telemetry v2; no in-flight replacement."
   },
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
@@ -578,24 +580,44 @@
         "scientific_checkpoint_present": true,
         "scientific_acceptance_issued": false,
         "last_observation": {
-          "time": 1792417236.6030376,
+          "time": 1792420760.628105,
           "action": "pause_external_gpu_pressure",
-          "host_cpu_percent": 11.4,
-          "host_memory_percent": 47.3,
+          "host_cpu_percent": 8.2,
+          "host_memory_percent": 52.7,
           "owned_cpu_percent_of_host": 0.0,
           "gpu_observation": {
-            "observed_time": 1792417234.1423924,
+            "observed_time": 1792420758.1836085,
             "status": "observed",
             "devices": [
               {
                 "index": 0,
-                "utilization_percent": 83.0,
+                "utilization_percent": 79.0,
                 "memory_total_mib": 8151.0,
-                "memory_used_mib": 5762.0,
-                "memory_percent": 70.69071279597595
+                "memory_used_mib": 6850.0,
+                "memory_percent": 84.03876824929456
               }
             ]
           },
+          "verified_live_identities": [
+            {
+              "role": "scientific_process",
+              "pid": 2016,
+              "created": 1792416854.9401252,
+              "status": "stopped"
+            },
+            {
+              "role": "supervisor",
+              "pid": 35752,
+              "created": 1792416783.4605472,
+              "status": "running"
+            },
+            {
+              "role": "outer_python_launcher",
+              "pid": 72388,
+              "created": 1792416783.4304018,
+              "status": "running"
+            }
+          ],
           "owned_processes": [
             {
               "pid": 66912,
@@ -626,8 +648,8 @@
         },
         "next_action": "Continue the same managed recovery actor when external resource pressure releases; verify original12imports and freshperson1, then all13folds, complete exit0/tree retirement and sealed independent acceptance before target matrix.",
         "person_states": {
-          "complete": 12,
-          "running": 1
+          "running": 1,
+          "complete": 12
         },
         "completed_folds": 0
       },
@@ -1069,17 +1091,53 @@
       "cleanup_status": "incomplete_automatic_approval_rejected_deletion"
     },
     "adult_population_transport_science": {
-      "state": "in_progress_independent_proper_completion_policy_and_counterexamples",
+      "state": "accepted_science_integrated_fixed_Gaussian_B_implementation_in_progress",
+      "integration_binding": "doc/assets/research_resume_20261012/adult_population_transport_science_integration.json",
+      "independent_acceptance": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\population-transport-independent\\ACCEPTANCE.json",
+        "bytes": 6207,
+        "sha256": "3924a05568b6abd18f0803f3f38b28b9f37345f8988e1543cd101499998cf913"
+      },
+      "accepted_scope": "complete source marginal plus explicit proper conditional law, actual seven-channel W, common-reference submodel and scientific conditions",
+      "production_code_accepted": false
+    },
+    "adult_population_transport": {
+      "state": "implementation_in_progress",
       "owner": "/root/history_slice_integration_review",
-      "topic": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\POPULATION_TRANSPORT_SCIENCE.zh.md",
-      "code_or_scientific_reference_policy_accepted": false
+      "candidate_root": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/adult-population-source/candidate",
+      "upstream_science_binding": "doc/assets/research_resume_20261012/adult_population_transport_science_integration.json",
+      "next_exit": "complete person execution handle, new all13 source-only forecast, actual geometry plus explicit conditional policy, factory/save/cold/original-parent readmission"
+    },
+    "zero_latent_response_graph": {
+      "state": "candidate_codec_replay_verification_in_progress",
+      "owner": "/root/zero_latent_graph_fix",
+      "candidate_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\zero-latent-graph-fix",
+      "confirmed_issue": "zero-column source factor loses covariance shape in exact_linear_image; use exact row Gram",
+      "in_flight_source_freeze_affected": false,
+      "current_992_column_source_instance_affected": false,
+      "historical_source_owner_boundary": "older335c source remains rejected by current c367 owner; separately documented, no expansion"
+    },
+    "future_supervision_telemetry": {
+      "state": "candidate_sealed_independent_review_in_progress_not_deployed",
+      "owner": "/root/audit_repository_convergence",
+      "delivery": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\DELIVERY_MANIFEST.json",
+        "bytes": 61385,
+        "sha256": "e2e45b844e7a45ada704e3568ab4875472ad0f025ad29b8be7101f34bd1b52ec"
+      },
+      "current_supervisor_replaced": false,
+      "cleanup_status": "incomplete_automatic_approval_rejected_deletion",
+      "remaining_generated_files": 53,
+      "remaining_generated_bytes": 2469001
     }
   },
   "next_actions": [
-    "Monitor the same live recovery actor and whole-host resource gate; preserve original12 accepted products and complete missing1thenall13folds.",
-    "After actual complete13person/13fold execution, exit0 and owned-tree retirement, issue the sealed recovered-source independent complete acceptance.",
-    "Use the recovered source target metadata and original819panel; freeze complete target runtime, resolve measured resources, execute full78Cfits/4914held cells.",
-    "Review and integrate adult multirecord input slice A; finish generic proper population transport policy before B/C/D/E integration."
+    "Monitor the same live recovery actor and whole-host gate; reuse original12 products, complete missing1 and all13 folds.",
+    "After complete13person/13fold exit0 and owned-tree retirement, issue the sealed recovered-source independent complete acceptance.",
+    "Use recovered-source target metadata and original819panel; freeze complete target runtime, resolve measured resources, execute all78Cfits/4914held cells.",
+    "Review and integrate zero-latent graph repair with origin/current consumer identity and full cold replay.",
+    "Complete and independently review B full-source transport factory/codec, then connect C joint, D history and E typed adult inference.",
+    "Review future telemetry v2 and its checker identity seal before using it in a new execution."
   ],
   "active_local_checks": [],
   "folder_cleanup_review": {
@@ -1090,7 +1148,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T13:49:00.324308+00:00",
+  "last_updated_utc": "2026-10-19T14:39:20.913775+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",

@@ -354,9 +354,27 @@ source group以participant为单位，对效应measurement covariance与人际va
 
 ### 成人七导的实际共同空间与完整接入
 
-源码核对确认：本轮Huebner人群源的31导不含PO8/Oz，与BrainSync原生七导共享Fz/Cz/P3/Pz/P4五个电极。消去未知参考后，这一布局组合有四维共同差分；B09可逆chart与proper条件分布可将人群信息传入共同方向，同时保留其余三个方向和完整七导观测。共同秩应由实际观测行空间求出，具体电极数不成为算法常数。
+实际Huebner源为31导、nose参考；BrainSync七导使用left-ear参考，共享Fz/Cz/P3/Pz/P4五个电极，PO8/Oz未在源中测量。两边实际差分观测行空间的秩分别为31、7，联合秩34，交空间因而为4维。共同秩由真实观测行空间求出；这限定直接共享的物理量，完整31导仍可通过具名统计模型帮助预测七导。
 
-完整成人接入还需将全部13份已接受个人likelihood建立的新成人forecast、population transport、250Hz实际时钟、多C-session权限、joint保存后原C重新准入及typed个人入口连通。现个人入口消费epoch logits，新joint入口应直接发布候选证据；session共享目标与block独立响应分别由真实parent声明。数学关系、六类反例和A–E完整切片见[成人接入交接](D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/ADULT_BRIDGE_HANDOFF.zh.md)。这是代码与数学依赖研究，尚无本次成人拟合或评价。
+一般迁移接口保留完整source人群law，并给未知参考差和缺电极响应一个明确的条件Gaussian：
+
+\[
+s=m_s+F_Bz_B+F_Mz_M,\qquad
+w\mid s\sim N(a_0+G_ss,V_w),\qquad
+\theta_t=B_ss+B_ww.
+\]
+
+其中人际差异因子F_B、总体均值估计误差因子F_M分别保存；w可取nose−ear、PO8−nose、Oz−nose，也可作精确可逆换坐标。真实七导的均值为`(Bs+Bw Gs)ms+Bw a0`，完整因子为`[(Bs+Bw Gs)FB,(Bs+Bw Gs)FM,Bw Fw]`，`Fw Fwᵀ=Vw`。Gs、a0、Vw的来源与量纲是新政策输入，保持全部源信息；34维表示潜在响应chart，实测源/目标仍分别为31/7导。跨成人联合时，F_M对应同一个共享均值变量，F_B逐人独立。
+
+仅用共同边缘的完成是上述接口内的明确子模型。对目标共同映射L、源共同映射S，以及预声明reference `N(m0,K0)`，定义`J=K0 Lᵀ(L K0 Lᵀ)⁻¹`、`R0=K0−JL K0`。取`T Bw=I`并令`Gs=T(JS−Bs)`、`a0=T(m0−JLm0)`、`Vw=T R0 Tᵀ`，便精确恢复共同边缘完成；actual W和Gs先在精确算术中合并再舍入。一般模型中Gs可利用全部31导，不把四维共同空间设为信息上限。
+
+proper表示概率归一化，允许Dirac等退化law。本次迁移另要求希望目标C继续学习的未知方向有完整条件支持，即Vw在其剩余坐标中正定；目标ambient中的R0自然为半正定。即使源人际差异为零，未知三向仍可有正变化；把残余方差乘以源between能量所得γ会在此处锁死支持，正倍数hyperprior也无法恢复。一般入口采用独立预声明的proper条件law，保原均值误差与人际差异；正域γ匹配作为另一具名政策保留，不用epsilon补方差。
+
+给定任意共同law，保reference条件分布最小化其平均条件KL；共同KL有限时，这也最小化总KL。Dirac共同law下总KL可能全为无穷，此时条件KL仍能区分完成。固定reference允许同一次完整C更新响应；另学残余尺度需保存其proper层级和整个人共享残余的score。reference若随候选noise变化，其均值/gain/covariance的导数一起进入联合目标；把同一C的posterior再当prior乘C才会重复更新。
+
+原population、chart、精确图、affine consumer和codec能力按各自职责复用。当前p=16时完整源参数496维，between/mean合计992因子列；source_map为identity的现有exact marginal先保完整496维源边缘及48维条件创新。进一步压缩应针对所有实际target查询与Gs的精确零空间，保各因子族的共享关系。旧软件fixture的3µV尺度保其数学造数身份，新reference政策另列来源。29组作者控制与8组独立Fraction/解析反例支持以上关系，科学设计和接口接受见[迁移数学绑定](../assets/research_resume_20261012/adult_population_transport_science_integration.json)。
+
+成人完整多C/held输入和原parent恢复接口见[输入整合](../assets/research_resume_20261012/adult_programme_input_integration.json)。全链依次连接全部13份已接受数据likelihood建立的新成人forecast、上述迁移、250Hz实际时钟、joint保存后原C重新准入、完整history及typed个人入口；12人LOSO折保自身角色。完整切片定义见[成人接入交接](D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/ADULT_BRIDGE_HANDOFF.zh.md)，实施和运行状态由当前checkpoint维护。
 
 ### 源数据因子的充分状态与产物职责
 
