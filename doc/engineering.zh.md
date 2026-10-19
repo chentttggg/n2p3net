@@ -12,9 +12,11 @@
 
 形式化工程使用`formal/lean/scripts/workspace_status.py`核源码与证明身份；`--compile-current-target`在当前源码上执行具名目标，保存实际运行前后身份。原版本验收及其源码对应关系独立保留，新的语义接受沿具名rebase和独立审阅推进。工具链由`--lake`、`N2P3_LAKE`或PATH提供；历史输出由`locate_evidence.py`按归档成员或原回执检索。`artifacts/`内被验收manifest明确保护的Lean检查源码属于恢复依赖。
 
-新源码、JSON、TOML、Markdown默认LF，已有显式producer行尾规则优先；
-捕获的`doc/assets`和`frozen`原字节默认不转换。不要全仓renormalize或统一格式化
-已绑定源码来修风格告警。忽略规则排除本机`.claude/settings.local.json`、`artifacts/`
+Git逐字节保存源码、配置和证据，`.gitattributes`显式禁止自动行尾转换；Git blob、检出文件和
+源码归档成员因此共享同一字节身份。新文件和有意修改的源码仍使用LF，由`.editorconfig`和
+本规范约束；这条编辑规则不追溯重写已经接受的CRLF或混合行尾文件。
+修改旧源码时核对影响范围并为新字节重新绑定执行身份；原producer、冻结结果和历史证据继续
+使用其原SHA。捕获的`doc/assets`、`frozen`及Lean原证据保持原字节，禁止全仓renormalize。忽略规则排除本机`.claude/settings.local.json`、`artifacts/`
 及`doc/assets`模型/缓存/归档载荷；JSON、manifest和必要文本继续可跟踪。
 ignore规则只控制新增分发，不删除本地科研证据，也不自动移除已跟踪载荷。
 

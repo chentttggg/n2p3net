@@ -1,3 +1,2 @@
-*.py text eol=lf
-*.md text eol=lf
-*.json text eol=lf
+# Original captured plan files keep their accepted bytes.
+* -text -whitespace
