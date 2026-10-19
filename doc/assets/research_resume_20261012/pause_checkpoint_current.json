@@ -282,10 +282,8 @@
     }
   },
   "active_agents": {
-    "/root/history_slice_integration_review": "Missing-person recovery owner implementation and focused vertical controls.",
-    "/root/execution_failures": "Independent original12product partial acceptance and complete recovered execution checker.",
-    "/root/audit_repository_convergence": "Independent final source/actor closure and recipe3 code-only freeze tools.",
-    "/root/joint_slice_integration_review": "Adult programme input slice A: complete multi-C/held scopes and neutral physical input owner."
+    "/root/audit_repository_convergence": "Independent adult multirecord input slice A review.",
+    "/root/history_slice_integration_review": "General population transport/completion mathematical policy and independent oracles."
   },
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
@@ -298,7 +296,7 @@
     "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
     "commit": "a6f5750"
   },
-  "integration_head": "094d44292d8155b96977ca1f26810eda23f77477",
+  "integration_head": "0f198d818fa6a7f3ce801dc175961cb45183b03c",
   "concurrency_authorization": "later user allowed more threads after the temporary six-agent limit; seven actual parallel roles used for independent scientific slices",
   "execution_priority": "resolve_current_repository_audit_then_resume_full_population_and_joint_history_matrix",
   "accepted_native_input_source_commit": "811fb18dcbde94b9903ee8cce0df4bee16466e4a",
@@ -506,6 +504,354 @@
       "actual_population_complete_hyperfits": 0,
       "candidate_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
       "execution": {
+        "state": "managed_recovery_waiting_external_resource_pressure",
+        "source_product_kind": "same_fit_full_response_data_factor_v2",
+        "launch": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\ROOT_LAUNCH.json",
+          "bytes": 3655,
+          "sha256": "ade2706ea64454758c63c4470c79960e5d0623d1ee9483a0501106d42a3b8021"
+        },
+        "source_manifest": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\SOURCE_MANIFEST.json",
+          "bytes": 71994,
+          "sha256": "6caba8203c0e09ee7db1494ada544301c36116b6d2f1d2031f8b247aa7acbf59"
+        },
+        "resources": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\RESOURCES.serial.json",
+          "bytes": 2209,
+          "sha256": "b5b28c703232099f4968ceb18397110d6c3c09a2aa45e9723e907151427f242f"
+        },
+        "recipe": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-source-recovery\\SOURCE_DATA_FACTOR_RECOVERY_RECIPE.json",
+          "bytes": 5206,
+          "sha256": "c7a71439ff3b69597f9f9870bb972f17ebc260ef44770278197ca41990b3d3c5"
+        },
+        "partial_execution_acceptance": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\PARTIAL_ACCEPTANCE.json",
+          "bytes": 19831,
+          "sha256": "b8deabb86845fca2781ebcbc73aa9efb7abc5384eb97e4ca8add3e79e795b57b"
+        },
+        "supervisor": {
+          "pid": 35752,
+          "created": 1792416783.4605472
+        },
+        "scientific_process": {
+          "pid": 2016,
+          "created": 1792416854.9401252
+        },
+        "outer_python_launcher": {
+          "pid": 72388,
+          "created": 1792416783.4304018
+        },
+        "owned_launch": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\supervision\\launch.json",
+          "bytes": 3285,
+          "sha256": "2bc7a444e2cfeaa8c411044b01079f7d1d164c1453f2f89f75dd05d4765bf117"
+        },
+        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-compact-source-recovery-programme\\checkpoint.json",
+        "supervision_progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\supervision\\progress.json",
+        "supervision_terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\supervision\\terminal.json",
+        "requested_people": 13,
+        "requested_folds": 13,
+        "original_products_available_for_reuse": 12,
+        "new_person_fits_requested": 1,
+        "source_workers": 1,
+        "fold_workers": 1,
+        "native_threads_per_worker": 20,
+        "cpu_threads_total": 21,
+        "phase_memory_GiB": 10,
+        "programme_memory_limit_GiB": 11,
+        "actual_frozen_inspect": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\INSPECT.json",
+          "bytes": 3530,
+          "sha256": "9848b4bd0e9f7a2b448b1a02ff826a171446bf3ff45036ccf97601f20a8c7da3"
+        },
+        "supervision_inputs": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\SUPERVISION_INPUTS.json",
+          "bytes": 1442,
+          "sha256": "0ffa16ab552dcd57824a26a0ae9f9981da661ba1891522c5ca810be1c1d4c325"
+        },
+        "independent_execution_preparation": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_PREPARATION_MANIFEST.json",
+          "bytes": 61437,
+          "sha256": "5f0aaad08de15c2c09a919cd9321f4466f6f2feb8ac4ed868ad121526fc262c4"
+        },
+        "scientific_checkpoint_present": true,
+        "scientific_acceptance_issued": false,
+        "last_observation": {
+          "time": 1792417236.6030376,
+          "action": "pause_external_gpu_pressure",
+          "host_cpu_percent": 11.4,
+          "host_memory_percent": 47.3,
+          "owned_cpu_percent_of_host": 0.0,
+          "gpu_observation": {
+            "observed_time": 1792417234.1423924,
+            "status": "observed",
+            "devices": [
+              {
+                "index": 0,
+                "utilization_percent": 83.0,
+                "memory_total_mib": 8151.0,
+                "memory_used_mib": 5762.0,
+                "memory_percent": 70.69071279597595
+              }
+            ]
+          },
+          "owned_processes": [
+            {
+              "pid": 66912,
+              "created": 1792416784.1609128,
+              "cpu_seconds": 0.015625
+            },
+            {
+              "pid": 44580,
+              "created": 1792416784.1805408,
+              "cpu_seconds": 0.015625
+            },
+            {
+              "pid": 71632,
+              "created": 1792416784.1989768,
+              "cpu_seconds": 3.171875
+            },
+            {
+              "pid": 71156,
+              "created": 1792416854.490964,
+              "cpu_seconds": 0.296875
+            },
+            {
+              "pid": 2016,
+              "created": 1792416854.9401252,
+              "cpu_seconds": 20.109375
+            }
+          ]
+        },
+        "next_action": "Continue the same managed recovery actor when external resource pressure releases; verify original12imports and freshperson1, then all13folds, complete exit0/tree retirement and sealed independent acceptance before target matrix.",
+        "person_states": {
+          "complete": 12,
+          "running": 1
+        },
+        "completed_folds": 0
+      },
+      "code_preparation": {
+        "conditioning": "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
+        "cloud_execution": "doc/assets/research_resume_20261012/source_cloud_execution_preparation.json",
+        "state": "accepted_final_recovery_source_frozen_and_launched",
+        "local_training_allowed": true,
+        "completed_source_models_in_stopped_attempt": 0,
+        "user_cloud_response": "User subsequently authorized local computation first with whole-machine CPU/RAM/GPU each below80percent.",
+        "managed_execution": "doc/assets/research_resume_20261012/source_managed_execution_integration.json",
+        "input_locations": "doc/assets/research_resume_20261012/source_input_location_integration.json",
+        "memory_lifecycle": "doc/assets/research_resume_20261012/source_memory_lifecycle_integration.json",
+        "serialization": "doc/assets/research_resume_20261012/source_serialization_integration.json"
+      },
+      "previous_stopped_local_execution": {
+        "state": "stopped_by_user_local_training_not_authorized",
+        "stop_receipt": "D:/BCI/artifacts/research-deliveries/source-response-states/audited-execution-source/USER_STOP.json",
+        "original_programme_checkpoint": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/actual-source-programme/checkpoint.json",
+        "tool_session": 94293,
+        "verified_programme_pid": 16484,
+        "verified_processes_stopped": 2,
+        "verified_processes_remaining": 0,
+        "all_requested_people": 13,
+        "all_requested_folds": 13,
+        "resume_on_local": false,
+        "completed_artifacts_and_failure_evidence": "retained in original attempt; not promoted to complete source execution"
+      },
+      "previous_supervised_local_execution": {
+        "state": "failed_job_memory_allocation_limit_all_owned_processes_retired",
+        "integration_binding": "doc/assets/research_resume_20261012/source_managed_execution_integration.json",
+        "launch": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\ROOT_LAUNCH2.json",
+          "bytes": 1030,
+          "sha256": "cb0ce38ed4c987a6a7161803437f34f7ff56bfd785a98a85be5dd88fd42b8718"
+        },
+        "source_manifest": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\SOURCE_MANIFEST.json",
+          "bytes": 64342,
+          "sha256": "22f148ad043536b91b4b1dd92fdb7c50669b503d5c08fc4e6393db1534776272"
+        },
+        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-local-complete-source\\checkpoint.json",
+        "supervision_progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision\\progress.json",
+        "supervision_terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision\\terminal.json",
+        "requested_people": 13,
+        "requested_folds": 13,
+        "completed_artifacts_and_failure_evidence": "Original stopped attempt retained separately; current outputs belong to the new frozen local consumer.",
+        "scientific_acceptance_issued": false,
+        "terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision\\terminal.json",
+        "failure": "Two simultaneous full-source fits exhausted aggregate owned commit cap; no person/fold model published. Keep same scientific recipe/source and schedule one full-source fit at a time.",
+        "next_attempt": "serial_source_fit_with_larger_per_fit_reservation_and20native_threads_under_same_host80percent_policy"
+      },
+      "previous_serial_supervised_local_execution": {
+        "state": "failed_serial_job_memory_limit_all_owned_processes_retired",
+        "integration_binding": "doc/assets/research_resume_20261012/source_managed_execution_integration.json",
+        "launch": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\ROOT_LAUNCH3.json",
+          "bytes": 933,
+          "sha256": "74e8e6265301d2c113135645e0371e32f9072995bcc1d6a0f634d2d776b4a419"
+        },
+        "source_manifest": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\SOURCE_MANIFEST.json",
+          "bytes": 64342,
+          "sha256": "22f148ad043536b91b4b1dd92fdb7c50669b503d5c08fc4e6393db1534776272"
+        },
+        "resources": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\RESOURCES.serial.json",
+          "bytes": 2906,
+          "sha256": "155575581680d2a06aa439ba6a25d76c679e11076247bc0956531bb93353c830"
+        },
+        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-local-complete-source-serial\\checkpoint.json",
+        "supervision_progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision-serial\\progress.json",
+        "supervision_terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision-serial\\terminal.json",
+        "requested_people": 13,
+        "requested_folds": 13,
+        "source_workers": 1,
+        "fold_workers": 1,
+        "native_threads_per_worker": 20,
+        "cpu_threads_total": 21,
+        "scientific_acceptance_issued": false,
+        "terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision-serial\\terminal.json",
+        "peak_host_CPU_percent": 76.4,
+        "peak_host_memory_percent": 76.7,
+        "completed_source_models": 0,
+        "completed_folds": 0,
+        "profile_evidence": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\P1_OBSERVED_STACK_SCOPE.json",
+        "next_action": "Reduce full-record augmented QR/copy peaks and posterior record/hash duplication, retaining complete scientific dimensions and inputs; review and freeze fixes before new full execution."
+      },
+      "independent_execution_acceptance_preparation": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_CHECKER_INTERFACE_SEAL.json",
+        "bytes": 6741,
+        "sha256": "04f377ed25b20cc1e5f4b30046e0994ac6062bdf48b55322382819a18baf26bd"
+      },
+      "previous_bounded_supervised_local_execution": {
+        "state": "superseded_by_independently_reviewed_exact_byte_codec_performance_revision",
+        "launch": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\ROOT_LAUNCH.json",
+          "bytes": 1983,
+          "sha256": "3d9c1d218dc44cc84afaae8ff335db994cace65a683408a8923a2c7834b1f127"
+        },
+        "source_manifest": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\SOURCE_MANIFEST.json",
+          "bytes": 64072,
+          "sha256": "975b9ba33103f273adf5842a52a63fb1699ca1e972a16819eaa1a4f951073525"
+        },
+        "resources": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\RESOURCES.json",
+          "bytes": 2271,
+          "sha256": "e3438d233f1a9eed66b38da3c9d27309767229df32972e2077bbaec5370c0dc0"
+        },
+        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-bounded-source-programme\\checkpoint.json",
+        "supervision_progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\progress.json",
+        "supervision_terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\terminal.json",
+        "supervisor": {
+          "pid": 11260,
+          "created": 1792402344.3164961
+        },
+        "requested_people": 13,
+        "requested_folds": 13,
+        "source_workers": 2,
+        "fold_workers": 2,
+        "native_threads_per_worker": 10,
+        "cpu_threads_total": 21,
+        "completed_source_models": 0,
+        "completed_folds": 0,
+        "scientific_acceptance_issued": false,
+        "next_action": "Monitor real saved source/fold progress and utilization, then independently accept complete execution before target dispatch.",
+        "outer_python_launcher": {
+          "pid": 64940,
+          "created": 1792402344.285771
+        },
+        "owned_launch": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\launch.json",
+          "bytes": 2879,
+          "sha256": "4d1633da44e814ef00fd17e92099a4d998ad2de3979335c1d413f4d7f306e0b7"
+        },
+        "last_observation": {
+          "time": 1792402735.0495615,
+          "action": "running",
+          "host_cpu_percent": 19.3,
+          "host_memory_percent": 58.4,
+          "owned_cpu_percent_of_host": 3.125887693938113
+        },
+        "profile_evidence": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\SOURCE_PROFILE.raw",
+          "bytes": 93840,
+          "sha256": "e1bac9ea9f2016295b0784458603acc4d1c314198a429c3558050c2502357ac8"
+        },
+        "supersession": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\ROOT_SUPERSESSION.json",
+          "bytes": 2794,
+          "sha256": "bf35a32100e41db28df4316d1cd416c7f64b7579e00963f7491035f5e427d171"
+        },
+        "terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\terminal.json",
+        "all_recorded_owned_identities_verified_absent": 5
+      },
+      "compact_data_factor_integration": "doc/assets/research_resume_20261012/source_data_factor_integration.json",
+      "previous_streamed_supervised_local_execution": {
+        "state": "retired_for_independently_accepted_compact_data_factor_replacement",
+        "source_product_kind": "spatial_model_v1",
+        "launch": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\streamed-source-execution\\ROOT_LAUNCH.json",
+          "bytes": 2262,
+          "sha256": "bd1661f265dd9be61d2c35389b67ddbbca76c5ae2fb195c7a012dfa4e7db567c"
+        },
+        "supersession": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\streamed-source-execution\\ROOT_SUPERSESSION.json",
+          "bytes": 1689,
+          "sha256": "ef26a1fb221afc0ecd9e11bcf818fbd902a6bbd496831b1a40b62412e3b285e6"
+        },
+        "original_outputs": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-streamed-source-programme",
+        "execution_acceptance_preparation": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-execution-acceptance\\PREPARATION_MANIFEST.json",
+          "bytes": 2988,
+          "sha256": "b34bc2cdb5063f161cd27cd338aa0c7498804718266118d9fbdf6d62335dda94"
+        },
+        "completed_source_publications": 0,
+        "completed_folds": 0,
+        "preserved_large_source_models": 2,
+        "original_terminal_role": "Explicit code supersession/stop_requested; original evidence and producer remain. This was not a user pause or a scientific failure."
+      },
+      "completed_source_products": 12,
+      "recovery": {
+        "state": "actual_managed_recovery_launched",
+        "implementation": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/compact-source-recovery",
+        "implementation_owner": "/root/history_slice_integration_review",
+        "independent_acceptance_owner": "/root/execution_failures",
+        "next_attempt_source_workers": 1,
+        "next_attempt_fold_workers": 1,
+        "next_attempt_native_threads": 20,
+        "new_attempt_launched": true,
+        "new_source_fits_required": 1,
+        "fold_fits_required": 13,
+        "target_continuation_handoff": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/population-matrix-execution/TARGET_CONTINUATION_HANDOFF.zh.md",
+        "partial_acceptance": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\PARTIAL_ACCEPTANCE.json",
+          "bytes": 19831,
+          "sha256": "b8deabb86845fca2781ebcbc73aa9efb7abc5384eb97e4ca8add3e79e795b57b"
+        },
+        "recipe": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-source-recovery\\SOURCE_DATA_FACTOR_RECOVERY_RECIPE.json",
+          "bytes": 5206,
+          "sha256": "c7a71439ff3b69597f9f9870bb972f17ebc260ef44770278197ca41990b3d3c5"
+        },
+        "root_review": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-source-recovery\\ROOT_MAIN_VERIFICATION.json",
+          "bytes": 5480,
+          "sha256": "918b2d71de4e975e1b78734b960f55db067729a06a48a71ff951e79bdb2b57b0"
+        },
+        "source_review_owner": "/root/audit_repository_convergence",
+        "resource_plan": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\RESOURCES.serial.json",
+          "bytes": 2209,
+          "sha256": "b5b28c703232099f4968ceb18397110d6c3c09a2aa45e9723e907151427f242f"
+        },
+        "target_metadata_continuation": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\RECOVERY_TARGET_METADATA.json",
+          "bytes": 9122,
+          "sha256": "5f44301bf05d7b39dda7b8fc84d76a6384e94ab62503a299b471f354f3bc8867"
+        }
+      },
+      "person_recovery_integration": "doc/assets/research_resume_20261012/source_person_recovery_integration.json",
+      "previous_compact_supervised_local_execution": {
         "state": "incomplete_native_wait_retired_missing_person_recovery_under_review",
         "source_product_kind": "same_fit_full_response_data_factor_v2",
         "launch": {
@@ -598,221 +944,7 @@
           "bytes": 3142,
           "sha256": "361b9a924756c0178dbb9b92fab6e6f58e93fe0cbca85fb70de26d4d39969722"
         }
-      },
-      "code_preparation": {
-        "conditioning": "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
-        "cloud_execution": "doc/assets/research_resume_20261012/source_cloud_execution_preparation.json",
-        "state": "recovery_main_integrated_final_code_only_freeze_pending",
-        "local_training_allowed": true,
-        "completed_source_models_in_stopped_attempt": 0,
-        "user_cloud_response": "User subsequently authorized local computation first with whole-machine CPU/RAM/GPU each below80percent.",
-        "managed_execution": "doc/assets/research_resume_20261012/source_managed_execution_integration.json",
-        "input_locations": "doc/assets/research_resume_20261012/source_input_location_integration.json",
-        "memory_lifecycle": "doc/assets/research_resume_20261012/source_memory_lifecycle_integration.json",
-        "serialization": "doc/assets/research_resume_20261012/source_serialization_integration.json"
-      },
-      "previous_stopped_local_execution": {
-        "state": "stopped_by_user_local_training_not_authorized",
-        "stop_receipt": "D:/BCI/artifacts/research-deliveries/source-response-states/audited-execution-source/USER_STOP.json",
-        "original_programme_checkpoint": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/actual-source-programme/checkpoint.json",
-        "tool_session": 94293,
-        "verified_programme_pid": 16484,
-        "verified_processes_stopped": 2,
-        "verified_processes_remaining": 0,
-        "all_requested_people": 13,
-        "all_requested_folds": 13,
-        "resume_on_local": false,
-        "completed_artifacts_and_failure_evidence": "retained in original attempt; not promoted to complete source execution"
-      },
-      "previous_supervised_local_execution": {
-        "state": "failed_job_memory_allocation_limit_all_owned_processes_retired",
-        "integration_binding": "doc/assets/research_resume_20261012/source_managed_execution_integration.json",
-        "launch": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\ROOT_LAUNCH2.json",
-          "bytes": 1030,
-          "sha256": "cb0ce38ed4c987a6a7161803437f34f7ff56bfd785a98a85be5dd88fd42b8718"
-        },
-        "source_manifest": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\SOURCE_MANIFEST.json",
-          "bytes": 64342,
-          "sha256": "22f148ad043536b91b4b1dd92fdb7c50669b503d5c08fc4e6393db1534776272"
-        },
-        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-local-complete-source\\checkpoint.json",
-        "supervision_progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision\\progress.json",
-        "supervision_terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision\\terminal.json",
-        "requested_people": 13,
-        "requested_folds": 13,
-        "completed_artifacts_and_failure_evidence": "Original stopped attempt retained separately; current outputs belong to the new frozen local consumer.",
-        "scientific_acceptance_issued": false,
-        "terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision\\terminal.json",
-        "failure": "Two simultaneous full-source fits exhausted aggregate owned commit cap; no person/fold model published. Keep same scientific recipe/source and schedule one full-source fit at a time.",
-        "next_attempt": "serial_source_fit_with_larger_per_fit_reservation_and20native_threads_under_same_host80percent_policy"
-      },
-      "previous_serial_supervised_local_execution": {
-        "state": "failed_serial_job_memory_limit_all_owned_processes_retired",
-        "integration_binding": "doc/assets/research_resume_20261012/source_managed_execution_integration.json",
-        "launch": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\ROOT_LAUNCH3.json",
-          "bytes": 933,
-          "sha256": "74e8e6265301d2c113135645e0371e32f9072995bcc1d6a0f634d2d776b4a419"
-        },
-        "source_manifest": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\SOURCE_MANIFEST.json",
-          "bytes": 64342,
-          "sha256": "22f148ad043536b91b4b1dd92fdb7c50669b503d5c08fc4e6393db1534776272"
-        },
-        "resources": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\RESOURCES.serial.json",
-          "bytes": 2906,
-          "sha256": "155575581680d2a06aa439ba6a25d76c679e11076247bc0956531bb93353c830"
-        },
-        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-local-complete-source-serial\\checkpoint.json",
-        "supervision_progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision-serial\\progress.json",
-        "supervision_terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision-serial\\terminal.json",
-        "requested_people": 13,
-        "requested_folds": 13,
-        "source_workers": 1,
-        "fold_workers": 1,
-        "native_threads_per_worker": 20,
-        "cpu_threads_total": 21,
-        "scientific_acceptance_issued": false,
-        "terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision-serial\\terminal.json",
-        "peak_host_CPU_percent": 76.4,
-        "peak_host_memory_percent": 76.7,
-        "completed_source_models": 0,
-        "completed_folds": 0,
-        "profile_evidence": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\P1_OBSERVED_STACK_SCOPE.json",
-        "next_action": "Reduce full-record augmented QR/copy peaks and posterior record/hash duplication, retaining complete scientific dimensions and inputs; review and freeze fixes before new full execution."
-      },
-      "independent_execution_acceptance_preparation": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-compact-factor\\CHECKER_INTERFACE_SEAL.json",
-        "bytes": 3987,
-        "sha256": "d54b574b5868d4f3bcedc19f00727a3ac680a2e67cc16899c52033f42f1e63b7"
-      },
-      "previous_bounded_supervised_local_execution": {
-        "state": "superseded_by_independently_reviewed_exact_byte_codec_performance_revision",
-        "launch": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\ROOT_LAUNCH.json",
-          "bytes": 1983,
-          "sha256": "3d9c1d218dc44cc84afaae8ff335db994cace65a683408a8923a2c7834b1f127"
-        },
-        "source_manifest": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\SOURCE_MANIFEST.json",
-          "bytes": 64072,
-          "sha256": "975b9ba33103f273adf5842a52a63fb1699ca1e972a16819eaa1a4f951073525"
-        },
-        "resources": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\RESOURCES.json",
-          "bytes": 2271,
-          "sha256": "e3438d233f1a9eed66b38da3c9d27309767229df32972e2077bbaec5370c0dc0"
-        },
-        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-bounded-source-programme\\checkpoint.json",
-        "supervision_progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\progress.json",
-        "supervision_terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\terminal.json",
-        "supervisor": {
-          "pid": 11260,
-          "created": 1792402344.3164961
-        },
-        "requested_people": 13,
-        "requested_folds": 13,
-        "source_workers": 2,
-        "fold_workers": 2,
-        "native_threads_per_worker": 10,
-        "cpu_threads_total": 21,
-        "completed_source_models": 0,
-        "completed_folds": 0,
-        "scientific_acceptance_issued": false,
-        "next_action": "Monitor real saved source/fold progress and utilization, then independently accept complete execution before target dispatch.",
-        "outer_python_launcher": {
-          "pid": 64940,
-          "created": 1792402344.285771
-        },
-        "owned_launch": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\launch.json",
-          "bytes": 2879,
-          "sha256": "4d1633da44e814ef00fd17e92099a4d998ad2de3979335c1d413f4d7f306e0b7"
-        },
-        "last_observation": {
-          "time": 1792402735.0495615,
-          "action": "running",
-          "host_cpu_percent": 19.3,
-          "host_memory_percent": 58.4,
-          "owned_cpu_percent_of_host": 3.125887693938113
-        },
-        "profile_evidence": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\SOURCE_PROFILE.raw",
-          "bytes": 93840,
-          "sha256": "e1bac9ea9f2016295b0784458603acc4d1c314198a429c3558050c2502357ac8"
-        },
-        "supersession": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\ROOT_SUPERSESSION.json",
-          "bytes": 2794,
-          "sha256": "bf35a32100e41db28df4316d1cd416c7f64b7579e00963f7491035f5e427d171"
-        },
-        "terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\terminal.json",
-        "all_recorded_owned_identities_verified_absent": 5
-      },
-      "compact_data_factor_integration": "doc/assets/research_resume_20261012/source_data_factor_integration.json",
-      "previous_streamed_supervised_local_execution": {
-        "state": "retired_for_independently_accepted_compact_data_factor_replacement",
-        "source_product_kind": "spatial_model_v1",
-        "launch": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\streamed-source-execution\\ROOT_LAUNCH.json",
-          "bytes": 2262,
-          "sha256": "bd1661f265dd9be61d2c35389b67ddbbca76c5ae2fb195c7a012dfa4e7db567c"
-        },
-        "supersession": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\streamed-source-execution\\ROOT_SUPERSESSION.json",
-          "bytes": 1689,
-          "sha256": "ef26a1fb221afc0ecd9e11bcf818fbd902a6bbd496831b1a40b62412e3b285e6"
-        },
-        "original_outputs": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-streamed-source-programme",
-        "execution_acceptance_preparation": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-execution-acceptance\\PREPARATION_MANIFEST.json",
-          "bytes": 2988,
-          "sha256": "b34bc2cdb5063f161cd27cd338aa0c7498804718266118d9fbdf6d62335dda94"
-        },
-        "completed_source_publications": 0,
-        "completed_folds": 0,
-        "preserved_large_source_models": 2,
-        "original_terminal_role": "Explicit code supersession/stop_requested; original evidence and producer remain. This was not a user pause or a scientific failure."
-      },
-      "completed_source_products": 12,
-      "recovery": {
-        "state": "integrated_main_focused_controls_passed_independent_freeze_in_progress",
-        "implementation": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/compact-source-recovery",
-        "implementation_owner": "/root/history_slice_integration_review",
-        "independent_acceptance_owner": "/root/execution_failures",
-        "next_attempt_source_workers": 1,
-        "next_attempt_fold_workers": 1,
-        "next_attempt_native_threads": 20,
-        "new_attempt_launched": false,
-        "new_source_fits_required": 1,
-        "fold_fits_required": 13,
-        "target_continuation_handoff": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/population-matrix-execution/TARGET_CONTINUATION_HANDOFF.zh.md",
-        "partial_acceptance": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\PARTIAL_ACCEPTANCE.json",
-          "bytes": 19831,
-          "sha256": "b8deabb86845fca2781ebcbc73aa9efb7abc5384eb97e4ca8add3e79e795b57b"
-        },
-        "recipe": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-source-recovery\\SOURCE_DATA_FACTOR_RECOVERY_RECIPE.json",
-          "bytes": 5206,
-          "sha256": "c7a71439ff3b69597f9f9870bb972f17ebc260ef44770278197ca41990b3d3c5"
-        },
-        "root_review": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-source-recovery\\ROOT_MAIN_VERIFICATION.json",
-          "bytes": 5480,
-          "sha256": "918b2d71de4e975e1b78734b960f55db067729a06a48a71ff951e79bdb2b57b0"
-        },
-        "source_review_owner": "/root/audit_repository_convergence",
-        "resource_plan": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\RESOURCES.json",
-          "bytes": 2041,
-          "sha256": "3bc5e19252ac9a8736479ef4d86ac299d59f6cb70281c5cac2edd6438eaf2531"
-        }
-      },
-      "person_recovery_integration": "doc/assets/research_resume_20261012/source_person_recovery_integration.json"
+      }
     },
     "joint_response_noise": {
       "checkpoint": {
@@ -913,11 +1045,10 @@
     }
   },
   "next_actions": [
-    "Verify retired original tree and independently accept exact12original person products for reuse only.",
-    "Review recovery owner/CLI/loaders, integrate and freeze recipe/3+execution/3; launch missing person1and all13folds under whole-host80percent ceiling.",
-    "After complete13person/13fold recovered execution, exit0 and owned-tree retirement, obtain independent complete acceptance.",
-    "Bind recovered source recipe to original819panel; freeze complete target runtime and execute full78Cfits/4914held cells.",
-    "Continue native7/adult nine-choice integration from the accepted adult-bridge dependency study."
+    "Monitor the same live recovery actor and whole-host resource gate; preserve original12 accepted products and complete missing1thenall13folds.",
+    "After actual complete13person/13fold execution, exit0 and owned-tree retirement, issue the sealed recovered-source independent complete acceptance.",
+    "Use the recovered source target metadata and original819panel; freeze complete target runtime, resolve measured resources, execute full78Cfits/4914held cells.",
+    "Review and integrate adult multirecord input slice A; finish generic proper population transport policy before B/C/D/E integration."
   ],
   "active_local_checks": [],
   "folder_cleanup_review": {
@@ -928,7 +1059,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T13:09:05.654632+00:00",
+  "last_updated_utc": "2026-10-19T13:40:36.625799+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
@@ -950,7 +1081,7 @@
       "delivery": "complete: source artifact plan and explicit implementation scope",
       "science": "complete: original A/r/c algebra, actual baseline-only moments consumer and ten independent predeclared Gaussian/Fraction controls; candidate correspondence is engineering review.",
       "engineering": "complete: compact source owner and full producer/save/load/cold consumer slice accepted and integrated; final163+3 source closure accepted.",
-      "execution": "in_progress: original native-wait tree retired; original12person products accepted for reuse only; main recovery code integrated and final source freeze in progress; next missing1+13folds.",
+      "execution": "in_progress: final164+3code-only recovery source accepted and actual inspect exit0; new managed one-person+13fold programme launched. Actual progress and resource action in population_source.execution.",
       "knowledge": "complete for code integration: canonical technical guide, existing response/noise and execution topics, integration binding and this checkpoint updated.",
       "external_research": "not_applicable: current decision derives from actual source and Gaussian algebra",
       "github": "not_applicable: no remote publication requested"
@@ -958,8 +1089,8 @@
     "handoff": "science_to_engineering: SOURCE_ARTIFACT_PLAN@58a6615b; preserve complete raw identity, noise programme, all columns, weak directions, flat measure and requested denominator."
   },
   "previous_live_checkpoint": {
-    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\ROOT_CHECKPOINT_BEFORE_NATIVE_WAIT_RETIREMENT.json",
-    "bytes": 50019,
-    "sha256": "20dcbf7e3f5e58b9cf338bcef478b302313d2630a9262635ab5b2750f8d81dbe"
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\ROOT_CHECKPOINT_BEFORE_RECOVERY_LAUNCH.json",
+    "bytes": 53594,
+    "sha256": "0e37ac50c34a9053552c9ce3de4de963357e746f621c9548a68d6eb43b81c011"
   }
 }

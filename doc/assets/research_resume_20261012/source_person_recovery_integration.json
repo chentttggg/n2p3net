@@ -1,6 +1,6 @@
 {
   "schema": "source_person_recovery_integration/1",
-  "status": "integrated_code_and_focused_contracts_pending_frozen_source_review",
+  "status": "accepted_code_focused_contracts_and_complete_frozen_execution_source",
   "recorded_utc": "2026-10-19T13:09:05.649287+00:00",
   "canonical_base": "ef8fa972b0982b4a07e64a3ebc538f5df63cbabc",
   "candidate_manifest": {
@@ -77,5 +77,55 @@
     "deleted_logical_bytes": 2520379,
     "actual_original_person_products_and_source_producers_preserved": true,
     "worktrees_created": 0
+  },
+  "independent_recovery_component_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERY_COMPONENT_REVIEW.json",
+    "bytes": 10335,
+    "sha256": "d3bd0ac5ec904fc426b75ba0308b790fb6c1483159c68ba7b01dfa94da93a3d9"
+  },
+  "complete_execution_source_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-compact-recovery-source-review\\COMPLETE_SOURCE_REVIEW.json",
+    "bytes": 36343,
+    "sha256": "127164f67ae2b4f6490153c29481de31eabb341b0313cce0088a4c9042270ff2"
+  },
+  "independent_source_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-compact-recovery-source-review\\DELIVERY_MANIFEST.json",
+    "bytes": 14287,
+    "sha256": "fbbfa38b2a48993b239bcfe597539dc1b76cda324cd8c0a1ce921661ea452bb8"
+  },
+  "materialized_scientific_source": {
+    "manifest": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\SOURCE_MANIFEST.json",
+      "bytes": 71994,
+      "sha256": "6caba8203c0e09ee7db1494ada544301c36116b6d2f1d2031f8b247aa7acbf59"
+    },
+    "materialization": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\MATERIALIZATION.json",
+      "bytes": 32888,
+      "sha256": "39feda496fbe18bef2da69a7e2852f5ff40e85f152af671ba747c87394b190fd"
+    },
+    "scientific_files": 167,
+    "scientific_file_bytes": 5024224,
+    "data_models_or_environment_copied": false,
+    "external_supervision_inputs": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\SUPERVISION_INPUTS.json",
+      "bytes": 1442,
+      "sha256": "0ffa16ab552dcd57824a26a0ae9f9981da661ba1891522c5ca810be1c1d4c325"
+    }
+  },
+  "materialized_actual_inspect": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\INSPECT.json",
+    "bytes": 3530,
+    "sha256": "9848b4bd0e9f7a2b448b1a02ff826a171446bf3ff45036ccf97601f20a8c7da3"
+  },
+  "complete_execution_checker": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_CHECKER_INTERFACE_SEAL.json",
+    "bytes": 6741,
+    "sha256": "04f377ed25b20cc1e5f4b30046e0994ac6062bdf48b55322382819a18baf26bd"
+  },
+  "independent_launch_preparation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_PREPARATION_MANIFEST.json",
+    "bytes": 61437,
+    "sha256": "5f0aaad08de15c2c09a919cd9321f4466f6f2feb8ac4ed868ad121526fc262c4"
   }
 }
