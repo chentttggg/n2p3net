@@ -161,7 +161,7 @@ helper向core/wrapper传原mask，站点之间不猜electrode/feature映射。�
 新拟合的安装程序按实际source/consumer/model身份保存，软件接受见
 [整合绑定](assets/research_resume_20261012/splitbn_target_integration.json)。
 
-`continuous_decision._conditional_posterior`持有原prefix/full joint QR公式，fit/profile与score消费同一完整kernel和各record diffuse drift。条件score的`_ConditionalRecordWhitening`在本次已准入record内共享`W(Y)`、`W(D0)`、`W(Z)`；各candidate全record白化`D1`后再split prefix/tail并完成独立QR。当前科研fit/posterior/df及load门保持原实现，详见[白化集成](evidence/execution_and_integration.zh.md#条件评分公共白化集成)。
+`continuous_decision._conditional_posterior`持有prefix/full joint QR公式，fit与score消费完整kernel和各record diffuse drift。fit先将每record完整的kernel、两条drift和response列压成局部增广R，再嵌入原全局坐标逐块合并；原prefix、proper先验及response residual一并保留。真实tail行数从原record支持单独传递，保持密度归一项与协方差分母。条件score的`_ConditionalRecordWhitening`在本次已准入record内共享`W(Y)`、`W(D0)`、`W(Z)`，各candidate白化`D1`后沿原完整record表示split prefix/tail；Torch profile保其autograd图。公式及实际caller关系见[内存生命周期整合](assets/research_resume_20261012/source_memory_lifecycle_integration.json)，score共享白化见[原集成](evidence/execution_and_integration.zh.md#条件评分公共白化集成)。
 
 完整episode指标通过`evaluate_candidate_evidence(..., requested_evidence_levels={DecisionKey: actual_R})`接入；其规范化不可变计划包含全部requested keys及缺失输出，并绑定原DecisionPlan digest。`transfer.outcomes`按每key唯一R记账，各R保自身分母，整体和participant风险仍用原episode；paired compare核完整horizon计划。原scalar fixed-R入口继续消费其原cross-product。预算、raw scope与实际R由reader/caller冻结，详见[逐任务horizon](evidence/public_evaluation.zh.md#逐任务horizon接口)。
 

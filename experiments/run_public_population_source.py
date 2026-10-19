@@ -13,6 +13,7 @@ import json
 import os
 import sys
 import time
+import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -235,14 +236,22 @@ def main(argv=None, *, cloud_owner_resources=None):
         try:
             futures = {executor.submit(operation, row): row for row in rows}
             for future in as_completed(futures):
+                row = futures.pop(future)
                 try:
                     complete.append(future.result())
                 except Exception as error:
-                    row = futures[future]
                     key = row.get("source_person_id", row.get("fold_id"))
                     stage = "persons" if "source_person_id" in row else "folds"
-                    event(stage, key, "failed", exception_type=type(error).__name__, reason=str(error))
+                    failure_path = output / "failures" / (stage + "-" + hashlib.sha256(key.encode()).hexdigest() + ".traceback.txt")
+                    failure_path.parent.mkdir(parents=True, exist_ok=True)
+                    with failure_path.open("x", encoding="utf8", newline="\n") as stream:
+                        stream.write("".join(traceback.format_exception(error)))
+                    event(stage, key, "failed", exception_type=type(error).__name__, reason=str(error),
+                        original_traceback=artifact(failure_path))
                     errors.append((key, type(error).__name__, str(error)))
+                    traceback.clear_frames(error.__traceback__)
+                finally:
+                    del future
         finally:
             executor.shutdown(wait=True, cancel_futures=True)
         if errors:

@@ -4,6 +4,8 @@
 
 源baseline的条件Gaussian算术已独立推导并整合：给定已观测prefix，减去每record首样本只平移其flat截距，proper响应先验保持；prefix的压缩右端直接进入tail增广QR，右下残差根保留小的平方和。固定小矩阵的精确scatter为8，新算法得到约8；两个record的独立有理数profile目标与NumPy/Torch及导数吻合。Burg固定形状复用同一次评价，profile复用已核终点，初始化、预测cache、最终kernel统计和physical source block共用该坐标。代码关系、公式及反控见[条件算术整合](../assets/research_resume_20261012/source_conditioning_arithmetic_integration.json)。
 
+完整source运行暴露的内存峰值随后按同一数学关系处理：每份记录先保存完整增广二次型的小R，再一起求解，所有kernel、各record漂移及response方向保持；密度仍按原实际观察行数归一。独立原始Gaussian有理数oracle核对变长record、非零proper prior、scatter、行数与后验；把压缩root行数误作观察数、丢掉response residual或拆成独立kernel三个负控均被区分。原P1布局的全局81列QR最多使用130行根合并，record本地49列白化仍按原数据执行。原错误中的2918282仅记录为allocation行数，真实tail分母从原record支持派生，见[内存生命周期整合](../assets/research_resume_20261012/source_memory_lifecycle_integration.json)。
+
 source、joint、history三切片已按精确前像组合，原数学证据依源码/AST关系复用，见[整合绑定](../assets/research_resume_20261012/source_joint_history_integration.json)。source每人拟合一次并导出同次数据likelihood；留人折复用各个人包，源均值不确定性与人际差异分别保留。固定两曝光参考由各折其余源人建立，个人后验不作无噪声观测。
 
 private AR1的新score先在完整后验mean/factor上形成创新，再累计二阶量，避免两个巨大raw二阶矩相减。完整startup、full Q、shared/local列及物理flat漂移保持。真实C8原返回点的梯度约3.741310，与独立objective有限差分约3.741309一致；这支持从原返回向量继续具名数值warm start。优化停止仍用原gtol=.001、maxiter=2000。

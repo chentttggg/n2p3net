@@ -248,22 +248,32 @@ def _conditional_prediction(samples, designs, noise, prefix, prior_mean, prior_c
         # and of the diffuse intercept, each with Jacobian one. The proper
         # response prior stays in its original coordinates.
         transformed = noise.whiten(np.column_stack((y-y[:1], design, drift)))
-        matrix = np.zeros((len(y), width))
-        matrix[:, :kernel_width] = transformed[:, channels:channels + kernel_width]
-        matrix[:, kernel_width + 2 * index:kernel_width + 2 * index + 2] = transformed[:, -2:]
-        prefix_design.append(matrix[:prefix])
-        prefix_y.append(transformed[:prefix, :channels])
-        tail_design.append(matrix[prefix:])
-        tail_y.append(transformed[prefix:, :channels])
+        # Compress the complete local [kernel, record drift, response]
+        # columns before embedding the record's two flat axes globally.
+        # The response residual block remains in this full augmented R.
+        local_tail = np.column_stack((transformed[prefix:, channels:], transformed[prefix:, :channels]))
+        tail_root = np.linalg.qr(local_tail, mode="r")
+        before = np.zeros((prefix, width))
+        before[:, :kernel_width] = transformed[:prefix, channels:channels + kernel_width]
+        before[:, kernel_width + 2 * index:kernel_width + 2 * index + 2] = transformed[:prefix, -2:]
+        after = np.zeros((len(tail_root), width))
+        after[:, :kernel_width] = tail_root[:, :kernel_width]
+        after[:, kernel_width + 2 * index:kernel_width + 2 * index + 2] = tail_root[:, kernel_width:kernel_width + 2]
+        prefix_design.append(before)
+        prefix_y.append(transformed[:prefix, :channels].copy())
+        tail_design.append(after)
+        tail_y.append(tail_root[:, kernel_width + 2:])
+        del transformed, local_tail, tail_root, drift
     return _conditional_posterior(prefix_design, prefix_y, tail_design, tail_y,
                                   prior_mean, prior_covariance, posterior=posterior,
-                                  prior_precision_root=prior_precision_root)
+                                  prior_precision_root=prior_precision_root,
+                                  tail_observation_rows=sum(len(y) - prefix for y in samples))
 
 
 def _conditional_posterior(prefix_design, prefix_y, tail_design, tail_y, prior_mean, prior_covariance, *,
-                           posterior=False, prior_precision_root=None):
+                           posterior=False, prior_precision_root=None, tail_observation_rows=None):
     """The same prefix/full QR owner for fitting and read-only scoring."""
-    A_u, Y_u, A_s, Y_s = map(np.vstack, (prefix_design, prefix_y, tail_design, tail_y))
+    A_u, Y_u = map(np.vstack, (prefix_design, prefix_y))
     kernel_width = prior_mean.shape[0]
     width = A_u.shape[1]
     prior_root = (solve_triangular(np.linalg.cholesky(prior_covariance), np.eye(kernel_width), lower=True)
@@ -274,8 +284,9 @@ def _conditional_posterior(prefix_design, prefix_y, tail_design, tail_y, prior_m
     prefix_response = prefix_q.T @ np.vstack((Y_u, prior_root @ prior_mean))
     # Keep the actual compressed response. Reconstructing it from a solved
     # prefix mean, or subtracting two large parameter means, loses residuals.
-    joint = np.linalg.qr(np.vstack((np.column_stack((A_s, Y_s)),
-        np.column_stack((prefix_information_root, prefix_response)))), mode="r")
+    joint = np.column_stack((prefix_information_root, prefix_response))
+    for design, response in zip(tail_design, tail_y, strict=True):
+        joint = np.linalg.qr(np.vstack((joint, np.column_stack((design, response)))), mode="r")
     full_information_root, full_response = joint[:width, :width], joint[:width, width:]
     residual_root = joint[width:, width:]
     scatter = residual_root.T @ residual_root
@@ -287,7 +298,8 @@ def _conditional_posterior(prefix_design, prefix_y, tail_design, tail_y, prior_m
         full_root = solve_triangular(full_information_root, np.eye(width))
         mean = full_mean[:kernel_width]
         covariance = full_root[:kernel_width] @ full_root[:kernel_width].T
-    return scatter, logdet, len(Y_s), mean, covariance
+    actual_rows = (sum(len(y) for y in tail_y) if tail_observation_rows is None else tail_observation_rows)
+    return scatter, logdet, actual_rows, mean, covariance
 
 
 class _ConditionalRecordWhitening:
@@ -1049,6 +1061,9 @@ class ContinuousDecisionModel:
         offsets = np.cumsum([0] + [len(x) for x in samples])
         pairs = [initial_residual[a:b] for a, b in zip(offsets[:-1], offsets[1:], strict=True)]
         if conditioning_samples:
+            # The initial residual views retain their own base; the stacked
+            # initial design/response and kernel mean are no longer consumed.
+            del D, Y, initial, initial_residual
             mean, row_cov, noise, noise_model, training_digest, statistics, posterior_state = _fit_fixed_prefix(
                 samples, designs, pairs, ids, order=noise_order, prefix=conditioning_samples,
                 ridge=ridge, strategy=noise_estimator, fit_scope=fit_scope, kernel_prior=compiled_prior)

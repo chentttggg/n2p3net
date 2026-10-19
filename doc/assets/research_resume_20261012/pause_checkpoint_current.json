@@ -283,9 +283,9 @@
   },
   "active_agents": {
     "execution_failures": "Source QR/memory lifecycle, repeated raw prefix hash and consumed Future retention; code-only candidate.",
-    "history_slice_integration_review": "Independent mathematical/caller review of source memory QR candidate.",
     "source_slice_integration_review": "Posterior record/hash/save memory lifecycle; code-only candidate.",
-    "joint_slice_integration_review": "Full target matrix programme and819-request panel preparation; code only."
+    "joint_slice_integration_review": "Full target matrix programme and819-request panel preparation; code only.",
+    "g1_exclusion_review": "Independent review of spatial numeric record/streamed save and same-fit saved-live admission."
   },
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
@@ -400,7 +400,7 @@
       "requirement": "78 genuine C fits, original63 held each, complete4914 denominator and independent complete source acceptance."
     },
     "source_memory_optimization": {
-      "state": "actual_memory_failure_and_read_only_profile_diagnosed_candidate_in_progress",
+      "state": "QR/prefix/Future3-file code accepted; spatial saved-model stream/copy candidate remains in progress",
       "scope": "Block augmented QR/whole-source prefix identity reuse/failed Future cleanup plus posterior canonical record/digest/save copies; no truncation or changed numerical thresholds."
     }
   },
@@ -559,7 +559,8 @@
         "completed_source_models_in_stopped_attempt": 0,
         "user_cloud_response": "User subsequently authorized local computation first with whole-machine CPU/RAM/GPU each below80percent.",
         "managed_execution": "doc/assets/research_resume_20261012/source_managed_execution_integration.json",
-        "input_locations": "doc/assets/research_resume_20261012/source_input_location_integration.json"
+        "input_locations": "doc/assets/research_resume_20261012/source_input_location_integration.json",
+        "memory_lifecycle": "doc/assets/research_resume_20261012/source_memory_lifecycle_integration.json"
       },
       "completed_source_models": 0,
       "previous_stopped_local_execution": {
@@ -683,7 +684,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T07:47:19.975269+00:00",
+  "last_updated_utc": "2026-10-19T07:58:58.027605+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",

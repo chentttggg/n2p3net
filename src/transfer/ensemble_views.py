@@ -2003,6 +2003,9 @@ class RecordSourceTrainingCompiler(RecordCalibrationPrefixCompiler):
         records = prefix.calibration_records
         if {record.record_id for record in records} != {source.record_id for source in self.sources}:
             raise ValueError("the complete source issuer lost an original declared acquisition")
+        # assert_original_prefix just verified this compiler-owned immutable
+        # prefix. Reuse its admitted identity within this read-only call.
+        prefix_identity = self._prefix_ownership[prefix.budget].identity
         receipts = []
         for record in records:
             scope = prefix.target_contract["record_scopes"][record.record_id]
@@ -2010,7 +2013,7 @@ class RecordSourceTrainingCompiler(RecordCalibrationPrefixCompiler):
             receipts.append({**prefix.target_contract, "record_id": record.record_id,
                 "source_sha256": scope["source_sha256"], "raw_scope": scope["read_sample_support"],
                 "raw_input_digest": array_digest(record.samples, record.onsets, record.target_mask),
-                "source_prefix_identity": calibration_prefix_identity(prefix),
+                "source_prefix_identity": prefix_identity,
                 "original_compiler_source_sha256": _SELECTION_EXECUTION_SOURCE_SHA256,
                 "label_use": {"raw": {"requested_labels": count, "used_labels": count,
                     "read_sample_support": scope["read_sample_support"], "right_censored": record.right_censored}}})

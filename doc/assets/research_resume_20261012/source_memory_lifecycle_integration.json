@@ -1,0 +1,88 @@
+{
+  "schema": "source_memory_lifecycle_integration/1",
+  "status": "accepted_code_pending_composed_execution",
+  "recorded_utc": "2026-10-19T07:58:58.026341+00:00",
+  "canonical_base": "d3a6636",
+  "author_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\source-memory-lifecycle\\DELIVERY_MANIFEST.json",
+    "bytes": 6344,
+    "sha256": "e45f910e46b00dcc6f13cf0d161e12ea932022d4b030ac658bc0f6b20475c10a"
+  },
+  "independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-source-memory-lifecycle\\REVIEW_RECEIPT.json",
+    "bytes": 9258,
+    "sha256": "70ec2ee97b28f96421d6c5e319908d8555756fe28c9d33a5270b191566fd148f"
+  },
+  "files": [
+    {
+      "relative": "src/transfer/continuous_decision.py",
+      "before_sha256": "04ea5151b402ae0d79074c41579ac71761da186c294ef6377034d2f7224a29e8",
+      "after_sha256": "c367838014607f08b9402896c4bb5b130e5f469b5d85d6ffe166b8e6741115ae",
+      "frozen_actual_bytes_match_canonical": true,
+      "before": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\source-memory-lifecycle\\preimages\\src\\transfer\\continuous_decision.py",
+        "bytes": 90369,
+        "sha256": "04ea5151b402ae0d79074c41579ac71761da186c294ef6377034d2f7224a29e8"
+      },
+      "after": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\source-memory-lifecycle\\candidate\\src\\transfer\\continuous_decision.py",
+        "bytes": 91522,
+        "sha256": "c367838014607f08b9402896c4bb5b130e5f469b5d85d6ffe166b8e6741115ae"
+      }
+    },
+    {
+      "relative": "experiments/run_public_population_source.py",
+      "before_sha256": "a856caf30cbf40da1831887ed42199cf6c9be61a612e2fd80ed4ebc179a49d70",
+      "after_sha256": "bacfa42ef195cffa8daa5d536d9471c3172c4ae4ae074bbc2ae012cc500f2cc0",
+      "frozen_actual_bytes_match_canonical": true,
+      "before": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\source-memory-lifecycle\\preimages\\experiments\\run_public_population_source.py",
+        "bytes": 18500,
+        "sha256": "a856caf30cbf40da1831887ed42199cf6c9be61a612e2fd80ed4ebc179a49d70"
+      },
+      "after": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\source-memory-lifecycle\\candidate\\experiments\\run_public_population_source.py",
+        "bytes": 19083,
+        "sha256": "bacfa42ef195cffa8daa5d536d9471c3172c4ae4ae074bbc2ae012cc500f2cc0"
+      }
+    },
+    {
+      "relative": "src/transfer/ensemble_views.py",
+      "before_sha256": "60128dde6ee03a1dc6ccb1fd8627cea6ed0f1e8872f056d0db2eaf6bc2c53110",
+      "after_sha256": "caff5f5a771dc758f6986f00b9e7a78b674ee95b5f64426d80b1a47c2754fa4c",
+      "frozen_actual_bytes_match_canonical": true,
+      "before": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\source-memory-lifecycle\\preimages\\src\\transfer\\ensemble_views.py",
+        "bytes": 147901,
+        "sha256": "60128dde6ee03a1dc6ccb1fd8627cea6ed0f1e8872f056d0db2eaf6bc2c53110"
+      },
+      "after": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\source-memory-lifecycle\\candidate\\src\\transfer\\ensemble_views.py",
+        "bytes": 148105,
+        "sha256": "caff5f5a771dc758f6986f00b9e7a78b674ee95b5f64426d80b1a47c2754fa4c"
+      }
+    }
+  ],
+  "root_review": "Read complete3-file diff, original conditioned model/caches, actual immutable-prefix owner and full run_stage lifecycle. Each record keeps full local augmented R then embeds original kernel/flat/response columns globally; iterative QR retains residual root, prefix proper prior and actual physical tail rows. Initial dense matrices released after last use. In-call source identity reuses already admitted immutable prefix. Original trace is durably saved before clearing traceback frames and retiring consumed futures.",
+  "reused_verification": "Author12fixed matrix cases plus independent raw Fraction full-Gaussian oracle and3distinguishing negative controls. Original caller/measure/provenance relationships reviewed; no source fit performed by code integration.",
+  "quantified_scope": {
+    "global_columns_in_reported_P1_case": 81,
+    "record_local_columns": 49,
+    "structural_global_QR_max_rows": 130,
+    "reported_allocation_rows_not_a_denominator": 2918282,
+    "physical_tail_denominator": "sum of actual record rows minus each original prefix; never compressed root rows"
+  },
+  "unmodified_paths": [
+    "post-fit kernel statistics",
+    "held prediction-cache original raw row representation",
+    "Torch conditional profile autograd graph"
+  ],
+  "current_recipe": "Burg/order1/prefix32; Torch optimizer branch is not called",
+  "scientific_data_precision_dimensions_prior_thresholds_and_denominator": "preserved",
+  "execution_awaits_composition_with_saved_model_memory_fix": true,
+  "old_executed_source_preserved": true,
+  "cleanup": {
+    "status": "not_applicable",
+    "reason": "No disposable old build created; failed executed source is required evidence."
+  }
+}
