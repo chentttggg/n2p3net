@@ -1,11 +1,11 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
-  "status": "paused_at_user_request",
-  "recorded_at": "2026-10-19T00:04:26.746727+08:00",
-  "user_request": "pause_and_wrap_up",
+  "status": "active_at_user_request",
+  "recorded_at": "2026-10-19T09:28:55.279198+08:00",
+  "user_request": "resume_research_then_resolve_repository_audit_before_autonomous_continuation",
   "research_worktree": "D:/BCI/worktrees/research-director",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
-  "concurrency_limit_including_root": 8,
+  "concurrency_limit_including_root": 10,
   "research_priority": "general_candidate_mathematics_with_final_adult_BrainSync_nine_choice_primary",
   "previous_checkpoint": {
     "archive": {
@@ -281,7 +281,17 @@
       "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
     }
   },
-  "active_agents": {},
+  "active_agents": {
+    "population_source_resume": "source launcher sealed; audit performance/resources",
+    "source_integration_review": "source independent acceptance; audit data ingress",
+    "joint_fit_resume": "direct innovation sealed; no new fit",
+    "joint_boundary_science": "independent boundary/direct score accepted",
+    "history_inference_resume": "compact history sealed; audit workstation",
+    "history_trace_review": "recipe/trace independently accepted; audit mathematics",
+    "trace_codec_resume": "trace2 sealed; audit engineering",
+    "audit_repository_convergence": "main/research/test/formal recovery",
+    "audit_transfer_contracts": "transfer/QC/checkpoint/selection audit"
+  },
   "cloud": {
     "state": "not_used_no_SSH",
     "ownership": "separate_cloud_chat"
@@ -292,9 +302,9 @@
     "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
     "commit": "a6f5750"
   },
-  "integration_head": "93c2ed6088e37887e2bfc74baf4d58e04b5cc1e2",
+  "integration_head": "6fec386dd9833d67748ae02722f9fc0234774f3f",
   "concurrency_authorization": "later user allowed more threads after the temporary six-agent limit; seven actual parallel roles used for independent scientific slices",
-  "execution_priority": "general population response -> joint G0/G1 C calibration -> full history; scope-based exact discrete elimination before outer shared-state integration",
+  "execution_priority": "resolve_current_repository_audit_then_resume_full_population_and_joint_history_matrix",
   "accepted_native_input_source_commit": "811fb18dcbde94b9903ee8cce0df4bee16466e4a",
   "worktree_housekeeping": {
     "observed_worktrees": 5,
@@ -416,14 +426,41 @@
     "bytes": 2453,
     "sha256": "db443b5ce6302c3f43fabb659dd4953c3517d877024ab4bd434038c1150b8b02"
   },
-  "concurrency_current_roles_including_root": 0,
-  "resume_requires_explicit_user_instruction": true,
+  "concurrency_current_roles_including_root": 10,
+  "resume_requires_explicit_user_instruction": false,
   "accepted_saved_public_noise_reuse": {
     "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\saved_public_noise_integration.json",
     "bytes": 3382,
     "sha256": "c265e0f4ab5b3f286b69d6cddbf3f10d71104eda79a4378163d2b0c1dda1f40a"
   },
-  "paused_scientific_work": {
+  "final_matrix_on_resume": {
+    "participants": 13,
+    "requested_future_selections_per_K": 819,
+    "K": [
+      200,
+      800,
+      2000
+    ],
+    "new_methods": [
+      "G0",
+      "G1"
+    ],
+    "new_requested_score_cells": 4914,
+    "completed_external_four_method_anchor_cells": 9828,
+    "total_six_method_cells": 14742,
+    "new_source_programme": "13 person likelihood fits once,13 folds each other12; actual fits not started",
+    "H2_C68_scope": "small development connection only"
+  },
+  "repository_audit": {
+    "source": "D:/BCI/n2p3-net/doc/evidence/repository_audit_20261019.zh.md",
+    "state": "current_source_reconciliation_and_implementation",
+    "history_protection": "D:/BCI/artifacts/research-deliveries/repository-preservation/HISTORY_PROTECTION.json",
+    "bundle": "D:/BCI/artifacts/research-deliveries/repository-preservation/BUNDLE_RECEIPT.json",
+    "code_snapshot": "D:/BCI/artifacts/research-deliveries/repository-preservation/CODE_SNAPSHOT_MANIFEST.json",
+    "fixture": "nine_focused_cases_passed; actual_20Hz_dimension_and_explicit_fixed_selection_metadata",
+    "training_launch": "deferred_until_execution_and_input_audit_slices_accepted"
+  },
+  "active_scientific_work": {
     "population_source": {
       "checkpoint": {
         "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\PAUSE_CHECKPOINT.json",
@@ -513,25 +550,8 @@
       "complete_original_science_arrays": "preserved in existing golden and fresh-process evidence"
     }
   },
-  "final_matrix_on_resume": {
-    "participants": 13,
-    "requested_future_selections_per_K": 819,
-    "K": [
-      200,
-      800,
-      2000
-    ],
-    "new_methods": [
-      "G0",
-      "G1"
-    ],
-    "new_requested_score_cells": 4914,
-    "completed_external_four_method_anchor_cells": 9828,
-    "total_six_method_cells": 14742,
-    "new_source_programme": "13 person likelihood fits once,13 folds each other12; actual fits not started",
-    "H2_C68_scope": "small development connection only"
-  },
-  "next_actions_on_explicit_resume": [
+  "next_actions": [
+    "Resolve audit against current source; integrate reviewed fixes with migration/formal/cleanup receipts before autonomous scientific runs.",
     "Read this checkpoint, actual handoffs and Git/source/process identities; do not relaunch solely from old session status.",
     "Review latest private-AR1 domain/finite-score revision and diagnose C8 G0 precision loss using preserved returned/last-valid state; any continuation is a named warm start.",
     "Finish source-only reference helper/test and complete plan/independent acceptance before executing13 person fits and13 source-only folds.",

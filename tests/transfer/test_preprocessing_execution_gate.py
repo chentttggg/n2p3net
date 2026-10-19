@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 import torch
 
+from baselines.features import downsampled_time_points
 from data.epochs import preprocessing_execution_binding
 from data.preprocess import execute_preprocessing
 from research.contracts import TrainingRunContract, semantic_sha256
@@ -60,14 +61,15 @@ def _checkpoint(dataset, *, evidence):
 
 def _personal(dataset, *, evidence):
     metadata = {"input_contract": _input_contract(dataset), "model_kind": "target_only_shrinkage_lda",
-        "participant_key": dataset.identity_table.record_for("p1").authority_key("source_or_global")}
+        "participant_key": dataset.identity_table.record_for("p1").authority_key("source_or_global"),
+        "selection": {}}
     if evidence:
         receipt = deepcopy(dataset.provenance["preprocessing_execution"])
         metadata.update(preprocessing_execution=receipt,
             preprocessing_execution_binding=preprocessing_execution_binding(receipt, dataset.preprocessing))
     # A finite fixed estimator state exercises load/validation, without fitting
     # on test inputs or invoking a training path.
-    size = dataset.n_channels * dataset.n_times
+    size = dataset.n_channels * downsampled_time_points(dataset.n_times, dataset.preprocessing.sfreq)
     state = {"coefficient": torch.zeros(size), "feature_mean": torch.zeros(size),
              "feature_scale": torch.ones(size), "intercept": torch.zeros(1)}
     return CalibratedPredictor(metadata, state)

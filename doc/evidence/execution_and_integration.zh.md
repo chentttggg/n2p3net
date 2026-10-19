@@ -309,3 +309,9 @@ QC通道选择 `8d9ad76` 完成实际数据关系修复：原路径保留全mont
 B07中央history整合`a1042ef/0ea4529`已按最终主树raw字节和两路独立审阅接受。full/prefix/conditional、mixture估计及typed unavailable随capsule保存重放；C-law按实际C-conditioned正joint质量核准，动态零轴及时进入失败账本。主树54项software/synthetic验证复用一次结果，最后零轴行由actual-main小型探针复签；独立数学11案例/32扰动与误调用4-case合成fixture分别列账，不合并成研究重复。10份实际源码及作者CRLF/LF差异、原WIP保持、零public fit/score见[整合绑定](../assets/research_resume_20261012/history_central_integration.json)。下一推进公共opt-in评价、C-latent posterior及实测时钟authority。
 
 checkpoint读取安全整合（`codex/claude-improvements-20261012`，基于`ed274bb`）：`load_checkpoint_payload`与结果复用模型原以`weights_only=False`反序列化任意对象，现与BrainSync源模型共用`transfer.checkpoint.load_weights_only`的三项NumPy allowlist；四个先算摘要再按路径重读的入口改为解码同一份已核验字节，原错误信息不变。`cpu_thread_budget`不再在缺少`threadpoolctl`时静默跳过BLAS限制，依赖显式声明且锁文件仅根包两行变化。本机全部worktree的4,038个`.pt`（3,806个唯一、2.46 GB）逐一以新旧方式读取：3,805个逐张量/数组/标量一致，0个需扩充allowlist；1个原已截断的旧文件两种方式都不可读，原件未改。仅为software_correctness，未拟合、未评分。50个相关测试文件834通过、7跳过、3失败；3个失败在未改动的`ed274bb`以同一环境（Python 3.14.3、Torch 2.13.0+cpu）同样复现，不属本改动；完整套件未运行，见[读取兼容绑定](../assets/research_resume_20261012/checkpoint_weights_only_integration.json)。
+
+## 全仓审计修复与历史保护
+
+主目录审计按当前科研源码逐项复核，处置与实际验收统一记入[修复绑定](../assets/research_resume_20261012/repository_audit_resolution.json)。112个游离提交均新增持久rescue引用，其中30个原无ref或reflog保护；完整194-ref本地bundle已验证，632,995,483 bytes。主目录975份源码、测试、配置、Lean源码与活动指南已封存并逐成员核验，5,575,913-byte code-only归档不含环境、原始数据或构建缓存；捕获前后源码和Git状态保持一致。
+
+预处理执行回执测试的个人包夹具改用真实20Hz特征维数，并明示固定/历史选择元数据；该文件9项通过，生产LDA维数校验和保存合同保持原义。历史证明和运行结果继续由其原producer解释，当前修复以新来源记录。

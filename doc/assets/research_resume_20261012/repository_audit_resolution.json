@@ -1,0 +1,51 @@
+{
+  "schema": "n2p3_repository_audit_resolution/1",
+  "status": "in_progress",
+  "audit": {
+    "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\repository_audit_20261019.zh.md",
+    "bytes": 60233,
+    "sha256": "55d7fc7d05dc6cc30b1b5cf95b99f48907b70c1f037ce6bb5963f939453138f5"
+  },
+  "recorded_at": "2026-10-19T01:30:23.281270+00:00",
+  "working_source": {
+    "path": "D:\\BCI\\worktrees\\research-director",
+    "head": "6fec386dd9833d67748ae02722f9fc0234774f3f"
+  },
+  "accepted_slices": {
+    "history_protection": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-preservation\\HISTORY_PROTECTION.json",
+      "bytes": 54695,
+      "sha256": "59451f67d76c3600f037daac5fb8cf60a5eb1635dae46dc64836ee402ed31e3e"
+    },
+    "history_bundle": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-preservation\\BUNDLE_RECEIPT.json",
+      "bytes": 20143,
+      "sha256": "1c82f7afa1673adf15292c151c8ba660f05cf0ce9356ece3214cf28b21f13950"
+    },
+    "main_code_snapshot": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-preservation\\CODE_SNAPSHOT_MANIFEST.json",
+      "bytes": 188170,
+      "sha256": "d9853775cc238c34ee8bf55cda878bee7763df24eaa5671fb0f7518b5978c1ee"
+    },
+    "preprocessing_execution_fixture": {
+      "source": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tests\\transfer\\test_preprocessing_execution_gate.py",
+        "bytes": 8252,
+        "sha256": "ba272f825445ba0bcd6da5a4d68178138adb93f5f5fcf37c492ec66cca01f01e"
+      },
+      "change": "Use actual 20Hz feature dimension and explicit fixed/historical selection metadata. Production feature/save contracts preserved.",
+      "validation": {
+        "command": "D:/BCI/n2p3-net/.venv/Scripts/python.exe -B -m pytest -q -p no:cacheprovider tests/transfer/test_preprocessing_execution_gate.py",
+        "passed": 9,
+        "exit_code": 0,
+        "ruff": 0,
+        "git_diff_check": 0
+      }
+    }
+  },
+  "cleanup": {
+    "status": "not_applicable",
+    "scope": "history recovery and fixture repair",
+    "reason": "Created recoverable source/history archives; no replacement build output to retire. Scientific producers, raw input, frozen results and checkpoints retained."
+  }
+}
