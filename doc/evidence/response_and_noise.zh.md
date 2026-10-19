@@ -378,6 +378,8 @@ proper表示概率归一化，允许Dirac等退化law。本次迁移另要求希
 
 成人完整多C/held输入和原parent恢复接口见[输入整合](../assets/research_resume_20261012/adult_programme_input_integration.json)。B已将完整execution的全部13个人数据likelihood、原source-only noise/reference/scale/seed、新成人排除、显式完整条件政策、actual W、保存/冷读及原parent重新准入连接到同一工厂。具名软件13人源为2导128Hz合成产物；它与实际七导250Hz的原EDF/BIDS输入完成9项控制，真实31导1000Hz的几何与完整源关系沿已接受数学和实际源码审阅核清。此处复用原控制及fixture的AST对应，主树另核六个模块实际导入，新增科研fit为0；新old-graph补充断言与三组独审数值脚本如实保未运行，接受依据及清理范围见[成人源迁移整合](../assets/research_resume_20261012/adult_population_source_integration.json)。
 
+同人新会话已能只读复用原固定source，并按新A重新核全部源排除关系。7项软件控制实际通过，包括新会话、异人拒绝、别名/EEG/record污染、原发布字节与异常对应、原13人数据因子及13套forecast冷读；新增source/C拟合、fold发布均为0。根整合复用原控制，核18份独审引用、三份主树字节和六个实际模块导入；原producer及已冻结的科研runtime保原身份。接受范围与来源见[新会话源排除整合](../assets/research_resume_20261012/adult_personal_query_source_integration.json)。
+
 后续全链连接一次完整C联合校准、保存后原C重新准入、完整history及typed个人入口；12人LOSO折保自身角色。完整切片定义见[成人接入交接](D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/ADULT_BRIDGE_HANDOFF.zh.md)，实施和运行状态由当前checkpoint维护。
 
 ### 源数据因子的充分状态与产物职责

@@ -423,8 +423,8 @@ class SharedLikelihoodStore:
             result.append(self._population_inputs[cache_key])
         return tuple(result)
 
-    def put_fold_references(self, fold, references):
-        """Persist only the fold and shared dependency refs, never copies of A/r."""
+    def validate_fold_references(self, fold, references):
+        """Return the original complete dependency record, without writing it."""
         by_person = {r.participant_key: r for r in references}
         if len(by_person) != len(references) or not set(fold.source_participant_keys) <= set(by_person):
             raise ValueError("shared likelihood references lack the complete source fold")
@@ -443,6 +443,11 @@ class SharedLikelihoodStore:
             raise ValueError("shared source record/label dependencies differ from the original fold")
         record = {"schema": "shared_full_response_source_fold_references/1", "fold": fold.record(),
                   "likelihood_references": [ref.record() for ref in selected], "raw_or_label_authority_granted": False}
+        return record
+
+    def put_fold_references(self, fold, references):
+        """Persist only the fold and shared dependency refs, never copies of A/r."""
+        record = self.validate_fold_references(fold, references)
         content = (_json(record)+"\n").encode()
         digest = _sha(content)
         self._write_once(digest+".fold.json", content)
@@ -464,5 +469,5 @@ class SharedLikelihoodStore:
         references = tuple(SharedLikelihoodReference(**r) for r in record["likelihood_references"])
         inputs = self.fold_inputs(fold, references, population_core=population_core)
         # Recheck all source dependency links at the new ingress; no fitting.
-        self.put_fold_references(fold, references)
+        self.validate_fold_references(fold, references)
         return fold, inputs

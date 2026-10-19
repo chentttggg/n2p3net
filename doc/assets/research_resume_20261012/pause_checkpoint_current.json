@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_at_user_request",
-  "recorded_at": "2026-10-19T23:29:53.292884+08:00",
+  "recorded_at": "2026-10-20T00:08:07.049166+08:00",
   "user_request": "resume_research_then_resolve_repository_audit_before_autonomous_continuation",
   "research_worktree": "D:\\BCI\\n2p3-net",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -284,8 +284,9 @@
   "active_agents": {
     "/root/history_slice_integration_review": "Implement readonly fixed-source exclusion relation for new personal query sessions.",
     "/root/audit_disposition_refresh": "Implement actual-functional adult C/history seam and complete downstream contract.",
-    "/root/execution_failures": "Prepare future complete target-matrix v2 telemetry checker; preserve current source checker/seals.",
-    "/root/audit_repository_convergence": "Independently review future complete target-matrix checker and accepted telemetry closure."
+    "/root/execution_failures": "Issue complete actual source acceptance through independently reviewed tuple/literal checker revision.",
+    "/root/adult_population_transport_independent": "Independently review literal/tuple checker repair; preserve original scientific law.",
+    "/root/zero_latent_graph_fix": "C four-core review complete with concrete legacy-reader condition; see independent-core-review."
   },
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
@@ -503,10 +504,9 @@
         "bytes": 4503,
         "sha256": "c3a1f7dfcf58a04aaf3a68053719b4be330e074bdfcd2622c8a0310238c4950c"
       },
-      "actual_population_complete_hyperfits": 0,
       "candidate_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
       "execution": {
-        "state": "managed_recovery_waiting_external_resource_pressure",
+        "state": "complete13people13folds_exit0_independent_runtime_origin_checker_revision_under_review",
         "source_product_kind": "same_fit_full_response_data_factor_v2",
         "launch": {
           "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\ROOT_LAUNCH.json",
@@ -616,12 +616,57 @@
             }
           ]
         },
-        "next_action": "Continue the same managed recovery actor when external resource pressure releases; verify original12imports and freshperson1, then all13folds, complete exit0/tree retirement and sealed independent acceptance before target matrix.",
+        "next_action": "Accept named generic runtime-origin checker revision and issue complete original frozen9a source acceptance; preserve scientific outputs and old seals.",
         "person_states": {
-          "running": 1,
-          "complete": 12
+          "complete": 13
         },
-        "completed_folds": 0
+        "completed_folds": 13,
+        "terminal": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\supervision\\terminal.json",
+          "bytes": 126652,
+          "sha256": "2ad5f721a922b990b86064bb9a7a1b31f19efea290b79f8e797d23431da7578b"
+        },
+        "complete_execution": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-compact-source-recovery-programme\\SOURCE_EXECUTION.json",
+          "bytes": 157871,
+          "sha256": "cf38f80fa83c4ced08bad216dc12dc8d231f0539b1a4f8b8fe6ad022cfe58b99"
+        },
+        "independent_complete_first_refusal": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_ACTUAL_COMPLETE_CHECKS.json",
+          "bytes": 112448,
+          "sha256": "6c789e2d6b16247a18cfbf561e0d80df329477f6d4bfb0097990e446d61a8daa"
+        },
+        "reference_law_diagnosis": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_REFERENCE_LAW_DIAGNOSIS.json",
+          "bytes": 10999,
+          "sha256": "a0ea4ccf0370d322fb6699f3fbb1df184d1e1e57ec6c104c13b2699df21944d4"
+        },
+        "proposed_checker_revision_seal": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_CHECKER_TUPLE_WEIGHTS_SEAL.json",
+          "bytes": 8755,
+          "sha256": "a4f929b3d4020bfb3104258b7ff25eb893a87645a7d01ef1b296c5eb472c24b6"
+        },
+        "original_process_identity_currently_present": false,
+        "reference_law_revision_acceptance": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\tuple-weights-revision\\independent-review\\ACCEPTANCE.json",
+          "bytes": 10426,
+          "sha256": "940b6f30fb14f1966a4766d234651d9db16eb4255b2e775fe4dacc380adab89d"
+        },
+        "independent_complete_second_refusal": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_TUPLE_WEIGHTS_ACTUAL_COMPLETE_CHECKS.json",
+          "bytes": 113758,
+          "sha256": "c6f2faed4118a9483870bb0482ff9091df80892d759ab6fcb70f9e67b04431c2"
+        },
+        "runtime_origin_diagnosis": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_RUNTIME_NAMESPACE_DIAGNOSIS.json",
+          "bytes": 3169,
+          "sha256": "f7e236e6332681d770a0b72e0acd09441372fbc85b8aa556d5619bf8e59f3da5"
+        },
+        "runtime_origin_revision_seal": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_CHECKER_RUNTIME_ORIGINS_SEAL.json",
+          "bytes": 9671,
+          "sha256": "4aca4e348faf9cf482d9239be2c5d51fde5abaea6c1cf7d08e15f9bd781fe570"
+        }
       },
       "code_preparation": {
         "conditioning": "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
@@ -1145,14 +1190,30 @@
       "handoff": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\ADULT_JOINT_HISTORY_HANDOFF.zh.md",
       "confirmed_seam": "existing JointCalibrationProblem assumes materialized physical source and same source/target clock; new actual-functional shared-latent compiler required",
       "next_exit": "preserve original joint QR/score/noise/local kernel and all actual multi-C/held/session-q/clock/drift contracts; complete save/cold/parent-readmission and typed nine-choice publishing",
-      "candidate_isolation": "C core files moved by SHA from shared B namespace; B uses its own explicit production whitelist"
+      "candidate_isolation": "C core files moved by SHA from shared B namespace; B uses its own explicit production whitelist",
+      "confirmed_preintegration_issues": [
+        "Legacy physical numeric replay needs controlled original reader; actual bound2d code-only closure prepared.",
+        "Zero-observation P full flat-axis measure and all-candidate segment coverage fixed and independently verified.",
+        "Original point01 halted for confirmed unbounded cache/redundant branch work; incomplete receipt retained; bounded lifecycle and exact equivalence under implementation."
+      ]
     },
     "future_target_checker": {
-      "state": "new_fixed_v2_target_checker_implementation_in_progress",
-      "owner": "/root/execution_failures",
-      "candidate_root": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/population-matrix-execution/telemetry-v2-checker",
-      "upstream_components_binding": "doc/assets/research_resume_20261012/local_telemetry_v2_acceptance.json",
-      "scientific_scope": "complete78Cfits/4914heldcells and original819panel; preserve source acceptance, actual target freeze, exit/tree retirement and cold replay",
+      "state": "components_and_current_source_interface_independently_accepted_actual_execution_bindings_pending",
+      "acceptance": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\telemetry-v2-checker\\independent-review\\CURRENT_SOURCE_ACCEPTANCE.json",
+        "bytes": 7011,
+        "sha256": "b717ad4a95214d1793668d8ae35b042f76c1112e6b250ce120542c30139ae6fe"
+      },
+      "component_interface": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\telemetry-v2-checker\\TARGET_CHECKER_INTERFACE.current-source.json",
+        "bytes": 15370,
+        "sha256": "6870f05d439153b944de9a4e933e45986f42bf2b57e2a266d678e62cc43e128d"
+      },
+      "delivery": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\telemetry-v2-checker\\DELIVERY_CURRENT_SOURCE.json",
+        "bytes": 8230,
+        "sha256": "056006762c9091b3ac9d29748533d2dda79241a0f623858b333b4080951b9fa8"
+      },
       "actual_execution_seal_issued": false,
       "scientific_acceptance_issued": false
     },
@@ -1196,19 +1257,43 @@
       "cleanup_status": "not_applicable"
     },
     "adult_personal_query_source": {
-      "state": "public_readonly_exclusion_relation_implementation_in_progress",
-      "owner": "/root/history_slice_integration_review",
-      "candidate_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\personal-query-exclusion\\candidate",
-      "scope": "new actual A session and original fixed source; same-person and full source exclusion validated without source refit or rewriting original producer",
-      "new_source_or_C_fit_authority": false
+      "state": "integrated_readonly_new_session_source_relation_independently_accepted",
+      "integration": "doc/assets/research_resume_20261012/adult_personal_query_source_integration.json",
+      "scope": "same-person fresh actual A exclusions checked against original complete fixed source; no source/C fitting or fold writing",
+      "next_owner_scope": "C/E validate original C roster, actual fit freeze time and fresh held permissions"
+    },
+    "target_execution_preparation": {
+      "state": "complete_code_only_runtime_frozen_source_complete_acceptance_and_actual_resources_pending",
+      "runtime_binding": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\CURRENT_TARGET_RUNTIME.json",
+        "bytes": 1259,
+        "sha256": "0a0a236888c96ee3a41b023e792621b77e8e7b47aad73fb7fb38a0674a2cb44c"
+      },
+      "source_manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-runtime\\source.manifest.json",
+        "bytes": 94265,
+        "sha256": "16e1431cff73893428fa7717d495b0d9fdd94353fb1860338ccdfa48ce826e75"
+      },
+      "source_archive": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-runtime\\source.source-only.tar.gz",
+        "bytes": 3394948,
+        "sha256": "193fd79e7e32701a5f95147c5de75087d3f80b1b0bb242f601735aff0e1cc9ab"
+      },
+      "source_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-runtime\\checkout",
+      "base_commit": "2d2cfd3a730de8e6b0c0a27a4c897f24fd0cd78a",
+      "environment_or_data_copied": false,
+      "fixed_original_requested_panel_SHA256": "6732e296cce03f21f8167a09ef08879361003ae85349029691960c00e23b9766",
+      "requested_C_programmes": 78,
+      "requested_held_cells": 4914,
+      "new_target_fits_started": 0,
+      "readiness": "newfixedtargetchecker component accepted; bind complete source grant/resources/command/supervision_inputs2/launch, then actual execution seal and fullrun"
     }
   },
   "next_actions": [
-    "Monitor the same live recovery actor and whole-host gate; reuse original12 products, complete missing1 and all13 folds.",
-    "After complete13person/13fold exit0 and owned-tree retirement, issue the sealed recovered-source independent complete acceptance.",
-    "Use recovered-source target metadata and original819panel; freeze complete target runtime, resolve measured resources, execute all78Cfits/4914held cells.",
-    "Complete and independently review B full-source transport factory/codec, then connect C joint, D history and E typed adult inference.",
-    "Review future telemetry v2 and its checker identity seal before using it in a new execution."
+    "Finish independent generic runtime-origin checker review and actual complete source acceptance; scientific13people/13folds already complete, no retraining.",
+    "Bind accepted source grant to fixed2d target runtime and exact original819panel, resolve actual resources and seal new v2 execution, then execute all78Cfits/4914held cells.",
+    "Complete bounded C query caches and exact equivalent-state reuse, original-reader legacy exit, C save/cold/actual parent readmission, D full history and E typed new-session inference.",
+    "Integrate readonly fixed-source exclusion relation for new personal queries after source/store review; preserve original producers."
   ],
   "active_local_checks": [],
   "folder_cleanup_review": {
@@ -1219,7 +1304,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T15:29:53.282164+00:00",
+  "last_updated_utc": "2026-10-19T16:08:07.049166+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",

@@ -42,6 +42,7 @@ from transfer.source_response_transport import ResponseCoordinateChart
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _SOURCES, _TRANSPORTS = WeakKeyDictionary(), WeakKeyDictionary()
+_PERSONAL_QUERIES = WeakKeyDictionary()
 SOURCE_SCHEMA = 'adult_complete_person_population_source/1'
 TRANSPORT_SCHEMA = 'adult_complete_population_fixed_conditional/1'
 POLICY_SCHEMA = 'declared_fixed_population_conditional_policy/1'
@@ -292,7 +293,7 @@ class FixedPopulationConditional:
                 'full_target_reference_mean': string_rows(m0), 'full_target_reference_covariance': string_rows(k0)})
 
 
-def _source_parents(execution, inputs, recipe_reference, store):
+def _source_parents(execution, inputs, recipe_reference, store, *, persist=True):
     execution = source_owner.require_complete_source_population_execution(execution)
     inputs = require_adult_programme_inputs(inputs)
     if metadata_digest(recipe_reference) not in {metadata_digest(row) for row in execution.record['recipes']}:
@@ -320,7 +321,10 @@ def _source_parents(execution, inputs, recipe_reference, store):
     fold = population.ParticipantFold('adult:'+plan_identity, excluded_identities,
         tuple(row['participant_key'] for row in people), source_records, excluded_eeg, excluded_records, plan_identity)
     # Reuse original source validation of aliases, EEG bytes, labels and roster.
-    store.put_fold_references(fold, references)
+    if persist:
+        store.put_fold_references(fold, references)
+    else:
+        store.validate_fold_references(fold, references)
     return execution, inputs, recipe, dictionary, source_geometry, fold, references
 
 
@@ -453,6 +457,85 @@ def require_adult_population_source(value):
     original = _SOURCES.get(value) if type(value) is AdultPopulationSource else None
     if original is None or any(a is not b for a, b in zip(original, _source_owners(value), strict=True)):
         raise TypeError('the original adult full-source admission is required')
+    source_owner.require_complete_source_population_execution(value.source_execution)
+    require_adult_programme_inputs(value.adult_inputs)
+    return value
+
+
+@dataclass(frozen=True, eq=False)
+class AdultPersonalQuerySourceRelation:
+    """Read-only exclusion proof for a fixed original population forecast.
+
+    The personal C owner separately binds the original calibration/fit and
+    grants query admission. This relation cannot enter a source or C fit API.
+    """
+
+    original_source: FrozenAdultPopulationSource
+    source_execution: object
+    adult_inputs: object
+    record: dict
+
+    @property
+    def identity(self):
+        return metadata_digest(self.record)
+
+
+def _personal_query_owners(value):
+    source, forecast = value.original_source, value.original_source.native.forecast
+    return (source, source.record, source.source_reference, source.native, forecast,
+        forecast.mean, forecast.between_factor, forecast.mean_factor, source.native.dictionary,
+        value.source_execution, value.adult_inputs, value.record)
+
+
+def admit_adult_personal_query_source(frozen_source, *, source_execution, adult_inputs, shared_store):
+    """Recheck a new same-person A exclusion union against the original people.
+
+    Restore the caller's original SHA-bound source artifact with its existing
+    numeric owner; preserve its forecast, programme and producer identities.
+    No new source fold is published and no response or population fit is run.
+    """
+    if type(frozen_source) is not FrozenAdultPopulationSource:
+        raise TypeError('personal query requires the original frozen population source numeric owner')
+    source = FrozenAdultPopulationSource.load(frozen_source.source_reference, shared_store=shared_store)
+    if metadata_digest(source.record) != metadata_digest(frozen_source.record):
+        raise ValueError('personal query changed the original frozen source artifact')
+    execution, inputs, _, dictionary, geometry, validation, references = _source_parents(source_execution,
+        adult_inputs, source.record['original_recipe'], shared_store, persist=False)
+    original, current = source.record['source_exclusion'], inputs.exclusion_contract
+    if any(original[key] != current[key] for key in ('participant_key', 'source_dataset_id', 'source_subject_id')):
+        raise ValueError('personal query requires the same original adult participant identity')
+    expected = {'accepted_source_execution': execution.execution_reference,
+        'independent_acceptance': execution.acceptance_reference, 'source_matrix': execution.matrix_reference,
+        'programme_seed': execution.record['programme_seed'], 'source_geometry': geometry.record(),
+        'native_dictionary': _read(source.record['original_recipe'])['native_dictionary'],
+        'person_publications': tuple(row['publication'] for row in execution.record['persons'])}
+    if any(metadata_digest(source.record[key]) != metadata_digest(value) for key, value in expected.items()):
+        raise ValueError('personal query requires the original accepted complete source execution and programme')
+    forecast = source.native.forecast
+    if (forecast.fold.source_participant_keys != validation.source_participant_keys
+            or tuple(row.original_likelihood_artifact_sha256 for row in forecast.likelihoods) != tuple(ref.sha256 for ref in references)
+            or source.native.dictionary.digest() != dictionary.digest()):
+        raise ValueError('personal query changed the original full-person forecast dependencies')
+    record = freeze_metadata({'schema': 'adult_personal_query_source_exclusion/1',
+        'original_source': source.source_reference, 'original_source_record_identity': metadata_digest(source.record),
+        'original_population_input_identity': forecast.input_identity,
+        'original_population_producer_sha256': forecast.producer_sha256,
+        'original_adult_programme_identity': source.record['adult_programme_identity'],
+        'accepted_source_execution_identity': execution.identity, 'adult_programme_identity': inputs.identity,
+        'actual_source_exclusion': inputs.exclusion_contract, 'validation_only_fold': validation.record(),
+        'source_likelihood_references': tuple(ref.record() for ref in references),
+        'new_source_fits': 0, 'new_C_fits': 0, 'new_fold_metadata_publications': 0,
+        'raw_or_label_or_source_or_C_fit_authority_granted': False,
+        'consumer_sha256': IMPLEMENTATION_SHA256})
+    value = AdultPersonalQuerySourceRelation(source, execution, inputs, record)
+    _PERSONAL_QUERIES[value] = _personal_query_owners(value)
+    return value
+
+
+def require_adult_personal_query_source(value):
+    original = _PERSONAL_QUERIES.get(value) if type(value) is AdultPersonalQuerySourceRelation else None
+    if original is None or any(a is not b for a, b in zip(original, _personal_query_owners(value), strict=True)):
+        raise TypeError('personal query exclusion requires its original source and actual fresh adult admission')
     source_owner.require_complete_source_population_execution(value.source_execution)
     require_adult_programme_inputs(value.adult_inputs)
     return value

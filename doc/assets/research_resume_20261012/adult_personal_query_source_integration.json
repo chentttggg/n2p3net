@@ -1,0 +1,98 @@
+{
+  "schema": "adult_personal_query_source_root_integration/1",
+  "status": "accepted_readonly_source_exclusion_increment",
+  "recorded_utc": "2026-10-19T16:08:07.042863+00:00",
+  "canonical_base": "2d2cfd3a730de8e6b0c0a27a4c897f24fd0cd78a",
+  "author_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\personal-query-exclusion\\DELIVERY_MANIFEST.json",
+    "bytes": 11281,
+    "sha256": "56cdd9db1e3b383eb9e22ab9af4fdfe0d9456de8361995e4094455aa8d910ca5"
+  },
+  "independent_acceptance": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\personal-query-exclusion\\independent-review\\ACCEPTANCE.json",
+    "bytes": 10548,
+    "sha256": "75abc08034d5b3fede5e7c67dd180d17f5114b26bb57af6d47df0ef1a67016f9"
+  },
+  "files": [
+    {
+      "path": "D:\\BCI\\n2p3-net\\src\\research\\adult_population_source.py",
+      "bytes": 44729,
+      "sha256": "cb0365a67e26279c05ea74023b9ea82f57f5d3eb50e31cf8cd290a87dbe39468",
+      "relative": "src/research/adult_population_source.py",
+      "preimage_sha256": "5464d36d7062b8bfaceb6186a5259367e84fb5fe24fc77d30a412ecfecd33104"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\src\\research\\source_likelihood_export.py",
+      "bytes": 26720,
+      "sha256": "c839e406ba07090ad6f1593efcf372ee469cdb9de714f09df52c90bc65985ca4",
+      "relative": "src/research/source_likelihood_export.py",
+      "preimage_sha256": "ee04c413e395a17d408f70ca63b8aabc2bd5d36925fa835f5bc2d8334bff7e25"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\tests\\research\\test_adult_personal_query_source.py",
+      "bytes": 13220,
+      "sha256": "8d3f5ebad85e4f58fc84d8503cc26d04c20d9209dd7c8a943b5966a251e854f6",
+      "relative": "tests/research/test_adult_personal_query_source.py",
+      "preimage_sha256": null
+    }
+  ],
+  "root_byte_verification": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\personal-query-exclusion\\ROOT_BYTE_INTEGRATION.json",
+    "bytes": 1874,
+    "sha256": "d2b9482a888bc599da6cec41a07a3efeda440a7cf4e9342be7aede61ecf470a3"
+  },
+  "root_main_import": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\personal-query-exclusion\\ROOT_MAIN_IMPORT.json",
+    "bytes": 1671,
+    "sha256": "8f9fd99da26b54a8962b9f0a44d5e33c99d89cddd77d10eb0911e121134d1387"
+  },
+  "original_software_controls": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\personal-query-exclusion\\CONTRACT_RESULT.json",
+    "bytes": 5288,
+    "sha256": "51476811b91ec63561d2ee9e4b9116358852703e1413ab67c0bd827f77911f17"
+  },
+  "root_review": {
+    "Spec": "pass_original_fixed_source_same_person_and_actual_fresh_exclusion_union",
+    "Standards": "pass_single_validator_original_put_bytes_and_explicit_live_relation",
+    "reviewed": "complete_new_API_diff_actual_source_load_parent_validation_store_owners_and_7_controls",
+    "verified_independent_references": 18,
+    "software_controls_reused": 7,
+    "software_controls_reexecuted": 0,
+    "actual_main_module_imports": 6,
+    "Ruff_exit_code": 0,
+    "git_diff_check_exit_code": 0,
+    "new_source_or_C_fits": 0
+  },
+  "accepted_scope": [
+    "readonly original source plus complete execution and new actual A",
+    "same canonical participant and complete alias EEG-byte record exclusions",
+    "original recipe seed dictionary geometry and all13 likelihood references",
+    "unchanged original source arrays and producer",
+    "pure shared fold validation reused by publisher and cold ingress"
+  ],
+  "next_owner_scope": [
+    "original C roster and fit freeze time",
+    "fresh held permission and typed personal prediction"
+  ],
+  "frozen_source_and_target_runtimes_unchanged": true,
+  "cleanup": {
+    "schema": "personal_query_source_increment_cleanup/1",
+    "status": "not_applicable",
+    "reason": "One current software validation build; no obsolete replacement build or new worktree. Original B fixed software source remains a recovery dependency and is not a cleanup target.",
+    "current_build": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\personal-query-exclusion\\build\\query-control-01",
+    "current_build_files": 92,
+    "current_build_bytes": 5935461,
+    "deletion_attempts": 0,
+    "actual_deleted_files": 0,
+    "new_worktrees": 0,
+    "new_environments": 0,
+    "scientific_payload_copies": 0,
+    "previously_rejected_objects_touched": false,
+    "protected_original_source": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\build\\final-validation\\test_actual_source13_new_adult0\\source\\adult-source.json",
+      "bytes": 19519,
+      "sha256": "142d8c314babc72c17516c0ca6cbf23577d450073404a2aa2cf5c56800148c25"
+    }
+  },
+  "active_state_owner": "pause_checkpoint_current.json"
+}
