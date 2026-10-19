@@ -1235,7 +1235,17 @@
         "expected_receipt": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\final-main-imports10.resources.json",
         "result": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\final-main-imports10.result.json",
         "controls_started": 0,
-        "original_birth_identity_live_at_checkpoint": true
+        "original_birth_identity_live_at_checkpoint": true,
+        "prelaunch_control_sources": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\source_snapshots\\final-main-imports10\\CONTROL_SOURCE_PREIMAGES.json",
+          "bytes": 2450,
+          "sha256": "688eee715c4f4d645dc53a1ff08e48408ae8a8eb3563456ae7d6b17fa64c987f"
+        }
+      },
+      "preserved_C06_original_source_test_and_runner_closure": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\root-integration\\C06_READER_SOURCE_CLOSURE.json",
+        "bytes": 58716,
+        "sha256": "39a9f8129b1887444167ad004b28f971c2d76836ae3af44f0c7e645885d62b37"
       }
     },
     "future_target_checker": {
@@ -1412,22 +1422,22 @@
         "resource_ledger": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\local-target-launch-v2-admission-r1\\attempt-01\\supervision\\resources.jsonl",
         "waiter_state": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\local-target-launch-v2-admission-r1\\attempt-01\\WAITER_STATE.json",
         "stop_request": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\local-target-launch-v2-admission-r1\\attempt-01\\stop.request.json",
-        "observed_sequence": 879,
-        "observed_time": 1792431884.1277092,
+        "observed_sequence": 2541,
+        "observed_time": 1792433071.6464763,
         "observed_action": "pause_external_gpu_pressure",
-        "observed_owned_RSS_bytes": 39866368,
-        "observed_host_cpu_percent": 15.6,
-        "observed_host_memory_percent": 44.2,
+        "observed_owned_RSS_bytes": 39845888,
+        "observed_host_cpu_percent": 10.9,
+        "observed_host_memory_percent": 47.9,
         "observed_GPU": {
-          "observed_time": 1792431880.7997634,
+          "observed_time": 1792433069.6442437,
           "status": "observed",
           "devices": [
             {
               "index": 0,
               "utilization_percent": 84.0,
               "memory_total_mib": 8151.0,
-              "memory_used_mib": 6595.0,
-              "memory_percent": 80.91031775242301
+              "memory_used_mib": 6511.0,
+              "memory_percent": 79.87976935345357
             }
           ]
         },
@@ -1493,7 +1503,7 @@
       }
     },
     "source_latent_marginalization_design": {
-      "state": "complete_source_design_delivered_full_physical_theta_generalization_under_independent_review",
+      "state": "complete_physical_theta_science_accepted_general_numerical_candidate_under_source_review",
       "owner": "/root/adult_population_transport_independent",
       "scope": "One complete fixed physical-coefficient Gaussian pushforward for source+proper conditional completion; adult7p/public31p are instances. Preserve exact weak directions, joint/family bridge and original rounded-law identities.",
       "implementation_authorized": true,
@@ -1504,10 +1514,16 @@
         "bytes": 6019,
         "sha256": "da21915b977819cedb0accecc9f90e2da563bab4229719d8ab70316a21c8942e"
       },
-      "implementation_owner": "/root/physical_gaussian_image"
+      "implementation_owner": "/root/physical_gaussian_image",
+      "science_integration": "doc/assets/research_resume_20261012/physical_gaussian_image_science_integration.json",
+      "complete_physical_theta_manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\source-latent-marginalization-design\\FULL_THETA_MANIFEST.json",
+        "bytes": 10074,
+        "sha256": "a0b4b4d4bfc69061b07a0c7a67a1d102b9c25987cad5a001d9a8e40b48f722f1"
+      }
     },
     "physical_gaussian_image": {
-      "state": "general_exact_physical_image_and_codec_candidate_in_development",
+      "state": "candidate_module_and_tiny_controls_written_save_and_posterior_cost_review_in_progress",
       "owner": "/root/physical_gaussian_image",
       "independent_design_owner": "/root/adult_population_transport_independent",
       "candidate_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\physical-gaussian-image\\candidate",
@@ -1515,7 +1531,14 @@
       "scope": "Complete fixed physical Gaussian image, exact rational covariance and PSD-LDL, query-time surd rounding/error, versioned origin/codec and posterior physical-image seam for adult and public consumers.",
       "no_source_or_C_fit_or_EEG_or_large_Gram_authority": true,
       "new_background_waiter_authority": false,
-      "current_frozen_matrix_dependency": false
+      "current_frozen_matrix_dependency": false,
+      "science_integration": "doc/assets/research_resume_20261012/physical_gaussian_image_science_integration.json",
+      "root_identified_changes": [
+        "exclusive witness publication",
+        "default posterior mean/factor without unconditional n_squared covariance",
+        "reuse bounded numerical contraction arithmetic instead of cubic_fraction_loop_for_large_tile"
+      ],
+      "actual_numerical_controls_run": 0
     }
   },
   "next_actions": [
@@ -1532,7 +1555,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T17:57:29.629004+00:00",
+  "last_updated_utc": "2026-10-19T18:04:31.800000+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",

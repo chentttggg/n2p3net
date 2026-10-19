@@ -96,6 +96,8 @@ C与held联合准入另以实际C3及新45次held录制执行：原source C68读
 
 同一合成held-only完整45闪烁任务的544/112两程序分别耗时253.65/137.92秒，峰working set为2.93/0.884 GB；全部162个分支的P/F绝对积分及九候选概率在该fixture逐bit相同。两程序各有独立进程冷读，原producer快照保留。数学等价依据exact边缘化，计时与逐bit结论限于这份完整任务；来源见[边缘化整合](../assets/research_resume_20261012/marginal_response_integration.json)。
 
+对当前完整source与固定条件补全policy，一般化后的充分对象是全部实际物理系数：令`A=T_s+T_w G`，则`theta=A s+T_w a+T_w epsilon`的均值为`A m+T_w a`，协方差为`A F F^T A^T+T_w V T_w^T`。对这一个完整Gaussian law取exact PSD分解，可将观测永远读不到的随机坐标一次积分掉；全部物理轴、弱正方向、九个候选和原漂移测度保留。公共全部源系数与成人全部七导系数是同一规则的实例，所有C、held、q与shape共享同一表示。六组独立Fraction控制覆盖一般条件补全、奇异支持、后验条件残差及policy/多人共享mean反例；实际E调用也已追到完整物理泛函入口。新数值表示同时接编译与后验矩，并保原source出处和旧C/轨迹reader；数学接受与源码接缝见[完整物理Gaussian科学绑定](../assets/research_resume_20261012/physical_gaussian_image_science_integration.json)，新的实际运行、维数及吞吐由对应程序测量。
+
 ## 一次响应C更新到完整九选一
 
 完整软件程序已连接实际公开source、合成BrainSync校准C、冻结七导C-noise、一次响应C更新，以及独立held完整45闪烁。每个端点使用

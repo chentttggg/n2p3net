@@ -1,0 +1,58 @@
+{
+  "schema": "complete_physical_gaussian_image_science_root_review/1",
+  "accepted_scope": "mathematical_sufficiency_for_fixed_source_conditional_policy_and_complete_physical_domain; actual_adult_C_D_E_and_public_caller_seams",
+  "recorded_utc": "2026-10-19T18:04:03.501141+00:00",
+  "evidence": {
+    "independent_mathematical_manifest": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\source-latent-marginalization-design\\FULL_THETA_MANIFEST.json",
+      "bytes": 10074,
+      "sha256": "a0b4b4d4bfc69061b07a0c7a67a1d102b9c25987cad5a001d9a8e40b48f722f1"
+    },
+    "mathematical_and_actual_caller_review": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\source-latent-marginalization-design\\FULL_THETA_UPDATE.zh.md",
+      "bytes": 19812,
+      "sha256": "e39581772a4da6983320c60528aeab640052578cb264a99fd6ab6a1e13265033"
+    },
+    "independent_fraction_controls": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\source-latent-marginalization-design\\FULL_THETA_CONTROLS.json",
+      "bytes": 2828,
+      "sha256": "91b94728661c65b44a8d1b8ba98c9bca4eb69b1001de8228a86bd800aeb53418"
+    }
+  },
+  "mathematical_law": {
+    "definition": "theta=(T_s+T_w G)s+T_w a+T_w epsilon; s=m+Fz; epsilon independent with covariance V",
+    "mean": "(T_s+T_w G)m+T_w a",
+    "covariance": "(T_s+T_w G)F F^T(T_s+T_w G)^T+T_w V T_w^T",
+    "scope": "one fixed complete physical domain shared by all current C/D/E records, candidates, shapes and noise/local-variance points",
+    "rank_policy": "retain every exact positive pivot; exact-zero Gaussian latent directions integrate to1; every physical coordinate remains",
+    "source_prior_count": 1,
+    "physical_drift_measure": "unchanged original da"
+  },
+  "generalization": {
+    "adult_and_public": "declared complete target/source physical coefficient domains; no hardcoded channel count or dimension threshold",
+    "future_policy_or_family_likelihood": "rebuild actual complete joint domain or use full conditional extension including residual covariance",
+    "multiple_adults": "one explicitly declared joint source origin with shared mean and complete target exclusion union; separate LOSO programmes remain separate"
+  },
+  "root_source_review": {
+    "complete_formula_and_weak_zero_policy_joint_family_counterexamples_read": true,
+    "current_E_complete_actual_caller_previously_read": true,
+    "public_compile_and_record_posterior_packs_both_required": true,
+    "posterior_interface": "same actual compiled query bytes and posterior columns; mean/factor path avoids unconditional n_squared covariance",
+    "old_rounded_query_counterexample_preserved": true
+  },
+  "controls": {
+    "reused_actual_independent_cases": 6,
+    "maximum_matrix_dimension": 5,
+    "controls_rerun_by_root": 0,
+    "new_fits_or_SMC_or_tensor_reads_by_root": 0
+  },
+  "production_code_acceptance": false,
+  "actual_rank_measured": false,
+  "throughput_or_adult_effectiveness_acceptance": false,
+  "old_source_C_posterior_trace_and_reader_bytes_preserved": true,
+  "cleanup": {
+    "status": "not_applicable",
+    "reason": "Mathematical/caller review only; no replacement build accepted or obsolete source dependency removed."
+  },
+  "active_state_owner": "pause_checkpoint_current.json"
+}
