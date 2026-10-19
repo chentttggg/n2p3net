@@ -351,6 +351,16 @@ class SpatialDecisionModel:
     @classmethod
     def fit(cls, records, receipts, programme, *, sfreq, channels, candidate_ids, operator_identity,
             dictionary, fit_scope="target_calibration", **noise_options):
+        """The original model-only entry shares its complete same-fit core."""
+        model, _blocks = cls.fit_with_blocks(records, receipts, programme, sfreq=sfreq, channels=channels,
+            candidate_ids=candidate_ids, operator_identity=operator_identity, dictionary=dictionary,
+            fit_scope=fit_scope, **noise_options)
+        return model
+
+    @classmethod
+    def fit_with_blocks(cls, records, receipts, programme, *, sfreq, channels, candidate_ids, operator_identity,
+            dictionary, fit_scope="target_calibration", **noise_options):
+        """Return the original fitted model and the exact blocks it consumed."""
         records, receipts = tuple(records), tuple(receipts)
         if noise_options.get("noise_order") is None:
             raise ValueError("physical response programme requires an explicit complete TemporalNoise order")
@@ -387,7 +397,7 @@ class SpatialDecisionModel:
             "kernel_uncertainty": "general_vec_Gaussian_given_original_fitted_noise",
             "response_fit_passes_after_noise_freeze": 1, "noise_refitted_after_freeze": False,
             "joint_spatial_noise_response_MLE_claimed": False}
-        return cls(programme, baseline, posterior, content, provenance)
+        return cls(programme, baseline, posterior, content, provenance), tuple(blocks)
 
     def score_view(self, view):
         if not isinstance(view, PredictionDecisionView) or view.samples is None:

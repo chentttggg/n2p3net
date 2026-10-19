@@ -29,6 +29,10 @@ def target_job_groups(source_record, plan, output, *, device, program="P1_P2"):
     if program not in {"P1_P2", "unified"}:
         raise ValueError("unsupported domain transfer program")
     workers = source_record["resource_policy"]["target_workers"]
+    policy = source_record["resource_policy"]
+    native = (policy.get("target_native_threads_per_worker",
+        max(1, policy["worker_cpu_budget"] // workers - 1)) if plan.get("resource_scope") == "cloud"
+        else policy.get("native_threads_per_worker", 1))
     task_outer = {str(Path(checkpoint).resolve()): task["key"].split("/")[0]
                   for task in source_record["tasks"] for checkpoint in task.get("checkpoints", {}).values()}
     outers = {outer["name"]: outer for outer in plan["outer_folds"]}
@@ -55,7 +59,7 @@ def target_job_groups(source_record, plan, output, *, device, program="P1_P2"):
                     continue
                 destination = output / "targets" / stage / source_plan.stem / f"shard{shard}"
                 job = {"plan": str(source_plan), "subjects": list(subjects), "output": str(destination),
-                       "cpu_threads": source_record["resource_policy"].get("native_threads_per_worker", 1),
+                       "cpu_threads": native,
                        "device": device, "target_cache": payload["target_cache"], "target_stage": stage}
                 groups.setdefault((payload["target_cache"], shard), []).append(job)
                 declarations.append({**job, "outer": outer_name,
@@ -73,9 +77,21 @@ def main(argv=None):
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--program", choices=("P1_P2", "unified"), default="P1_P2")
+    parser.add_argument("--resource-scope", choices=("cloud", "local_development", "software_correctness"))
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
+    scope = args.resource_scope or plan.get("resource_scope",
+        "software_correctness" if plan.get("evidence_scope") == "software_correctness" else "cloud")
+    if scope not in {"cloud", "local_development", "software_correctness"}:
+        raise ValueError("domain matrix resource scope must be cloud, local_development or software_correctness")
+    plan = {**plan, "resource_scope": scope}
+    if scope == "cloud":
+        from research.source_execution import with_cloud_resource_floor
+
+        # Resolve an explicitly declared cloud policy; this does not select or
+        # initialize the actual compute device. A CPU run cannot meet its GPU floor.
+        plan = with_cloud_resource_floor(plan, "cuda")
     if args.program == "P1_P2" and "ce" not in plan.get("source_objectives", {"ce": {}}):
         raise ValueError("the combined matrix requires its CE control to be named ce")
     output = args.output.resolve()
@@ -102,6 +118,12 @@ def main(argv=None):
     progress.update(status="running_targets", target_groups=len(groups), target_jobs=len(declarations),
                     resource_policy=source["resource_policy"])
     atomic_write_json(output / "matrix.json", progress)
+    if scope == "cloud":
+        from research.domain_target_execution import execute_cloud_domain_targets
+
+        execute_cloud_domain_targets(groups, plan=plan, source_policy=source["resource_policy"],
+            output=output, progress=progress, started=started, device=args.device)
+        return
     workers = source["resource_policy"]["target_workers"]
     with ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context("spawn")) as pool:
         futures = {pool.submit(_evaluate_outer_group, group): index for index, group in enumerate(groups)}

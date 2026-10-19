@@ -264,6 +264,7 @@ def checkpoint_study_membership(payload: Mapping, *, proofs: Sequence[Mapping] =
                 }
             )
         verified_proofs.append(proof.get("proof_source", {"membership_digest": proof["digest"]}))
+    has_producer_proof = bool(mapping)
     risk = contract.objective.get("source_risk_contract", {})
     domain_mass = risk.get("domain_mass", {}) if isinstance(risk, Mapping) else {}
     for stream in streams - set(mapping):
@@ -290,6 +291,10 @@ def checkpoint_study_membership(payload: Mapping, *, proofs: Sequence[Mapping] =
         original_source_cache_sha256=contract.source_cache_sha256,
         historical_checkpoint_unchanged=True,
     )
-    if domain_mass and set(study_ids_for_identity(identity, result)) != set(domain_mass):
-        raise ValueError("proved study membership disagrees with bound source risk domains")
+    # Training-domain labels are a separate, explicitly named row axis. A
+    # verified producer proof resolves acquisition streams to studies without
+    # requiring those study names to equal the historical training-domain keys.
+    # Without such a proof, keep the legacy exact-stream fallback's full roster.
+    if domain_mass and not has_producer_proof and set(mapping) != set(domain_mass):
+        raise ValueError("legacy exact-stream fallback disagrees with bound source risk domains")
     return result

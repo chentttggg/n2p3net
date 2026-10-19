@@ -1602,11 +1602,16 @@ class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
     """The original multi-file source owner; no stitched continuous recording."""
 
     def __init__(self, adapter, *, budgets, profiles, authorization_preprocessing,
-                 response_seconds=1.203125, pre_roll_seconds=.2):
+                 response_seconds=1.203125, pre_roll_seconds=.2, _source_training=False):
         from data.candidate_input import CandidateDatasetAdapter
 
         if not isinstance(adapter, CandidateDatasetAdapter):
             raise TypeError("shared prefix issuer requires its registered original dataset adapter")
+        if _source_training and type(self) is not RecordSourceTrainingCompiler:
+            raise TypeError("full source permission uses its named original-record issuer")
+        self._source_training = _source_training
+        if _source_training and adapter.requested_future_record_ids is not None:
+            raise ValueError("a source-only issuer does not attach future evaluation acquisitions")
         self.adapter, self.sources = adapter, adapter.recordings
         self.profiles = {p.digest: p for p in profiles}
         self.budgets = tuple(sorted(set(budgets)))
@@ -1643,9 +1648,16 @@ class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
                     (test if admissible else purged).append(int(base)+local)
             return BinaryTimeSplit(np.arange(k, dtype=np.int64), np.asarray(test, dtype=np.int64),
                                    np.asarray(purged, dtype=np.int64))
-        self._splits, self._adjustments = resolve_calibration_splits(self.budgets, split,
-            minimum_test_trials=1, available_trials=total,
-            separate_test_recordings=adapter.requested_future_record_ids is not None)
+        if _source_training:
+            if self.budgets != (total,):
+                raise ValueError("the full source issuer retains its exact complete declared label roster")
+            self._splits = {total: BinaryTimeSplit(np.arange(total, dtype=np.int64),
+                np.empty(0, dtype=np.int64), np.empty(0, dtype=np.int64))}
+            self._adjustments = {}
+        else:
+            self._splits, self._adjustments = resolve_calibration_splits(self.budgets, split,
+                minimum_test_trials=1, available_trials=total,
+                separate_test_recordings=adapter.requested_future_record_ids is not None)
         self.actual_budgets, self.maximum = tuple(sorted(self._splits)), max(self._splits)
         if adapter.requested_future_record_ids is not None:
             for source, base in zip(self.sources, self._offsets[:-1], strict=True):
@@ -1665,6 +1677,19 @@ class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
                 "source_relative_path": s.source_relative_path, "native_sample_count": s.native_sample_count,
                 "sample_rate_hz": s.sample_rate_hz, "source_subject_id": s.source_subject_id,
                 "session_id": s.session_id, "run_id": s.run_id} for s in self.sources}}
+        if _source_training:
+            self.target.update({"issuer_role": "full_original_source_training_prefix/1",
+                "source_training_only": True, "source_requested_labels": total,
+                "target_groups_materialized": False,
+                "source_selection_ledger": [{"record_id": source.record_id,
+                    "selections": [{**selection.public_record(),
+                        "stimulus_schedule_complete": selection.decision.schedule_complete,
+                        "response_support_right_censored": source.native_sample_count is not None and
+                            int(source.native_onsets[selection.event_indices[-1]])+self.response_samples > source.native_sample_count}
+                        for selection in source.selections],
+                    "requested_selections": len(source.selections),
+                    "complete_stimulus_schedules": sum(s.decision.schedule_complete for s in source.selections)}
+                    for source in self.sources]})
         for source in self.sources:
             if (source.channel_names,source.reference,source.sample_rate_hz) != (first.channel_names,self.reference,self.rate):
                 raise ValueError("original participant records have incompatible measured native layouts/reference/clock")
@@ -1677,6 +1702,8 @@ class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
             "authorization_preprocessing": authorization_preprocessing.record(),
             "response_seconds": response_seconds, "pre_roll_seconds": pre_roll_seconds,
             "original_adapter_digest": adapter.digest, "original_factory_source_sha256": adapter.original_factory_source_sha256}
+        if _source_training:
+            self._history_ingress["issuer_role"] = "full_original_source_training_prefix/1"
         self._arguments = {"maximum": self.maximum, "profiles": self.profiles,
             "authorization_preprocessing": authorization_preprocessing, "width": self.response_samples,
             "preroll": self.preroll_samples, "target": self.target}
@@ -1756,13 +1783,16 @@ class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
                 source.source_relative_path, self.adapter.dataset_id, source.source_subject_id, (0, cutoff), (int(base), int(base)+count),
                 cutoff, tuple(map(int, onsets)))
             scopes[source.record_id] = scope.record()
-            for selection, declared in enumerate(source.selections):
-                event_rows = np.asarray(declared.event_indices, dtype=np.int64)
-                if event_rows[0] >= count:
-                    break
-                group = self._current_view(source, selection, permitted_event_stop=count, maximum_read_stop=cutoff)
-                if group.samples is not None and group.raw_scope[1] <= cutoff and declared.parent_target_candidate is not None:
-                    groups.append(CalibrationSelection(group, labels[event_rows], declared.parent_target_candidate))
+            # The source-only role fits complete native records. Target-only
+            # decision calibration groups would reread each same source range.
+            if not self._source_training:
+                for selection, declared in enumerate(source.selections):
+                    event_rows = np.asarray(declared.event_indices, dtype=np.int64)
+                    if event_rows[0] >= count:
+                        break
+                    group = self._current_view(source, selection, permitted_event_stop=count, maximum_read_stop=cutoff)
+                    if group.samples is not None and group.raw_scope[1] <= cutoff and declared.parent_target_candidate is not None:
+                        groups.append(CalibrationSelection(group, labels[event_rows], declared.parent_target_candidate))
             for digest, profile in self.profiles.items():
                 profile.validate_observation(self._current_view(source, 0, read_samples=False))
                 available = (onsets+profile._source_start >= 0) & (onsets+profile._source_stop <= cutoff)
@@ -1947,6 +1977,47 @@ class RecordCalibrationPrefixCompiler(CalibrationPrefixCompiler):
             "endpoint": self.adapter.endpoint,
             "input_records": [s.public_record() for s in self.sources], "truth_consumed_by_prediction": False}
         return IndependentSubjectViews({k: self.compile(k) for k in self.actual_budgets}, tuple(decisions), truths, ledger, self)
+
+
+class RecordSourceTrainingCompiler(RecordCalibrationPrefixCompiler):
+    """Full source labels from the registered original adapter, with no future.
+
+    The ordinary target compiler keeps its independent later-test requirement.
+    This named issuer reuses the same native reader, prefix ownership, clocks,
+    labels, geometry, right-censoring and optional epoch-profile implementation.
+    """
+
+    def __init__(self, adapter, *, profiles, authorization_preprocessing,
+                 response_seconds, pre_roll_seconds):
+        total = sum(len(source.native_onsets) for source in adapter.recordings)
+        super().__init__(adapter, budgets=(total,), profiles=profiles,
+            authorization_preprocessing=authorization_preprocessing, response_seconds=response_seconds,
+            pre_roll_seconds=pre_roll_seconds, _source_training=True)
+
+    def source_fit_operands(self):
+        """Issue every exact source record and its original per-record controller."""
+        prefix = self.assert_original_prefix(self.compile(self.maximum))
+        use = prefix.label_use["raw"]
+        if use["used_labels"] != self.maximum or use["unavailable_records"]:
+            raise ValueError("the complete requested source programme has unavailable native records or clocks")
+        records = prefix.calibration_records
+        if {record.record_id for record in records} != {source.record_id for source in self.sources}:
+            raise ValueError("the complete source issuer lost an original declared acquisition")
+        receipts = []
+        for record in records:
+            scope = prefix.target_contract["record_scopes"][record.record_id]
+            count = len(record.onsets)
+            receipts.append({**prefix.target_contract, "record_id": record.record_id,
+                "source_sha256": scope["source_sha256"], "raw_scope": scope["read_sample_support"],
+                "raw_input_digest": array_digest(record.samples, record.onsets, record.target_mask),
+                "source_prefix_identity": calibration_prefix_identity(prefix),
+                "original_compiler_source_sha256": _SELECTION_EXECUTION_SOURCE_SHA256,
+                "label_use": {"raw": {"requested_labels": count, "used_labels": count,
+                    "read_sample_support": scope["read_sample_support"], "right_censored": record.right_censored}}})
+        return prefix, records, tuple(receipts)
+
+    def independent_views(self):
+        raise TypeError("the full source-only issuer has no held-out target evaluation programme")
 
 
 def _record_epoch_prefix(parts, profile, target, budget):

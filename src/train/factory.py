@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from inspect import signature
 from typing import Any
 
 import numpy as np
@@ -85,7 +86,11 @@ def build_binary_model(
     n2p3net_pooling_mode: str = DEFAULT_N2P3_POOLING_MODE,
     n2p3net_architecture: N2P3ArchitectureConfig = DEFAULT_N2P3_ARCHITECTURE,
 ):
-    """Return one candidate using only the data and performance contracts."""
+    """Build one candidate after the caller admits its study/input contract.
+
+    Explicit deep_config_overrides are applied last. describe_binary_model
+    records the resulting configuration used by the actual model.
+    """
 
     _validate_binary_dataset(dataset)
     key = str(model_name).strip().lower()
@@ -154,7 +159,10 @@ def describe_binary_model(model_name: str, model: object) -> dict[str, Any]:
 
     key = str(model_name).strip().lower()
     if key in {"swdla", "window_lr", "template", "xdawn_rg"}:
-        return {"name": key, "class": type(model).__name__}
+        parameters = {name: getattr(model, name) for name in signature(type(model)).parameters}
+        return {"name": key, "class": type(model).__name__,
+                "hyperparameters": {name: value.tolist() if isinstance(value, np.ndarray) else value
+                                    for name, value in parameters.items()}}
     config = getattr(model, "cfg", None)
     record = {
         "name": key,

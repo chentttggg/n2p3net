@@ -1,0 +1,89 @@
+{
+  "schema": "n2p3_repository_audit_performance_integration/1",
+  "runtime_E2_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\audit-performance\\RUNTIME_E2_V1_MANIFEST.json",
+    "sha256": "c1649d99b8c6bbcf3344f2cd64b222cfc7527600ede9532076906733208922c7",
+    "bytes": 6948
+  },
+  "report_v2_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\audit-performance\\report-v2\\DELIVERY_MANIFEST.json",
+    "sha256": "4cd3015907bf6ef2e78769c47bf3db85a4b64a0c3954db54ccbb30e4115c4435",
+    "bytes": 7274
+  },
+  "report_independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\audit-performance\\report-v2\\independent-review\\REVIEW_RECEIPT.json",
+    "sha256": "96ed579a8f21bd74ed47fbb4dade14621eaa36b8bfae3b3922c4b6ccbdc6a4f4",
+    "bytes": 6556
+  },
+  "root_review": {
+    "runtime": "Process affinity/Job limit/fractional quota, preserve compiled cache and avoid useless streamed random batch pinning; merged fixed/adaptive policy+row observer from transfer exact base",
+    "E2": "Same dataset lifecycle read-only mmap, one admitted pool, parent shard, actual GPU/CPU grants and terminal failure accounting; original source refit follows pool closure",
+    "root_found_and_author_fixed": [
+      "Pool unnecessarily restarted on repeated memory-limited grant",
+      "Parent allocator released after resource lease",
+      "Sibling index could shadow an unrelated report path"
+    ],
+    "report": "Read complete CAS shard writer/cold reader/external inventory/resume and terminal publication; original scientific report schema and producer fields preserved"
+  },
+  "scope": "Runtime software and actual local transfer/writer measurements; no full cloud training throughput acceptance",
+  "canonical_sources": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\train\\runtime.py",
+      "sha256": "d59c03ee83057e9195c562f0edb9ca8d793e4e97dd2f29f1c144f0e41adb6b72",
+      "bytes": 55753
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\source_execution.py",
+      "sha256": "dee720d8c04c0163d787192fb4e22d1d314156f1152c10757a9237d361168f22",
+      "bytes": 68252
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\run_source_training_chain.py",
+      "sha256": "7047d157f9c3809b5bd5bec22ecdbb90326163c578c7b27f3e92592046632b3a",
+      "bytes": 161072
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\source_chain_report.py",
+      "sha256": "3da6011e266f06eb6f64a98c7f48692bb66cbf9c924ca5cc5e629381639165e1",
+      "bytes": 6882
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\source_resume.py",
+      "sha256": "8cdf17212c0396e3700633fe9e5ba6025ff777400e1cc3b9bb9871a7978f27b6",
+      "bytes": 8159
+    }
+  ],
+  "pending": "Atomic standalone checkpoint C2 closure and single final composed suite",
+  "canonical_validation": {
+    "runtime": "30 passed,1 CUDA-only skip",
+    "source_resume": "two original admission/reuse cases passed",
+    "actual_frozen_source_to_candidate": "source3updates completed; candidate replay DAG failure diagnosed separately; frozen producer kept",
+    "import_sort": "Four local import blocks sorted under actual canonical package classification; source definitions preserved"
+  },
+  "P4_composition": {
+    "author": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\audit-performance\\DELIVERY_MANIFEST.json",
+      "sha256": "3e9b141f84058994efabc19f4b3a0b758d5a594819ea75018c868b953e1624be",
+      "bytes": 12137
+    },
+    "independent": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\audit-performance\\resource-scopes\\independent-review\\DELIVERY_MANIFEST.json",
+      "sha256": "7f4ebb162687c0a58f14a50b1900a89c01371178d07c13e0d9df1a8cdef25954",
+      "bytes": 2111
+    },
+    "root_integration": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\reviewed-integration\\INTEGRATION.json",
+      "sha256": "a9790f996775980fb84ed1c69e87b29f2e393f09bd311e900b62e55e0b21892e",
+      "bytes": 26540
+    },
+    "root_review": "Read source-pool input/dose readiness, central floor/leases, terminal failure denominator, non-admission of retained failed JSON, domain target native+interop/coordinator and retained scientific adapters.",
+    "portable_tests": "Six source-identical test files placed under tests/research and tests/train; 46 author cases await canonical suite.",
+    "source_runtime_overlap": "Keep combined fixed/adaptive batch and actual row ordering; R3 changes runtime documentation only.",
+    "canonical_validation": "pending final composed suite"
+  },
+  "actual_source_replay_followup": {
+    "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\repository_audit_fixed_family_integration.json",
+    "sha256": "376be7587cfdd6e31dc7b422073404a75cc3975845e4c9f749806421b76155b1",
+    "bytes": 2321
+  }
+}

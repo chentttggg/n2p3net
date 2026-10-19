@@ -2,13 +2,16 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 from dataclasses import asdict
 from pathlib import Path
 
 from research.contracts import semantic_sha256
 from research.evaluation import verified_source_snapshot
+from research.source_chain_report import load_source_chain_report, source_chain_report_reference
 from transfer.checkpoint import checkpoint_training_contract, load_checkpoint_payload
+from transfer.result_reuse import ResultIntegrityError, read_verified_bytes
 
 
 class SourceChainResume:
@@ -16,19 +19,19 @@ class SourceChainResume:
         self.inventory = None
         self.record = {}
         self.tasks = {}
-        self._verified = {}
         if declaration is None:
             return
         path = Path(declaration["inventory"])
-        if hashlib.sha256(path.read_bytes()).hexdigest() != declaration["sha256"]:
+        content = path.read_bytes()
+        if hashlib.sha256(content).hexdigest() != declaration["sha256"]:
             raise ValueError("source resume inventory changed")
-        self.inventory = json.loads(path.read_text(encoding="utf-8"))
+        self.inventory = json.loads(content)
         if self.inventory["schema"] != "n2p3_source_resume_inventory/1":
             raise ValueError("unsupported source resume inventory")
         self.root = Path(self.inventory["source_root"])
-        self.record_path = self.root / "source_chain_record.json"
-        self.verify(self.record_path)
-        self.record = json.loads(self.record_path.read_text(encoding="utf-8"))
+        report_path = self.root / "source_chain_record.json"
+        self.record_path = source_chain_report_reference(report_path)
+        self.record = load_source_chain_report(report_path, verify=self.verify)
         snapshot = verified_source_snapshot(self.inventory["source_snapshot_manifest"])
         if snapshot["archive_sha256"] != self.record["source_snapshot"]["archive_sha256"]:
             raise ValueError("resumed source snapshot disagrees with the original run")
@@ -40,18 +43,17 @@ class SourceChainResume:
         if self.record.get("groups") and not self.record.get("tasks"):
             for group in self.record["groups"]:
                 path = Path(group["directory"]) / "source_chain_record.json"
-                relative = path.resolve().relative_to(self.root.resolve()).as_posix()
+                relative = source_chain_report_reference(path).resolve().relative_to(self.root.resolve()).as_posix()
                 if relative not in self.inventory["files"]:
                     continue
-                self.verify(path)
-                child = json.loads(path.read_text(encoding="utf-8"))
+                child = load_source_chain_report(path, verify=self.verify)
                 if child["source_snapshot"]["archive_sha256"] != snapshot["archive_sha256"]:
                     raise ValueError("resumed group snapshot disagrees with its parent run")
                 self.record.setdefault("tasks", []).extend(child.get("tasks", []))
                 self.record.setdefault("selection", []).extend(child.get("selection", []))
         self.tasks = {task["key"]: task for task in self.record["tasks"] if task["status"] == "completed"}
 
-    def verify(self, path):
+    def _expected_digest(self, path):
         path = Path(path)
         key = path.resolve().as_posix()
         try:
@@ -61,19 +63,34 @@ class SourceChainResume:
             expected = self.inventory.get("external_files", {}).get(key)
         if expected is None:
             raise ValueError("resumed artifact is not present in the frozen inventory")
-        stat = path.stat()
-        version = (stat.st_size, stat.st_mtime_ns)
-        if self._verified.get(key) != version:
-            with path.open("rb") as stream:
-                actual = hashlib.file_digest(stream, "sha256").hexdigest()
-            if actual != expected:
-                raise ValueError("resumed source artifact changed")
-            self._verified[key] = version
+        return expected
+
+    def verify(self, path):
+        path = Path(path)
+        expected = self._expected_digest(path)
+        with path.open("rb") as stream:
+            actual = hashlib.file_digest(stream, "sha256").hexdigest()
+        if actual != expected:
+            raise ValueError("resumed source artifact changed")
         return expected
 
     def acquire(self, key, config, ledger, cache_sha256, *, refit_key=None, architecture_record=None):
-        task = (self.tasks.get(key) if refit_key is None else next((task for task in self.tasks.values()
-                if task.get("refit_key") == list(refit_key)), None))
+        if refit_key is None:
+            task = self.tasks.get(key)
+        else:
+            candidates = [task for task in self.tasks.values() if task.get("refit_key") == list(refit_key)]
+            matches = [task for task in candidates
+                       if semantic_sha256(task["config"]) == semantic_sha256(asdict(config))
+                       and semantic_sha256(task["fit_ledger"]) == semantic_sha256(ledger)
+                       and task.get("source_cache_sha256", cache_sha256) == cache_sha256]
+            if candidates and not matches:
+                raise ValueError("resumed source task configuration, rows or cache changed")
+            if len(matches) > 1:
+                identities = {self._expected_digest(Path(task["checkpoint"])) for task in matches}
+                if len(identities) > 1:
+                    raise ValueError("resumed refit key has multiple distinct checkpoint producers")
+                matches.sort(key=lambda task: task["key"])
+            task = matches[0] if matches else None
         if task is None:
             return None
         if (semantic_sha256(task["config"]) != semantic_sha256(asdict(config))
@@ -86,9 +103,23 @@ class SourceChainResume:
         paths = {update: (Path(task["checkpoints"][str(update)]) if task.get("checkpoints") else
                           self.root / key / f"source.u{update}.pt") if refit_key is None
                  else Path(task["checkpoint"]) for update in updates}
+        selected_update = updates[0] if selecting else config.fixed_updates
+        selected_path = paths[selected_update]
+        selected_object = selected_path.resolve()
+        verified_paths = {}
         for path in paths.values():
-            self.verify(path)
-        payload = load_checkpoint_payload(paths[updates[0] if selecting else config.fixed_updates])
+            resolved = path.resolve()
+            if resolved != selected_object and resolved not in verified_paths:
+                verified_paths[resolved] = self.verify(path)
+        expected = self._expected_digest(selected_path)
+        try:
+            content = read_verified_bytes(selected_path, expected)
+        except ResultIntegrityError as error:
+            raise ValueError("resumed source artifact changed or is unavailable") from error
+        payload = load_checkpoint_payload(io.BytesIO(content))
+        del content
+        verified_paths[selected_object] = expected
+        verified = {update: verified_paths[path.resolve()] for update, path in paths.items()}
         if selecting and payload.get("global_early_stopping") != config.global_early_stopping.record():
             raise ValueError("resumed checkpoint has a different global early-stopping policy")
         contract = checkpoint_training_contract(payload)
@@ -103,7 +134,7 @@ class SourceChainResume:
                 "source_training_reuse": {"reused": True, "kind": "completed_previous_run",
                     "origin_record": str(self.record_path), "origin_task": task["key"],
                     "origin_source_snapshot_sha256": payload["source_snapshot_sha256"],
-                    "origin_checkpoints": {str(update): {"path": str(path), "sha256": self.verify(path)}
+                    "origin_checkpoints": {str(update): {"path": str(path), "sha256": verified[update]}
                                            for update, path in paths.items()}}}
 
     def prepared_source_view(self, outer, input_bindings):

@@ -1,0 +1,242 @@
+{
+  "schema": "n2p3_final_scope_slices_root_integration/1",
+  "root_review": {
+    "data": "Canonical producer parsing is shared only by source/exclusion consumers; domain/study axes stay separate with complete legacy fallback; per-writer sidecar staging preserves original replacement semantics; known-zero CNN availability unchanged.",
+    "statistics": "Complete requested fold roster, per-metric availability/diagnostic role, undefined null, existing no-fold/input validation and failure propagation; held candidate hit unchanged; active CLI is the actual consumer.",
+    "resume": "Inventory and checkpoint parse verified same bytes; preserve report-codec actual-byte checks, complete fit request/refit disambiguation, zero-fit source reuse and explicit worker/cache lifecycle.",
+    "dashboard": "Read readyline, HEAD and child liveness protocol; actual loopback proof keeps child exit and retires server/readers."
+  },
+  "inputs": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\G1-p2-adjudication\\DELIVERY_MANIFEST.json",
+      "bytes": 7579,
+      "sha256": "2554f421ffbdf046cb353d3bcbaf1e97f87c72e418d52492890f34dae79a3751"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\G1-p2-adjudication\\independent-review\\REVIEW_MANIFEST.json",
+      "bytes": 1461,
+      "sha256": "4382158295f6ffd79d814631d9e94f13c3fc7e9d3150b78c9e7d27b6688b14f7"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\baseline-evaluation-followup\\DELIVERY_MANIFEST.json",
+      "bytes": 4615,
+      "sha256": "7f9070f84f09d1b3902523edd0f63ba5a82adcad3659d278857a36212907ed72"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\resume-dashboard-review\\DELIVERY_MANIFEST.json",
+      "bytes": 2389,
+      "sha256": "14703b0f60b6569c4d3603b59b1dc8675e8673063bd05c678e76b4328bac067c"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\resume-dashboard-review\\supplement\\DELIVERY_MANIFEST.json",
+      "bytes": 1506,
+      "sha256": "2d734e19180106d962939957f55b364223c6027cad909111966c09b6dc0a3b4d"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\resume-dashboard-review\\independent-review\\SOURCE_REVIEW.json",
+      "bytes": 4861,
+      "sha256": "3ab04d46e388d25c6b7f39f116d0383cc501427a7318fa01fdc6f51047760d99"
+    }
+  ],
+  "before_archive": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\reviewed-integration\\root_before_G1_statistics_resume.zip",
+    "bytes": 38656,
+    "sha256": "763a47a86b7c27a59c781b492d089e474b8d52a35055fbb5e7c1e156c89f3dde"
+  },
+  "files": [
+    {
+      "scope": "G1_P2",
+      "path": "src/data/artifact_sidecar.py",
+      "candidate": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\G1-p2-adjudication\\candidate\\src\\data\\artifact_sidecar.py",
+        "bytes": 8436,
+        "sha256": "7f009fa93828b71129c1d923914cb0e0c8ecbc26a453ade5d9ca3f1658d2babc"
+      },
+      "before_sha256": "a7b45cfe07b85e754c66223b1f18130b841ff33130d9e1d59668396021e664ce",
+      "canonical": {
+        "path": "D:\\BCI\\worktrees\\research-director\\src\\data\\artifact_sidecar.py",
+        "bytes": 8295,
+        "sha256": "eb5e67740195610dd75014d7de3024e36736c2c8bca6f44013cfd8ab23685059"
+      },
+      "relationship": "candidate with LF only; AST equal"
+    },
+    {
+      "scope": "G1_P2",
+      "path": "src/data/exclusions.py",
+      "candidate": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\G1-p2-adjudication\\candidate\\src\\data\\exclusions.py",
+        "bytes": 2827,
+        "sha256": "753fafb0b4a6b44f9e47533fe75764cbe4b79963724cab0a9f56b4a6be881aa9"
+      },
+      "before_sha256": "a4bc8c78d7efce25aeee0c1c13f0f8b6d021249e22c2eeb0f27d5c0fbe27131a",
+      "canonical": {
+        "path": "D:\\BCI\\worktrees\\research-director\\src\\data\\exclusions.py",
+        "bytes": 2764,
+        "sha256": "a9f197fdaa66a73f2f5a71b3b69636a385647f4ed6db19f803b9e3ad1d46703f"
+      },
+      "relationship": "candidate with LF only; AST equal"
+    },
+    {
+      "scope": "G1_P2",
+      "path": "src/data/identity.py",
+      "candidate": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\G1-p2-adjudication\\candidate\\src\\data\\identity.py",
+        "bytes": 17805,
+        "sha256": "9ad3309e2a2ead0531a313f9940c71c4082d809ee936bfbd5f033af603c372d6"
+      },
+      "before_sha256": "3b0568eb3ba25321dab62768dbb40d83330d3dbb6cee06b3ff5dcb7482f6791c",
+      "canonical": {
+        "path": "D:\\BCI\\worktrees\\research-director\\src\\data\\identity.py",
+        "bytes": 17805,
+        "sha256": "9ad3309e2a2ead0531a313f9940c71c4082d809ee936bfbd5f033af603c372d6"
+      },
+      "relationship": "candidate with LF only; AST equal"
+    },
+    {
+      "scope": "G1_P2",
+      "path": "src/data/study.py",
+      "candidate": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\G1-p2-adjudication\\candidate\\src\\data\\study.py",
+        "bytes": 12796,
+        "sha256": "fed1fb1634f59828eb49e296fa7c367c6ee22bc7fbe25f60cd49a513d0ead441"
+      },
+      "before_sha256": "2ee86bc1b6ee91aa0211a7f7cda93a1263aa551b888733fe9c0f4f198f4df69e",
+      "canonical": {
+        "path": "D:\\BCI\\worktrees\\research-director\\src\\data\\study.py",
+        "bytes": 12496,
+        "sha256": "813d79f8398734ea10a4299254a4f09047e754793aeae2549baafb314b20491b"
+      },
+      "relationship": "candidate with LF only; AST equal"
+    },
+    {
+      "scope": "G1_P2",
+      "path": "tests/data/test_g1_p2_boundaries.py",
+      "candidate": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\G1-p2-adjudication\\tests\\test_g1_p2_boundaries.py",
+        "bytes": 7751,
+        "sha256": "b214d70e6c622f1c8a13697dac32d49e3e5e05c87813b4ce51e71e58a62f8f3a"
+      },
+      "before_sha256": null,
+      "canonical": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tests\\data\\test_g1_p2_boundaries.py",
+        "bytes": 7751,
+        "sha256": "b214d70e6c622f1c8a13697dac32d49e3e5e05c87813b4ce51e71e58a62f8f3a"
+      },
+      "relationship": "candidate with LF only; AST equal"
+    },
+    {
+      "scope": "fold_statistics",
+      "path": "src/baselines/evaluate.py",
+      "candidate": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\baseline-evaluation-followup\\integration\\src\\baselines\\evaluate.py",
+        "bytes": 76231,
+        "sha256": "84a9c5aa1a9e6008212f7481edc87d21a12f21a96d552f0a56b3937b289dbc46"
+      },
+      "before_sha256": "144d9b6059f6986189cf0915bc760b4feb99621515fb76a444f9bdf82d71c9e9",
+      "canonical": {
+        "path": "D:\\BCI\\worktrees\\research-director\\src\\baselines\\evaluate.py",
+        "bytes": 74759,
+        "sha256": "203f98b77a01178b12ef580a16284d2d210b1fcf28774c5b96292b4c67c1590b"
+      },
+      "relationship": "candidate with LF only; AST equal"
+    },
+    {
+      "scope": "fold_statistics",
+      "path": "experiments/run_eeg_loso.py",
+      "candidate": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\baseline-evaluation-followup\\integration\\experiments\\run_eeg_loso.py",
+        "bytes": 33574,
+        "sha256": "9c2415d2a5611e74ada3ebeb5a519b1eaa36475e7fec1b142f883471191b8e03"
+      },
+      "before_sha256": "4572282c426c2f103a2222818004647450f2b0ddcff5e26b0f167d7cbdbe290a",
+      "canonical": {
+        "path": "D:\\BCI\\worktrees\\research-director\\experiments\\run_eeg_loso.py",
+        "bytes": 32813,
+        "sha256": "839d79c672ca0d7a7ca82549a13829d06b7a2a6cad55d96259e57a34f0f093c8"
+      },
+      "relationship": "candidate with LF only; AST equal"
+    },
+    {
+      "scope": "fold_statistics",
+      "path": "tests/research/test_binary_metric_availability.py",
+      "candidate": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\baseline-evaluation-followup\\integration\\tests\\research\\test_binary_metric_availability.py",
+        "bytes": 8647,
+        "sha256": "fa3a90f997b869b0742d207aa7dbe431cb94c60086e96b42bf785c2da3e7b581"
+      },
+      "before_sha256": null,
+      "canonical": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tests\\research\\test_binary_metric_availability.py",
+        "bytes": 8647,
+        "sha256": "fa3a90f997b869b0742d207aa7dbe431cb94c60086e96b42bf785c2da3e7b581"
+      },
+      "relationship": "candidate with LF only; AST equal"
+    },
+    {
+      "scope": "resume_dashboard",
+      "path": "experiments/run_with_dashboard.py",
+      "candidate": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\resume-dashboard-review\\candidate\\experiments\\run_with_dashboard.py",
+        "bytes": 6501,
+        "sha256": "f6a97b86eedc32242d8e014f37d48ad3878a3b2453e6f3ac422910d99dcbba11"
+      },
+      "before_sha256": "64f71d9d19790c3fb68b43924fe93fd741bee9104c45d3cc2d1d6b4b43a046f0",
+      "canonical": {
+        "path": "D:\\BCI\\worktrees\\research-director\\experiments\\run_with_dashboard.py",
+        "bytes": 6333,
+        "sha256": "010a028c8385d10c512c1c8457c74ff18520d014738329246fdbe72e0f072984"
+      },
+      "relationship": "candidate with LF only; AST equal"
+    },
+    {
+      "scope": "resume_dashboard",
+      "path": "src/research/source_resume.py",
+      "candidate": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\resume-dashboard-review\\supplement\\candidate\\src\\research\\source_resume.py",
+        "bytes": 9782,
+        "sha256": "7a5aa072fc0bd65b298b00a03b3668093fc8b7840d232ca8fe954322faf607be"
+      },
+      "before_sha256": "8cdf17212c0396e3700633fe9e5ba6025ff777400e1cc3b9bb9871a7978f27b6",
+      "canonical": {
+        "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\source_resume.py",
+        "bytes": 9782,
+        "sha256": "7a5aa072fc0bd65b298b00a03b3668093fc8b7840d232ca8fe954322faf607be"
+      },
+      "relationship": "candidate with LF only; AST equal"
+    },
+    {
+      "scope": "resume_dashboard",
+      "path": "tests/research/test_resume_dashboard_boundaries.py",
+      "candidate": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\resume-dashboard-review\\candidate\\tests\\research\\test_resume_dashboard_boundaries.py",
+        "bytes": 9298,
+        "sha256": "0e116f6db4c6c8defe59cf37bb5c7d498a8e6ec4ec3205bed12e3541e3bf8cd7"
+      },
+      "before_sha256": null,
+      "canonical": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tests\\research\\test_resume_dashboard_boundaries.py",
+        "bytes": 9298,
+        "sha256": "0e116f6db4c6c8defe59cf37bb5c7d498a8e6ec4ec3205bed12e3541e3bf8cd7"
+      },
+      "relationship": "candidate with LF only; AST equal"
+    },
+    {
+      "scope": "resume_dashboard",
+      "path": "tests/research/test_resume_inventory_image.py",
+      "candidate": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\resume-dashboard-review\\supplement\\candidate\\tests\\research\\test_resume_inventory_image.py",
+        "bytes": 2318,
+        "sha256": "aebbc02051124a8c0e58bf61fad96df90caa3201f8e5bcc1be0d52de397cf857"
+      },
+      "before_sha256": null,
+      "canonical": {
+        "path": "D:\\BCI\\worktrees\\research-director\\tests\\research\\test_resume_inventory_image.py",
+        "bytes": 2318,
+        "sha256": "aebbc02051124a8c0e58bf61fad96df90caa3201f8e5bcc1be0d52de397cf857"
+      },
+      "relationship": "candidate with LF only; AST equal"
+    }
+  ],
+  "validation": "pending final composed suite",
+  "training_or_real_EEG_reads": 0
+}

@@ -107,7 +107,7 @@ def _ar_covariance_fast(noise: TemporalNoise, n_samples: int) -> np.ndarray:
 # Exact propagated covariance
 # ---------------------------------------------------------------------------
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class ExactPropagatedCovariance:
     """Raw F K_AR F.T and a declared Gaussian measure, without a ridge.
 
@@ -115,6 +115,8 @@ class ExactPropagatedCovariance:
     requires explicit orthonormal support_basis Q for the identified law
     Q (Q.T K Q) Q.T. Its density uses Euclidean volume on that support.
     Numerical rank never silently selects or truncates the statistical law.
+    Instances use object identity; array/state identity is verified by their
+    explicit integrity digest, rather than elementwise Python equality.
     """
     K_propagated: np.ndarray
     K_ar: np.ndarray

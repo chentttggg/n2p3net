@@ -7,14 +7,19 @@ import csv
 import hashlib
 import io
 import json
+import os
 import sys
+import tempfile
 import zipfile
+from contextlib import ExitStack
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from data.brainsync_contract import validate_brainsync_bids_recording  # noqa: E402
 from data.contract import brainsync_reference_record  # noqa: E402
+from data.file_read_lease import OriginalFileReadLease  # noqa: E402
 from research.execution import atomic_write_json  # noqa: E402
 
 
@@ -78,7 +83,11 @@ def prepare_session_correction(root: Path, *, previous: str, authority: str, all
             with path.open(encoding="utf-8-sig", newline="") as stream:
                 reader = csv.DictReader(stream, delimiter="\t")
                 fields, rows = reader.fieldnames, list(reader)
+            if fields is None:
+                raise ValueError('BIDS channels reference table requires an explicit header')
             if "reference" in fields:
+                if any(row['reference'] != previous for row in rows if row.get('type', '').upper() == 'EEG'):
+                    raise ValueError('all original EEG channel references must agree with the explicit previous label')
                 for row in rows:
                     if row["reference"] == previous:
                         row["reference"] = replacement
@@ -92,14 +101,33 @@ def prepare_session_correction(root: Path, *, previous: str, authority: str, all
             for path, value in changes.items()}
 
 
+def _replace_metadata(path, content):
+    path = Path(path)
+    descriptor, name = tempfile.mkstemp(prefix='.'+path.name+'.reference-', dir=path.parent)
+    staged = Path(name)
+    try:
+        with os.fdopen(descriptor, 'wb') as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        staged.replace(path)
+    finally:
+        staged.unlink(missing_ok=True)
+
+
 def correct_sessions(roots, *, previous: str, authority: str, output: Path, allow_incomplete: bool = False):
     roots = [Path(path).resolve() for path in roots]
-    if len(roots) != len(set(roots)):
-        raise ValueError("Reference correction sessions must be unique")
+    if not roots or len(roots) != len(set(roots)) or not previous.strip() or not authority.strip():
+        raise ValueError("Reference correction requires unique sessions and explicit previous label and authority")
+    output = Path(output).resolve()
+    if any(output == root or output.is_relative_to(root) for root in roots):
+        raise ValueError('reference correction output must be a new directory outside every source session')
+    if output.exists():
+        raise FileExistsError(output)
     changes = {}
     for root in roots:
         changes.update(prepare_session_correction(root, previous=previous, authority=authority, allow_incomplete=allow_incomplete))
-    output.mkdir(parents=True, exist_ok=True)
+    output.mkdir(parents=True, exist_ok=False)
     archive = output / "original_reference_metadata.zip"
     if archive.exists():
         raise FileExistsError(archive)
@@ -112,19 +140,6 @@ def correct_sessions(roots, *, previous: str, authority: str, output: Path, allo
         for index, (path, content) in enumerate(old.items()):
             if zipped.read(f"{index:04}/{path.name}") != content:
                 raise ValueError("Reference metadata archive verification failed")
-    # All sessions are prevalidated and archived before any active file is replaced.
-    try:
-        for path, value in changes.items():
-            if path.read_bytes() != old[path]:
-                raise ValueError(f"Concurrent reference metadata change: {path}")
-            path.write_bytes(value)
-    except Exception:
-        for path, value in old.items():
-            if path.read_bytes() == changes[path]:
-                path.write_bytes(value)
-        raise
-    if any(_sha(path.read_bytes()) != digest for path, digest in signals.items()):
-        raise ValueError("EDF changed during metadata correction")
     manifest = {"schema": "brainsync-reference-correction-manifest/1", "authority": authority,
                 "reference": brainsync_reference_record(), "archive": archive.name,
                 "archive_sha256": _sha(archive.read_bytes()),
@@ -133,63 +148,150 @@ def correct_sessions(roots, *, previous: str, authority: str, output: Path, allo
                            "archive_member": f"{index:04}/{path.name}"}
                           for index, (path, value) in enumerate(changes.items())],
                 "unchanged_edf_sha256": {str(path): digest for path, digest in signals.items()},
-                "raw_header_policy": "historical binary headers and event logs remain original; corrected BIDS/session metadata is authoritative"}
-    atomic_write_json(output / "manifest.json", manifest)
+                "raw_header_policy": "historical binary headers and event logs remain original; corrected BIDS/session metadata is authoritative",
+                'postvalidation': 'explicit_incomplete_metadata_only_not_admitted' if allow_incomplete else 'full_BrainSync_BIDS_contract'}
+    journal = output/'transaction.json'
+    atomic_write_json(journal, {**manifest, 'transaction_status': 'prepared_before_active_mutation'})
+    written = []
+    # The archive and complete recovery mapping are durable before mutation.
+    try:
+        for path, value in changes.items():
+            if path.read_bytes() != old[path]:
+                raise ValueError(f"Concurrent reference metadata change: {path}")
+            written.append(path)
+            _replace_metadata(path, value)
+        with ExitStack() as postcondition_leases:
+            if allow_incomplete:
+                postcondition_leases.enter_context(OriginalFileReadLease((*changes, *signals)))
+            else:
+                for root in roots:
+                    validated = validate_brainsync_bids_recording(root)
+                    postcondition_leases.callback(validated.bids.close)
+                    validated.bids.assert_content_unchanged()
+            if any(_sha(path.read_bytes()) != digest for path, digest in signals.items()):
+                raise ValueError("EDF changed during metadata correction")
+            mismatched = [str(path) for path, expected in changes.items() if path.read_bytes() != expected]
+            if mismatched:
+                raise ValueError('reference correction metadata differs from its declared after bytes: '+', '.join(mismatched))
+            atomic_write_json(output / "manifest.json", manifest)
+    except BaseException as error:
+        rollback_errors = []
+        concurrent_metadata = []
+        for path in reversed(written):
+            try:
+                current = path.read_bytes() if path.exists() else None
+                if current == changes[path]:
+                    _replace_metadata(path, old[path])
+                elif current != old[path]:
+                    concurrent_metadata.append(str(path))
+            except BaseException as rollback_error:
+                rollback_errors.append(f'{path}: {type(rollback_error).__name__}')
+        if concurrent_metadata:
+            error.add_note('concurrent metadata preserved; transaction journal requires manual reconciliation: '+', '.join(concurrent_metadata))
+        if rollback_errors:
+            error.add_note('reference rollback incomplete; use the saved transaction journal: '+', '.join(rollback_errors))
+        raise
     return manifest
+
+
+def recover_reference_transaction(output):
+    """Restore a prepared interrupted metadata transaction from its checked archive."""
+    output = Path(output).resolve()
+    if (output/'manifest.json').exists():
+        raise ValueError('a completed reference correction is not an interrupted transaction')
+    journal = json.loads((output/'transaction.json').read_text(encoding='utf-8'))
+    if journal.get('transaction_status') != 'prepared_before_active_mutation':
+        raise ValueError('an explicit prepared reference transaction is required')
+    archive = output/journal['archive']
+    if archive.parent != output or _sha(archive.read_bytes()) != journal['archive_sha256']:
+        raise ValueError('reference recovery archive changed its original bytes')
+    restore = []
+    roots = tuple(Path(root).resolve() for root in journal['sessions'])
+    with zipfile.ZipFile(archive) as zipped:
+        for row in journal['files']:
+            path = Path(row['path']).resolve()
+            if not any(path.is_relative_to(root) for root in roots):
+                raise ValueError('reference recovery metadata must remain in its declared original session')
+            original = zipped.read(row['archive_member'])
+            current = _sha(path.read_bytes())
+            if _sha(original) != row['before_sha256'] or current not in {row['before_sha256'], row['after_sha256']}:
+                raise ValueError('reference recovery refuses changed original or concurrently edited metadata')
+            if current == row['after_sha256']:
+                restore.append((path, original))
+    for path, original in restore:
+        _replace_metadata(path, original)
+    return {'status': 'original_metadata_restored', 'restored_files': len(restore), 'EEG_modified': False}
 
 
 def amend_continuous_quality_reference(source: Path, session_roots, *, previous: str, authority: str, output: Path):
     """Rebind a metadata-only correction after verifying the original fit EDF bytes."""
-    from data.brainsync_contract import validate_brainsync_bids_session
-    from data.continuous_qc import continuous_qc_from_record, load_continuous_qc, save_continuous_qc
+    with ExitStack() as input_leases:
+        from data.brainsync_contract import validate_brainsync_bids_session
+        from data.continuous_qc import (
+            continuous_qc_from_record,
+            load_continuous_qc,
+            save_continuous_qc,
+        )
 
-    if output.exists():
-        raise FileExistsError(output)
-    original = load_continuous_qc(source)
-    if original.fit_provenance.get("source_reference") != previous:
-        raise ValueError("Quality model does not declare the explicit previous acquisition reference")
-    sessions = {item.session_id: item for item in map(validate_brainsync_bids_session, session_roots)}
-    for recorded in original.fit_provenance.get("sources", []):
-        session = sessions.get(recorded["session_id"])
-        if session is None or session.bids.source_reference != brainsync_reference_record()["label"]:
-            raise ValueError("Quality correction requires all original fit sessions with corrected REF")
-        if _sha(session.bids.raw_path.read_bytes()) != recorded["raw_sha256"]:
-            raise ValueError("Original quality fit EEG bytes changed; metadata correction cannot reuse this fit")
-        correction = session.manifest.get("reference_correction", {})
-        if correction.get("previous_label") != previous or correction.get("authority") != authority:
-            raise ValueError("Quality and raw metadata corrections need the same explicit authority")
-    if not original.fit_provenance.get("sources"):
-        raise ValueError("Quality model lacks raw fit identities")
-    updated = original.record()
-    updated["fit_provenance"]["source_reference"] = brainsync_reference_record()["label"]
-    updated["fit_provenance"]["reference_metadata_correction"] = {
-        "authority": authority, "previous_label": previous,
-        "corrected_reference": brainsync_reference_record(),
-        "original_model_sha256": _sha(source.read_bytes()), "parameters_refitted": False,
-    }
-    if updated.get("epoch_recovery") is not None:
-        updated["epoch_recovery"]["fit_provenance"]["source_reference"] = brainsync_reference_record()["label"]
-        updated["epoch_recovery"]["fit_provenance"]["reference_metadata_correction"] = updated["fit_provenance"]["reference_metadata_correction"]
-    amended = continuous_qc_from_record(updated)
-    for key in set(original.record()) - {"fit_provenance", "epoch_recovery"}:
-        if amended.record()[key] != original.record()[key]:
-            raise ValueError("Metadata correction changed a numerical quality parameter")
-    if original.epoch_recovery is not None:
-        for key in set(original.epoch_recovery.record()) - {"fit_provenance"}:
-            if amended.epoch_recovery.record()[key] != original.epoch_recovery.record()[key]:
-                raise ValueError("Metadata correction changed an epoch recovery parameter")
-    save_continuous_qc(output, amended)
-    return amended
+        if output.exists():
+            raise FileExistsError(output)
+        original = load_continuous_qc(source)
+        if original.fit_provenance.get("source_reference") != previous:
+            raise ValueError("Quality model does not declare the explicit previous acquisition reference")
+        sessions = {}
+        for root in session_roots:
+            session = validate_brainsync_bids_session(root)
+            input_leases.callback(session.bids.close)
+            sessions[session.session_id] = session
+        for recorded in original.fit_provenance.get("sources", []):
+            session = sessions.get(recorded["session_id"])
+            if session is None or session.bids.source_reference != brainsync_reference_record()["label"]:
+                raise ValueError("Quality correction requires all original fit sessions with corrected REF")
+            if _sha(session.bids.raw_path.read_bytes()) != recorded["raw_sha256"]:
+                raise ValueError("Original quality fit EEG bytes changed; metadata correction cannot reuse this fit")
+            correction = session.manifest.get("reference_correction", {})
+            if correction.get("previous_label") != previous or correction.get("authority") != authority:
+                raise ValueError("Quality and raw metadata corrections need the same explicit authority")
+        if not original.fit_provenance.get("sources"):
+            raise ValueError("Quality model lacks raw fit identities")
+        updated = original.record()
+        updated["fit_provenance"]["source_reference"] = brainsync_reference_record()["label"]
+        updated["fit_provenance"]["reference_metadata_correction"] = {
+            "authority": authority, "previous_label": previous,
+            "corrected_reference": brainsync_reference_record(),
+            "original_model_sha256": _sha(source.read_bytes()), "parameters_refitted": False,
+        }
+        if updated.get("epoch_recovery") is not None:
+            updated["epoch_recovery"]["fit_provenance"]["source_reference"] = brainsync_reference_record()["label"]
+            updated["epoch_recovery"]["fit_provenance"]["reference_metadata_correction"] = updated["fit_provenance"]["reference_metadata_correction"]
+        amended = continuous_qc_from_record(updated)
+        for key in set(original.record()) - {"fit_provenance", "epoch_recovery"}:
+            if amended.record()[key] != original.record()[key]:
+                raise ValueError("Metadata correction changed a numerical quality parameter")
+        if original.epoch_recovery is not None:
+            for key in set(original.epoch_recovery.record()) - {"fit_provenance"}:
+                if amended.epoch_recovery.record()[key] != original.epoch_recovery.record()[key]:
+                    raise ValueError("Metadata correction changed an epoch recovery parameter")
+        save_continuous_qc(output, amended)
+        return amended
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--session-dir", type=Path, action="append", required=True)
-    parser.add_argument("--previous-label", required=True)
-    parser.add_argument("--authority", required=True)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--session-dir", type=Path, action="append")
+    parser.add_argument("--previous-label")
+    parser.add_argument("--authority")
+    parser.add_argument("--output", type=Path)
+    parser.add_argument('--recover-transaction', type=Path)
     parser.add_argument("--allow-incomplete", action="store_true", help="Correct existing metadata without creating missing sidecars or changing admission.")
     args = parser.parse_args()
+    if args.recover_transaction is not None:
+        if args.session_dir or args.previous_label or args.authority or args.output or args.allow_incomplete:
+            parser.error('transaction recovery cannot be combined with a new correction request')
+        print(json.dumps(recover_reference_transaction(args.recover_transaction)))
+        return
+    if not args.session_dir or not args.previous_label or not args.authority or args.output is None:
+        parser.error('new correction requires session-dir, previous-label, authority and output')
     record = correct_sessions(args.session_dir, previous=args.previous_label, authority=args.authority, output=args.output,
                               allow_incomplete=args.allow_incomplete)
     print(json.dumps({"sessions": len(record["sessions"]), "corrected_files": len(record["files"]),

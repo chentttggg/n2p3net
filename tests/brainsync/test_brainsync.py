@@ -1148,11 +1148,14 @@ def test_brainsync_runner_derives_scope_and_keeps_policy_failure_in_denominator(
     if with_ocular:
         assert result["evidence_scope"]["target_preprocessing_calibrated"] is True
         assert result["evidence_scope"]["zero_target_fit_claim"] is False
-        argv = _runner_argv(cache, checkpoint, source_snapshot_manifest, output, test_limit=1)
+        original_output = output.read_bytes()
+        failed_output = tmp_path / "all_failed.json"
+        argv = _runner_argv(cache, checkpoint, source_snapshot_manifest, failed_output, test_limit=1)
         argv.extend(["--evaluation-snapshot-manifest", str(evaluation_manifest)])
         monkeypatch.setattr("sys.argv", argv)
         run_brainsync_cross_decision()
-        all_failed = read_json(output)
+        all_failed = read_json(failed_output)
+        assert output.read_bytes() == original_output
         assert all_failed["decision_accounting"]["requested"] == 1
         assert all_failed["decision_accounting"]["eligible"] == 0
         assert all_failed["decision_accounting"]["pre_evaluation_failed"] == 1
@@ -1172,8 +1175,12 @@ def test_brainsync_runner_derives_scope_and_keeps_policy_failure_in_denominator(
         source["input_mean"] = [1e9] * dataset.n_channels
         source["input_std"] = [1e-3] * dataset.n_channels
         torch.save(source, checkpoint)
+        original_output = output.read_bytes()
+        repeated_output = tmp_path / "repeated.json"
+        argv[argv.index("--output") + 1] = str(repeated_output)
         run_brainsync_cross_decision()
-        repeated = read_json(output)
+        repeated = read_json(repeated_output)
+        assert output.read_bytes() == original_output
         np.testing.assert_array_equal(
             result["records"][0]["suffix_predictions"]["raw_logits"],
             repeated["records"][0]["suffix_predictions"]["raw_logits"],

@@ -9,8 +9,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
+for location in (ROOT, SRC):
+    if str(location) not in sys.path:
+        sys.path.insert(0, str(location))
 
 from data.brainsync import (  # noqa: E402
     BRAIN_SYNC_PREPROCESSING,
@@ -18,8 +19,9 @@ from data.brainsync import (  # noqa: E402
     load_brainsync_sessions_resilient,
 )
 from data.continuous_qc import load_continuous_qc  # noqa: E402
-from data.epochs import load_preprocessing_spec, save_epoch_dataset  # noqa: E402
+from data.epochs import load_preprocessing_spec  # noqa: E402
 from data.ocular import load_eog_regression  # noqa: E402
+from experiments.brainsync_cli_artifacts import publish_epoch_cache_new  # noqa: E402
 
 
 def _environment_path(name: str) -> str | None:
@@ -27,7 +29,7 @@ def _environment_path(name: str) -> str | None:
     return value or None
 
 
-def main() -> None:
+def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--session-dir",
@@ -52,7 +54,7 @@ def main() -> None:
     parser.add_argument(
         "--ocular-model", type=Path, help="Frozen calibration-fitted EOG regression JSON."
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     session_dirs = args.session_dir or [_environment_path("BRAIN_SYNC_SESSION_DIR")]
     if not session_dirs or any(value is None for value in session_dirs):
@@ -64,6 +66,9 @@ def main() -> None:
             parser.error("--output or BRAIN_SYNC_OUTPUT_DIR is required")
         output_value = str(Path(output_dir) / "brainsync_epochs.npz")
 
+    output = Path(output_value).resolve()
+    if output.exists() or output.with_suffix('.record.json').exists():
+        parser.error('choose a new cache path; existing cache and attestation are immutable')
     print("PROGRESS 5", flush=True)
     result = load_brainsync_sessions_resilient(
         [str(value) for value in session_dirs],
@@ -73,7 +78,7 @@ def main() -> None:
         continuous_qc_model=None if args.continuous_qc_model is None else load_continuous_qc(args.continuous_qc_model),
     )
     print("PROGRESS 85", flush=True)
-    output = save_epoch_dataset(
+    output = publish_epoch_cache_new(
         output_value,
         result.dataset,
         compressed=not args.uncompressed,

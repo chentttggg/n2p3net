@@ -1,4 +1,8 @@
-"""Read-only, target-free recording reports using production preprocessing and QC."""
+"""Read-only, target-free recording reports using production preprocessing and QC.
+
+not_evaluable means the requested epoch-level report could not complete. It
+can retain an established raw-QC availability diagnosis and its full counts.
+"""
 
 from __future__ import annotations
 
@@ -22,11 +26,22 @@ from data.brainsync_contract import validate_brainsync_bids_recording
 from data.channel import canonical_channel_name
 from data.dataset import read_raw
 from data.qc_features import compute_epoch_qc_features
+from research.contracts import semantic_sha256
 from research.execution import atomic_write_json
 from transfer.quality import transform_epoch_quality
 
 REPORT_SCHEMA = "n2p3_recording_quality_report/1"
 PLOT_COLORS = ("#147d70", "#3879b6", "#8c63ac", "#ae642e", "#3c8e9b", "#74852e", "#bc5370", "#787f86")
+
+
+def generator_program_record():
+    """Bind the actual Python modules that produce the report's numeric views."""
+    modules = {name: file_sha256(Path(importlib.import_module(name).__file__)) for name in (
+        "research.recording_quality", "data.dataset", "data.brainsync", "data.brainsync_contract",
+        "data.bids_eeg", "data.preprocess", "data.qc_features", "transfer.quality",
+    )}
+    record = {"schema": "n2p3_quality_report_generator/1", "module_sha256": modules}
+    return {**record, "digest": semantic_sha256(record)}
 
 
 def file_sha256(path: Path) -> str:
@@ -236,7 +251,8 @@ def create_recording_quality_report(session_dir, output_dir, *, loader=load_brai
               "target_labels_used": False, "fit_performed": False, "classifier_evaluated": False,
               "request": request or {}, "notes": [], "sections": [], "plots": [],
               "software": {name: importlib.metadata.version(name) for name in ("numpy", "scipy", "mne", "matplotlib")},
-              "generator_sha256": file_sha256(Path(__file__))}
+              "generator_sha256": file_sha256(Path(__file__)),
+              "generator_program": generator_program_record()}
     validated = None
     try:
         if callable(epoch_quality):

@@ -14,13 +14,21 @@ from pathlib import Path
 import numpy as np
 from research.channel_noise_mechanism import FittedChannelNoise, NoiseGeometry
 from research.frozen_metadata import freeze_metadata, plain_metadata
-from research.gaussian_local_factor import SharedResponseChart, require_once_record_partition
+from research.gaussian_local_factor import (
+    SharedResponseChart,
+    require_once_record_partition,
+)
 from research.joint_response_noise_reference import TwoExposureWithinReference
 from research.joint_response_scale import NumericalResolutionError, _augmented_qr
+from research.private_ar1_noise_point import UnrepresentableJointParameterPointError
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
-
-from transfer.noise_model import array_digest, finite_real_array, frozen_array, metadata_digest
+from transfer.noise_model import (
+    array_digest,
+    finite_real_array,
+    frozen_array,
+    metadata_digest,
+)
 from transfer.temporal_noise import TemporalNoise
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
@@ -183,6 +191,32 @@ class AR1ResidualStatistics:
     current: np.ndarray
 
 
+@dataclass(frozen=True)
+class AR1InnovationStatistics:
+    """Direct E[wwT] and E[w e_previousT], w=e_current-diag(phi)e_previous.
+
+    These are formed from posterior means/factors before second moments are
+    accumulated. They are distinct from the complete raw residual diagnostics.
+    """
+
+    record_id: str
+    native_samples: int
+    initial: np.ndarray
+    innovation_second: np.ndarray
+    innovation_previous: np.ndarray
+
+    def __post_init__(self):
+        initial = finite_real_array(self.initial, name='one original stationary startup moment')
+        second = finite_real_array(self.innovation_second, name='direct complete innovation second moment')
+        cross = finite_real_array(self.innovation_previous, name='direct complete innovation/previous cross moment')
+        if (type(self.native_samples) is not int or self.native_samples < 1
+                or initial.ndim != 2 or initial.shape[0] != initial.shape[1]
+                or second.shape != initial.shape or cross.shape != initial.shape):
+            raise ValueError('direct AR1 moments retain one complete original channel grid and record')
+        for name, value in (('initial', initial), ('innovation_second', second), ('innovation_previous', cross)):
+            object.__setattr__(self, name, frozen_array(value))
+
+
 def ar1_residual_statistics(moments, *, channels, record_id):
     """One stationary initial moment per record, all consecutive tail moments."""
     if len(moments.mean) % channels:
@@ -205,12 +239,14 @@ class PrivateAR1Coordinates:
     reference_innovation_root: np.ndarray
     conditioning_samples: int
     reference_binding: dict
+    numeric_point_programme: str = 'legacy_markov_full_prefix'
 
     def __post_init__(self):
         root = finite_real_array(self.reference_innovation_root, name='fixed noise unit/reference root')
         c = len(self.geometry.channels)
         if (root.shape != (c, c) or np.any(np.triu(root, 1) != 0) or np.any(np.diag(root) <= 0)
-                or type(self.conditioning_samples) is not int or self.conditioning_samples < 2):
+                or type(self.conditioning_samples) is not int or self.conditioning_samples < 2
+                or self.numeric_point_programme not in {'legacy_markov_full_prefix', 'small_stationary_AR1_innovations'}):
             raise ValueError('private AR1 coordinates need an explicit proper physical noise reference')
         object.__setattr__(self, 'reference_innovation_root', frozen_array(root))
         object.__setattr__(self, 'reference_binding', freeze_metadata(self.reference_binding))
@@ -222,7 +258,17 @@ class PrivateAR1Coordinates:
 
     @cached_property
     def identity(self):
-        return metadata_digest({'geometry': self.geometry.record(), 'conditioning': self.conditioning_samples,
+        if self.numeric_point_programme != 'legacy_markov_full_prefix':
+            from research.private_ar1_noise_point import (
+                IMPLEMENTATION_SHA256 as POINT_PRODUCER_SHA256,
+            )
+        else:
+            POINT_PRODUCER_SHA256 = None
+        programme = ({'numeric_point_programme': self.numeric_point_programme}
+            if self.numeric_point_programme != 'legacy_markov_full_prefix' else {})
+        if POINT_PRODUCER_SHA256 is not None:
+            programme['numeric_point_producer'] = POINT_PRODUCER_SHA256
+        return metadata_digest({'geometry': self.geometry.record(), 'conditioning': self.conditioning_samples, **programme,
             'reference_root': array_digest(self.reference_innovation_root), 'reference': self.reference_binding,
             'family': 'private_AR1_full_innovation_covariance', 'eta': 1.,
             'coordinates': 'atanh_AR_and_relative_lower_logdiagonal_cholesky',
@@ -237,8 +283,14 @@ class PrivateAR1Coordinates:
         with np.errstate(over='raise', under='raise', invalid='raise'):
             for value, (i, j) in zip(parameters[c:], zip(*np.tril_indices(c), strict=True), strict=True):
                 relative[i, j] = np.exp(value) if i == j else value
-        physical = self.reference_innovation_root@relative
-        covariance = physical@physical.T
+            physical = self.reference_innovation_root@relative
+            covariance = physical@physical.T
+        if self.numeric_point_programme == 'small_stationary_AR1_innovations':
+            from research.private_ar1_noise_point import PrivateAR1NoisePoint
+
+            noise = PrivateAR1NoisePoint(phi, covariance, self.geometry, self.conditioning_samples,
+                {'fit_scope': 'numeric_parameter_evaluation', 'joint_parameterization': self.identity})
+            return noise, phi, relative
         # TemporalNoise stores the AR polynomial reflection: for AR1 k=-phi.
         temporal = tuple(TemporalNoise.from_reflections([-value], innovation_variance=1.,
             reference_id='joint_C_private_AR1_numeric_point') for value in phi)
@@ -282,12 +334,38 @@ class PrivateAR1Coordinates:
         return np.r_[phi_gradient*(1-phi*phi), packed]
 
 
+    def score_innovations(self, statistics, parameters, point):
+        """Fisher identity using direct innovation factors, including startup."""
+        noise, phi, relative = point
+        q = noise.innovation_covariance
+        q_root = noise._spatial_root
+        q_inv = solve_triangular(q_root.T, solve_triangular(q_root, np.eye(len(q)), lower=True))
+        denominator = 1-phi[:, None]*phi[None, :]
+        initial = q/denominator
+        initial_root = np.linalg.cholesky(initial)
+        s_inv = solve_triangular(initial_root.T, solve_triangular(initial_root, np.eye(len(q)), lower=True))
+        q_gradient, phi_gradient = np.zeros_like(q), np.zeros(len(q))
+        for value in statistics:
+            if type(value) is not AR1InnovationStatistics:
+                raise TypeError('direct score requires explicit innovation statistics, not raw residual moments')
+            q_gradient += .5*(q_inv@value.innovation_second@q_inv-(value.native_samples-1)*q_inv)
+            phi_gradient += np.diag(q_inv@value.innovation_previous)
+            initial_gradient = .5*(s_inv@value.initial@s_inv-s_inv)
+            q_gradient += initial_gradient/denominator
+            phi_gradient += 2*np.sum(initial_gradient*q*phi[None, :]/denominator**2, axis=1)
+        relative_gradient = 2*self.reference_innovation_root.T@q_gradient@self.reference_innovation_root@relative
+        packed = [relative_gradient[i, j]*relative[i, j] if i == j else relative_gradient[i, j]
+            for i, j in zip(*np.tril_indices(len(q)), strict=True)]
+        return np.r_[phi_gradient*(1-phi*phi), packed]
+
+
 @dataclass(frozen=True)
 class JointCalibrationWorkspace:
     potentials: tuple
     record_samples: dict
     posterior_moment_callback: object
     input_identity: str
+    innovation_moment_callback: object = None
 
 
 @dataclass(frozen=True)
@@ -324,10 +402,13 @@ class JointCalibrationProblem:
         noise_width = self.noise_coordinates.dimension
         if parameters.shape != (noise_width+(self.arm == 'G1'),):
             raise ValueError('G0 and G1 retain their own exact declared parameter dimensions')
-        point = self.noise_coordinates.point(parameters[:noise_width])
-        x = float(parameters[-1]) if self.arm == 'G1' else None
-        within = (self.within_reference.scaled_factor(x) if x is not None
-            else np.empty((self.source.mean.size, 0)))
+        try:
+            point = self.noise_coordinates.point(parameters[:noise_width])
+            x = float(parameters[-1]) if self.arm == 'G1' else None
+            within = (self.within_reference.scaled_factor(x) if x is not None
+                else np.empty((self.source.mean.size, 0)))
+        except (FloatingPointError, NumericalResolutionError) as error:
+            raise UnrepresentableJointParameterPointError(str(error)) from error
         workspace = self.component_factory(point[0], within)
         if any(value.binding['original_noise_carrier'] != point[0]._runtime_state_digest()
                 for value in workspace.potentials):
@@ -337,18 +418,28 @@ class JointCalibrationProblem:
                 'workspace_identity': workspace.input_identity, 'problem': self.identity})
         log_prior = -.5*x*x-.5*_LOG2PI if x is not None else 0.
         objective = -marginal.log_density-log_prior
+        if not np.isfinite(objective):
+            raise UnrepresentableJointParameterPointError('joint parameter point has no finite objective')
         if not gradient:
             return float(objective), marginal
-        statistics, local_second, local_dimension = workspace.posterior_moment_callback(marginal)
+        direct_innovations = workspace.innovation_moment_callback is not None
+        callback = workspace.innovation_moment_callback if direct_innovations else workspace.posterior_moment_callback
+        statistics, local_second, local_dimension = callback(marginal)
         actual_records = {value.record_id: value.native_samples for value in statistics}
         if len(actual_records) != len(statistics) or actual_records != workspace.record_samples:
             raise ValueError('AR moments retain one startup and every native row of each original record')
         expected_dimension = sum(width for value in workspace.potentials for _, width in value.local_dimensions)
         if local_dimension != expected_dimension or (self.arm == 'G0' and local_dimension):
             raise ValueError('EM moments retain every independent local column exactly once')
-        score = self.noise_coordinates.score(statistics, parameters[:noise_width], point)
+        try:
+            score_function = self.noise_coordinates.score_innovations if direct_innovations else self.noise_coordinates.score
+            score = score_function(statistics, parameters[:noise_width], point)
+        except FloatingPointError as error:
+            raise UnrepresentableJointParameterPointError('joint parameter point has no finite complete noise score') from error
         if x is not None:
             score = np.r_[score, .5*(local_second-local_dimension)-x]
+        if not np.isfinite(score).all():
+            raise UnrepresentableJointParameterPointError('joint parameter point has no finite complete gradient')
         return float(objective), frozen_array(-score), marginal
 
 
@@ -358,14 +449,15 @@ class JointCalibrationOptimizationError(RuntimeError):
         super().__init__('the declared joint response/noise programme did not produce a converged plugin')
 
 
-def fit_joint_calibration(problem, initial, *, initial_binding, maximum_iterations, gradient_tolerance):
+def fit_joint_calibration(problem, initial, *, initial_binding, maximum_iterations, gradient_tolerance,
+        evaluation_callback=None):
     """Reusable numeric optimizer; original C/live fit admission is upstream."""
     initial = finite_real_array(initial, name='explicit joint warm start or external initial point')
     if (type(maximum_iterations) is not int or maximum_iterations < 1
             or not np.isfinite(gradient_tolerance) or gradient_tolerance <= 0
             or initial.shape != (problem.noise_coordinates.dimension+(problem.arm == 'G1'),)):
         raise ValueError('declare the actual optimizer programme')
-    calls = 0
+    calls, invalid_trials, last_valid, best_valid, last_invalid = 0, 0, None, None, None
     programme = {'schema': 'joint_response_noise_plugin_fit/1', 'problem_identity': problem.identity,
         'arm': problem.arm, 'source_identity': problem.source.identity,
         'within_reference_identity': problem.within_reference.identity,
@@ -376,20 +468,47 @@ def fit_joint_calibration(problem, initial, *, initial_binding, maximum_iteratio
         'gradient_tolerance': gradient_tolerance, 'producer_sha256': IMPLEMENTATION_SHA256,
         'old_noise_artifact_resigned': False, 'raw_or_live_fit_authority_granted': False}
     def objective(parameters):
-        nonlocal calls
+        nonlocal calls, invalid_trials, last_valid, best_valid, last_invalid
         calls += 1
-        value, gradient, _ = problem.evaluate(parameters)
+        try:
+            if not np.isfinite(parameters).all():
+                raise UnrepresentableJointParameterPointError('optimizer trial parameters are not finite')
+            value, gradient, _ = problem.evaluate(parameters)
+            if not np.isfinite(value) or not np.isfinite(gradient).all():
+                raise UnrepresentableJointParameterPointError('optimizer trial objective or complete gradient is not finite')
+        except UnrepresentableJointParameterPointError as error:
+            # Finite-step line searches may probe beyond the binary64 chart.
+            # The scientific law is unchanged; these trials have no fit state.
+            invalid_trials += 1
+            last_invalid = {'parameters': [float(value) if np.isfinite(value) else repr(float(value)) for value in parameters],
+                'reason': str(error), 'evaluation': calls, 'phase': 'parameter_point_or_finite_objective_score'}
+            return np.inf, np.zeros_like(parameters)
+        last_valid = {'parameters': parameters.tolist(), 'negative_log_objective': value,
+            'gradient': gradient.tolist(), 'evaluation': calls}
+        if best_valid is None or value < best_valid['negative_log_objective']:
+            best_valid = last_valid
+        if evaluation_callback is not None:
+            evaluation_callback(freeze_metadata({'problem_identity': problem.identity,
+                'arm': problem.arm, 'valid_trial': last_valid, 'unrepresentable_trials': invalid_trials,
+                'best_valid_trial': best_valid, 'last_unrepresentable_trial': last_invalid,
+                'numeric_checkpoint_only_not_converged_fit': True}))
         return value, gradient
     try:
         result = minimize(objective, initial, jac=True, method='BFGS',
             options={'maxiter': maximum_iterations, 'gtol': gradient_tolerance})
     except (ValueError, ArithmeticError, np.linalg.LinAlgError) as error:
         raise JointCalibrationOptimizationError({**programme, 'success': False,
-            'evaluations': calls, 'failure': {'type': type(error).__name__, 'message': str(error)}}) from error
+            'evaluations': calls, 'last_valid_trial': last_valid, 'unrepresentable_trials': invalid_trials,
+            'best_valid_trial': best_valid, 'last_unrepresentable_trial': last_invalid,
+            'failure': {'type': type(error).__name__, 'message': str(error)}}) from error
     record = {**programme,
         'parameters': result.x.tolist(), 'negative_log_objective': float(result.fun),
         'success': bool(result.success), 'status': int(result.status), 'message': str(result.message),
-        'iterations': int(result.nit), 'evaluations': int(result.nfev), 'final_gradient': result.jac.tolist()}
+        'iterations': int(result.nit), 'evaluations': int(result.nfev), 'final_gradient': result.jac.tolist(),
+        'unrepresentable_trials': invalid_trials}
     if not result.success or not np.isfinite(result.fun):
+        record['last_valid_trial'] = last_valid
+        record['best_valid_trial'] = best_valid
+        record['last_unrepresentable_trial'] = last_invalid
         raise JointCalibrationOptimizationError(record)
     return frozen_array(result.x), freeze_metadata(record)

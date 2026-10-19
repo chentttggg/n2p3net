@@ -232,6 +232,7 @@ class PDSSelection:
     pds_attempts: int = 0
     pds_fallback_count: int = 0
     pds_distance_backend: str = "cpu_f64"
+    pds_attempt_policy: str = "legacy_nonempty_proposals"
 
     def __post_init__(self) -> None:
         indices = np.asarray(self.selected_indices, dtype=np.int64)
@@ -297,17 +298,22 @@ class PDSSelection:
                 isinstance(self.pds_fallback_count, bool)
                 or not isinstance(self.pds_fallback_count, (int, np.integer))
                 or self.pds_fallback_count < 0
-                or self.pds_fallback_count > self.pds_attempts
+                or self.pds_fallback_count > len(indices)
+                or (self.pds_attempt_policy == "legacy_nonempty_proposals"
+                    and self.pds_fallback_count > self.pds_attempts)
             ):
                 raise ValueError(
-                    "pds_fallback_count must be a non-negative integer no larger than pds_attempts."
+                    "pds_fallback_count must fit the selected rows and its declared attempt policy."
                 )
-            if self.pds_distance_backend not in {"cpu_f64", "gpu_f64"}:
-                raise ValueError("pds_distance_backend must be cpu_f64 or gpu_f64.")
+            if self.pds_attempt_policy not in {"legacy_nonempty_proposals", "all_class_draws_including_empty/1"}:
+                raise ValueError("unknown dense-PDS attempt policy")
+            if self.pds_distance_backend not in {"cpu_f64", "gpu_f64", "gpu_f64_then_cpu_f64"}:
+                raise ValueError("unknown dense-PDS distance backend")
         else:
-            if self.pds_radius is not None or self.pds_mingling_mixture is not None:
+            if (self.pds_radius is not None or self.pds_mingling_mixture is not None
+                    or self.pds_attempt_policy != "legacy_nonempty_proposals"):
                 raise ValueError(
-                    "TSD selections cannot declare dense-PDS radius/mixture fields."
+                    "TSD selections cannot declare dense-PDS radius/mixture/attempt-policy fields."
                 )
             if (
                 isinstance(self.pds_attempts, bool)
@@ -354,6 +360,8 @@ class PDSSelection:
             "pds_attempts": int(self.pds_attempts),
             "pds_fallback_count": int(self.pds_fallback_count),
             "pds_distance_backend": self.pds_distance_backend,
+            **({"pds_attempt_policy": self.pds_attempt_policy}
+               if self.pds_attempt_policy != "legacy_nonempty_proposals" else {}),
         }
 
 
@@ -441,6 +449,7 @@ def pds_selection_from_record(
             pds_attempts=pds_attempts,
             pds_fallback_count=pds_fallback_count,
             pds_distance_backend=pds_distance_backend,
+            pds_attempt_policy=str(record.get("pds_attempt_policy", "legacy_nonempty_proposals")),
         )
     except (KeyError, TypeError, ValueError) as error:
         raise ValueError(f"invalid PDS source-selection record: {error}") from error
@@ -834,37 +843,54 @@ def select_dense_pds_rows(
         and getattr(_torch, "cuda", None) is not None
         and _torch.cuda.is_available()
     )
+    selected_vectors: list[np.ndarray] = []
+    backend = "cpu_f64"
     if use_gpu:
+        from train.runtime import is_oom_error
+
         device = _torch.device("cuda")
-        source_tensor = _torch.as_tensor(source, dtype=_torch.float64, device=device)
-        selected_tensor = _torch.empty(
-            (n_select, source.shape[1]), dtype=_torch.float64, device=device
-        )
-        backend = "gpu_f64"
-    else:
-        selected_vectors: list[np.ndarray] = []
-        backend = "cpu_f64"
+        try:
+            source_tensor = _torch.as_tensor(source, dtype=_torch.float64, device=device)
+            selected_tensor = _torch.empty(
+                (n_select, source.shape[1]), dtype=_torch.float64, device=device
+            )
+            backend = "gpu_f64"
+        except RuntimeError as error:
+            if not is_oom_error(error):
+                raise
+            source_tensor = selected_tensor = None
+            use_gpu = False
 
     def min_distances(indices: np.ndarray) -> np.ndarray:
         """Chunked minimum Euclidean distance to every selected row."""
+        nonlocal use_gpu, source_tensor, selected_tensor, selected_vectors, backend
         output = np.full(len(indices), np.inf, dtype=np.float64)
         if selected_count == 0:
             return output
         if use_gpu:
-            index_tensor = _torch.as_tensor(indices, dtype=_torch.long, device=device)
-            selected_slab = selected_tensor[:selected_count]
-            for index_start in range(0, len(indices), 128):
-                index_slab = index_tensor[index_start : index_start + 128]
-                distances = _torch.cdist(
-                    source_tensor.index_select(0, index_slab),
-                    selected_slab,
-                    p=2.0,
-                    compute_mode="donot_use_mm_for_euclid_dist",
-                )
-                output[index_start : index_start + len(index_slab)] = (
-                    distances.min(dim=1).values.detach().cpu().numpy()
-                )
-            return output
+            try:
+                index_tensor = _torch.as_tensor(indices, dtype=_torch.long, device=device)
+                selected_slab = selected_tensor[:selected_count]
+                for index_start in range(0, len(indices), 128):
+                    index_slab = index_tensor[index_start : index_start + 128]
+                    distances = _torch.cdist(
+                        source_tensor.index_select(0, index_slab),
+                        selected_slab,
+                        p=2.0,
+                        compute_mode="donot_use_mm_for_euclid_dist",
+                    )
+                    output[index_start : index_start + len(index_slab)] = (
+                        distances.min(dim=1).values.detach().cpu().numpy()
+                    )
+                return output
+            except RuntimeError as error:
+                if not is_oom_error(error):
+                    raise
+                source_tensor = selected_tensor = None
+                selected_vectors = [source[index] for index in selected]
+                use_gpu = False
+                backend = "gpu_f64_then_cpu_f64"
+                output.fill(np.inf)
         selected_block = np.asarray(selected_vectors, dtype=np.float64)
         for selected_start in range(0, len(selected_block), 128):
             selected_slab = selected_block[selected_start : selected_start + 128]
@@ -906,17 +932,14 @@ def select_dense_pds_rows(
         mingling_class = int(classes[mixture_position])
         candidates = np.flatnonzero(eligible & (labels == mingling_class))
         if not len(candidates):
-            # An empty mingling class is a degenerate proposal, not a
-            # dart-throwing attempt; keep sampling the declared mixture.
-            pds_attempts -= 1
+            # Empty draws consume the same finite proposal budget. The declared
+            # class mixture and already selected rows remain unchanged.
             continue
         candidate = int(rng.choice(candidates))
         if float(min_distances(np.asarray([candidate], dtype=np.int64))[0]) > pds_radius:
             accept(candidate)
 
     indices = np.asarray(selected, dtype=np.int64)
-    if pds_fallback_count > pds_attempts:
-        pds_attempts = pds_fallback_count
     return PDSSelection(
         selected_indices=indices,
         source_count=len(source),
@@ -936,6 +959,7 @@ def select_dense_pds_rows(
         pds_attempts=pds_attempts,
         pds_fallback_count=pds_fallback_count,
         pds_distance_backend=backend,
+        pds_attempt_policy="all_class_draws_including_empty/1",
     )
 
 __all__ = [

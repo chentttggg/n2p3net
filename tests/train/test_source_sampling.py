@@ -260,7 +260,7 @@ def test_dense_pds_hard_disk_accepts_beyond_and_rejects_within_radius() -> None:
         pds_max_attempts=1,
     )
     assert tiny_budget.selected_indices.tolist() == [2, 0, 1]
-    assert tiny_budget.pds_attempts == 2
+    assert tiny_budget.pds_attempts == 1
     assert tiny_budget.pds_fallback_count == 2
 
 
@@ -281,7 +281,7 @@ def test_dense_pds_fallback_breaks_ties_with_rng_permutation() -> None:
 
     assert selection.selected_indices.tolist() == [1, 0, 2]
     assert selection.pds_fallback_count == 2
-    assert selection.pds_attempts == 2
+    assert selection.pds_attempts == 1
 
 
 @pytest.mark.parametrize(

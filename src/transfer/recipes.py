@@ -172,15 +172,24 @@ def actual_batch_recipes(recipes: tuple[TargetRecipe, ...], n_fit: int) -> tuple
 
 
 def target_batch_budget(
-    n_fit: int, batch_size: int, *, epochs: int = 60, max_updates: int | None = None
+    n_fit: int, batch_size: int, *, epochs: int = 60, max_updates: int | None = None,
+    decision_rows_per_update: int = 0,
 ) -> dict[str, object]:
-    """Expected ordinary-CE exposure, including a possible partial final traversal."""
+    """CE exposure plus an upper bound for the appended complete-decision stream.
+
+    The decision cap comes from actual authorized groups, including zero-weight
+    controls that retain the same forward stream. Overlapping CE/decision rows
+    count twice, matching the adapter's concatenation. Zero preserves CE-only
+    records; a positive cap makes ``draws`` an explicit forward-row upper bound.
+    """
     if n_fit < 1 or batch_size < 1 or epochs < 1 or (max_updates is not None and max_updates < 1):
         raise ValueError("row count, batch, epochs and updates must be positive")
+    if type(decision_rows_per_update) is not int or decision_rows_per_update < 0:
+        raise ValueError("decision rows per update must be a nonnegative integer")
     per_epoch = ceil(n_fit / batch_size)
     updates = epochs * per_epoch if max_updates is None else max_updates
     full, partial = divmod(updates, per_epoch)
-    return {
+    result = {
         "n_fit": n_fit,
         "requested_batch_size": batch_size,
         "effective_batch_size": min(batch_size, n_fit),
@@ -191,6 +200,13 @@ def target_batch_budget(
         "partial_epoch_updates": partial,
         "reference_updates": epochs * ceil(n_fit / 128),
     }
+    if decision_rows_per_update:
+        result.update(ordinary_draws=result["draws"],
+            candidate_rows_per_update_upper_bound=decision_rows_per_update,
+            candidate_draws_upper_bound=updates * decision_rows_per_update,
+            draws_kind="forward_rows_upper_bound")
+        result["draws"] += result["candidate_draws_upper_bound"]
+    return result
 
 
 def batch_size_aliases(

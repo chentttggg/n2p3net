@@ -1378,6 +1378,9 @@ class SubjectAdapter:
                 "decision_training": (None if decision_context is None else {
                     "score_kind": "membership_llr_sum/1",
                     "update_policy": "one_joint_step_row_and_complete_decision_streams",
+                    "decisions_per_update": 1,
+                    "sampling_unit": "complete_requested_decision_with_replacement",
+                    "support_bn_statistics": "frozen",
                     "requested_groups": len(decision_groups),
                     "authorized_groups": len(decision_context[0]),
                     "budget_excluded_groups": len(decision_groups) - len(decision_context[0]),

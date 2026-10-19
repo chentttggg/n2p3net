@@ -8,7 +8,13 @@
 
 `research.population_response_forecast`消费个人data likelihood的完整A/r/c，分别保人群均值不确定性与真实人际差异；`source_likelihood_export`从原同次source blocks导出数据因子、绝对常数与显式F→C列置换，每人一个shared数值包供不同fold引用。个人posterior的prior信息不进入data likelihood。
 
+`public_population_source`沿原注册reader完整拟合每个source一次，`SpatialDecisionModel.fit_with_blocks`交出同次拟合实际消费的blocks；不同留人折引用同一份个人likelihood。`population_noise_reference`按源参与者等权建立固定stationary noise及两曝光参考，再交原population variance owner学习。`run_public_population_source`以同进程中央CPU/内存lease调度person与fold，原始标签权限和publication registry由原issuer持有。
+
 `gaussian_local_factor/gaussian_local_conditional`在同一次QR中积分selection独立变化并保其条件后验，shared响应与原record漂移留给外层各处理一次。`joint_response_noise_reference`持固定两曝光GLS刻度，`joint_response_noise_calibration`持完整C的响应/噪声联合边缘似然、残差二阶矩和private AR1/full-Q解析梯度。它们是数值owner；真实source/C factory、新fit artifact与held消费者沿同一权限链连接。源码、独审与组合检查见[通用响应核心整合](assets/research_resume_20261012/general_response_core_integration.json)。
+
+新joint路径由`public_source_context`区分原native与population issuer；`private_ar1_noise_point`保完整stationary startup和full-Q创新根，`native_joint_sufficient`在同一次完整后验的mean/factor上先形成创新，再计算Fisher score。原raw二阶矩继续作诊断。`public_joint_response_noise`持真实fit、数值保存及对原C的重新准入；cold load只解析已核验的同一份字节。
+
+`public_joint_history_execution`连接真实fit与完整history：每record观测并集一次，精确离散sum-product保全部候选，Gaussian算术按tile批处理。compact native状态、proposal recipe与shared numeric store供原SMC/trace `/2`冷重放；typed publication仍需同一live issuer和实际重放。每cell使用独占新目录，失败留下原产物及收据；共享数值store位于cell的同级目录。精确源码关系见[三切片整合](assets/research_resume_20261012/source_joint_history_integration.json)。
 
 `public_native_learner_plan`持实际C/history的原record观测并集、完整q/shape/unknown变量与精确C标签因子；运行期对照初次封存的真实law、质量、scope和算子，正常缓存不进入科学身份。`public_native_noise_reuse`要求原、新两个live parent和完整实际残差关系；保存态复用由独立issuer处理。`response_frontier`保C排除候选的真实零似然及完整候选轴。
 
@@ -254,6 +260,14 @@ source固定更新的进度复用`baselines.progress`；selection/refit sink分�
 `source_prior_development_fold`接受显式development_domains，未选域全量留在源拟合；source链检查开发域与逐域排除原因完整分割实际source。
 源内选方记录包含声明及所有prefix摘要，改变开发支持不能沿用原选择身份。`unified_target_recipes`集中产生按监督匹配的scratch，
 有真实membership时增加CE-only对照，无membership时保留单个等价scratch。调用者统一从recipe派生处理名和decision因子。
+
+目标候选训练由`SubjectAdapter`每optimizer step按原requested-group风险质量有放回抽取一个完整decision，
+与普通CE行串接前向；重叠行计两次。支持BN统计已冻结，源训练`DecisionBatchPlan`的至少两decision/128行
+用于其源训练程序，不约束小C目标采样。`candidate_loss_weight=0`控制保留相同decision前向，`None`省略该流。
+`calibration_decision_rows_per_update`只从授权组求实际可用行最大值；任务、selector、epoch selection、
+correctness缩减及decision诊断计划据此计入额外forward上界，普通CE曝光单列，QC删行后仍保上界。
+独立epoch-selection视图在构建与拟合入口均按全局唯一的physical event ID对齐父C标签和授权行；
+独立X、裁剪后的保留行与行顺序可不同。
 
 2026-09-17采集端`transport.py`集中串口/BLE连接入口、地址及固件能力差异；
 `DeviceAdapter`共用连接所有权、预览、阻抗、回调录制和清理，删除串口SDK原生EDF分支。
@@ -568,6 +582,10 @@ source runner的共享trajectory registry仅对有序真实event/person/domain�
 完整训练配方、seed、设备及源码一致的已有update快照复用。原checkpoint不改写，消费方容器
 保留自己的父cache/fit ledger，并记录原checkpoint SHA及TrainingRunContract digest；
 `physical_optimizer_updates=0`明确表示本次未训练，不把复用伪装成新的随机重复。
+新source程序摘要使用`n2p3_source_training_procedure/2`，绑定实际optimizer配置、mask/loss、
+选轮规则与固定剂量；选出的refit长度保留为fit outcome。人口导出的validation cap先与实际配置核对，
+程序摘要比较声明规则与resolution basis，完整TrainingRunContract继续保存原人口计数和resolved配置。
+实际analyzer按冻结摘要版本分派，历史无版本记录沿原`/1`投影读取，原manifest与producer保持原字节。
 登记表按语义签名持有OS级跨进程文件锁，完成训练和哈希发布后才允许相同任务复用。
 每组保存独立record及轻量进度，父进程聚合；已完成模型可以从显式哈希清单跨多次续跑复用。
 GPU任务结束释放缓存并重置该worker的编译缓存，避免旧optimizer对象累积触发全局重编译上限。

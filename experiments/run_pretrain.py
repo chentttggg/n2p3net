@@ -19,6 +19,8 @@ import torch
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
@@ -32,6 +34,7 @@ from data.epochs import (  # noqa: E402
     preprocessing_execution_binding,
 )
 from data.identity import training_identity_ledger_from_rows  # noqa: E402
+from experiments.freeze_source_snapshot import capture_executed_run_source  # noqa: E402
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
     DEFAULT_N2P3_POOLING_MODE,
@@ -40,12 +43,14 @@ from models.n2p3net import (  # noqa: E402
     N2P3Net,
 )
 from research.contracts import TrainingRunContract  # noqa: E402
-from research.evaluation import (  # noqa: E402
-    source_snapshot_sha256_from_archive_manifest,
+from research.resource_scope import entrypoint_resource_record  # noqa: E402
+from research.source_execution import (  # noqa: E402
+    require_new_checkpoint_paths,
+    save_source_checkpoint,
 )
 from train.device import get_device  # noqa: E402
 from train.runtime import GpuPerformanceScheduler, MatrixBatchSource  # noqa: E402
-from transfer.checkpoint import CHECKPOINT_SCHEMA  # noqa: E402
+from transfer.checkpoint import CHECKPOINT_SCHEMA, checkpoint_state_digest  # noqa: E402
 from transfer.losses import ReconstructionLossConfig  # noqa: E402
 from transfer.masking import MaskingConfig  # noqa: E402
 from transfer.pretraining import PretrainingConfig, PretrainingTask  # noqa: E402
@@ -101,7 +106,7 @@ def main() -> None:
         "--source-snapshot-manifest",
         type=Path,
         required=True,
-        help="Manifest for the physical source archive used for this training run.",
+        help="Declared source archive; actual executing bytes are saved beside each new checkpoint.",
     )
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--holdout-subjects", default="", help="comma separated; never pretrain on these")
@@ -136,6 +141,8 @@ def main() -> None:
     )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--device", default="auto")
+    parser.add_argument("--resource-scope", choices=("local_development", "software_correctness"),
+                        default="local_development", help="Standalone execution; cloud runs use the source-family controller")
     parser.add_argument(
         "--cohort",
         choices=tuple(SOURCE_COHORT_DATA_CONTRACTS),
@@ -153,10 +160,12 @@ def main() -> None:
         help="Explicit epoch-end recipe override for matched factorials.",
     )
     args = parser.parse_args()
-    source_snapshot_manifest = args.source_snapshot_manifest.resolve()
-    source_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(
-        source_snapshot_manifest
-    )
+    require_new_checkpoint_paths((args.checkpoint,))
+    execution_source = capture_executed_run_source(
+        Path(args.checkpoint).with_suffix(Path(args.checkpoint).suffix + '.source'),
+        declared_manifest=args.source_snapshot_manifest, root=ROOT, entrypoint=Path(__file__))
+    source_snapshot_manifest = Path(execution_source['manifest'])
+    source_snapshot_sha256 = execution_source['archive_sha256']
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.source_cache, require_labels=False, validation="attested")
@@ -443,10 +452,12 @@ def main() -> None:
     payload = {
         "schema": CHECKPOINT_SCHEMA,
         "trunk_state_dict": trunk.state_dict(),
+        "trunk_state_dict_sha256": checkpoint_state_digest(trunk.state_dict()),
         "config": asdict(config),
         "source_cache": str(Path(args.source_cache).resolve()),
         "source_snapshot_manifest": str(source_snapshot_manifest),
         "source_snapshot_sha256": source_snapshot_sha256,
+        "execution_source": execution_source,
         "holdout_subjects": sorted(holdout),
         "source_dataset_name": dataset.name,
         "n_channels": int(dataset.n_channels),
@@ -482,13 +493,15 @@ def main() -> None:
             if args.standardize
             else np.ones(dataset.n_channels, dtype=np.float32).tolist()
         ),
+        "resource_execution": entrypoint_resource_record(entrypoint="run_pretrain",
+            requested_device=args.device, effective_device=device, declared_scope=args.resource_scope),
         "runtime": {
             "device": str(device),
             "preloaded": source.preloaded,
             "memory": runtime.memory_record(),
         },
     }
-    torch.save(payload, checkpoint)
+    save_source_checkpoint(checkpoint, payload, exclusive=True)
     print(f"[pretrained] {checkpoint}", flush=True)
 
 

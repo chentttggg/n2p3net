@@ -826,7 +826,7 @@
       "existing_validation_sha_matches": true
     }
   ],
-  "paper_PDFs_copied_or_removed": 0,
+  "paper_PDFs_copied_or_removed": false,
   "datasets": [
     {
       "name": "BI2014a",
@@ -859,5 +859,14 @@
       "raw_redistribution_authorized_by_this_index": false
     }
   ],
-  "interpretation": "Access/OA/arXiv/accepted-manuscript labels are not proof of redistribution permission; preserve exact original copies locally and export citation metadata until exact rights are verified."
+  "interpretation": "Access/OA/arXiv/accepted-manuscript labels are not proof of redistribution permission; preserve exact original copies locally and export citation metadata until exact rights are verified.",
+  "paper_distribution": {
+    "status": "local_reference_payload_retained_outside_current_Git_tree",
+    "files": 54,
+    "bytes": 200655101,
+    "local_files_deleted": 0,
+    "raw_copies_created": 0,
+    "previous_history": "Preserved in protected Git history and original local research references",
+    "source_code_exports": "Continue metadata and original citations; no redistribution permission inferred"
+  }
 }

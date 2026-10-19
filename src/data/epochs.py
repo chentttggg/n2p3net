@@ -1059,9 +1059,36 @@ def save_epoch_dataset(
             if dataset.y is not None
             else np.empty(0, dtype=np.int64)
         ),
-        "decoded_dataset_sha256": np.asarray(_decoded_dataset_sha256(dataset)),
     }
-    _publish_epoch_cache(path, dataset, payload, compressed=compressed, exclusive=exclusive)
+    # The generic writer accepts wider input dtypes and an empty metadata
+    # table. Bind the decoded identity to exactly the arrays/table stored in
+    # this payload, leaving the caller's in-memory representation unchanged.
+    stored_dataset = replace(
+        dataset,
+        X=payload["X"],
+        y=payload["y"] if dataset.y is not None else None,
+        subject_ids=payload["subject_ids"],
+        channel_positions_m=payload["channel_positions_m"],
+        channel_mask=payload["channel_mask"],
+        trial_channel_mask=(payload["trial_channel_mask"] if dataset.trial_channel_mask is not None else None),
+        metadata=metadata,
+        qc_features=replace(
+            dataset.qc_features,
+            relative_ptp=payload["qc_relative_ptp"],
+            channel_std_v=payload["qc_channel_std_v"],
+            epoch_scale_v=payload["qc_epoch_scale_v"],
+            observed_mask=payload["qc_observed_mask"],
+        ),
+    )
+    if (any(getattr(stored_dataset, field) is not getattr(dataset, field)
+            for field in ("X", "y", "channel_positions_m"))
+            or any(getattr(stored_dataset.qc_features, field) is not getattr(dataset.qc_features, field)
+                   for field in ("relative_ptp", "channel_std_v", "epoch_scale_v"))):
+        # A finite wider value can become Inf or a zero coordinate in float32.
+        # Only converted numeric states need another value-contract scan.
+        stored_dataset.validate()
+    payload["decoded_dataset_sha256"] = np.asarray(_decoded_dataset_sha256(stored_dataset))
+    _publish_epoch_cache(path, stored_dataset, payload, compressed=compressed, exclusive=exclusive)
     return path
 
 

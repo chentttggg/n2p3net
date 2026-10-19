@@ -366,6 +366,12 @@ class _SplitBatchNorm(nn.Module):
         return 1.0 / float(batches_tracked.item())
 
     def _update_pooled_buffer(self, inputs: torch.Tensor) -> None:
+        """Update standard batch-mixture BN EMA on the sampled source stream.
+
+        This estimates the sampler's pooled distribution through batch EMA;
+        it is distinct from exact pooled sample moments or an equal-domain
+        mixture. Declared source-weighted moments use their separate route.
+        """
         with torch.no_grad():
             factor = self._momentum_factor(self.pooled_num_batches_tracked)
             F.batch_norm(

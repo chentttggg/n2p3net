@@ -383,6 +383,10 @@ class SourceObjective:
         Each domain pair/class retains its own detached median of strictly
         positive pairwise distances. Padding uses infinity only for sorting;
         inactive cells contribute neither a term nor its denominator.
+        Eligible cells have equal weight, independent of their row counts;
+        this is a macro average of cell-specific kernels, not a single pooled
+        population MMD. If every distance in a cell is zero, its kernel uses
+        bandwidth one and its discrepancy is zero.
         A same-batch bandwidth estimate is detached, not statistically independent.
         """
         cells = [
@@ -407,8 +411,11 @@ class SourceObjective:
         padded = torch.cat((ordered, z.new_ones((len(cells), 1))), dim=1)
         median = padded.gather(1, position).squeeze(1)
         sigma = torch.where(counts > 0, median, torch.ones_like(median))
-        squared = torch.cdist(z, z).square()
-        kernel = torch.exp(-squared.unsqueeze(0) / (2 * sigma.square()[:, None, None]))
+        pair_distances = torch.cdist(z, z, compute_mode="donot_use_mm_for_euclid_dist")
+        # Standardize before squaring: a small positive bandwidth can have a
+        # subnormal square even when the standardized kernel/gradient is finite.
+        scaled_distances = pair_distances.unsqueeze(0) / sigma[:, None, None]
+        kernel = torch.exp(-0.5 * scaled_distances.square())
         off_diagonal = ~torch.eye(len(z), dtype=torch.bool, device=z.device)
         ll = left[:, :, None] & left[:, None, :] & off_diagonal
         rr = right[:, :, None] & right[:, None, :] & off_diagonal

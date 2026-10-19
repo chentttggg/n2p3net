@@ -136,5 +136,276 @@
     "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-transfer\\CLEANUP_RESULT.json",
     "sha256": "90d0827fddec6f1db04fe9e06a216f5922b184f47432af47bf41689b433adbbd",
     "bytes": 576
+  },
+  "R3_residual_contracts": {
+    "author": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-transfer\\revision3\\TERMINAL_BINDING.json",
+      "sha256": "eb86d36df609ded06bbb83d16602634812dbd4994d662a9a968b21fb2ad1e6d4",
+      "bytes": 4804
+    },
+    "independent": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\transfer-r3-review\\REVIEW_MANIFEST.json",
+      "sha256": "4213f1a386b33220ce185258e30fb08e4f4af5b18c58c2949367861f69f194cd",
+      "bytes": 5067
+    },
+    "root_before": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\reviewed-integration\\root_before_transfer_R3.zip",
+      "sha256": "35523b46f5535a8a3b74b35cd08269862129ab5dba8967c0b9f21a0f2e493bca",
+      "bytes": 89988
+    },
+    "root_review": "Read actual producer and analyzer version dispatch, declared-rule versus resolved-population controls, PDS RNG/count/OOM lifecycle, direct-distance MMD kernel identity, mask/count contracts and actual report generator/state digest owners.",
+    "source_relations": [
+      {
+        "path": "experiments/analyze_candidate_cross_decision.py",
+        "candidate_sha256": "aa22317b5f04c3a7a7aa92566c419272761bb914cc596e4c351ec04c819d7cc7",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\experiments\\analyze_candidate_cross_decision.py",
+          "sha256": "56ca1614027c6714cf7b9a3880363e72a6ecd2b62a02823408f8448863b47e69",
+          "bytes": 60653
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "src/models/splitbn.py",
+        "candidate_sha256": "1e6e245acea22a966bba555e4796ea744894f7057e0040b10425c4e4a65078bb",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\src\\models\\splitbn.py",
+          "sha256": "7eda0a8f829f0251f01bcfd103546f388271bb885b2d9e248c455f418025f2e9",
+          "bytes": 40492
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "src/research/contracts.py",
+        "candidate_sha256": "4aaf5985919f84161eb7157416a99c7885beb58f7fc7d25df6472ea825324b42",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\contracts.py",
+          "sha256": "58c478251f13ae1b572a96a7c1041136df7c630ef487ef5ec4cb62998a4a9e38",
+          "bytes": 29172
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "src/research/recording_quality.py",
+        "candidate_sha256": "77fb1e4999999c899a71454d93abe31fc48ad2f1a5a499567c2eb91754e53cbf",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\recording_quality.py",
+          "sha256": "77fb1e4999999c899a71454d93abe31fc48ad2f1a5a499567c2eb91754e53cbf",
+          "bytes": 23430
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "src/train/factory.py",
+        "candidate_sha256": "759014e0a814a43f84fb3eac2e12a6680ff01be18e8d5c9486e091f4e7219810",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\src\\train\\factory.py",
+          "sha256": "62a9937d3ecf28589a7d0ca51d9eb2293545d65e899051700ec88b287c7cf48f",
+          "bytes": 6235
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "src/train/runtime.py",
+        "candidate_sha256": "ca06ce3f1943df6aaf54e87da93b80738fc9f24f46774a5f90ba4a4e7b346347",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\src\\train\\runtime.py",
+          "sha256": "ca06ce3f1943df6aaf54e87da93b80738fc9f24f46774a5f90ba4a4e7b346347",
+          "bytes": 56268
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "src/train/source_sampling.py",
+        "candidate_sha256": "5d37f2b5a7368de75f0e571d46a6349b81defc05e9410b52fcf5501553963f07",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\src\\train\\source_sampling.py",
+          "sha256": "5d37f2b5a7368de75f0e571d46a6349b81defc05e9410b52fcf5501553963f07",
+          "bytes": 43755
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "src/transfer/evaluation.py",
+        "candidate_sha256": "a7a9dafaeae15a3672d7d0648081ff65f95df276cfcbfe8ae56d7237ff89e4c9",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\evaluation.py",
+          "sha256": "ebfd81265563b0353117fc5c7d4c641690d68c98113e5fd6bc0ff077e1f4e79d",
+          "bytes": 12317
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "src/transfer/exact_covariance.py",
+        "candidate_sha256": "7c9808499a1ac44e40b77546672947e7843d0ab41bb55509ae3e43df141b56c2",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\exact_covariance.py",
+          "sha256": "7c9808499a1ac44e40b77546672947e7843d0ab41bb55509ae3e43df141b56c2",
+          "bytes": 19637
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "src/transfer/heads.py",
+        "candidate_sha256": "7c2530cbedf333a38656efb2ea7017928cf9255d4585332c54a5ae0fbf2a44af",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\heads.py",
+          "sha256": "2d3f93d8f5cdfff7d3a5273568e20a54a2ec105141cb028cacf47ce40004cb7c",
+          "bytes": 3864
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "src/transfer/mask_probe.py",
+        "candidate_sha256": "ba0a30a00bd0b4267d93a9538b5cfd6005c6c60cda1fad29d421b683435a365d",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\mask_probe.py",
+          "sha256": "ba0a30a00bd0b4267d93a9538b5cfd6005c6c60cda1fad29d421b683435a365d",
+          "bytes": 13276
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "src/transfer/masking.py",
+        "candidate_sha256": "968d8f32eef120c9f91d1e90e3ff0a60ea1116ba53484dd67ac5a0e2ee0cdd6e",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\masking.py",
+          "sha256": "bf0a8f6dfaee570931facd07a5016a05e7dd4b6ca4633a1fe2c0b46bf9fac812",
+          "bytes": 2947
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "src/transfer/outcomes.py",
+        "candidate_sha256": "caa3d54bb98e0d65e473cd6a1e7cb1c5c9ce7334e0273aba6f8168a5ecb13cc1",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\outcomes.py",
+          "sha256": "ac79c0f2098b3f89c15f51a396758e8dd5ec6a28e3f974e0fc525e9c04cf49a5",
+          "bytes": 16547
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "src/transfer/source_objective.py",
+        "candidate_sha256": "73f26551bc779d9731de72fa9916207ae0730a9ea5a0f2bb01e4a6d68fbfca0f",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\source_objective.py",
+          "sha256": "cd08926e1f4d1ffb02ee5f00e0b9de1146c322b4f2b9b36a7aa6b2d51c7695f8",
+          "bytes": 21596
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "tests/train/test_source_sampling.py",
+        "candidate_sha256": "719ec1ed8c8783f44dd794aff049a371ff675f1e3ddf38766a03b2ed926fcde6",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\tests\\train\\test_source_sampling.py",
+          "sha256": "719ec1ed8c8783f44dd794aff049a371ff675f1e3ddf38766a03b2ed926fcde6",
+          "bytes": 17323
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      },
+      {
+        "path": "tests/transfer/test_remaining_audit_contracts.py",
+        "candidate_sha256": "2e698633497c1d0f1655a8efd89f189f06c276b0f06f6c57904b5d5dd8166fae",
+        "canonical": {
+          "path": "D:\\BCI\\worktrees\\research-director\\tests\\transfer\\test_remaining_audit_contracts.py",
+          "sha256": "2e698633497c1d0f1655a8efd89f189f06c276b0f06f6c57904b5d5dd8166fae",
+          "bytes": 15670
+        },
+        "relationship": "exact candidate bytes after CRLF to LF only"
+      }
+    ],
+    "canonical_validation": "pending final composed suite"
+  },
+  "R4_splitbn_current_source": {
+    "author": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-transfer\\revision4\\TERMINAL_BINDING.json",
+      "sha256": "49eb6a29373db796d1a3fb01d1e5952556b154ba94f2e7add5006bb27e4d574e",
+      "bytes": 1128
+    },
+    "result": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-transfer\\revision4\\RESULT.json",
+      "sha256": "138afd4b7991a3caad4c6c4e2de71905aa1a36f40d21c34e17bd084ea01fa0ec",
+      "bytes": 3185
+    },
+    "root_review": "Current SplitBN installer restores individual train modes and temporary flags on success/failure; existing weighted variance law preserved. No new production delta. Original F10/F11/F12 numbering correction retained.",
+    "production_delta": false
+  },
+  "R5_decision_budget_and_selection_labels": {
+    "author": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-transfer\\revision5\\TERMINAL_BINDING.json",
+      "sha256": "7a586dba9fa71b69cd7dfd07fc1519e06f3f1aee1c03480b1634e8b61219bf25",
+      "bytes": 3832
+    },
+    "independent": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-transfer\\revision5\\independent-review\\REVIEW_MANIFEST.json",
+      "sha256": "9f6cf41dbda0b32585c852a2c314e9dd74c4c27fed9a2156811a1451098551ae",
+      "bytes": 1964
+    },
+    "root_review": "Actual extra decision forward rows included in all relevant update budget paths, including weight zero; only None removes the context. Independent subset X/order remain allowed while event-id-to-row label correspondence is enforced at ingress and fitting. Original source and one-decision target BN programmes retain distinct declared purposes. right_censored response axis was correct.",
+    "source_relations": [
+      {
+        "path": "doc/technical_structure.zh.md",
+        "canonical_sha256": "87a873f80dcce5fb580a7eb724b67ec7a79a34dd767f4528fc4d94108358e5f5",
+        "candidate_sha256": "87a873f80dcce5fb580a7eb724b67ec7a79a34dd767f4528fc4d94108358e5f5",
+        "relationship": "exact after CRLF-to-LF normalization"
+      },
+      {
+        "path": "experiments/run_brainsync_recovery.py",
+        "canonical_sha256": "446c83ecaa174c0e508f20a9a8b9d4b7c1de240d74a72711a4462dc6f2d5d1fc",
+        "candidate_sha256": "446c83ecaa174c0e508f20a9a8b9d4b7c1de240d74a72711a4462dc6f2d5d1fc",
+        "relationship": "exact after CRLF-to-LF normalization"
+      },
+      {
+        "path": "src/transfer/calibration_candidates.py",
+        "canonical_sha256": "829ebadf77b20392c26f2d9ebfb2a8dbd91c486b5debd09a1a78d4f8301e59ad",
+        "candidate_sha256": "829ebadf77b20392c26f2d9ebfb2a8dbd91c486b5debd09a1a78d4f8301e59ad",
+        "relationship": "exact after CRLF-to-LF normalization"
+      },
+      {
+        "path": "src/transfer/decision_experiments.py",
+        "canonical_sha256": "5148dfb53655754e0f1ceb7975f22b62a30bc667470c21edbe3e1bfa2fab2af6",
+        "candidate_sha256": "5148dfb53655754e0f1ceb7975f22b62a30bc667470c21edbe3e1bfa2fab2af6",
+        "relationship": "exact after CRLF-to-LF normalization"
+      },
+      {
+        "path": "src/transfer/epoch_selection.py",
+        "canonical_sha256": "86aaacefe5cf177b5657fc6fe44f0c3ddc75001251d3b54fee0205ec7f0922c4",
+        "candidate_sha256": "86aaacefe5cf177b5657fc6fe44f0c3ddc75001251d3b54fee0205ec7f0922c4",
+        "relationship": "exact after CRLF-to-LF normalization"
+      },
+      {
+        "path": "src/transfer/recipes.py",
+        "canonical_sha256": "e9014f9d65cd340c37c20d25911e2401ad0fa9739a99116f155a93860ef50d6e",
+        "candidate_sha256": "e9014f9d65cd340c37c20d25911e2401ad0fa9739a99116f155a93860ef50d6e",
+        "relationship": "exact after CRLF-to-LF normalization"
+      },
+      {
+        "path": "src/transfer/subject_adapter.py",
+        "canonical_sha256": "c3b4e15c1531dedb905477b8aea6e6a8bd129ec1f42f76d4ddc4b10175894a8a",
+        "candidate_sha256": "c3b4e15c1531dedb905477b8aea6e6a8bd129ec1f42f76d4ddc4b10175894a8a",
+        "relationship": "exact after CRLF-to-LF normalization"
+      },
+      {
+        "path": "src/transfer/target_experiments.py",
+        "canonical_sha256": "51145e37fc89276222e154c92393471eafcf3b710db7659e3197a4a8ae1bbb0a",
+        "candidate_sha256": "51145e37fc89276222e154c92393471eafcf3b710db7659e3197a4a8ae1bbb0a",
+        "relationship": "exact after CRLF-to-LF normalization"
+      },
+      {
+        "path": "tests/transfer/test_audit_target_budget_and_labels.py",
+        "canonical_sha256": "9f967288e877b5ee4c7b2cad399001a1577953a2442d89affa2e1483bb61587a",
+        "candidate_sha256": "9f967288e877b5ee4c7b2cad399001a1577953a2442d89affa2e1483bb61587a",
+        "relationship": "exact after CRLF-to-LF normalization"
+      },
+      {
+        "path": "tests/transfer/test_execution_input_binding.py",
+        "canonical_sha256": "f5fa117a2b70d9f9aa8d30a7d0949159d1c2fe93a0e579e7c87702899d961580",
+        "candidate_sha256": "f5fa117a2b70d9f9aa8d30a7d0949159d1c2fe93a0e579e7c87702899d961580",
+        "relationship": "exact after CRLF-to-LF normalization"
+      }
+    ],
+    "validation": "Original author/independent controls retained; integrated source relation verified. Root final focused composition receipt will carry actual current code identity."
   }
 }

@@ -176,6 +176,7 @@ def _summary_metric_fields(summary: BinarySummary) -> dict[str, object]:
     candidate = isinstance(summary, CandidateSummary)
     fields = {
         "metric_schema": LOSO_METRICS_SCHEMA_V2,
+        "binary_metric_scope": summary.binary_metric_scope,
         "decision_hit_rate_mean": summary.hit_rate_mean if candidate else None,
         "primary_decision_hit_rate": summary.primary_hit_rate if candidate else None,
         "primary_decision_hit_rate_decision_micro": summary.primary_hit_rate if candidate else None,
@@ -196,6 +197,10 @@ def _summary_metric_fields(summary: BinarySummary) -> dict[str, object]:
     }
     validate_loso_metric_record(fields)
     return fields
+
+
+def _json_binary_metric(value: float | None) -> float | None:
+    return float(value) if value is not None and np.isfinite(value) else None
 
 
 def main() -> None:
@@ -684,8 +689,8 @@ def main() -> None:
                 "type": "fold",
                 "fold": fold_id,
                 "n_folds_done": folds_completed,
-                "fold_bacc": float(fold_result.balanced_acc),
-                "fold_auc": float(fold_result.auc),
+                "fold_bacc": _json_binary_metric(fold_result.balanced_acc),
+                "fold_auc": _json_binary_metric(fold_result.auc),
                 "hit": None if hit_rate is None else float(hit_rate),
                 "epochs_ran": int(fold_result.epochs_ran),
                 "train_losses": [round(float(value), 6) for value in fold_result.train_losses][
@@ -781,7 +786,8 @@ def main() -> None:
                 "artifact_qc_workers": summary.artifact_qc_workers,
                 "artifact_qc_cpu_threads_per_worker": summary.artifact_qc_cpu_threads_per_worker,
             },
-            "per_fold": [fold.__dict__ for fold in summary.per_fold],
+            "per_fold": [dict(fold.__dict__, balanced_acc=_json_binary_metric(fold.balanced_acc),
+                              auc=_json_binary_metric(fold.auc)) for fold in summary.per_fold],
             "wall_seconds": time.perf_counter() - started,
             "finished_utc": datetime.now(UTC).isoformat(),
         }
@@ -793,11 +799,15 @@ def main() -> None:
         temporary_record.replace(record_path)
         with (output_dir / "progress.jsonl").open("a", encoding="utf-8") as completed:
             completed.write(
-                json.dumps({"type": "done", "ts": datetime.now(UTC).isoformat()}) + "\n"
+                json.dumps({"type": "done", "ts": datetime.now(UTC).isoformat(),
+                    "binary_metric_status": (summary.binary_metric_scope or {}).get("status", "unknown")}) + "\n"
             )
+        bacc = "unavailable" if summary.balanced_acc_mean is None else f"{summary.balanced_acc_mean:.4f}"
+        auc = "unavailable" if summary.auc_mean is None else f"{summary.auc_mean:.4f}"
         print(
-            f"[{model_name}] bacc={summary.balanced_acc_mean:.4f} "
-            f"auc={summary.auc_mean:.4f} wall={record['wall_seconds']:.1f}s",
+            f"[{model_name}] bacc={bacc} auc={auc} "
+            f"binary_metrics={(summary.binary_metric_scope or {}).get('status', 'unknown')} "
+            f"wall={record['wall_seconds']:.1f}s",
             flush=True,
         )
 

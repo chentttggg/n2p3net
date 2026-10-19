@@ -13,6 +13,22 @@ from transfer.calibration_split import dataset_calibration_inner_split
 from transfer.recipes import TargetRecipe, target_batch_budget
 
 
+def _validate_independent_event_labels(view, calibration, allowed):
+    """Align labels by globally unique scheduled-event identity, not row position."""
+    parent, inner = calibration.event_timeline, view.event_timeline
+    parent_rows = np.asarray(parent.evidence_indices)
+    positions = np.flatnonzero(parent_rows >= 0)
+    authorized = {str(parent.event_ids[position]): calibration.y[parent_rows[position]]
+                  for position in positions if allowed[parent_rows[position]]}
+    for event, row in zip(inner.event_ids, inner.evidence_indices, strict=True):
+        if row < 0:
+            continue
+        if str(event) not in authorized:
+            raise ValueError("independent early-stopping data escape authorized calibration events")
+        if view.y[row] != authorized[str(event)]:
+            raise ValueError("independent early-stopping labels differ from authorized calibration events")
+
+
 @dataclass(frozen=True)
 class IndependentEpochSelectionData:
     dataset: object
@@ -74,6 +90,7 @@ class IndependentEpochSelectionData:
             if (view.identity_table.authority_keys() != authority or view.preprocessing != calibration.preprocessing
                     or view.channel_names != calibration.channel_names or set(np.unique(view.y)) != {0, 1}):
                 raise ValueError("independent validation requires matching participants/contracts and both classes")
+            _validate_independent_event_labels(view, calibration, np.ones(calibration.n_epochs, dtype=bool))
         shared = {}
         for field in ("source_reference", "event_contract", "candidate_task_contract", "candidate_vocabulary", "session_schema"):
             value = calibration.provenance.get(field)
@@ -132,10 +149,15 @@ def epoch_selection_recipes(*, batch_size=512, seed=20260906, epochs=60):
     }
 
 
-def epoch_selection_budget(recipe, policy, *, calibration_rows, inner_rows, inner_legal):
+def epoch_selection_budget(recipe, policy, *, calibration_rows, inner_rows, inner_legal,
+                           calibration_decision_rows=0, inner_decision_rows=0):
     selecting = policy.mode != "fixed" and inner_legal
-    refit = target_batch_budget(calibration_rows, recipe.batch_size, epochs=recipe.epochs)
-    inner = target_batch_budget(inner_rows, recipe.batch_size, epochs=recipe.epochs) if selecting else {"updates": 0, "draws": 0}
+    decision_context = recipe.candidate_loss_weight is not None
+    refit = target_batch_budget(calibration_rows, recipe.batch_size, epochs=recipe.epochs,
+        decision_rows_per_update=calibration_decision_rows if decision_context else 0)
+    inner = (target_batch_budget(inner_rows, recipe.batch_size, epochs=recipe.epochs,
+        decision_rows_per_update=inner_decision_rows if decision_context else 0)
+        if selecting else {"updates": 0, "draws": 0})
     return {"fit_calls_upper_bound": 2 if selecting else 1,
         "inner_epochs_upper_bound": recipe.epochs if selecting else 0,
         "full_calibration_epochs_upper_bound": recipe.epochs,
@@ -183,12 +205,7 @@ def fit_with_epoch_selection(
             from types import SimpleNamespace
 
             inner_dataset = selection_data.dataset
-            parent_timeline, inner_timeline = dataset.event_timeline, inner_dataset.event_timeline
-            authorized = set(parent_timeline.event_ids[np.isin(parent_timeline.evidence_indices,
-                                                               np.flatnonzero(allowed))].tolist())
-            consumed = set(inner_timeline.event_ids[inner_timeline.evidence_indices >= 0].tolist())
-            if not consumed <= authorized:
-                raise ValueError("independent early-stopping data escape authorized calibration events")
+            _validate_independent_event_labels(inner_dataset, dataset, allowed)
             split = SimpleNamespace(legal=True, training_mask=selection_data.training_mask,
                                     validation_mask=selection_data.validation_mask)
             record["inner_split"] = selection_data.evidence

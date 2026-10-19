@@ -1,0 +1,267 @@
+{
+  "schema": "source_joint_history_scientific_integration/1",
+  "status": "accepted_source_composition_pending_execution",
+  "recorded_utc": "2026-10-19T05:36:09Z",
+  "root_review": "Read actual source compiler/fit-with-blocks and publication launcher, direct innovation/startup Fisher gradients and cold-byte load, full history whole-law target/proposal/trace/typed consumer and source-context budget delta. Exact before-images checked for every replacement; no whole historical snapshot overlay.",
+  "reviews": {
+    "source": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\post-audit-source-integration\\independent-postaudit\\REVIEW.json",
+      "sha256": "1dd21e0b0a5b4957a7b69bdc70744e175b08ff8950854885c357db1623fda721",
+      "bytes": 4274
+    },
+    "source_delivery": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\post-audit-source-integration\\independent-postaudit\\DELIVERY_MANIFEST.json",
+      "sha256": "60fe0974bc41d53c3b05f0fe70668f8c79d31b61d37401c736cb9c6947836709",
+      "bytes": 5710
+    },
+    "joint": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-response-noise\\post-audit-integration\\DELIVERY_MANIFEST.json",
+      "sha256": "660d14eb43951ef4d07a9dbc818a0279efbfe0dc7cfcd6f448b7cc3ddf9088f6",
+      "bytes": 10962
+    },
+    "history": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\post-audit-integration\\DELIVERY_MANIFEST.json",
+      "sha256": "a8f9874e2bd0b2ae06a34dbce87dc2da8c14f776bdcd7e08bf06b2faad8f70b7",
+      "bytes": 21476
+    }
+  },
+  "files": [
+    {
+      "owner": "population_source",
+      "path": "experiments/run_public_population_source.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\post-audit-source-integration\\independent-postaudit\\candidate\\experiments\\run_public_population_source.py",
+      "before_sha256": null,
+      "after_sha256": "a26c15bf9011e836984f27f3aec0525a6d8612ab32e5212f73312d61f34099d6",
+      "reviewed_candidate_sha256": "f3bfeaf1e7a65dff082a3e61583745aa47f05443f80f4c2051af47432c4ed720"
+    },
+    {
+      "owner": "population_source",
+      "path": "src/research/population_noise_reference.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\post-audit-source-integration\\candidate\\src\\research\\population_noise_reference.py",
+      "before_sha256": null,
+      "after_sha256": "adfc95a7410acaab5ca4465c26220df8aa6d735a22ae38b05ad3ccdd6ae59d02"
+    },
+    {
+      "owner": "population_source",
+      "path": "src/research/population_response_forecast.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\post-audit-source-integration\\candidate\\src\\research\\population_response_forecast.py",
+      "before_sha256": "876b23b2da3d39a6e382f8b1efc14917b8a6197fbc50ae49b7cc16d37c758f99",
+      "after_sha256": "330320bbcd91889380c102a0d7b85cc88d1c6a8e3a2941a8d9981e6daed29db9"
+    },
+    {
+      "owner": "population_source",
+      "path": "src/research/public_population_source.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\post-audit-source-integration\\candidate\\src\\research\\public_population_source.py",
+      "before_sha256": null,
+      "after_sha256": "792481bc2c542835cd5d289ebc02d0902fa93cdd22ccc4589200551e1213b9ae"
+    },
+    {
+      "owner": "population_source",
+      "path": "src/transfer/ensemble_views.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\post-audit-source-integration\\candidate\\src\\transfer\\ensemble_views.py",
+      "before_sha256": "b39ff1ce4df291290357c2fe0ae318fe90dc1936398964bf6ec3e9013c3df1cc",
+      "after_sha256": "60128dde6ee03a1dc6ccb1fd8627cea6ed0f1e8872f056d0db2eaf6bc2c53110"
+    },
+    {
+      "owner": "population_source",
+      "path": "src/transfer/spatial_programme.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\post-audit-source-integration\\candidate\\src\\transfer\\spatial_programme.py",
+      "before_sha256": "285bde1d020dfdfba5f7f44702710a7f7081cfe2161366cbbf055f21106bc00b",
+      "after_sha256": "64cbe21d160ff9683a663ba6d5b6a79f0c98a7dd290b4fadab2bced19a608fa0"
+    },
+    {
+      "owner": "joint_response_noise",
+      "path": "src/research/joint_response_noise_calibration.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-response-noise\\post-audit-integration\\candidate\\src\\research\\joint_response_noise_calibration.py",
+      "before_sha256": "ef58720a25b9b4396452a7f50ecca2756938154c6238cbea46e2684aa9317cb7",
+      "after_sha256": "ce82f94ff82def7289e86b2b6af23dbc4231e65e132a668f91d392137b00c3ba"
+    },
+    {
+      "owner": "joint_response_noise",
+      "path": "src/research/native_joint_sufficient.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-response-noise\\post-audit-integration\\candidate\\src\\research\\native_joint_sufficient.py",
+      "before_sha256": null,
+      "after_sha256": "28f673653d79ff2003da7ae6da73eacd89d3fbd20558c3b1862eb07de7a26ff8",
+      "reviewed_candidate_sha256": "fa683822dd18a8d9175207559a84a9c33910f749fe5c5dd71f5fbb320e0039c6"
+    },
+    {
+      "owner": "joint_response_noise",
+      "path": "src/research/private_ar1_noise_point.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-response-noise\\post-audit-integration\\candidate\\src\\research\\private_ar1_noise_point.py",
+      "before_sha256": null,
+      "after_sha256": "d267244679a319d9f4ced1e4d0b4cb875e5b94e782b259e82e1f4cad341a2f22"
+    },
+    {
+      "owner": "joint_response_noise",
+      "path": "src/research/public_joint_response_noise.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-response-noise\\post-audit-integration\\candidate\\src\\research\\public_joint_response_noise.py",
+      "before_sha256": null,
+      "after_sha256": "8c63116e44ef51f7cf0b307d84808175956b571e461bc514c8997d468bb0c08d",
+      "reviewed_candidate_sha256": "0a1766994724c80caa86196aaff5545d574e10eb3fdd747e0ab4e39b874599b1"
+    },
+    {
+      "owner": "joint_response_noise",
+      "path": "src/research/public_source_context.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-response-noise\\post-audit-integration\\candidate\\src\\research\\public_source_context.py",
+      "before_sha256": null,
+      "after_sha256": "4e7a31a6038b21f8c1701f2992745ff5a32d34090c3d2c75a8ebf110ad71d4fa"
+    },
+    {
+      "owner": "joint_response_noise",
+      "path": "tests/research/test_public_joint_codec_image.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-response-noise\\post-audit-integration\\candidate\\tests\\research\\test_public_joint_codec_image.py",
+      "before_sha256": null,
+      "after_sha256": "baf52b9f553075b3f22c0dcdaf160733a1192aa56bc5233a37e29c8babd6668f",
+      "reviewed_candidate_sha256": "61b8374a279931c45d69e248c4d45cef4c98971ce8c13f5efc6883380af34e7d"
+    },
+    {
+      "owner": "history_inference",
+      "path": "src/research/joint_history_artifact.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\post-audit-integration\\candidate\\src\\research\\joint_history_artifact.py",
+      "before_sha256": null,
+      "after_sha256": "70d9d390f5a48f8c5866225add16c5b49bc46a65a01d0b981349db4e41badd24"
+    },
+    {
+      "owner": "history_inference",
+      "path": "src/research/joint_history_inference.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\post-audit-integration\\candidate\\src\\research\\joint_history_inference.py",
+      "before_sha256": null,
+      "after_sha256": "74f8b9f3d5d4834bc3a6e1751bd95f46f0bc428bd4b22fec60eb87e2cbc7d54f"
+    },
+    {
+      "owner": "history_inference",
+      "path": "src/research/joint_history_numeric_store.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\post-audit-integration\\candidate\\src\\research\\joint_history_numeric_store.py",
+      "before_sha256": null,
+      "after_sha256": "bcb0fd7282eca53d09ac76639644ff0fae77a3008d672719863fe411d088e785"
+    },
+    {
+      "owner": "history_inference",
+      "path": "src/research/joint_history_proposal.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\post-audit-integration\\candidate\\src\\research\\joint_history_proposal.py",
+      "before_sha256": null,
+      "after_sha256": "4925cc673d935aee034abfea3e2f014d353a51846dbc9a7077e592d0a6c7abb6"
+    },
+    {
+      "owner": "history_inference",
+      "path": "src/research/joint_history_storage_closure.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\post-audit-integration\\candidate\\src\\research\\joint_history_storage_closure.py",
+      "before_sha256": null,
+      "after_sha256": "e4f65f5a688ea85872813cc32d293f8879f9500bb6ef54bd786597dbe186caf6"
+    },
+    {
+      "owner": "history_inference",
+      "path": "src/research/joint_history_target.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\post-audit-integration\\candidate\\src\\research\\joint_history_target.py",
+      "before_sha256": null,
+      "after_sha256": "481798606cd74f094150b2449ebb67be870b0e06d99187cbd111a8062b3e0923"
+    },
+    {
+      "owner": "history_inference",
+      "path": "src/research/native_joint_numeric_store.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\post-audit-integration\\candidate\\src\\research\\native_joint_numeric_store.py",
+      "before_sha256": null,
+      "after_sha256": "abdcbe0b9976ae959e6844baf6c14d3126ec4db64dd5c079b9f817f9a963d5a8"
+    },
+    {
+      "owner": "history_inference",
+      "path": "src/research/public_joint_history.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\post-audit-integration\\candidate\\src\\research\\public_joint_history.py",
+      "before_sha256": null,
+      "after_sha256": "be89b946de1ebd4d9e638c6177a9e25f8f5b35292f6d5dff83d24d3f7b45b0f6"
+    },
+    {
+      "owner": "history_inference",
+      "path": "src/research/public_joint_history_execution.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\post-audit-integration\\candidate\\src\\research\\public_joint_history_execution.py",
+      "before_sha256": null,
+      "after_sha256": "ca46a662fc8edcc5decb11d09402d8945f8ae40c45874a35060443df16d30149"
+    },
+    {
+      "owner": "history_inference",
+      "path": "src/research/public_native_learner_plan.py",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\post-audit-integration\\candidate\\src\\research\\public_native_learner_plan.py",
+      "before_sha256": "67c092ffb45255241616c23ee5f65b90ddb076eaf9b7099525fd7152e47ece7b",
+      "after_sha256": "477af69571d531e71845921fa0e071a3921b637c2a8766d5117e6f9e71120455"
+    }
+  ],
+  "trace_files_preserved": {
+    "src/research/common_cloud_transition_trace.py": "6a83661c717e0c3cfd19638c410acfe4595241d425fbb6c18e6ab45e854aa0c1"
+  },
+  "external_joint_launcher": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-response-noise\\post-audit-integration\\candidate\\RUN_PUBLIC_JOINT.py",
+    "candidate_sha256": "a00e1014508adb5b2b55214b3e1de7e4d1b7abf68d749dc5dac8851d8dfc818d",
+    "v5_sha256": "4ad4355b5527960ebaa067ee5724c2acc511a74319e5b11a179759ab35a2d1d2",
+    "sole_behavior_change": "four-argument history progress adapter"
+  },
+  "source_freeze_builder": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\post-audit-source-integration\\independent-postaudit\\candidate\\BUILD_FINAL_MANIFEST.py",
+    "bytes": 3649,
+    "sha256": "2fb42815a27996e0c792a9738041fd6a91f3480679c4d5df322e45d1e3f1fd21"
+  },
+  "scientific_contract": {
+    "source_people": 13,
+    "source_fits_each": 1,
+    "folds": 13,
+    "sources_per_fold": 12,
+    "K": [
+      200,
+      800,
+      2000
+    ],
+    "arms": [
+      "G0",
+      "G1"
+    ],
+    "requested_per_person_K_arm": 63,
+    "new_cells": 4914,
+    "original_baseline_diagnostic_cells": 9828,
+    "private_AR1_full_Q": true,
+    "full_local_and_shared_dimensions": true,
+    "original_joint_gtol": 0.001,
+    "original_joint_maximum_iterations": 2000,
+    "warm_start_kind": "named numeric initialization from original returned vector; not exact BFGS resume"
+  },
+  "verification": "Original mathematical and focused producer evidence reused by explicit source relations. New one-image codec boundary and final integrated imports/Ruff pending. No new scientific fits or held reads during integration.",
+  "root_import_classification": [
+    {
+      "path": "experiments/run_public_population_source.py",
+      "reviewed_before_sha256": "f3bfeaf1e7a65dff082a3e61583745aa47f05443f80f4c2051af47432c4ed720",
+      "canonical_after_sha256": "a26c15bf9011e836984f27f3aec0525a6d8612ab32e5212f73312d61f34099d6",
+      "relationship": "Import-order-only adaptation with all non-import AST unchanged; actual whole-tree namespace classification."
+    },
+    {
+      "path": "src/research/native_joint_sufficient.py",
+      "reviewed_before_sha256": "fa683822dd18a8d9175207559a84a9c33910f749fe5c5dd71f5fbb320e0039c6",
+      "canonical_after_sha256": "28f673653d79ff2003da7ae6da73eacd89d3fbd20558c3b1862eb07de7a26ff8",
+      "relationship": "Import-order-only adaptation with all non-import AST unchanged; actual whole-tree namespace classification."
+    },
+    {
+      "path": "src/research/public_joint_response_noise.py",
+      "reviewed_before_sha256": "0a1766994724c80caa86196aaff5545d574e10eb3fdd747e0ab4e39b874599b1",
+      "canonical_after_sha256": "8c63116e44ef51f7cf0b307d84808175956b571e461bc514c8997d468bb0c08d",
+      "relationship": "Import-order-only adaptation with all non-import AST unchanged; actual whole-tree namespace classification."
+    },
+    {
+      "path": "tests/research/test_public_joint_codec_image.py",
+      "reviewed_before_sha256": "61b8374a279931c45d69e248c4d45cef4c98971ce8c13f5efc6883380af34e7d",
+      "canonical_after_sha256": "baf52b9f553075b3f22c0dcdaf160733a1192aa56bc5233a37e29c8babd6668f",
+      "relationship": "Import-order-only adaptation with all non-import AST unchanged; actual whole-tree namespace classification."
+    }
+  ],
+  "final_seam_checks": {
+    "imports.json": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\scientific-composition-01\\imports.json",
+      "sha256": "dc75943182e9c1d3bc0d777038a795886694af9c5902981b988537040da31dcc"
+    },
+    "junit.xml": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\scientific-composition-01\\junit.xml",
+      "sha256": "7ba73020fda764029b5dc85a99a25ab2749c3b8ffe8c799db2118b7db7e7b91f"
+    },
+    "pytest.log": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\scientific-composition-01\\pytest.log",
+      "sha256": "32d4f05cc8e719feaec3c94aab71322c37ec61a6a044aea9b34d8db1577c86f9"
+    },
+    "interpretation": "All 20 actual scientific owner modules imported from the integrated canonical namespace; new authenticated-image codec case passed. Ruff passed. Existing mathematical evidence reused via exact source/AST relationships; real source/joint/history execution remains next."
+  }
+}

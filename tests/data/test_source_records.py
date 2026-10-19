@@ -168,7 +168,8 @@ def test_pool_cli_checks_preparation_and_resume_without_starting_fits(huebner_re
     monkeypatch.setattr(pool_runner, "verified_executed_snapshot", lambda *a, **k: {"archive_sha256": "0" * 64})
     monkeypatch.setattr(pool_runner, "ProcessPoolExecutor", lambda *a, **k: pytest.fail("dry-run must not start workers"))
     args = ["--prepared", str(tmp_path / "prepared"), "--output", str(tmp_path / "matrix"),
-            "--snapshot", str(tmp_path / "snapshot.json"), "--matrix-plan", str(plan), "--dry-run", "--device", "cpu"]
+            "--snapshot", str(tmp_path / "snapshot.json"), "--matrix-plan", str(plan), "--dry-run", "--device", "cpu",
+            "--resource-scope", "software_correctness"]
     pool_runner.main(args)
     pool_runner.main(args)
     binding = json.loads((tmp_path / "matrix/input_bindings.json").read_text())

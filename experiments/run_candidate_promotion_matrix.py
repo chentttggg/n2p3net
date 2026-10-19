@@ -73,6 +73,10 @@ from research.contracts import (  # noqa: E402
 from research.evaluation import (  # noqa: E402
     source_snapshot_sha256_from_archive_manifest,
 )
+from research.resource_scope import (  # noqa: E402
+    entrypoint_resource_record,
+    require_standalone_resource_scope,
+)
 from train.runtime import (  # noqa: E402
     available_cpu_threads,
     cpu_thread_budget,
@@ -1989,6 +1993,7 @@ def dag_record(
         "plan": _portable_path(dag.plan.path, dag),
         "plan_digest": dag.plan.digest,
         "stage": "development",
+        "resource_scope": "local_development",
         "device": dag.device,
         "output_root": "$OUTPUT_ROOT",
         "task_count": len(dag.tasks),
@@ -2637,6 +2642,8 @@ def _initial_state(
     timestamp = _now()
     return {
         "schema": JOURNAL_SCHEMA,
+        "resource_execution": entrypoint_resource_record(entrypoint="run_candidate_promotion_matrix",
+            requested_device=dag.device, effective_device=dag.device, configured_compute_workers=0),
         "plan": {
             "path": _portable_path(dag.plan.path, dag),
             "sha256": dag.plan.digest,
@@ -3545,6 +3552,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
+    require_standalone_resource_scope(json.loads(args.plan.read_text(encoding="utf8")))
     plan = load_plan(args.plan, root=args.root)
     result_workers = plan.result_max_workers or args.result_workers or args.max_workers
     dag = build_dag(

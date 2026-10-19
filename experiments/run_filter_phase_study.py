@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import sys
+from contextlib import ExitStack
 from dataclasses import replace
 from pathlib import Path
 
@@ -161,71 +162,76 @@ def candidate_metrics(dataset, scores):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--sessions", type=Path, nargs="+", required=True)
-    parser.add_argument("--output", type=Path, required=True)
-    args = parser.parse_args(argv)
-    output = args.output.resolve()
-    output.mkdir(parents=True, exist_ok=False)
-    sessions = [validate_brainsync_bids_session(p) for p in args.sessions]
-    if len(sessions) < 3 or len({s.session_id for s in sessions}) != len(sessions):
-        raise ValueError("at least three distinct complete recordings are required")
-    if len({s.subject_id for s in sessions}) != 1:
-        raise ValueError("this within-person study requires one declared participant")
-    sources = []
-    for root, session in zip(args.sessions, sessions, strict=True):
-        manifest = json.loads((root / "session.json").read_text(encoding="utf-8"))
-        raw_path = root / manifest["recording"]["path"]
-        sources.append(dict(session=session.session_id, root=str(root.resolve()), raw=str(raw_path.resolve()),
-                            sha256=hashlib.sha256(raw_path.read_bytes()).hexdigest()))
-    protocol = dict(schema="n2p3_filter_phase_study/1", role="within_person_retrospective_development",
-                    sources=sources, profiles={k:v.record() for k,v in profiles().items()},
-                    split="leave_one_complete_recording_out", references=["native", "cz"],
-                    classifier="LDA lsqr auto shrinkage, fixed equal priors; 100 ms window means in uV",
-                    continuous_qc="not_applied; common raw-supported rows, includes observed contamination",
-                    candidate_estimand="one declared target decision per session; first five cycles scored only after full recording processing",
-                    ocular="not_applied", expected_fits=len(sessions)*6,
-                    software=dict(numpy=np.__version__, mne=mne.__version__),
-                    source_files={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest()
-                                  for p in [Path(__file__), *sorted((ROOT/"src").rglob("*.py"))]})
-    atomic_write_json(output / "protocol.json", protocol)
-    with threadpool_limits(limits=1):
-        signal = signal_study(output)
-        datasets = {k:[load_brainsync_session(root, preprocessing=spec) for root in args.sessions]
-                    for k,spec in profiles().items()}
-        base = datasets["forward"]
-        for arm in datasets.values():
-            for a,b in zip(base,arm,strict=True):
-                np.testing.assert_array_equal(a.event_timeline.event_ids, b.event_timeline.event_ids)
-                np.testing.assert_array_equal(a.event_timeline.evidence_indices, b.event_timeline.evidence_indices)
-                np.testing.assert_array_equal(a.y, b.y)
-        results = []
-        for reference in protocol["references"]:
-            for name, arm in datasets.items():
-                f = [features(d,reference) for d in arm]
-                for heldout, test in enumerate(arm):
-                    training = [i for i in range(len(arm)) if i != heldout]
-                    x = np.concatenate([f[i] for i in training])
-                    y = np.concatenate([arm[i].y for i in training])
-                    model = LinearDiscriminantAnalysis(solver="lsqr", shrinkage="auto", priors=[.5,.5]).fit(x,y)
-                    scores = model.decision_function(f[heldout])
-                    np.testing.assert_allclose(scores, (f[heldout]@model.coef_.T+model.intercept_).ravel(), atol=1e-10)
-                    artifact = f"{reference}_{name}_{heldout}.npz"
-                    np.savez_compressed(output/artifact, scores=scores, y=test.y, coef=model.coef_,
-                                        intercept=model.intercept_, test_features=f[heldout],
-                                        training_sessions=np.array([sessions[i].session_id for i in training]),
-                                        event_ids=test.event_timeline.event_ids,
-                                        evidence_indices=test.event_timeline.evidence_indices)
-                    result = dict(reference=reference, profile=name, heldout=sessions[heldout].session_id,
-                                  training_epochs=len(y), test_epochs=len(scores), scheduled=test.event_timeline.n_events,
-                                  auc=float(roc_auc_score(test.y,scores)), r5=candidate_metrics(test,scores),
-                                  artifact=artifact, sha256=hashlib.sha256((output/artifact).read_bytes()).hexdigest())
-                    results.append(result)
-                    print(json.dumps({k:v for k,v in result.items() if k not in {"r5","sha256"}}), flush=True)
-        for source in sources:
-            assert hashlib.sha256(Path(source["raw"]).read_bytes()).hexdigest() == source["sha256"]
-        atomic_write_json(output / "results.json", dict(protocol=protocol, signal=signal, results=results,
-                                                        completed_fits=len(results), raw_hashes_unchanged=True))
+    with ExitStack() as input_leases:
+        parser = argparse.ArgumentParser(description=__doc__)
+        parser.add_argument("--sessions", type=Path, nargs="+", required=True)
+        parser.add_argument("--output", type=Path, required=True)
+        args = parser.parse_args(argv)
+        output = args.output.resolve()
+        output.mkdir(parents=True, exist_ok=False)
+        sessions = []
+        for root in args.sessions:
+            session = validate_brainsync_bids_session(root)
+            input_leases.callback(session.bids.close)
+            sessions.append(session)
+        if len(sessions) < 3 or len({s.session_id for s in sessions}) != len(sessions):
+            raise ValueError("at least three distinct complete recordings are required")
+        if len({s.subject_id for s in sessions}) != 1:
+            raise ValueError("this within-person study requires one declared participant")
+        sources = []
+        for root, session in zip(args.sessions, sessions, strict=True):
+            manifest = json.loads((root / "session.json").read_text(encoding="utf-8"))
+            raw_path = root / manifest["recording"]["path"]
+            sources.append(dict(session=session.session_id, root=str(root.resolve()), raw=str(raw_path.resolve()),
+                                sha256=hashlib.sha256(raw_path.read_bytes()).hexdigest()))
+        protocol = dict(schema="n2p3_filter_phase_study/1", role="within_person_retrospective_development",
+                        sources=sources, profiles={k:v.record() for k,v in profiles().items()},
+                        split="leave_one_complete_recording_out", references=["native", "cz"],
+                        classifier="LDA lsqr auto shrinkage, fixed equal priors; 100 ms window means in uV",
+                        continuous_qc="not_applied; common raw-supported rows, includes observed contamination",
+                        candidate_estimand="one declared target decision per session; first five cycles scored only after full recording processing",
+                        ocular="not_applied", expected_fits=len(sessions)*6,
+                        software=dict(numpy=np.__version__, mne=mne.__version__),
+                        source_files={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest()
+                                      for p in [Path(__file__), *sorted((ROOT/"src").rglob("*.py"))]})
+        atomic_write_json(output / "protocol.json", protocol)
+        with threadpool_limits(limits=1):
+            signal = signal_study(output)
+            datasets = {k:[load_brainsync_session(root, preprocessing=spec) for root in args.sessions]
+                        for k,spec in profiles().items()}
+            base = datasets["forward"]
+            for arm in datasets.values():
+                for a,b in zip(base,arm,strict=True):
+                    np.testing.assert_array_equal(a.event_timeline.event_ids, b.event_timeline.event_ids)
+                    np.testing.assert_array_equal(a.event_timeline.evidence_indices, b.event_timeline.evidence_indices)
+                    np.testing.assert_array_equal(a.y, b.y)
+            results = []
+            for reference in protocol["references"]:
+                for name, arm in datasets.items():
+                    f = [features(d,reference) for d in arm]
+                    for heldout, test in enumerate(arm):
+                        training = [i for i in range(len(arm)) if i != heldout]
+                        x = np.concatenate([f[i] for i in training])
+                        y = np.concatenate([arm[i].y for i in training])
+                        model = LinearDiscriminantAnalysis(solver="lsqr", shrinkage="auto", priors=[.5,.5]).fit(x,y)
+                        scores = model.decision_function(f[heldout])
+                        np.testing.assert_allclose(scores, (f[heldout]@model.coef_.T+model.intercept_).ravel(), atol=1e-10)
+                        artifact = f"{reference}_{name}_{heldout}.npz"
+                        np.savez_compressed(output/artifact, scores=scores, y=test.y, coef=model.coef_,
+                                            intercept=model.intercept_, test_features=f[heldout],
+                                            training_sessions=np.array([sessions[i].session_id for i in training]),
+                                            event_ids=test.event_timeline.event_ids,
+                                            evidence_indices=test.event_timeline.evidence_indices)
+                        result = dict(reference=reference, profile=name, heldout=sessions[heldout].session_id,
+                                      training_epochs=len(y), test_epochs=len(scores), scheduled=test.event_timeline.n_events,
+                                      auc=float(roc_auc_score(test.y,scores)), r5=candidate_metrics(test,scores),
+                                      artifact=artifact, sha256=hashlib.sha256((output/artifact).read_bytes()).hexdigest())
+                        results.append(result)
+                        print(json.dumps({k:v for k,v in result.items() if k not in {"r5","sha256"}}), flush=True)
+            for source in sources:
+                assert hashlib.sha256(Path(source["raw"]).read_bytes()).hexdigest() == source["sha256"]
+            atomic_write_json(output / "results.json", dict(protocol=protocol, signal=signal, results=results,
+                                                            completed_fits=len(results), raw_hashes_unchanged=True))
 
 
 if __name__ == "__main__":

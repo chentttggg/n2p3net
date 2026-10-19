@@ -20,11 +20,19 @@ from typing import TYPE_CHECKING
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from data.digests import file_sha256  # noqa: E402
+from experiments.freeze_source_snapshot import capture_executed_run_source  # noqa: E402
 from research.contracts import TrainingRunContract, semantic_sha256  # noqa: E402
+from research.resource_scope import entrypoint_resource_record  # noqa: E402
+from research.source_execution import (  # noqa: E402
+    require_new_checkpoint_paths,
+    save_source_checkpoint,
+)
 
 SOURCE_PRETRAIN_BATCH_SCHEMA = "n2p3_source_pretrain_batch/1"
 SOURCE_PRETRAIN_INVALID_SCHEMA = "n2p3_source_pretrain_invalid/1"
@@ -70,7 +78,15 @@ def _source_snapshot_sha256_once(path: Path) -> str:
     return cached
 
 
-def _write_json_atomic(path: Path, value: dict[str, object]) -> None:
+def _write_json_atomic(path: Path, value: dict[str, object], *, exclusive=False) -> None:
+    if exclusive:
+        from research.execution import publish_exclusive
+        from research.source_execution import current_input_admission
+
+        content = (json.dumps(value, sort_keys=True, indent=2, ensure_ascii=True)+'\n').encode('utf-8')
+        publish_exclusive(path, lambda stream: stream.write(content),
+            input_admission=current_input_admission(), byte_size=len(content))
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp")
     try:
@@ -88,6 +104,11 @@ def _write_json_atomic(path: Path, value: dict[str, object]) -> None:
 def _invalid_record_path(checkpoint: str | Path) -> Path:
     path = Path(checkpoint)
     return path.with_suffix(path.suffix + ".invalid.json")
+
+
+def _checkpoint_output_paths(checkpoint: str | Path, updates):
+    checkpoint = Path(checkpoint)
+    return (checkpoint, *(checkpoint.with_name(f'{checkpoint.stem}.u{update}{checkpoint.suffix}') for update in updates))
 
 
 def _write_contract_failure(
@@ -298,6 +319,7 @@ def _single_job_argv(
             argv.extend(["--snapshot-updates", *map(str, args.snapshot_updates)])
     if getattr(args, "dry_run", False):
         argv.append("--dry-run")
+    argv.extend(["--resource-scope", getattr(args, "resource_scope", "local_development")])
     return argv
 
 
@@ -310,10 +332,13 @@ def _run_batch(args: argparse.Namespace, jobs: tuple[SourcePretrainJob, ...]) ->
     checkpoints = [job.checkpoint.resolve() for job in jobs]
     if len(set(checkpoints)) != len(checkpoints):
         raise ValueError("source pretrain batch checkpoint paths must be unique.")
+    execution_source = capture_executed_run_source(
+        args.batch_record.with_suffix(args.batch_record.suffix + '.source'),
+        declared_manifest=args.source_snapshot_manifest, root=ROOT, entrypoint=Path(__file__))
     device = torch.device(args.device) if args.device != "auto" else get_device()
     records: list[dict[str, object]] = []
     for job in jobs:
-        main(_single_job_argv(args, job))
+        main(_single_job_argv(args, job), executing_source_manifest=Path(execution_source['manifest']))
         checkpoint = job.checkpoint.resolve()
         payload = load_checkpoint_payload(checkpoint)
         training = checkpoint_training_contract(payload)
@@ -326,6 +351,8 @@ def _run_batch(args: argparse.Namespace, jobs: tuple[SourcePretrainJob, ...]) ->
                 "checkpoint_sha256": file_sha256(checkpoint),
                 "checkpoint_byte_size": checkpoint.stat().st_size,
                 "training_contract_digest": training.digest(),
+                "source_snapshot_manifest": payload['source_snapshot_manifest'],
+                "source_snapshot_sha256": payload['source_snapshot_sha256'],
             }
         )
         release_device_memory(device)
@@ -335,13 +362,16 @@ def _run_batch(args: argparse.Namespace, jobs: tuple[SourcePretrainJob, ...]) ->
         "completed": True,
         "source_cache": str(Path(args.source_cache).resolve()),
         "source_cache_sha256": first["source_cache_sha256"],
-        "source_snapshot_manifest": str(Path(args.source_snapshot_manifest).resolve()),
+        "source_snapshot_manifest": first['source_snapshot_manifest'],
         "source_snapshot_sha256": first["source_snapshot_sha256"],
+        "execution_source": execution_source,
         "seed": int(args.seed),
         "job_count": len(records),
+        "resource_execution": entrypoint_resource_record(entrypoint="run_pretrain_supervised_batch",
+            requested_device=args.device, effective_device=device, declared_scope=args.resource_scope),
         "jobs": records,
     }
-    _write_json_atomic(args.batch_record.resolve(), batch_record)
+    _write_json_atomic(args.batch_record.resolve(), batch_record, exclusive=True)
     print(
         json.dumps(
             {
@@ -355,7 +385,7 @@ def _run_batch(args: argparse.Namespace, jobs: tuple[SourcePretrainJob, ...]) ->
     )
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv: list[str] | None = None, *, executing_source_manifest: Path | None = None) -> None:
     actual_argv = list(sys.argv[1:] if argv is None else argv)
     dispatch_parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
     dispatch_parser.add_argument("--source-chain-plan", nargs="?", const="", default=None)
@@ -392,6 +422,7 @@ def main(argv: list[str] | None = None) -> None:
     from train.runtime import GpuPerformanceScheduler
     from transfer.checkpoint import (
         CHECKPOINT_SCHEMA,
+        checkpoint_state_digest,
         checkpoint_training_contract,
         load_checkpoint_payload,
     )
@@ -409,7 +440,7 @@ def main(argv: list[str] | None = None) -> None:
         "--source-snapshot-manifest",
         type=Path,
         required=True,
-        help="Manifest for the physical source archive used for this training run.",
+        help="Declared source archive; actual executing bytes are saved beside each new checkpoint.",
     )
     parser.add_argument(
         "--holdout-subjects",
@@ -686,6 +717,8 @@ def main(argv: list[str] | None = None) -> None:
         help="Completed batch sentinel with checkpoint hashes and contract digests.",
     )
     parser.add_argument("--device", default="auto")
+    parser.add_argument("--resource-scope", choices=("local_development", "software_correctness"),
+                        default="local_development", help="Standalone execution; cloud runs use the source-family controller")
     args = parser.parse_args(argv)
     if args.candidate_loss_weight is None and args.candidate_loss_max_repetitions is not None:
         parser.error("--candidate-loss-max-repetitions requires --candidate-loss-weight")
@@ -715,12 +748,16 @@ def main(argv: list[str] | None = None) -> None:
             )
             for index, (holdout, checkpoint) in enumerate(args.job)
         )
+        output_paths = tuple(path for job in jobs for path in _checkpoint_output_paths(job.checkpoint, args.snapshot_updates))
+        if args.batch_record.resolve() in {Path(path).resolve() for path in output_paths}:
+            raise ValueError('checkpoint output paths must be unique; batch record cannot alias a model output')
+        require_new_checkpoint_paths((args.batch_record,) if args.dry_run else (args.batch_record, *output_paths))
         if args.dry_run:
             for job in jobs:
                 main(_single_job_argv(args, job))
             _write_json_atomic(Path(args.batch_record), {"schema": SOURCE_PRETRAIN_BATCH_SCHEMA,
                 "dry_run": True, "fitting_performed": False,
-                "jobs": [{"argv": _single_job_argv(args, job)} for job in jobs]})
+                "jobs": [{"argv": _single_job_argv(args, job)} for job in jobs]}, exclusive=True)
         else:
             _run_batch(args, jobs)
         return
@@ -731,11 +768,18 @@ def main(argv: list[str] | None = None) -> None:
         parser.error("single-job mode requires --checkpoint")
     if args.batch_record is not None:
         parser.error("--batch-record requires at least one --job")
+    if not args.dry_run:
+        require_new_checkpoint_paths(_checkpoint_output_paths(args.checkpoint, args.snapshot_updates))
     source_snapshot_manifest = args.source_snapshot_manifest.resolve()
     source_snapshot_sha256 = _source_snapshot_sha256_once(source_snapshot_manifest)
-    if args.fixed_updates is not None and not args.dry_run:
-        from research.evaluation import verified_executed_snapshot
-        verified_executed_snapshot(source_snapshot_manifest, root=ROOT)
+    declared_snapshot_sha256 = source_snapshot_sha256
+    execution_source = None
+    if not args.dry_run:
+        execution_source = capture_executed_run_source(
+            Path(args.checkpoint).with_suffix(Path(args.checkpoint).suffix + '.source'),
+            declared_manifest=executing_source_manifest or source_snapshot_manifest, root=ROOT, entrypoint=Path(__file__))
+        source_snapshot_manifest = Path(execution_source['manifest'])
+        source_snapshot_sha256 = execution_source['archive_sha256']
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset, source_cache_attestation = _load_source_dataset_once(args.source_cache)
@@ -752,7 +796,7 @@ def main(argv: list[str] | None = None) -> None:
                 "--initial-checkpoint was trained on a different source cache; "
                 "two-stage source selection requires the same source cache."
             )
-        if initial_contract.source_snapshot_sha256 != source_snapshot_sha256:
+        if initial_contract.source_snapshot_sha256 != declared_snapshot_sha256:
             raise ValueError("--initial-checkpoint source snapshot disagrees with this run.")
         if initial_payload.get("source_selection_contract") is not None:
             raise ValueError(
@@ -1024,6 +1068,9 @@ def main(argv: list[str] | None = None) -> None:
             "config": asdict(config), "checkpoint": str(args.checkpoint),
             "architecture_configuration": asdict(architecture),
             "fitting_performed": False,
+            "resource_execution": entrypoint_resource_record(entrypoint="run_pretrain_supervised",
+                requested_device=args.device, effective_device=device, declared_scope=args.resource_scope,
+                execution_performed=False),
         }, indent=2))
         return
     runtime = GpuPerformanceScheduler(
@@ -1389,6 +1436,7 @@ def main(argv: list[str] | None = None) -> None:
         "schema": CHECKPOINT_SCHEMA,
         **({"source_study_membership": study_membership} if study_membership is not None else {}),
         "trunk_state_dict": {k: v.detach().cpu() for k, v in model.state_dict().items()},
+        "trunk_state_dict_sha256": checkpoint_state_digest(model.state_dict()),
         "input_mean": input_mean.reshape(-1).tolist(),
         "input_std": input_std.reshape(-1).tolist(),
         "config": {
@@ -1457,6 +1505,9 @@ def main(argv: list[str] | None = None) -> None:
         "source_cache": str(Path(args.source_cache).resolve()),
         "source_snapshot_manifest": str(source_snapshot_manifest),
         "source_snapshot_sha256": source_snapshot_sha256,
+        "execution_source": execution_source,
+        "declared_source_snapshot": {'manifest': str(args.source_snapshot_manifest.resolve()),
+            'archive_sha256': declared_snapshot_sha256},
         "holdout_subjects": sorted(holdout),
         "source_dataset_name": dataset.name,
         "source_subjects": sorted(all_subjects),
@@ -1493,13 +1544,15 @@ def main(argv: list[str] | None = None) -> None:
         "refit_seconds": refit_sec,
         "best_epoch": history.get("best_epoch"),
         "final_task_val_auc": history.get("final_task_val_auc"),
+        "resource_execution": entrypoint_resource_record(entrypoint="run_pretrain_supervised",
+            requested_device=args.device, effective_device=device, declared_scope=args.resource_scope),
         "runtime": {
             "device": str(device),
             "selection": selection_baseline.last_runtime,
             "refit": baseline.last_runtime,
         },
     }
-    torch.save(payload, checkpoint)
+    save_source_checkpoint(checkpoint, payload, exclusive=True)
     if config.fixed_updates is not None:
         for update, snapshot in baseline.candidate_snapshots_.items():
             candidate_config = replace(config, fixed_updates=update, snapshot_updates=())
@@ -1515,6 +1568,7 @@ def main(argv: list[str] | None = None) -> None:
             )
             candidate = {**payload,
                 "trunk_state_dict": snapshot["model_state_dict"],
+                "trunk_state_dict_sha256": checkpoint_state_digest(snapshot["model_state_dict"]),
                 "input_mean": snapshot["input_mean"].reshape(-1).tolist(),
                 "input_std": snapshot["input_std"].reshape(-1).tolist(),
                 "training_contract": candidate_contract.record(),
@@ -1530,7 +1584,7 @@ def main(argv: list[str] | None = None) -> None:
                 "source_candidate_trajectory": {key: value for key, value in snapshot.items()
                                                 if key not in {"model_state_dict", "input_mean", "input_std"}},
             }
-            torch.save(candidate, checkpoint.with_name(f"{checkpoint.stem}.u{update}{checkpoint.suffix}"))
+            save_source_checkpoint(_checkpoint_output_paths(checkpoint, (update,))[1], candidate, exclusive=True)
     print(
         json.dumps(
             {

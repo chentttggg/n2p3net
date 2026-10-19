@@ -17,6 +17,10 @@ if TYPE_CHECKING:
     from data.identity import IdentityExclusionPolicy
 
 
+class ExecutedSourceMismatchError(ValueError):
+    """A valid original freeze describes different current runtime files."""
+
+
 def checkpoint_model_origin(
     payload: Mapping[str, object], *, checkpoint_sha256: str
 ) -> dict[str, object]:
@@ -163,19 +167,19 @@ def verified_executed_snapshot(
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
     recorded = payload.get("files")
     if not isinstance(recorded, dict) or not recorded:
-        raise ValueError("executed snapshot requires a nonempty files digest mapping")
+        raise ExecutedSourceMismatchError("executed snapshot requires a nonempty files digest mapping")
     required = set(required_files) | {"pyproject.toml", "uv.lock"}
     required.update(item.relative_to(root).as_posix() for item in (root / "src").rglob("*.py"))
     required.update(item.relative_to(root).as_posix() for item in (root / "experiments").glob("*.py"))
     missing = required - set(recorded)
     if missing:
-        raise ValueError(f"executed snapshot missing runtime files: {sorted(missing)}")
+        raise ExecutedSourceMismatchError(f"executed snapshot missing runtime files: {sorted(missing)}")
     for name, digest in recorded.items():
         actual_path = (root / name).resolve()
         if not actual_path.is_relative_to(root):
             raise ValueError("snapshot file path escapes executing checkout")
         if not actual_path.is_file() or hashlib.sha256(actual_path.read_bytes()).hexdigest() != digest:
-            raise ValueError(f"executed source differs from snapshot: {name}")
+            raise ExecutedSourceMismatchError(f"executed source differs from snapshot: {name}")
     with tarfile.open(Path(path).resolve().parent / payload["archive"], "r:gz") as archive:
         members = {member.name: member for member in archive if member.isfile()}
         for name, digest in recorded.items():
@@ -186,6 +190,7 @@ def verified_executed_snapshot(
 
 
 __all__ = [
+    "ExecutedSourceMismatchError",
     "build_evaluation_run_contract",
     "checkpoint_model_origin",
     "scratch_model_origin",

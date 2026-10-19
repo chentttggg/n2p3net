@@ -270,6 +270,16 @@ def calibration_decision_groups(dataset: EpochDataset, training_mask: np.ndarray
     return tuple(groups), tuple(targets), weights, ledger
 
 
+def calibration_decision_rows_per_update(dataset: EpochDataset, training_mask: np.ndarray) -> int:
+    """Bound the sampled decision forward using only authorized physical groups.
+
+    Epoch QC can remove evidence, so the pre-QC maximum also bounds its replay.
+    The full requested-group risk and its sampling probabilities stay unchanged.
+    """
+    groups, _, _, _ = calibration_decision_groups(dataset, training_mask)
+    return max((int(np.sum(group.evidence_indices >= 0)) for group in groups), default=0)
+
+
 def remap_decision_groups(groups, source_rows):
     """Map authorized event evidence through an explicit row subset/QC result.
 

@@ -1,0 +1,55 @@
+{
+  "schema": "n2p3_checkpoint_publication_root_integration/1",
+  "author": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-checkpoint-publication\\DELIVERY_MANIFEST.json",
+    "sha256": "1d8b7b71d5ae04aa526b5626e85b0a182a829b1d5094fa447f4a02f239750662",
+    "bytes": 6669
+  },
+  "independent": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-checkpoint-publication\\independent-review\\SOURCE_REVIEW.json",
+    "sha256": "a4a07e4b8c00dff074f4909c82eb9cc5bf8eacecf9b8abd4d23762b76c4d24a0",
+    "bytes": 3903
+  },
+  "root_before": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\reviewed-integration\\root_before_checkpoint_publication.zip",
+    "sha256": "549e57e28159005eac63f3301161dcb94ffa5338ece6c9fee9fbf9be3d650748",
+    "bytes": 40141
+  },
+  "canonical_files": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\run_pretrain.py",
+      "sha256": "1d7e0ac070da95623551defd19fcd4c1513ac43e77cf31b62ea2d17ab7245785",
+      "bytes": 23012
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\run_pretrain_supervised.py",
+      "sha256": "ec2adcff2a8c603f8b42b91e08aa7f4fb23ce9d9d26c02fd9afcff2eda853036",
+      "bytes": 74937
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\execution.py",
+      "sha256": "c1aff54e5c55892d30e50bf925932181c0fc7f63b01f107084d0357f057b8bc0",
+      "bytes": 8707
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\source_execution.py",
+      "sha256": "9d551d9b76485bf3ef7cd92bc60bc5e386128b6f11204284d9bc56f43d3cfbe9",
+      "bytes": 69215
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\train\\test_pretrain_checkpoint_publication.py",
+      "sha256": "86b85b76263268297ccec324758412f4be60200bf36b9fb244e0104511a20240",
+      "bytes": 10087
+    }
+  ],
+  "root_review": "Read all writer and CLI changes; explicit exclusive mode delegates fsync/no-replace publication and existing temporary-byte admission, preserves legacy partial accounting, rejects actual main/candidate and dry/full batch-record collisions before capture or fit; payload/scientific AST retained.",
+  "validation": {
+    "author_and_independent": "18 source-pinned controls accepted; no training or EEG",
+    "canonical_combination": "pending final composed suite"
+  },
+  "root_import_classification": {
+    "path": "experiments\\run_pretrain_supervised.py",
+    "change": "one local import block sorted for the canonical package layout",
+    "canonical_sha256": "16ed85586284f0e0cc76b78dc4f6e1686f10caa9589c72b31c49c6e3e6e04539"
+  }
+}

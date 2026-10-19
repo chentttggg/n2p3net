@@ -141,7 +141,7 @@ def _atomic_write_stream(path, chunks, nbytes, *, input_admission=None):
     return target
 
 
-def publish_exclusive(path: str | Path, write) -> Path:
+def publish_exclusive(path: str | Path, write, *, input_admission=None, byte_size=None) -> Path:
     """Publish a new immutable artifact without replacing an existing file."""
 
     target = Path(path)
@@ -149,14 +149,17 @@ def publish_exclusive(path: str | Path, write) -> Path:
     if target.exists():
         raise FileExistsError(f"refusing to replace an existing artifact: {target}")
     temporary = target.with_name(f".{target.name}.{uuid4().hex}.tmp")
-    try:
-        with temporary.open("xb") as stream:
-            write(stream)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.link(temporary, target)
-    finally:
-        temporary.unlink(missing_ok=True)
+    allocation = (input_admission.artifact_writer(target, byte_size, temporary_paths=(temporary,))
+                  if input_admission is not None else nullcontext())
+    with allocation:
+        try:
+            with temporary.open("xb") as stream:
+                write(stream)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.link(temporary, target)
+        finally:
+            temporary.unlink(missing_ok=True)
     return target
 
 

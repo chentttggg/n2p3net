@@ -390,12 +390,27 @@ class DecisionPlanContract:
         )
 
 
+LEGACY_SOURCE_PROCEDURE_SCHEMA = "n2p3_source_training_procedure/1"
+SOURCE_PROCEDURE_SCHEMA = "n2p3_source_training_procedure/2"
+
 _SOURCE_PROCEDURE_FIELDS: dict[str, frozenset[str] | None] = {
     "architecture": None,
     "preprocessing": None,
     "optimizer": frozenset(
         {
             "name",
+            "config",
+            "lr",
+            "learning_rate",
+            "weight_decay",
+            "momentum",
+            "betas",
+            "eps",
+            "epochs",
+            "batch_size",
+            "gradient_clip_max_norm",
+            "shuffle_each_epoch",
+            "subject_probe_optimizer",
             "selection_config",
             "selection_execution",
             "refit_execution",
@@ -422,8 +437,22 @@ _SOURCE_PROCEDURE_FIELDS: dict[str, frozenset[str] | None] = {
             "feature_alignment_contract",
             "decision_loss",
             "source_selection_contract",
+            "source_program_config",
+            "mask",
+            "loss",
+            "band_weight_estimation_samples",
+            "standardize_input",
         }
     ),
+}
+
+_LEGACY_SOURCE_PROCEDURE_FIELDS = {
+    "optimizer": frozenset({"name", "selection_config", "selection_execution",
+                            "refit_execution", "effective_batch_contract"}),
+    "validation": _SOURCE_PROCEDURE_FIELDS["validation"],
+    "objective": frozenset({"name", "qc_ptp_uv", "input_statistics_scope", "source_risk_contract",
+                            "source_domain_axis", "feature_transfer", "feature_alignment_contract",
+                            "decision_loss", "source_selection_contract"}),
 }
 
 
@@ -446,7 +475,36 @@ def _without_replicate_randomness(value: Any) -> Any:
     return value
 
 
-def training_procedure_record(contract: TrainingRunContract) -> dict[str, Any]:
+def _source_program_procedure(contract: TrainingRunContract) -> dict[str, Any] | None:
+    program = contract.objective.get("source_program_config")
+    if program is None:
+        return None
+    actual = contract.optimizer.get("config", {})
+    if any(actual.get(key) != value for key, value in program["resolved"].items()):
+        raise ValueError("source program resolution differs from its actual optimizer configuration")
+    return {"declared": program["declared"], "val_groups_max_basis": program["val_groups_max_basis"]}
+
+
+def _source_optimizer_procedure(contract: TrainingRunContract) -> dict[str, Any]:
+    optimizer = _project_procedure_section(contract.optimizer, _SOURCE_PROCEDURE_FIELDS["optimizer"])
+    program = _source_program_procedure(contract)
+    if program is not None:
+        # Population-resolved caps remain in the full run contract. The
+        # procedure compares the declared rule across participant partitions.
+        optimizer["config"] = {**optimizer["config"], **program["declared"]}
+    if (contract.validation.get("strategy") == "source_internal_early_stopping_then_full_refit"
+            and "config" in optimizer):
+        # This producer stores its final refit config. Selected exposure is a
+        # fit outcome; the actual recorded stopping policy is the control.
+        config = {key: value for key, value in optimizer["config"].items() if key != "fixed_updates"}
+        config["global_early_stopping"] = contract.validation["early_stopping"]["policy"]
+        optimizer["config"] = config
+    return optimizer
+
+
+def training_procedure_record(
+    contract: TrainingRunContract, *, projection_schema: str = SOURCE_PROCEDURE_SCHEMA,
+) -> dict[str, Any]:
     """Project a training run onto the fields that define the source procedure.
 
     The projection is an explicit allowlist of procedure *controls*. Realized
@@ -462,22 +520,29 @@ def training_procedure_record(contract: TrainingRunContract) -> dict[str, Any]:
     an empty record that could equate different unknown schemes. Replicate
     seed fields are stripped wherever they appear: seed is a declared
     variation axis, not a procedure control.
-    """
 
+    New records declare projection /2. The explicit /1 mode replays the
+    historical unversioned projection without relabelling its frozen bytes.
+    """
+    if projection_schema not in {SOURCE_PROCEDURE_SCHEMA, LEGACY_SOURCE_PROCEDURE_SCHEMA}:
+        raise ValueError("unsupported source training procedure projection")
+    current = projection_schema == SOURCE_PROCEDURE_SCHEMA
+    fields = _SOURCE_PROCEDURE_FIELDS if current else _LEGACY_SOURCE_PROCEDURE_FIELDS
+    objective = _project_procedure_section(contract.objective, fields["objective"])
+    if current and "source_program_config" in objective:
+        objective["source_program_config"] = _source_program_procedure(contract)
     return _canonical_value(
         _without_replicate_randomness(
             {
+            **({"schema": SOURCE_PROCEDURE_SCHEMA} if current else {}),
             "architecture": contract.architecture,
             "preprocessing": contract.preprocessing,
-            "optimizer": _project_procedure_section(
-                contract.optimizer, _SOURCE_PROCEDURE_FIELDS["optimizer"]
-            ),
+            "optimizer": (_source_optimizer_procedure(contract) if current else
+                          _project_procedure_section(contract.optimizer, fields["optimizer"])),
             "validation": _project_procedure_section(
-                contract.validation, _SOURCE_PROCEDURE_FIELDS["validation"]
+                contract.validation, fields["validation"]
             ),
-                "objective": _project_procedure_section(
-                    contract.objective, _SOURCE_PROCEDURE_FIELDS["objective"]
-                ),
+                "objective": objective,
             }
         )
     )
@@ -612,6 +677,8 @@ __all__ = [
     "EVALUATION_RUN_CONTRACT_SCHEMA",
     "STATISTICAL_DESIGN_SCHEMA",
     "TRAINING_RUN_CONTRACT_SCHEMA",
+    "SOURCE_PROCEDURE_SCHEMA",
+    "LEGACY_SOURCE_PROCEDURE_SCHEMA",
     "ArmContract",
     "DecisionPlanContract",
     "DecisionPlanEntry",

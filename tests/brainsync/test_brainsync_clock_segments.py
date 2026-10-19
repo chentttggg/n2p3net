@@ -21,7 +21,8 @@ def recording(tmp_path):
 
 def _write_clock_segments(root, boundaries):
     validated = validate_brainsync_bids_session(root)
-    count = round(validated.bids.duration_seconds * validated.bids.sample_rate_hz)
+    with validated.bids:
+        count = round(validated.bids.duration_seconds * validated.bids.sample_rate_hz)
     clock = write_recording_clock(root, acquired=count, serialized=count)["clock"]
     metadata_path, journal_path = root / clock["metadata_path"], root / clock["journal_path"]
     metadata = read_json(metadata_path)

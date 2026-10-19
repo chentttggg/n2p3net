@@ -34,6 +34,7 @@ from experiments.run_pretrain_supervised import (
 from models.adapters import FeatureDomainTransfer
 from models.n2p3net import N2P3Net
 from research.contracts import training_procedure_record
+from research.evaluation import verified_executed_snapshot
 from tests import PROJECT_ROOT
 from tests.support.snapshots import write_source_snapshot
 from train.source_sampling import PDSSelection, array_digest
@@ -393,9 +394,16 @@ def test_supervised_runner_records_uniform_initial_checkpoint_for_selected_stage
 
     payload = torch.load(initial_checkpoint, map_location="cpu", weights_only=False)
     contract = checkpoint_training_contract(payload)
-    assert contract.source_snapshot_sha256 == source_digest
-    assert payload["source_snapshot_sha256"] == source_digest
-    assert payload["source_snapshot_manifest"] == str(source_manifest.resolve())
+    assert payload["declared_source_snapshot"] == {
+        "manifest": str(source_manifest.resolve()), "archive_sha256": source_digest,
+    }
+    actual_manifest = Path(payload["source_snapshot_manifest"])
+    actual_source = verified_executed_snapshot(actual_manifest, root=PROJECT_ROOT)
+    assert actual_source["archive_sha256"] != source_digest
+    assert contract.source_snapshot_sha256 == actual_source["archive_sha256"]
+    assert payload["source_snapshot_sha256"] == actual_source["archive_sha256"]
+    assert payload["execution_source"]["declared_source"]["archive_sha256"] == source_digest
+    assert payload["execution_source"]["manifest"] == str(actual_manifest)
     assert contract.optimizer["selection_config"]["precision"] == "auto"
     assert contract.optimizer["refit_config"]["precision"] == "auto"
     assert contract.optimizer["selection_runtime"]["precision"] == "fp32"
@@ -406,7 +414,7 @@ def test_supervised_runner_records_uniform_initial_checkpoint_for_selected_stage
     run_pretrain_supervised_main(
         _source_args(
             tmp_path,
-            source_manifest,
+            actual_manifest,
             "--source-selection-record",
             str(selection_path),
             "--initial-checkpoint",
@@ -425,6 +433,20 @@ def test_supervised_runner_records_uniform_initial_checkpoint_for_selected_stage
         "path": str(initial_checkpoint.resolve()),
         "sha256": expected_sha,
     }
+    assert payload["declared_source_snapshot"]["archive_sha256"] == actual_source["archive_sha256"]
+    assert payload["execution_source"]["mode"] == "verified_original_source_archive_copied"
+    assert contract.source_snapshot_sha256 == actual_source["archive_sha256"]
+    selected_manifest = Path(payload["source_snapshot_manifest"])
+    assert verified_executed_snapshot(selected_manifest, root=PROJECT_ROOT)["archive_sha256"] == actual_source["archive_sha256"]
+
+    # Source capture does not weaken the existing initial-checkpoint cache gate.
+    _SOURCE_DATASET_CACHE.clear()
+    monkeypatch.setattr("data.epochs.loaded_epoch_cache_attestation", lambda *args, **kwargs: {"sha256": "f" * 64})
+    wrong_cache_checkpoint = tmp_path / "wrong-cache-initial.pt"
+    with pytest.raises(ValueError, match="different source cache"):
+        run_pretrain_supervised_main(_source_args(tmp_path, actual_manifest,
+            "--initial-checkpoint", str(initial_checkpoint), "--checkpoint", str(wrong_cache_checkpoint)))
+    assert not wrong_cache_checkpoint.exists()
 
 
 def test_supervised_runner_rejects_selection_from_another_source_cache(
@@ -481,6 +503,16 @@ def test_supervised_batch_loads_source_once_and_attests_each_checkpoint(
             return super().fit(X, y, group_ids=group_ids, **kwargs)
 
     _patch_source_runner(monkeypatch, load_once, MaskCheckingBaseline)
+    from experiments import freeze_source_snapshot
+
+    original_freeze = freeze_source_snapshot.freeze_source
+    actual_freezes = []
+
+    def freeze_actual_source(output, **kwargs):
+        actual_freezes.append(Path(output).resolve())
+        return original_freeze(output, **kwargs)
+
+    monkeypatch.setattr(freeze_source_snapshot, "freeze_source", freeze_actual_source)
 
     run_pretrain_supervised_main(
         _source_args(
@@ -504,13 +536,24 @@ def test_supervised_batch_loads_source_once_and_attests_each_checkpoint(
     assert record["schema"] == SOURCE_PRETRAIN_BATCH_SCHEMA
     assert record["completed"] is True
     assert record["job_count"] == 2
-    assert record["source_snapshot_sha256"] == source_digest
+    shared_source = record["execution_source"]
+    assert shared_source["declared_source"]["archive_sha256"] == source_digest
+    actual_source = verified_executed_snapshot(shared_source["manifest"], root=PROJECT_ROOT)
+    assert record["source_snapshot_sha256"] == actual_source["archive_sha256"]
+    assert record["source_snapshot_sha256"] != source_digest
+    assert actual_freezes == [batch_record.with_suffix(batch_record.suffix + ".source").resolve()]
     assert [Path(job["checkpoint"]) for job in record["jobs"]] == [
         path.resolve() for path in checkpoints
     ]
     for job, checkpoint in zip(record["jobs"], checkpoints, strict=True):
         payload = load_checkpoint_payload(checkpoint)
         assert job["checkpoint_sha256"] == hashlib.sha256(checkpoint.read_bytes()).hexdigest()
+        assert job["source_snapshot_sha256"] == record["source_snapshot_sha256"]
+        assert payload["source_snapshot_sha256"] == record["source_snapshot_sha256"]
+        assert payload["declared_source_snapshot"]["archive_sha256"] == source_digest
+        assert payload["execution_source"]["mode"] == "verified_original_source_archive_copied"
+        assert payload["execution_source"]["declared_source"]["manifest"] == shared_source["manifest"]
+        assert job["source_snapshot_manifest"] == payload["source_snapshot_manifest"]
         assert payload["architecture"]["mst_features_per_scale"] == 4
         assert (
             payload["source_observed_trial_counts"]

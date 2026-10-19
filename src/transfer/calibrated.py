@@ -1144,7 +1144,7 @@ def save_calibrated_predictor(path: str | Path, predictor: CalibratedPredictor) 
     temporary = destination.with_name(f".{destination.name}.{uuid4().hex}.tmp")
     payload = {
         "schema": CALIBRATED_PREDICTOR_SCHEMA,
-        "selection_contract": predictor.metadata["selection"].get(
+        "selection_contract": predictor.metadata.get("selection", {}).get(
             "schema", "n2p3_fixed_or_historical_calibration/1"),
         "metadata": predictor.metadata, "metadata_digest": semantic_sha256(predictor.metadata),
         "state": predictor.state, "state_digest": _state_digest(predictor.state),
@@ -1174,7 +1174,7 @@ def load_calibrated_predictor(path: str | Path | BinaryIO, *, device: str = "cpu
         raise ValueError("calibrated model state digest mismatch")
     if payload["schema"] == CALIBRATED_PREDICTOR_SCHEMA:
         declaration = payload.get("selection_contract")
-        selection = payload["metadata"]["selection"]
+        selection = payload["metadata"].get("selection", {})
         if declaration == "n2p3_calibration_candidate_selection/1":
             if selection.get("schema") != declaration:
                 raise ValueError("calibrated model selection contract is missing or inconsistent")

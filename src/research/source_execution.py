@@ -43,13 +43,33 @@ class _CheckpointByteCounter:
         pass
 
 
-def save_source_checkpoint(path, payload):
+def require_new_checkpoint_paths(paths):
+    """Reject immutable output collisions before data work or source capture."""
+    paths = tuple(Path(path).resolve() for path in paths)
+    if len(paths) != len(set(paths)):
+        raise ValueError('checkpoint output paths must be unique')
+    existing = [str(path) for path in paths if path.exists()]
+    if existing:
+        raise FileExistsError('choose new checkpoint outputs; existing artifacts are immutable: '+', '.join(existing))
+
+
+def save_source_checkpoint(path, payload, *, exclusive=False):
     """Admit serialized model/ledger bytes independently of resident EEG RAM."""
     import torch
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     admission = current_input_admission()
+    if exclusive:
+        from research.execution import publish_exclusive
+
+        require_new_checkpoint_paths((path,))
+        counter = _CheckpointByteCounter() if admission is not None else None
+        if counter is not None:
+            torch.save(payload, counter)
+        publish_exclusive(path, lambda stream: torch.save(payload, stream), input_admission=admission,
+            byte_size=None if counter is None else counter.nbytes)
+        return
     if admission is None:
         torch.save(payload, path)
         return
@@ -873,7 +893,6 @@ def release_source_worker(device):
     import torch
 
     if torch.device(device).type == "cuda" and torch.cuda.is_initialized():
-        torch.compiler.reset()
         from train.device import release_device_memory
 
         release_device_memory(torch.device(device))

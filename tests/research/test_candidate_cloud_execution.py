@@ -36,9 +36,17 @@ def interrupted_candidate_adapter(arguments):
 
 def resources(plan_path):
     plan = json.loads(plan_path.read_bytes())
-    return resolve_source_resources({**plan, "cpu_budget": len(plan["records"]) + 1,
-        "source_workers": len(plan["records"]), "target_workers": len(plan["records"]),
-        "source_worker_memory_gib": .25, "target_worker_memory_gib": .25}, len(plan["records"]), "cpu")
+    count = len(plan["records"])
+    replay = plan.get("evaluation_design") == "independent_prefix"
+    return resolve_source_resources({
+        **plan,
+        "cpu_budget": count * (2 if replay else 1) + 1,
+        "source_workers": count,
+        "target_workers": count,
+        "source_worker_memory_gib": .25,
+        "target_worker_memory_gib": .25,
+        **({"target_native_threads_per_worker": 1} if replay else {}),
+    }, count, "cpu")
 
 
 def test_actual_native_exit_preserves_sealed_model_probability_and_all_requested_decisions(tmp_path):
@@ -167,6 +175,11 @@ def test_independent_one_seed_native_exit_keeps_unscored_actual_budget_panels(tm
                                    source_snapshot_sha256="b" * 64)
     payload = torch.load(source_path, weights_only=True)
     payload["training_contract"]["seed"] = 20260918
+    # This synthetic source supplies a posterior probability, so its actual
+    # weighted-CE class cost must be declared in the source training contract.
+    payload["training_contract"]["optimizer"]["config"] = {
+        "pos_weight": payload["source_calibration"]["pos_weight"],
+    }
     payload["training_contract_digest"] = runner.semantic_sha256(payload["training_contract"])
     torch.save(payload, source_path)
     recipe = TargetRecipe("NN", initialization="source", input_statistics="source", epochs=1, batch_size=128,

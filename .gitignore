@@ -57,3 +57,6 @@ cloud_inputs/
 /doc/assets/**/cache/
 /doc/assets/**/.cache/
 /doc/assets/**/build/
+
+# Local research reference PDFs remain available; citation inventory stays in Git.
+/Paper/*.pdf

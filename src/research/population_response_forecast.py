@@ -51,7 +51,9 @@ def _generated_relation(actual, expected, magnitude):
     # values remain the law; a cold consumer never substitutes recomputation.
     operations = max(1, *(actual.shape or (1,)))
     bound = 64 * np.finfo(float).eps * operations * magnitude
-    if actual.shape != expected.shape or np.any(np.abs(actual-expected) > bound):
+    if (actual.shape != expected.shape or not np.isfinite(actual).all()
+            or not np.isfinite(expected).all() or not np.isfinite(magnitude).all()
+            or np.any(np.abs(actual-expected) > bound)):
         raise ValueError("saved forecast decomposition differs from its original saved factors")
 
 
@@ -356,6 +358,9 @@ class PopulationForecast:
     log_source_marginal: float
     variance_fit_json: str
     producer_sha256: str
+    source_qr_witnesses: tuple = field(default=(), repr=False, kw_only=True)
+    population_qr_witness: np.ndarray | None = field(default=None, repr=False, kw_only=True)
+    restoration_validation: str = field(default="original_numeric_producer", kw_only=True)
 
     def __post_init__(self):
         dimensions = {"log_scales": 1, "mean": 1, "between_factor": 2, "mean_factor": 2,
@@ -366,6 +371,10 @@ class PopulationForecast:
         if not np.isfinite(self.log_source_marginal):
             raise ArithmeticError("the original source marginal must be finite")
         object.__setattr__(self, "variance_fit_json", _json(json.loads(self.variance_fit_json)))
+        object.__setattr__(self, "source_qr_witnesses", tuple(
+            (_array(q, 2), _array(lower, 2)) for q, lower in self.source_qr_witnesses))
+        if self.population_qr_witness is not None:
+            object.__setattr__(self, "population_qr_witness", _array(self.population_qr_witness, 2))
 
     @property
     def factor(self):
@@ -383,16 +392,19 @@ class PopulationForecast:
         return matrix @ self.mean, matrix @ self.factor
 
 
-def _infer(ordered, fold, reference, templates, input_identity, log_scales, variance_fit):
+def _infer(ordered, fold, reference, templates, input_identity, log_scales, variance_fit, *, retain_witness=False):
     between = _between_factor(templates, log_scales)
     dimension = reference.chart.dimension
     stack, rhs, log_determinants = [np.eye(dimension)], [np.zeros(dimension)], 0.
     constants = 0.
+    source_witnesses = []
     for row in ordered:
         b = row.matrix @ between
         # [I, A F_Omega] [I, A F_Omega]^T, represented by its QR square root.
-        _, upper = _positive_qr(np.column_stack((np.eye(len(row.response)), b)).T)
+        source_q, upper = _positive_qr(np.column_stack((np.eye(len(row.response)), b)).T)
         lower = upper.T
+        if retain_witness:
+            source_witnesses.append((source_q, lower))
         stack.append(solve_triangular(lower, row.matrix @ reference.factor, lower=True))
         rhs.append(solve_triangular(lower, row.response - row.matrix @ reference.mean, lower=True))
         log_determinants += float(np.log(np.diag(lower)).sum())
@@ -408,7 +420,8 @@ def _infer(ordered, fold, reference, templates, input_identity, log_scales, vari
     marginal = constants - log_determinants - float(np.log(np.diag(upper)).sum()) - .5 * float(residual @ residual)
     return PopulationForecast(reference.chart, fold, reference, templates, ordered, input_identity,
         np.asarray(log_scales), mean, between, mean_factor, upper, transformed,
-        marginal, _json(variance_fit), IMPLEMENTATION_SHA256)
+        marginal, _json(variance_fit), IMPLEMENTATION_SHA256,
+        source_qr_witnesses=tuple(source_witnesses), population_qr_witness=q if retain_witness else None)
 
 
 def infer_population(likelihoods, *, fold, reference, templates, log_scales, fitted_variance=None):
@@ -422,7 +435,7 @@ def infer_population(likelihoods, *, fold, reference, templates, log_scales, fit
                 or record["kind"] != "source_only_log_variance_plugin"
                 or record["source_only"] is not True or record["success"] is not True):
             raise ValueError("a fitted variance cannot be reused after changing the source fold or likelihoods")
-    return _infer(ordered, fold, reference, templates, identity, log_scales, record)
+    return _infer(ordered, fold, reference, templates, identity, log_scales, record, retain_witness=True)
 
 
 class VarianceOptimizationError(RuntimeError):
@@ -461,13 +474,11 @@ def fit_population_variance(likelihoods, *, fold, reference, templates, program)
         "global_optimality_claimed": False, "producer_sha256": IMPLEMENTATION_SHA256}
     if not result.success or not np.isfinite(result.fun):
         raise VarianceOptimizationError(record)
-    return _infer(ordered, fold, reference, templates, identity, result.x, record)
+    return _infer(ordered, fold, reference, templates, identity, result.x, record, retain_witness=True)
 
 
-def save_forecast(forecast, directory):
-    """Save a compact numeric closure, with source dependency identities, once."""
-    directory = Path(directory)
-    directory.mkdir(parents=True, exist_ok=False)
+def forecast_numeric_state(forecast):
+    """Complete numeric state with its original identities; no file/fit authority."""
     arrays = {name: getattr(forecast, name) for name in ("log_scales", "mean", "between_factor", "mean_factor",
         "posterior_latent_upper", "posterior_latent_rhs")}
     arrays.update(reference_mean=forecast.reference.mean, reference_factor=forecast.reference.factor)
@@ -475,10 +486,6 @@ def save_forecast(forecast, directory):
         arrays[f"template_{i}"] = template.factor
     for i, likelihood in enumerate(forecast.likelihoods):
         arrays[f"source_{i}_matrix"], arrays[f"source_{i}_response"] = likelihood.matrix, likelihood.response
-    stream = io.BytesIO()
-    np.savez_compressed(stream, **arrays)
-    payload = stream.getvalue()
-    (directory / "arrays.npz").write_bytes(payload)
     record = {"schema": "n2p3_full_response_population_forecast/1", "chart": forecast.chart.record(),
         "fold": forecast.fold.record(), "reference": forecast.reference.record(),
         "templates": [t.record() for t in forecast.templates],
@@ -487,8 +494,144 @@ def save_forecast(forecast, directory):
         "variance_fit": json.loads(forecast.variance_fit_json), "producer_sha256": forecast.producer_sha256,
         "factor_order": "between_person_columns_then_population_mean_uncertainty_columns",
         "raw_or_label_authority_granted": False,
-        "arrays": {"file": "arrays.npz", "sha256": hashlib.sha256(payload).hexdigest(), "bytes": len(payload)},
         "array_identities": {name: _array_id(value) for name, value in arrays.items()}}
+    return record, arrays
+
+
+def forecast_qr_witness_state(forecast):
+    """Only the actual final fit's QR outputs; optimizer probes retain none."""
+    if (forecast.population_qr_witness is None
+            or len(forecast.source_qr_witnesses) != len(forecast.likelihoods)):
+        raise ValueError("the original complete final-fit source/population QR witnesses are required")
+    state, arrays = forecast_numeric_state(forecast)
+    values = {"population_q": forecast.population_qr_witness}
+    for i, (q, lower) in enumerate(forecast.source_qr_witnesses):
+        values[f"source_q_{i}"], values[f"source_lower_{i}"] = q, lower
+    header = {"schema": "same_fit_source_and_population_QR_witness/1",
+        "input_identity": forecast.input_identity, "producer_sha256": forecast.producer_sha256,
+        "forecast_array_identities": state["array_identities"],
+        "array_identities": {name: _array_id(value) for name, value in values.items()},
+        "original_source_participants": [row.participant_key for row in forecast.likelihoods],
+        "raw_or_label_authority_granted": False}
+    return header, values
+
+
+def save_forecast_qr_witness(forecast, path):
+    """Write one compressed evidence artifact per fold, separate from state."""
+    header, arrays = forecast_qr_witness_state(forecast)
+    stream = io.BytesIO()
+    np.savez_compressed(stream, **arrays)
+    payload = stream.getvalue()
+    path = Path(path)
+    with path.open("xb") as output:
+        output.write(payload)
+    return {"path": str(path.resolve()), "bytes": len(payload),
+        "sha256": hashlib.sha256(payload).hexdigest(), "header": header}
+
+
+def load_forecast_qr_witness(reference, *, base_directory=None):
+    path = Path(reference["path"])
+    if not path.is_absolute():
+        if base_directory is None:
+            raise ValueError("a local QR witness needs its actual forecast directory")
+        path = Path(base_directory)/path
+    content = path.read_bytes()
+    if len(content) != reference["bytes"] or hashlib.sha256(content).hexdigest() != reference["sha256"]:
+        raise ValueError("the original final-fit QR witness bytes changed")
+    with np.load(io.BytesIO(content), allow_pickle=False) as archive:
+        values = {name: archive[name] for name in archive.files}
+    return reference["header"], values
+
+
+def _qr_witness_relation(q, upper, design):
+    rows, columns = design.shape
+    if (q.shape != (rows, columns) or upper.shape != (columns, columns)
+            or not np.isfinite(q).all() or not np.isfinite(upper).all()):
+        raise ValueError("the actual QR witness has a different complete input shape")
+    orthogonal = q.T @ q
+    magnitude = np.abs(q.T) @ np.abs(q)+np.eye(columns)
+    bound = 64*np.finfo(float).eps*max(rows, columns)*magnitude
+    if (not np.isfinite(orthogonal).all() or not np.isfinite(magnitude).all()
+            or np.any(np.abs(orthogonal-np.eye(columns)) > bound)):
+        raise ValueError("the saved actual QR witness is not orthonormal")
+    # QR is backward stable in input-column norms. Scale every column
+    # independently, so a strong column cannot set a weak column's budget.
+    scales = np.maximum(np.max(np.abs(design), axis=0), np.max(np.abs(upper), axis=0))
+    if np.any(scales == 0):
+        raise ValueError("the proper source/population QR has an empty original column")
+    scaled_design, scaled_upper = design/scales, upper/scales
+    actual = q @ scaled_upper
+    dot_magnitude = np.abs(q) @ np.abs(scaled_upper)+np.abs(scaled_design)
+    arithmetic = 64*np.finfo(float).eps*max(rows, columns)
+    budget = arithmetic*(dot_magnitude+np.sqrt(float(rows))*np.max(np.abs(scaled_design), axis=0))
+    if not np.isfinite(actual).all() or np.any(np.abs(actual-scaled_design) > budget):
+        raise ValueError("the saved QR witness differs from its actual original input columns")
+
+
+def validate_forecast_qr_witness(record, arrays, witness, ordered, reference, between, upper, rhs):
+    """One complete cold-fold relation; preserves all saved parameters/columns."""
+    header, values = witness
+    required = {"population_q"} | {f"source_{field}_{i}" for i in range(len(ordered)) for field in ("q", "lower")}
+    if (header["schema"] != "same_fit_source_and_population_QR_witness/1"
+            or header["raw_or_label_authority_granted"] is not False
+            or header["input_identity"] != record["input_identity"]
+            or header["producer_sha256"] != record["producer_sha256"]
+            or header["original_source_participants"] != [row.participant_key for row in ordered]
+            or header["forecast_array_identities"] != record["array_identities"]
+            or set(values) != required
+            or {name: _array_id(value) for name, value in values.items()} != header["array_identities"]):
+        raise ValueError("the actual final-fit QR witness belongs to another source/forecast state")
+    dimension = reference.chart.dimension
+    designs, responses = [np.eye(dimension)], [np.zeros(dimension)]
+    constants, logdet = 0., 0.
+    magnitude_constant = 0.
+    for i, row in enumerate(ordered):
+        size = len(row.response)
+        lower = values[f"source_lower_{i}"]
+        if (lower.shape != (size, size) or not np.array_equal(lower, np.tril(lower))
+                or np.any(np.diag(lower) <= 0)):
+            raise ValueError("the source covariance QR lower factor changed its actual support")
+        augmented = np.column_stack((np.eye(size), row.matrix @ between)).T
+        _qr_witness_relation(values[f"source_q_{i}"], lower.T, augmented)
+        designs.append(solve_triangular(lower, row.matrix @ reference.factor, lower=True))
+        responses.append(solve_triangular(lower, row.response-row.matrix @ reference.mean, lower=True))
+        terms = np.log(np.diag(lower))
+        logdet += float(terms.sum())
+        constants += row.log_constant
+        magnitude_constant += abs(row.log_constant)+float(np.abs(terms).sum())
+    design, data = np.vstack(designs), np.concatenate(responses)
+    q = values["population_q"]
+    _qr_witness_relation(q, upper, design)
+    projected = q.T @ data
+    projection_magnitude = np.abs(q.T) @ np.abs(data)+np.abs(rhs)
+    projection_bound = 64*np.finfo(float).eps*max(q.shape)*projection_magnitude
+    if not np.isfinite(projected).all() or np.any(np.abs(projected-rhs) > projection_bound):
+        raise ValueError("the saved population RHS differs from actual source data and original Q")
+    z = solve_triangular(upper, rhs)
+    residual = data-design @ z
+    terms = np.log(np.diag(upper))
+    expected = constants-logdet-float(terms.sum())-.5*float(residual @ residual)
+    envelope = np.abs(data)+np.abs(design) @ np.abs(z)
+    magnitude = magnitude_constant+float(np.abs(terms).sum())+.5*float(envelope @ envelope)
+    budget = 256*np.finfo(float).eps*max(design.shape)*magnitude
+    if (not np.isfinite(expected) or not np.isfinite(magnitude)
+            or abs(record["log_source_marginal"]-expected) > budget):
+        raise ValueError("the absolute source marginal differs from original A/r/c and same-fit QR")
+
+
+def save_forecast(forecast, directory):
+    """Save the original self-contained /1 codec, including source A/r."""
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=False)
+    record, arrays = forecast_numeric_state(forecast)
+    stream = io.BytesIO()
+    np.savez_compressed(stream, **arrays)
+    payload = stream.getvalue()
+    (directory / "arrays.npz").write_bytes(payload)
+    record["arrays"] = {"file": "arrays.npz", "sha256": hashlib.sha256(payload).hexdigest(), "bytes": len(payload)}
+    if forecast.population_qr_witness is not None:
+        witness = save_forecast_qr_witness(forecast, directory / "qr-witness.npz")
+        record["qr_witness"] = {**witness, "path": "qr-witness.npz"}
     content = (_json(record) + "\n").encode()
     (directory / "forecast.json").write_bytes(content)
     return {"path": str((directory / "forecast.json").resolve()),
@@ -512,8 +655,23 @@ def load_forecast(path, *, expected_sha256):
         raise ValueError("saved forecast numeric arrays changed")
     with np.load(io.BytesIO(payload), allow_pickle=False) as archive:
         arrays = {name: archive[name] for name in archive.files}
-    if {name: _array_id(value) for name, value in arrays.items()} != record["array_identities"]:
-        raise ValueError("saved forecast array dependency identities differ")
+    witness = (None if "qr_witness" not in record else
+               load_forecast_qr_witness(record["qr_witness"], base_directory=path.parent))
+    return restore_forecast_state(record, arrays, qr_witness=witness)
+
+
+def restore_forecast_state(record, arrays, *, qr_witness=None):
+    """One numeric restore owner for full and shared-reference codecs.
+
+    The caller verifies actual external artifact bytes. This function checks
+    every actual numeric/reference/template/likelihood/fold relation and fits
+    nothing. Saved producer identities remain the original identities.
+    """
+    if (record["schema"] != "n2p3_full_response_population_forecast/1"
+            or record["raw_or_label_authority_granted"] is not False
+            or record["factor_order"] != "between_person_columns_then_population_mean_uncertainty_columns"
+            or {name: _array_id(value) for name, value in arrays.items()} != record["array_identities"]):
+        raise ValueError("numeric forecast roles or actual state array identities differ")
     chart = ResponseChart.from_definition(record["chart"]["coefficient_names"], record["chart"]["physical_definition"])
     f = record["fold"]
     if f["exclusion_scope"] != "target_participant_all_records_and_source_hyperlearning":
@@ -554,6 +712,11 @@ def load_forecast(path, *, expected_sha256):
     if record["variance_fit"]["kind"] == "source_only_log_variance_plugin":
         if record["variance_fit"]["log_scales"] != arrays["log_scales"].tolist():
             raise ValueError("saved fitted variance scales changed")
+    validation = "legacy_numeric_identity_only_no_source_qr_witness"
+    if qr_witness is not None:
+        validate_forecast_qr_witness(record, arrays, qr_witness, ordered, reference, between, upper, rhs)
+        validation = "complete_same_fit_source_and_population_qr_witness"
     return PopulationForecast(chart, fold, reference, templates, ordered, identity,
         arrays["log_scales"], arrays["mean"], arrays["between_factor"], arrays["mean_factor"],
-        upper, rhs, record["log_source_marginal"], _json(record["variance_fit"]), record["producer_sha256"])
+        upper, rhs, record["log_source_marginal"], _json(record["variance_fit"]), record["producer_sha256"],
+        restoration_validation=validation)

@@ -1,0 +1,44 @@
+{
+  "schema": "n2p3_fixed_family_capacity_root_integration/1",
+  "delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\fixed-family-followup\\DELIVERY_MANIFEST.json",
+    "sha256": "bc47e86bf4933eda11e21f44185269dda15c0d55d70f834821b2a3cf039afbc8"
+  },
+  "preserved_before": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\reviewed-integration\\root_before_fixed_family.zip",
+    "sha256": "88248d419add1e73c1031dcb978413ef7cc873993e024965ee6f5cd0cf450a32"
+  },
+  "files": [
+    {
+      "repository_path": "experiments/run_candidate_ensemble_study.py",
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\fixed-family-followup\\integration\\experiments\\run_candidate_ensemble_study.py",
+      "sha256": "9b6f6de2e06408528b5e3fd53cb6e5510104a699170247c79009ea3c0f7c3989",
+      "bytes": 197234,
+      "predecessor_sha256": "e6105ab48c0fdb119aa9c6a42dd5e83328f0b36e8953b6732c537ec6c5f77786"
+    },
+    {
+      "repository_path": "tests/research/test_source_chain_fixed_family_replay.py",
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\fixed-family-followup\\integration\\tests\\research\\test_source_chain_fixed_family_replay.py",
+      "sha256": "ed2e0ef41a77956f83078f499b026cb1e393037fcd00e49a43a91624551c7828",
+      "bytes": 17550,
+      "predecessor_sha256": "fe848dfad9f16faa29d24f3a91ebe9d36d53abe2ecb71dedc2defe7d6bfdcd63"
+    },
+    {
+      "repository_path": "tests/research/test_candidate_replay_capacity.py",
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\fixed-family-followup\\integration\\tests\\research\\test_candidate_replay_capacity.py",
+      "sha256": "6fe413363ae97ffbac2ec32c11b7b1d07a427e88f7193e551ac86c52a3076cd0",
+      "bytes": 3064,
+      "predecessor_sha256": null
+    }
+  ],
+  "root_review": "Actual native+interop CPU must fit after coordinator reservation; preserve caller explicit budget, original fit and saved prediction denominator.",
+  "accepted_control": {
+    "new_fits": 0,
+    "new_optimizer_updates": 0,
+    "evaluation_workers_completed": 15,
+    "prediction_rows_preserved": 290,
+    "original_decisions": 29,
+    "original_failed_run_rewritten": false
+  },
+  "canonical_validation": "pending final composed suite"
+}

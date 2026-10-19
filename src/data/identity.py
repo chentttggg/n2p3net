@@ -47,6 +47,20 @@ def origin_subject_key(source_dataset_id: object, source_subject_id: object) -> 
     )
 
 
+def parse_origin_subject_key(origin: str) -> tuple[str, str]:
+    """Decode exactly the canonical source/participant key made by this module."""
+    parsed = urlsplit(origin)
+    parts = parsed.path.split("/")
+    if (parsed.scheme != "n2p3-origin" or not parsed.netloc
+            or len(parts) != 3 or parts[1] != "participant" or not parts[2]
+            or parsed.query or parsed.fragment):
+        raise ValueError("source library identity requires a canonical origin key")
+    source, subject = unquote(parsed.netloc), unquote(parts[2])
+    if origin_subject_key(source, subject) != origin:
+        raise ValueError("source library identity requires a canonical origin key")
+    return source, subject
+
+
 def source_dataset_ids_from_identity(table: DatasetIdentityTable) -> tuple[str, ...]:
     """Read original acquisition libraries from canonical provenance identities."""
     libraries = set()
@@ -54,10 +68,8 @@ def source_dataset_ids_from_identity(table: DatasetIdentityTable) -> tuple[str, 
         if not record.origin_subject_keys:
             raise ValueError("source library identity requires canonical origin keys")
         for origin in record.origin_subject_keys:
-            parsed = urlsplit(origin)
-            if parsed.scheme != "n2p3-origin" or not parsed.netloc or not parsed.path.startswith("/participant/"):
-                raise ValueError("source library identity requires a canonical origin key")
-            libraries.add(unquote(parsed.netloc))
+            source, _ = parse_origin_subject_key(origin)
+            libraries.add(source)
     return tuple(sorted(libraries))
 
 

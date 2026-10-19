@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from urllib.parse import unquote, urlsplit
+from urllib.parse import urlsplit
 
-from data.identity import DatasetIdentityTable
+from data.identity import DatasetIdentityTable, parse_origin_subject_key
 
 PARTICIPANT_EXCLUSION_POLICY = "brain_invaders_author_exclusions_20260907"
 PARTICIPANT_EXCLUSION_SOURCE = "https://hal.science/hal-02171575/document#page=4"
@@ -28,26 +28,37 @@ def source_participant_excluded(dataset_id: str, subject_id: object) -> bool:
     return subject.isdecimal() and int(subject) in excluded
 
 
+def _source_origin_excluded(origin: str) -> bool:
+    """Interpret canonical source keys while preserving other authority keys."""
+    # General identity records and training contracts also hold opaque source
+    # authorities or global registry keys. Only this reserved URI scheme
+    # declares source/participant fields for the author exclusion policy.
+    try:
+        scheme = urlsplit(origin).scheme
+    except ValueError:
+        if origin.partition(":")[0].lower() != "n2p3-origin":
+            return False
+        raise
+    if scheme != "n2p3-origin":
+        return False
+    source, subject = parse_origin_subject_key(origin)
+    return source_participant_excluded(source, subject)
+
+
 def excluded_identity_subjects(table: DatasetIdentityTable) -> tuple[str, ...]:
     excluded = []
     for record in table.records:
         for origin in record.origin_subject_keys:
-            parsed = urlsplit(origin)
-            parts = parsed.path.split("/")
-            if parsed.scheme == "n2p3-origin" and len(parts) == 3 and parts[1] == "participant":
-                if source_participant_excluded(unquote(parsed.netloc), unquote(parts[2])):
-                    excluded.append(record.local_subject_id)
-                    break
+            if _source_origin_excluded(origin):
+                excluded.append(record.local_subject_id)
+                break
     return tuple(excluded)
 
 
 def assert_origin_keys_allowed(keys: Sequence[str]) -> None:
     for origin in keys:
-        parsed = urlsplit(origin)
-        parts = parsed.path.split("/")
-        if parsed.scheme == "n2p3-origin" and len(parts) == 3 and parts[1] == "participant":
-            if source_participant_excluded(unquote(parsed.netloc), unquote(parts[2])):
-                raise ValueError(f"{PARTICIPANT_EXCLUSION_POLICY}: excluded source identity {origin}.")
+        if _source_origin_excluded(origin):
+            raise ValueError(f"{PARTICIPANT_EXCLUSION_POLICY}: excluded source identity {origin}.")
 
 
 def assert_identity_participants_allowed(table: DatasetIdentityTable) -> None:

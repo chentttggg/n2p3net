@@ -35,6 +35,7 @@ from research.evaluation import (
     verified_source_snapshot,
 )
 from research.execution import ExpectedSubjectError, atomic_write_json
+from research.resource_scope import entrypoint_resource_record, require_standalone_resource_scope
 from train.runtime import cpu_thread_budget
 from transfer.binary import (
     STANDARD_CALIBRATION_TRIALS,
@@ -227,7 +228,12 @@ def execute(args):
     torch.set_num_threads(args.cpu_threads)
     device = torch.device(args.device)
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
+    require_standalone_resource_scope(plan)
     evidence_scope = plan.get("evidence_scope", "development")
+    resource_execution = entrypoint_resource_record(entrypoint="run_cross_dataset_transfer",
+        requested_device=args.device, effective_device=device, requested_cpu_threads=args.cpu_threads,
+        declared_scope="software_correctness" if evidence_scope == "software_correctness" else "local_development",
+        execution_performed=not args.dry_run)
     if evidence_scope not in {"development", "software_correctness"}:
         raise ValueError("target training-chain evidence scope must be explicit development or software_correctness")
     if "correctness_target_epochs" in plan and evidence_scope != "software_correctness":
@@ -401,7 +407,7 @@ def execute(args):
                         protocol_exclusions=exclusions, requested_calibration_budgets=list(budgets))
         if unified:
             manifest["prefix_allocations"] = prefix_admission["prefix_allocations"]
-        context = dict(plan=plan, target_study=plan["target_study"], target_protocol=plan["target_protocol"],
+        context = dict(resource_execution=resource_execution, plan=plan, target_study=plan["target_study"], target_protocol=plan["target_protocol"],
                        evidence_scope=evidence_scope,
                        source_seed=prepared.source_seed,
                        target_cache_sha256=target_sha, checkpoint_sha256=checkpoint_sha,
@@ -437,6 +443,7 @@ def execute(args):
     report = {
         "schema": "n2p3_cross_dataset_transfer/1",
         "evidence_scope": evidence_scope,
+        "resource_execution": resource_execution,
         "status": "running",
         "plan": plan,
         "plan_sha256": hashlib.sha256(args.plan.read_bytes()).hexdigest(),

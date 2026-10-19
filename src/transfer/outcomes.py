@@ -70,6 +70,8 @@ def _canonical_counts(
         candidate = str(candidate)
         if not candidate:
             raise ValueError(f"{name} contains an empty candidate identifier.")
+        if isinstance(count, bool) or not isinstance(count, Integral):
+            raise ValueError(f"{name}[{candidate!r}] must be an integer count.")
         count = int(count)
         if count < 0:
             raise ValueError(f"{name}[{candidate!r}] must be non-negative.")

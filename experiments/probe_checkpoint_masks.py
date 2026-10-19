@@ -18,6 +18,7 @@ from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation
 from data.study import load_study_membership_proof
 from research.evaluation import verified_executed_snapshot
 from research.execution import atomic_write_json
+from research.resource_scope import entrypoint_resource_record  # noqa: E402
 from train.runtime import cpu_thread_budget
 from transfer.checkpoint import load_checkpoint_payload
 from transfer.mask_probe import run_checkpoint_mask_probe
@@ -33,6 +34,8 @@ def main(argv: list[str] | None = None) -> dict[str, object]:
     parser.add_argument("--study-membership-proof", type=Path, action="append", default=[])
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--device", default="cpu")
+    parser.add_argument("--resource-scope", choices=("local_development", "software_correctness"),
+                        default="local_development", help="Standalone execution; cloud runs use the source-family controller")
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--cpu-threads", type=int, default=2)
     args = parser.parse_args(argv)
@@ -62,6 +65,9 @@ def main(argv: list[str] | None = None) -> dict[str, object]:
     study_proofs = tuple(load_study_membership_proof(path) for path in args.study_membership_proof)
     records, failures = [], []
     with cpu_thread_budget(args.cpu_threads):
+        execution_resources = entrypoint_resource_record(entrypoint="probe_checkpoint_masks",
+            requested_device=args.device, effective_device=args.device, requested_cpu_threads=args.cpu_threads,
+            declared_scope=args.resource_scope, execution_performed=not args.dry_run)
         for subject in requested:
             try:
                 records.append(
@@ -93,6 +99,9 @@ def main(argv: list[str] | None = None) -> dict[str, object]:
     result = {
         "schema": "n2p3_fixed_checkpoint_mask_probe_run/1",
         "dry_run": args.dry_run,
+        "resource_execution": execution_resources,
+        "evidence_scope": "planning_only" if args.dry_run else "development",
+        "execution_performed": not args.dry_run,
         "execution_snapshot": snapshot,
         "execution_snapshot_status": "verified" if snapshot else "required_before_execution",
         "unbound_plan_contract_digest_placeholder": "0" * 64 if snapshot is None else None,

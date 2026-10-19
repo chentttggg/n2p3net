@@ -47,6 +47,7 @@ from transfer.calibrated import (  # noqa: E402
 )
 from transfer.calibration_candidates import (  # noqa: E402
     _state_digest,
+    calibration_decision_rows_per_update,
     fit_calibration_candidate,
     score_calibration_candidate,
 )
@@ -312,14 +313,23 @@ def main(argv=None):
                 record = {"id": key, "pipeline": arm["name"], "recipe": recipe.record(),
                     "fit_seconds": duration, "fit_history": fitted.fit_history, "actual_n_fit": n_fit,
                     "expected_budget": None if recipe.initialization == "waveform_lda" else target_batch_budget(
-                        n_fit, recipe.batch_size, epochs=recipe.epochs, max_updates=recipe.max_updates),
+                        n_fit, recipe.batch_size, epochs=recipe.epochs, max_updates=recipe.max_updates,
+                        decision_rows_per_update=calibration_decision_rows_per_update(
+                            calibration, np.ones(calibration.n_epochs, dtype=bool))
+                        if recipe.candidate_loss_weight is not None else 0),
                     "peak_allocated_bytes": torch.cuda.max_memory_allocated(),
                     "peak_reserved_bytes": torch.cuda.max_memory_reserved(), "artifact": str(artifact),
                     "artifact_sha256": sha(artifact), "state_sha256": _state_digest(fitted.state)}
                 if fitted.adapter is not None:
-                    for field in ("updates", "draws"):
-                        if fitted.fit_history["fit_budget"][field] != record["expected_budget"][field]:
-                            raise ValueError(f"actual {field} differs from the frozen training budget")
+                    actual, expected = fitted.fit_history["fit_budget"], record["expected_budget"]
+                    if actual["updates"] != expected["updates"]:
+                        raise ValueError("actual updates differ from the frozen training budget")
+                    if "candidate_draws_upper_bound" in expected:
+                        if (actual["draws"] - actual["candidate_draws"] != expected["ordinary_draws"]
+                                or actual["candidate_draws"] > expected["candidate_draws_upper_bound"]):
+                            raise ValueError("actual draws differ from CE exposure or exceed the decision upper bound")
+                    elif actual["draws"] != expected["draws"]:
+                        raise ValueError("actual draws differ from the frozen training budget")
                 atomic_write_json(directory / "fit.json", record)
                 completed.append(record)
                 for path in arm["evaluation_caches"]:

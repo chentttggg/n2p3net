@@ -13,10 +13,12 @@ import shutil
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
+from copy import copy
 from dataclasses import asdict, replace
 from functools import lru_cache
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
@@ -27,6 +29,11 @@ if str(ROOT / "src") not in sys.path:
 
 from research.contracts import TrainingRunContract, semantic_sha256  # noqa: E402
 from research.execution import ExpectedSubjectError, atomic_write_json  # noqa: E402
+from research.source_chain_report import (  # noqa: E402
+    checkpoint_source_chain_report,
+    load_source_chain_report,
+    source_chain_report_exists,
+)
 
 
 def _sha256(path):
@@ -393,14 +400,23 @@ def _score_checkpoint(path, dataset, cohort, *, cache_sha256, snapshot_sha256, r
 
 
 _E2_DATASET = None
+_E2_NATIVE_LIMIT = None
 
 
-def _initialize_e2_worker(dataset, threads=1):
+def _initialize_e2_worker(dataset_reference, threads=1):
+    import numpy as np
     import torch
+    from threadpoolctl import threadpool_limits
 
-    global _E2_DATASET
+    global _E2_DATASET, _E2_NATIVE_LIMIT
     torch.set_num_threads(threads)
-    _E2_DATASET = dataset
+    _E2_NATIVE_LIMIT = threadpool_limits(limits=threads)
+    _E2_DATASET = copy(dataset_reference["metadata"])
+    for name, record in dataset_reference["arrays"].items():
+        value = np.load(record["path"], mmap_mode="r", allow_pickle=False)
+        if list(value.shape) != record["shape"] or value.dtype.str != record["dtype"]:
+            raise ValueError("the private E2 shared array differs from its declared row/type contract")
+        setattr(_E2_DATASET, name, value)
 
 
 def _score_e2_worker(arguments):
@@ -410,55 +426,211 @@ def _score_e2_worker(arguments):
     slots = options.pop("gpu_slots", None)
     with gpu_task_slot(slots):
         try:
-            return _score_checkpoint(path, _E2_DATASET, cohort, **options)
-        finally:
+            rows = _score_checkpoint(path, _E2_DATASET, cohort, **options)
+        except BaseException:
             release_source_worker(options["device"])
+            raise
+        if any(row["status"] != "completed" for row in rows):
+            release_source_worker(options["device"])
+        return {"rows": rows, "worker_pid": os.getpid()}
+
+
+class _E2ScoringSession:
+    """One dataset/selection lifecycle, one shared read-only view and one pool.
+
+    The parent performs one shard, so a grant of W workers creates W-1 child
+    processes. This matches the existing nested CPU/GPU admission accounting.
+    Source refits happen after this session closes and returns all child leases.
+    """
+
+    def __init__(self, dataset, *, workers, gpu_slots=None, memory_admission=None, threads_per_worker=1):
+        self.dataset, self.requested_workers = dataset, workers
+        self.gpu_slots, self.memory_admission = gpu_slots, memory_admission
+        self.threads = threads_per_worker
+        self.workers = None
+        self.pool = None
+        self.stack = ExitStack()
+        self.starts, self.submitted, self.completed = 0, 0, 0
+        self.worker_pids, self.failed_jobs = set(), []
+        self.shared_bytes = 0
+        self.used_device = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *error):
+        return self.stack.__exit__(*error)
+
+    def _release_parent_allocator(self):
+        if self.used_device is not None:
+            from research.source_execution import release_source_worker
+
+            release_source_worker(self.used_device)
+
+    def _start(self, ready_jobs, output_directory):
+        import pickle
+
+        import numpy as np
+
+        from research.source_execution import current_input_admission
+        from train.runtime import available_cpu_threads
+
+        if type(self.requested_workers) is not int or self.requested_workers < 1:
+            raise ValueError("target_workers must be a positive resolved worker count")
+        requested = min(self.requested_workers, ready_jobs)
+        if not 1 <= requested <= available_cpu_threads():
+            raise ValueError("target_workers must fit the ready people and available CPU budget")
+        self.workers = requested
+        self.ready_jobs_at_start = ready_jobs
+        if self.memory_admission is not None:
+            self.workers = self.stack.enter_context(self.memory_admission.target_workers(requested))
+            self.threads = self.memory_admission.native_threads
+        self.capacity_limiter = ("resource_admission" if self.workers < requested else
+            "ready_jobs" if requested < self.requested_workers else "requested_workers")
+        # Registered after admission and before the pool: the pool exits first,
+        # then parent cache cleanup runs while the complete grant is still held.
+        self.stack.callback(self._release_parent_allocator)
+        if self.workers == 1:
+            return
+        output_directory.mkdir(parents=True, exist_ok=True)
+        temporary = TemporaryDirectory(prefix=".e2-shared-", dir=output_directory)
+        directory = Path(temporary.name)
+        admission = current_input_admission()
+        try:
+            if admission is not None:
+                estimated_bytes = sum(value.nbytes+4096 for value in vars(self.dataset).values()
+                    if isinstance(value, np.ndarray) and not value.dtype.hasobject)
+                self.stack.enter_context(admission.artifact_directory(directory, estimated_bytes))
+            # Exit ordering is pool -> temporary files -> admitted directory settlement.
+            self.stack.enter_context(temporary)
+        except BaseException:
+            temporary.cleanup()
+            raise
+        metadata, arrays = copy(self.dataset), {}
+        for name, value in vars(self.dataset).items():
+            if not isinstance(value, np.ndarray) or value.dtype.hasobject:
+                continue
+            path = directory/(name+".npy")
+            shared = np.lib.format.open_memmap(path, mode="w+", dtype=value.dtype, shape=value.shape)
+            np.copyto(shared, value)
+            shared.flush()
+            del shared
+            arrays[name] = {"path": str(path), "shape": list(value.shape), "dtype": value.dtype.str}
+            setattr(metadata, name, None)
+            self.shared_bytes += value.nbytes
+        reference = {"metadata": metadata, "arrays": arrays}
+        if metadata.X is not None:
+            raise ValueError("E2 worker initialization must reference its EEG matrix without pickling it")
+        self.initializer_pickle_bytes = len(pickle.dumps(reference, protocol=pickle.HIGHEST_PROTOCOL))
+        self.pool = self.stack.enter_context(ProcessPoolExecutor(max_workers=self.workers-1,
+            mp_context=multiprocessing.get_context("spawn"), initializer=_initialize_e2_worker,
+            initargs=(reference, self.threads)))
+        self.starts += 1
+
+    def record(self):
+        return {"requested_workers": self.requested_workers, "effective_workers": self.workers,
+            "child_processes": max(0, (self.workers or 1)-1), "pool_starts": self.starts,
+            "native_threads_per_worker": self.threads, "shared_read_only_array_bytes": self.shared_bytes,
+            "initializer_pickle_bytes": getattr(self, "initializer_pickle_bytes", 0),
+            "capacity_limiter": getattr(self, "capacity_limiter", "not_started"),
+            "ready_jobs_at_start": getattr(self, "ready_jobs_at_start", 0),
+            "worker_pids": sorted(self.worker_pids), "submitted_jobs": self.submitted,
+            "completed_jobs": self.completed, "failed_jobs": self.failed_jobs,
+            "allocator_cleanup": "failed_jobs_immediate_successful_jobs_at_session_exit",
+            "parent_performs_one_shard": True, "dataset_EEG_in_initializer_pickle": False}
+
+    def score(self, path, cohort, candidates, *, progress_path, checkpoint_paths=None, **options):
+        from research.source_execution import gpu_task_slot, release_source_worker
+
+        people = sorted({cell["participant_key"] for cell in cohort})
+        if not people or not candidates:
+            return []
+        if self.used_device is not None and self.used_device != options["device"]:
+            raise ValueError("one E2 selection session cannot change its admitted device")
+        self.used_device = options["device"]
+        ready_jobs = len(people)*len(candidates)
+        if self.workers is None:
+            self._start(ready_jobs, Path(progress_path).parent)
+        elif self.capacity_limiter == "ready_jobs" and ready_jobs > self.ready_jobs_at_start:
+            # A dependency tail may become a wider ready cohort. Only grow at
+            # this completed-call boundary; do not leave a single-worker tail
+            # permanently serial after independent work becomes available.
+            self.stack.close()
+            self.stack, self.pool = ExitStack(), None
+            self._start(ready_jobs, Path(progress_path).parent)
+        width = min(self.workers, len(people))
+        shards = [set(people[index::width]) for index in range(width)]
+        outcomes, futures, errors = [], {}, []
+        parent_jobs = []
+        job_index = 0
+        for update in candidates:
+            checkpoint = path/f"source.u{update}.pt" if checkpoint_paths is None else checkpoint_paths[str(update)]
+            for shard in shards:
+                selected = [cell for cell in cohort if cell["participant_key"] in shard]
+                job = {"update": update, "people": sorted(shard)}
+                self.submitted += 1
+                if job_index % self.workers == 0:
+                    parent_jobs.append((checkpoint, selected, job))
+                else:
+                    arguments = (checkpoint, selected, {**options, "gpu_slots": self.gpu_slots})
+                    futures[self.pool.submit(_score_e2_worker, arguments)] = job
+                job_index += 1
+
+        def accept(rows, job, pid):
+            outcomes.extend({**row, "updates": job["update"]} for row in rows)
+            self.completed += 1
+            self.worker_pids.add(pid)
+
+        def failed(error, job):
+            row = {**job, "exception_type": type(error).__name__, "reason": str(error)}
+            self.failed_jobs.append(row)
+            errors.append(error)
+
+        def progress():
+            atomic_write_json(progress_path, {"completed_cells": len(outcomes),
+                "requested_cells": len(cohort)*len(candidates), "workers": min(self.workers, ready_jobs),
+                "failed_cells": sum(row["status"] != "completed" for row in outcomes),
+                "scoring_session": self.record()})
+
+        for checkpoint, selected, job in parent_jobs:
+            try:
+                with gpu_task_slot(self.gpu_slots):
+                    try:
+                        rows = _score_checkpoint(checkpoint, self.dataset, selected, **options)
+                    except BaseException:
+                        release_source_worker(options["device"])
+                        raise
+                    if any(row["status"] != "completed" for row in rows):
+                        release_source_worker(options["device"])
+                accept(rows, job, os.getpid())
+            except Exception as error:
+                failed(error, job)
+            progress()
+        for future in as_completed(futures):
+            job = futures[future]
+            try:
+                result = future.result()
+                accept(result["rows"], job, result["worker_pid"])
+            except Exception as error:
+                failed(error, job)
+            progress()
+        if errors:
+            raise RuntimeError("E2 scoring worker failed; requested jobs and completed cells remain in progress ledger") from errors[0]
+        return (outcomes if self.workers == 1 else
+            sorted(outcomes, key=lambda row: (row["updates"], row["participant_key"], row["actual_K"])))
 
 
 def _score_e2_candidates(dataset, path, cohort, candidates, *, workers, progress_path, checkpoint_paths=None,
-                         gpu_slots=None, memory_admission=None, threads_per_worker=1, **options):
-    from research.source_execution import gpu_task_slot, release_source_worker
-    from train.runtime import available_cpu_threads
-
-    if memory_admission is not None:
-        # The ledger charges native threads for each nested worker; use them rather than idle them.
-        with memory_admission.target_workers(workers) as effective:
-            return _score_e2_candidates(dataset, path, cohort, candidates, workers=effective,
-                progress_path=progress_path, checkpoint_paths=checkpoint_paths, gpu_slots=gpu_slots,
-                threads_per_worker=memory_admission.native_threads, **options)
-    if type(workers) is not int or not 1 <= workers <= available_cpu_threads():
-        raise ValueError("target_workers must be within the available CPU budget")
-    if workers == 1:
-        outcomes = []
-        for update in candidates:
-            checkpoint = path / f"source.u{update}.pt" if checkpoint_paths is None else checkpoint_paths[str(update)]
-            with gpu_task_slot(gpu_slots):
-                try:
-                    rows = _score_checkpoint(checkpoint, dataset, cohort, **options)
-                finally:
-                    release_source_worker(options["device"])
-            outcomes.extend({**row, "updates": update} for row in rows)
-        return outcomes
-    # Spawn isolates CUDA contexts and random generators from the source trainer.
-    people = sorted({cell["participant_key"] for cell in cohort})
-    shards = [set(people[index::workers]) for index in range(workers)]
-    outcomes = []
-    with ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context("spawn"),
-                             initializer=_initialize_e2_worker, initargs=(dataset, threads_per_worker)) as pool:
-        futures = {}
-        for update in candidates:
-            for shard in shards:
-                selected = [cell for cell in cohort if cell["participant_key"] in shard]
-                if selected:
-                    checkpoint = path / f"source.u{update}.pt" if checkpoint_paths is None else checkpoint_paths[str(update)]
-                    arguments = (checkpoint, selected, {**options, "gpu_slots": gpu_slots})
-                    futures[pool.submit(_score_e2_worker, arguments)] = update
-        for future in as_completed(futures):
-            outcomes.extend({**row, "updates": futures[future]} for row in future.result())
-            atomic_write_json(progress_path, {"completed_cells": len(outcomes),
-                "requested_cells": len(cohort) * len(candidates), "workers": workers,
-                "failed_cells": sum(row["status"] != "completed" for row in outcomes)})
-    return sorted(outcomes, key=lambda row: (row["updates"], row["participant_key"], row["actual_K"]))
+                         gpu_slots=None, memory_admission=None, threads_per_worker=1, session=None, **options):
+    if session is not None:
+        if session.dataset is not dataset:
+            raise ValueError("one E2 session cannot mix original datasets")
+        return session.score(path, cohort, candidates, progress_path=progress_path,
+            checkpoint_paths=checkpoint_paths, **options)
+    with _E2ScoringSession(dataset, workers=workers, gpu_slots=gpu_slots, memory_admission=memory_admission,
+            threads_per_worker=threads_per_worker) as session:
+        return session.score(path, cohort, candidates, progress_path=progress_path,
+            checkpoint_paths=checkpoint_paths, **options)
 
 
 def _independent_source_requests(plan):
@@ -505,10 +677,11 @@ def _finish_independent_source_report(report, output):
         "logical_fit_count": report["completed_logical_fit_count"]})
 
 
-def _save_chain_report(output, report):
+def _save_chain_report(output, report, *, write_record=True, materialize=False):
     import torch
 
-    atomic_write_json(output / "source_chain_record.json", report)
+    if write_record or materialize:
+        checkpoint_source_chain_report(output / "source_chain_record.json", report, materialize=materialize)
     tasks = report.get("tasks", [])
     completed = {task["key"] for task in tasks if task["status"] in {"completed", "fit_failure"}}
     active = next((task for task in reversed(tasks) if task["status"] == "running"), None)
@@ -587,7 +760,7 @@ def _source_group_worker(arguments):
             worker_diagnostic_phase("execute_source_chain")
             execute_source_chain(plan, output=Path(output), dry_run=False, device=device,
                                  stages=stages, evaluate_outer=False)
-            snapshot = json.loads((Path(output) / "source_chain_record.json").read_text(encoding="utf-8"))["source_snapshot"]
+            snapshot = load_source_chain_report(Path(output) / "source_chain_record.json")["source_snapshot"]
             _assert_source_bytes(plan["source_snapshot_manifest"], snapshot)
     return str(Path(output) / "source_chain_record.json")
 
@@ -712,8 +885,9 @@ def _admit_source_group(path, *, child_plan, program, snapshot):
     from transfer.checkpoint import checkpoint_training_contract, load_checkpoint_payload
 
     _assert_source_bytes(child_plan["source_snapshot_manifest"], snapshot)
-    child = json.loads(Path(path).read_text(encoding="utf-8"))
-    if (child["source_snapshot"]["archive_sha256"] != snapshot["archive_sha256"]
+    child = load_source_chain_report(path)
+    if (child.get("status") in {"failed", "interrupted"}
+            or child["source_snapshot"]["archive_sha256"] != snapshot["archive_sha256"]
             or child["source_program_record"] != program
             or child["evidence_scope"] != child_plan.get("evidence_scope", "development")
             or not child.get("source_input_admitted") or child["preflight_failures"]
@@ -794,6 +968,7 @@ def _admit_source_group(path, *, child_plan, program, snapshot):
 def _source_legacy_outer_preparation_worker(arguments):
     report, plan, output, device = arguments
     groups = _prepare_outer_plans(report, plan, Path(output), device=device, execute=False)
+    _save_chain_report(Path(output), report, materialize=True)
     return {"record": str(Path(output) / "source_chain_record.json"), "groups": list(groups.values())}
 
 
@@ -1139,7 +1314,7 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                     entry = legacy_tasks[outcome.task_id]
                     entry.update(status=outcome.status, failure=outcome.failure)
                     if entry["kind"] == "preparation" and outcome.status == "completed":
-                        child = json.loads(Path(outcome.value["record"]).read_text(encoding="utf-8"))
+                        child = load_source_chain_report(outcome.value["record"])
                         report["outer_evaluation_jobs"].extend(child["outer_evaluation_jobs"])
                         if evaluate_outer:
                             for index, jobs in enumerate(outcome.value["groups"]):
@@ -1173,16 +1348,20 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                     "active_pipeline_nodes": len(observation["running"]),
                     "running_tasks": observation["running"], "pending_tasks": observation["pending"],
                     "admitting_tasks": observation["admitting"]}
-                if merged != previous_observation:
+                report_changed = merged != previous_observation
+                if report_changed:
                     report["resource_observations"].append({"observed_unix": observation["observed_unix"], **merged})
                     previous_observation = merged
                 for entry in report["groups"]:
                     if entry["task_id"] in observation["running"]:
+                        report_changed |= entry["status"] != "running"
                         entry["status"] = "running"
                     progress = Path(entry["directory"]) / "worker_progress.json"
                     if progress.exists():
-                        entry["progress"] = json.loads(progress.read_text(encoding="utf-8"))
-                _save_chain_report(output, report)
+                        progress_record = json.loads(progress.read_text(encoding="utf-8"))
+                        report_changed |= entry.get("progress") != progress_record
+                        entry["progress"] = progress_record
+                _save_chain_report(output, report, write_record=report_changed)
 
             tasks = source_tasks_ready() + tasks
             if inventory is not None:
@@ -1209,9 +1388,9 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                     declaration.update(status="failed", failure={"type": type(error).__name__, "message": str(error)})
             for entry in report["groups"]:
                 path = Path(entry["directory"]) / "source_chain_record.json"
-                if not path.exists():
+                if not source_chain_report_exists(path):
                     continue
-                child = json.loads(path.read_text(encoding="utf-8"))
+                child = load_source_chain_report(path)
                 for key in ("tasks", "selection", "preflight_failures"):
                     report[key].extend(child[key])
                 report.setdefault("source_prior_selection", []).extend(child.get("source_prior_selection", []))
@@ -1256,13 +1435,13 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                       or any(entry["status"] == "failed" for entry in report["consumers"])
                       or report.get("additional_finalization", {}).get("status", "completed") != "completed")
             report["status"] = "failed" if failed else "completed"
-            _save_chain_report(output, report)
+            _save_chain_report(output, report, materialize=True)
     if failed:
         raise RuntimeError("source/consumer programme failed; complete requested and completed artifact records are preserved")
     return report
 
 
-def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stages: tuple[str, ...],
+def _execute_source_chain_body(plan, *, output: Path, dry_run: bool, device: str, stages: tuple[str, ...],
                          evaluate_outer: bool = False, additional_tasks=(), on_additional_finished=None,
                          on_additional_complete=None):
     """Run source and dependent consumers under one owner, with optional CloudTasks.
@@ -1674,8 +1853,37 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
         _prepare_outer_plans(report, plan, output, device=device, execute=evaluate_outer)
     if independent:
         _finish_independent_source_report(report, output)
-    _save_chain_report(output, report)
+    _save_chain_report(output, report, materialize=True)
     return report
+
+
+def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stages: tuple[str, ...],
+                         evaluate_outer: bool = False, additional_tasks=(), on_additional_finished=None,
+                         on_additional_complete=None):
+    """Keep a typed terminal checkpoint when execution or finalization raises."""
+    output = Path(output)
+    path = output / "source_chain_record.json"
+    owns_new_report = not source_chain_report_exists(path)
+    try:
+        return _execute_source_chain_body(plan, output=output, dry_run=dry_run, device=device, stages=stages,
+            evaluate_outer=evaluate_outer, additional_tasks=additional_tasks,
+            on_additional_finished=on_additional_finished, on_additional_complete=on_additional_complete)
+    except BaseException as error:
+        if owns_new_report and source_chain_report_exists(path):
+            status = "interrupted" if isinstance(error, KeyboardInterrupt) else "failed"
+            failure = {"type": type(error).__name__, "message": str(error), "stage": "source_execution_or_finalization"}
+            try:
+                report = load_source_chain_report(path)
+                report.update(status=status, fatal_error=failure)
+                checkpoint_source_chain_report(path, report, terminal_state=status)
+                atomic_write_json(output / "source_chain_failure.json", {
+                    "schema": "n2p3_source_chain_terminal_failure/1", "status": status,
+                    "failure": failure, "current_checkpoint": "source_chain_state.json",
+                    "requested_source_task_count": len(report.get("requested_source_tasks", report.get("tasks", []))),
+                    "completed_task_count": sum(row.get("status") == "completed" for row in report.get("tasks", []))})
+            except Exception as recording_error:
+                error.add_note("terminal source checkpoint failed: "+str(recording_error))
+        raise
 
 
 def _run_e2_selection(dataset, outer, seed, target_seeds, output, source_sha, snapshot_sha, plan, report, dry_run, device,
@@ -1698,100 +1906,107 @@ def _run_e2_selection(dataset, outer, seed, target_seeds, output, source_sha, sn
     target_epochs = int(plan.get("correctness_target_epochs", 1)) if evidence_scope == "software_correctness" else 60
     if not 1 <= target_epochs <= 60:
         raise ValueError("target epoch budget is out of bounds")
-    for target_seed in target_seeds:
-        recipe = TargetRecipe("E2_public_fixed", batch_size=int(plan.get("target_batch_size", 32)), seed=target_seed, epochs=target_epochs)
-        for axis in ("participant", "library"):
-            outcomes, requested = [], []
-            previous_selection = None if resume is None else resume.selection(outer["name"], seed, target_seed, axis)
-            for fold in (item for item in folds if item["axis"] == axis):
-                cohort, failures = _pseudo_target_cohort(dataset, fold["validation_rows"], outer["source_protocols"],
-                                                         STANDARD_CALIBRATION_TRIALS)
-                report["preflight_failures"].extend(failures)
-                requested.extend((cell["domain"], cell["participant_key"], cell["actual_K"]) for cell in cohort)
-                if dry_run:
-                    continue
-                path = output / f"{outer['name']}/common_three/seed{seed}/E2_{axis}_{fold['fold_id']}"
-                path.mkdir(parents=True, exist_ok=True)
-                if previous_selection is not None:
-                    scopes = {(cell["participant_key"], cell["actual_K"]): cell for cell in cohort}
-                    reused = [row for row in previous_selection["outcomes"]
-                              if (row["participant_key"], row["actual_K"]) in scopes]
-                    if len(reused) != len(cohort) * len(candidates):
-                        raise ValueError("resumed E2 selection cohort changed")
-                    for row in reused:
-                        scope = scopes[row["participant_key"], row["actual_K"]]
-                        if (row["target_recipe"] != recipe.record() or any(row[field] != scope[field] for field in (
-                                "calibration_rows_sha256", "test_rows_sha256"))):
-                            raise ValueError("resumed E2 recipe or scoring rows changed")
-                        if row["status"] == "completed":
-                            resume.verify(row["prediction_path"])
-                        outcomes.append({**row, "resumed_from": str(resume.record_path)})
-                else:
-                    task_key = f"{outer['name']}/common_three/seed{seed}/E2_{axis}_{fold['fold_id']}"
-                    checkpoints = next(task["checkpoints"] for task in report["tasks"] if task["key"] == task_key)
-                    outcomes.extend(_score_e2_candidates(dataset, path, cohort, candidates,
-                        workers=plan.get("target_workers", 1), progress_path=path / "scoring_progress.json",
-                        checkpoint_paths=checkpoints, cache_sha256=source_sha, snapshot_sha256=snapshot_sha,
-                        recipe=recipe, output=path, device=device, evidence_scope=evidence_scope,
-                        gpu_slots=plan.get("_gpu_slots"), memory_admission=plan.get("_memory_admission")))
-            if dry_run:
-                report["selection"].append({"outer": outer["name"], "source_seed": seed, "target_seed": target_seed,
-                    "axis": axis, "requested_cells": [list(cell) for cell in requested], "recipe": recipe.record()})
-                continue
-            if not requested:
-                report["selection"].append({"outer": outer["name"], "source_seed": seed, "target_seed": target_seed,
-                    "axis": axis, "status": "no_legal_pseudo_target_cohort", "U_ce": None, "U_cal": None, "U_zero": None})
-                continue
-            selected = select_source_updates(outcomes, requested_cells=requested, candidates=candidates)
-            report["selection"].append({"outer": outer["name"], "source_seed": seed, "target_seed": target_seed,
-                "axis": axis, **selected, "outcomes": outcomes})
-            _save_chain_report(output, report)
-            for updates in sorted({value for name, value in selected.items() if name in {"U_ce", "U_cal", "U_zero"} and value is not None}):
-                destination = output / f"{outer['name']}/common_three/seed{seed}/refit.u{updates}.pt"
-                refit_key = (outer["name"], seed, updates)
-                existing_refit = next((item for item in report["tasks"] if item.get("refit_key") == list(refit_key)), None)
-                if existing_refit is not None and existing_refit.get("status") == "fit_failure":
-                    continue
-                already_refit = existing_refit is not None
-                if already_refit:
-                    destination = Path(existing_refit["checkpoint"])
-                if not already_refit:
-                    config = DeepConfig(fixed_updates=updates, batch_size=512, seed=seed, val_group_frac=None,
-                                        sampling="uniform_rows", compile_mode=plan.get("compile_mode", "reduce-overhead"))
-                    try:
-                        acquired = None if resume is None else resume.acquire(str(destination), config,
-                            source_fit_ledger(dataset, np.arange(dataset.n_epochs),
-                                excluded_source_datasets=outer["excluded_source_datasets"]),
-                            source_sha, refit_key=refit_key)
-                        if acquired is None:
-                            acquired = fit_or_reuse_source_trajectory(
-                                registry=trajectory_registry, dataset=dataset, rows=np.arange(dataset.n_epochs),
-                                config=config, destination=destination.with_suffix(""), task_id=str(destination),
-                                source_cache_sha256=source_sha, source_snapshot_sha256=snapshot_sha,
-                                excluded_source_datasets=outer["excluded_source_datasets"], device=device, evidence_scope=evidence_scope,
-                                gpu_slots=plan.get("_gpu_slots"),
-                                runtime_preload_budget_bytes=plan.get("_runtime_preload_budget_bytes"),
-                                runtime_input_staging_gate=plan.get("_runtime_input_staging_gate"),
-                                runtime_host_process_budget_bytes=plan.get("_runtime_host_process_budget_bytes"))
-                    except RuntimeError as error:
-                        report["tasks"].append({"key": str(destination), "refit_key": list(refit_key),
-                            "status": "fit_failure", "failure": str(error), "optimizer_updates": updates,
-                            "trial_draws": updates * 512, "source_seed": seed, "config": asdict(config)})
-                        _save_chain_report(output, report)
+    pending_refits = []
+    with _E2ScoringSession(dataset, workers=plan.get("target_workers", 1),
+            gpu_slots=plan.get("_gpu_slots"), memory_admission=plan.get("_memory_admission")) as scoring_session:
+        for target_seed in target_seeds:
+            recipe = TargetRecipe("E2_public_fixed", batch_size=int(plan.get("target_batch_size", 32)), seed=target_seed, epochs=target_epochs)
+            for axis in ("participant", "library"):
+                outcomes, requested = [], []
+                previous_selection = None if resume is None else resume.selection(outer["name"], seed, target_seed, axis)
+                for fold in (item for item in folds if item["axis"] == axis):
+                    cohort, failures = _pseudo_target_cohort(dataset, fold["validation_rows"], outer["source_protocols"],
+                                                             STANDARD_CALIBRATION_TRIALS)
+                    report["preflight_failures"].extend(failures)
+                    requested.extend((cell["domain"], cell["participant_key"], cell["actual_K"]) for cell in cohort)
+                    if dry_run:
                         continue
-                    destination = Path(acquired["checkpoints"][updates])
+                    path = output / f"{outer['name']}/common_three/seed{seed}/E2_{axis}_{fold['fold_id']}"
+                    path.mkdir(parents=True, exist_ok=True)
+                    if previous_selection is not None:
+                        scopes = {(cell["participant_key"], cell["actual_K"]): cell for cell in cohort}
+                        reused = [row for row in previous_selection["outcomes"]
+                                  if (row["participant_key"], row["actual_K"]) in scopes]
+                        if len(reused) != len(cohort) * len(candidates):
+                            raise ValueError("resumed E2 selection cohort changed")
+                        for row in reused:
+                            scope = scopes[row["participant_key"], row["actual_K"]]
+                            if (row["target_recipe"] != recipe.record() or any(row[field] != scope[field] for field in (
+                                    "calibration_rows_sha256", "test_rows_sha256"))):
+                                raise ValueError("resumed E2 recipe or scoring rows changed")
+                            if row["status"] == "completed":
+                                resume.verify(row["prediction_path"])
+                            outcomes.append({**row, "resumed_from": str(resume.record_path)})
+                    else:
+                        task_key = f"{outer['name']}/common_three/seed{seed}/E2_{axis}_{fold['fold_id']}"
+                        checkpoints = next(task["checkpoints"] for task in report["tasks"] if task["key"] == task_key)
+                        outcomes.extend(_score_e2_candidates(dataset, path, cohort, candidates,
+                            workers=plan.get("target_workers", 1), progress_path=path / "scoring_progress.json",
+                            checkpoint_paths=checkpoints, cache_sha256=source_sha, snapshot_sha256=snapshot_sha,
+                            recipe=recipe, output=path, device=device, evidence_scope=evidence_scope,
+                            gpu_slots=plan.get("_gpu_slots"), memory_admission=plan.get("_memory_admission"),
+                            session=scoring_session))
+                if dry_run:
+                    report["selection"].append({"outer": outer["name"], "source_seed": seed, "target_seed": target_seed,
+                        "axis": axis, "requested_cells": [list(cell) for cell in requested], "recipe": recipe.record()})
+                    continue
+                if not requested:
+                    report["selection"].append({"outer": outer["name"], "source_seed": seed, "target_seed": target_seed,
+                        "axis": axis, "status": "no_legal_pseudo_target_cohort", "U_ce": None, "U_cal": None, "U_zero": None})
+                    continue
+                selected = select_source_updates(outcomes, requested_cells=requested, candidates=candidates)
+                report["selection"].append({"outer": outer["name"], "source_seed": seed, "target_seed": target_seed,
+                    "axis": axis, **selected, "outcomes": outcomes})
+                _save_chain_report(output, report)
+                pending_refits.append((selected, target_seed, axis))
+    report.setdefault("e2_scoring_sessions", []).append(scoring_session.record())
+    for selected, target_seed, axis in pending_refits:
+        for updates in sorted({value for name, value in selected.items() if name in {"U_ce", "U_cal", "U_zero"} and value is not None}):
+            destination = output / f"{outer['name']}/common_three/seed{seed}/refit.u{updates}.pt"
+            refit_key = (outer["name"], seed, updates)
+            existing_refit = next((item for item in report["tasks"] if item.get("refit_key") == list(refit_key)), None)
+            if existing_refit is not None and existing_refit.get("status") == "fit_failure":
+                continue
+            already_refit = existing_refit is not None
+            if already_refit:
+                destination = Path(existing_refit["checkpoint"])
+            if not already_refit:
+                config = DeepConfig(fixed_updates=updates, batch_size=512, seed=seed, val_group_frac=None,
+                                    sampling="uniform_rows", compile_mode=plan.get("compile_mode", "reduce-overhead"))
+                try:
+                    acquired = None if resume is None else resume.acquire(str(destination), config,
+                        source_fit_ledger(dataset, np.arange(dataset.n_epochs),
+                            excluded_source_datasets=outer["excluded_source_datasets"]),
+                        source_sha, refit_key=refit_key)
+                    if acquired is None:
+                        acquired = fit_or_reuse_source_trajectory(
+                            registry=trajectory_registry, dataset=dataset, rows=np.arange(dataset.n_epochs),
+                            config=config, destination=destination.with_suffix(""), task_id=str(destination),
+                            source_cache_sha256=source_sha, source_snapshot_sha256=snapshot_sha,
+                            excluded_source_datasets=outer["excluded_source_datasets"], device=device, evidence_scope=evidence_scope,
+                            gpu_slots=plan.get("_gpu_slots"),
+                            runtime_preload_budget_bytes=plan.get("_runtime_preload_budget_bytes"),
+                            runtime_input_staging_gate=plan.get("_runtime_input_staging_gate"),
+                            runtime_host_process_budget_bytes=plan.get("_runtime_host_process_budget_bytes"))
+                except RuntimeError as error:
                     report["tasks"].append({"key": str(destination), "refit_key": list(refit_key),
-                        "status": "completed", "checkpoint": str(destination),
-                        "optimizer_updates": updates, "trial_draws": updates * 512,
-                        "source_seed": seed, "fit_ledger": acquired["fit_ledger"],
-                        "refit_initialization": "scratch_same_source_seed", "config": asdict(config),
-                        **{name: acquired[name] for name in (
-                            "source_training_reuse", "physical_optimizer_updates", "physical_trial_draws")}})
-                report["outer_evaluation_jobs"].append({"source_checkpoint": str(destination), "outer": outer["name"],
-                    "layout": "common_three", "source_seed": seed, "target_seed": target_seed, "axis": axis,
-                    "source_arm": "E2_" + axis,
-                    "selectors": [name for name in ("U_ce", "U_cal", "U_zero") if selected[name] == updates],
-                    "target_cache": outer.get("target_cache"), "target_protocol": outer.get("target_protocol")})
+                        "status": "fit_failure", "failure": str(error), "optimizer_updates": updates,
+                        "trial_draws": updates * 512, "source_seed": seed, "config": asdict(config)})
+                    _save_chain_report(output, report)
+                    continue
+                destination = Path(acquired["checkpoints"][updates])
+                report["tasks"].append({"key": str(destination), "refit_key": list(refit_key),
+                    "status": "completed", "checkpoint": str(destination),
+                    "optimizer_updates": updates, "trial_draws": updates * 512,
+                    "source_seed": seed, "fit_ledger": acquired["fit_ledger"],
+                    "refit_initialization": "scratch_same_source_seed", "config": asdict(config),
+                    **{name: acquired[name] for name in (
+                        "source_training_reuse", "physical_optimizer_updates", "physical_trial_draws")}})
+            report["outer_evaluation_jobs"].append({"source_checkpoint": str(destination), "outer": outer["name"],
+                "layout": "common_three", "source_seed": seed, "target_seed": target_seed, "axis": axis,
+                "source_arm": "E2_" + axis,
+                "selectors": [name for name in ("U_ce", "U_cal", "U_zero") if selected[name] == updates],
+                "target_cache": outer.get("target_cache"), "target_protocol": outer.get("target_protocol")})
 
 
 @lru_cache(maxsize=2)

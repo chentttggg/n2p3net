@@ -7,6 +7,7 @@ import hashlib
 import json
 import multiprocessing as mp
 import os
+import re
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor
@@ -134,6 +135,32 @@ def _run_jobs(plan, arms, phase, output, workers):
     return results, {"wall_seconds": time.perf_counter() - started, "cpu_plan": cpu_plan.record()}
 
 
+def validate_pilot_plan(plan):
+    if not isinstance(plan, dict) or plan.get('schema') != 'n2p3_brainsync_pilot/1':
+        raise ValueError('versioned pilot plan required')
+    required = {'input_sha256', 'batch_rule', 'caches', 'arms', 'device'}
+    if not required <= plan.keys() or not isinstance(plan['input_sha256'], dict) or not plan['input_sha256']:
+        raise ValueError('pilot plan requires complete input hashes, batch rule, cache scopes, arms and device')
+    if not isinstance(plan['caches'], dict) or set(plan['caches']) != {'calibration', 'test', 'full'}:
+        raise ValueError('pilot plan requires exactly calibration, test and full caches')
+    if not isinstance(plan['arms'], list) or not plan['arms']:
+        raise ValueError('pilot plan requires a nonempty arm list')
+    names, families = set(), set()
+    reserved = {'CON', 'PRN', 'AUX', 'NUL', *(f'COM{i}' for i in range(1, 10)), *(f'LPT{i}' for i in range(1, 10))}
+    for arm in plan['arms']:
+        if not isinstance(arm, dict) or not {'name', 'source', 'recipe'} <= arm.keys():
+            raise ValueError('each pilot arm requires name, source and complete recipe')
+        name = arm['name']
+        if (not isinstance(name, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*', name)
+                or name.endswith('.') or name.split('.')[0].upper() in reserved or name in names):
+            raise ValueError('pilot arm names must be unique safe file names')
+        names.add(name)
+        families.add(TargetRecipe(**arm['recipe']).initialization)
+    if 'waveform_lda' not in families:
+        raise ValueError('pilot selection requires a declared waveform_lda control before evaluation')
+    return plan
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan", type=Path, required=True)
@@ -142,8 +169,7 @@ def main(argv=None):
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
-    if plan.get("schema") != "n2p3_brainsync_pilot/1":
-        raise ValueError("versioned pilot plan required")
+    validate_pilot_plan(plan)
     verified_executed_snapshot(args.snapshot, root=ROOT)
     for path, expected in plan["input_sha256"].items():
         if _sha(path) != expected:

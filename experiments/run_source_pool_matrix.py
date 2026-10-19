@@ -37,6 +37,7 @@ from experiments.run_source_training_chain import fit_or_reuse_source_trajectory
 from research.contracts import semantic_sha256  # noqa: E402
 from research.evaluation import verified_executed_snapshot  # noqa: E402
 from research.execution import atomic_write_json  # noqa: E402
+from research.resource_scope import entrypoint_resource_record  # noqa: E402
 from research.source_execution import (  # noqa: E402
     SharedTrajectoryRegistry,
     with_cloud_resource_floor,
@@ -96,7 +97,7 @@ def prepare_dose_views(tasks, prepared, dose, *, preprocessing_json=None):
 
 
 def execute_group(arguments):
-    tasks, prepared, output, snapshot, config, dose, threads, preprocessing_json, device = arguments
+    tasks, prepared, output, snapshot, config, dose, threads, preprocessing_json, device, *scope = arguments
     with cpu_thread_budget(threads):
         if tasks[0]["dose"] == "matched":
             dose_views = prepare_dose_views(tasks, prepared, dose, preprocessing_json=preprocessing_json)
@@ -126,6 +127,9 @@ def execute_group(arguments):
                 excluded_source_datasets=task["excluded"], device=device, evidence_scope="development")
             record = {"task": task, "status": "completed", "seconds": time.perf_counter() - started,
                       "trajectory": fitted, "source_snapshot": snapshot,
+                      "resource_execution": entrypoint_resource_record(entrypoint="run_source_pool_matrix_adapter",
+                          requested_device=device, effective_device=device, requested_cpu_threads=threads,
+                          declared_scope=scope[0] if scope else "local_development"),
                       "input_caches": {s: prepared[s]["cache_sha256"] for s in task["studies"]}}
             atomic_write_json(destination / "result.json", record)
             print(json.dumps({"source_task": task["id"], "status": "completed", "seconds": record["seconds"]}), flush=True)
@@ -162,7 +166,8 @@ def main(argv=None):
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--snapshot", required=True, type=Path)
     parser.add_argument("--workers", type=int, default=2)
-    parser.add_argument("--threads-per-worker", type=int, default=2)
+    parser.add_argument("--threads-per-worker", type=int, default=2,
+                        help="Cloud actor CPU budget including one inter-op thread; local native thread count")
     parser.add_argument("--updates", type=int, default=4000)
     parser.add_argument("--compile-mode", choices=("none", "reduce-overhead"), default="reduce-overhead")
     parser.add_argument("--task", action="append", help="Explicit probe selection; omission executes the full matrix")
@@ -175,6 +180,8 @@ def main(argv=None):
     parser.add_argument("--wait-for-preparation-seconds", type=float, default=0,
                         help="Bounded input wait; positive values allow preparation and training to overlap")
     args = parser.parse_args(argv)
+    if args.resource_scope == "cloud" and (not args.device.startswith("cuda") or args.threads_per_worker < 2):
+        parser.error("cloud source-pool execution requires a CUDA device and one native plus one inter-op thread; local CPU/CUDA uses --resource-scope local_development")
     if min(args.workers, args.threads_per_worker, args.updates) < 1:
         parser.error("workers, threads and updates must be positive")
     if not np.isfinite(args.wait_for_preparation_seconds) or args.wait_for_preparation_seconds < 0:
@@ -201,6 +208,7 @@ def main(argv=None):
                                         device=args.device, resource_scope=args.resource_scope),
                 threads_per_worker=args.threads_per_worker, device=args.device,
                 resource_scope=args.resource_scope,
+                resource_owner="source_family_resource_owner" if args.resource_scope == "cloud" else "local_process_pool",
                 cloud_resource_floor=(with_cloud_resource_floor({}, args.device).get("cloud_resource_floor")
                                       if str(args.device).startswith("cuda") and args.resource_scope == "cloud" else None),
                 preprocessing=spec.record(), dose_comparison_tasks=list(dose_tasks))
@@ -227,6 +235,15 @@ def main(argv=None):
         key = semantic_sha256({k: task[k] for k in ("studies", "channels", "excluded", "dose")})
         groups.setdefault(key, []).append(task)
     pending, active, results = list(groups.values()), {}, []
+    if args.resource_scope == "cloud":
+        from research.source_pool_cloud import execute_cloud_source_pool
+
+        execute_cloud_source_pool(groups=list(groups.values()), tasks=tasks, dose_tasks=dose_tasks,
+            prepared_directory=args.prepared, initial=initial, output=args.output, snapshot=snapshot,
+            config=config, preprocessing_json=preprocessing_json, workers=args.workers,
+            threads_per_worker=args.threads_per_worker, device=args.device,
+            wait_timeout=args.wait_for_preparation_seconds, initial_bindings=bindings)
+        return
     dose = None
     input_deadline = time.monotonic() + args.wait_for_preparation_seconds
     with ProcessPoolExecutor(max_workers=plan["workers"], mp_context=multiprocessing.get_context("spawn")) as pool:
@@ -269,7 +286,8 @@ def main(argv=None):
                 if remaining:
                     pending.append(remaining)
                 future = pool.submit(execute_group, (ready, prepared, str(args.output), snapshot, config,
-                                                     dose, args.threads_per_worker, preprocessing_json, args.device))
+                                                     dose, args.threads_per_worker, preprocessing_json, args.device,
+                                                     args.resource_scope))
                 active[future] = ready
             if active:
                 done, _ = wait(active, timeout=10, return_when=FIRST_COMPLETED)

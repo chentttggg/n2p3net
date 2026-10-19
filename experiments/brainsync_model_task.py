@@ -7,6 +7,7 @@ import hashlib
 import io
 import json
 import sys
+from contextlib import ExitStack
 from pathlib import Path
 
 import numpy as np
@@ -76,6 +77,7 @@ def model_task_device(requested: str) -> str:
 
 
 def _model_summary(predictor) -> dict[str, object]:
+    predictor.validate_personal_workflow_metadata()
     metadata = predictor.metadata
     ocular = metadata["input_request"].get("ocular_model")
     quality = metadata.get("epoch_quality")
@@ -100,10 +102,8 @@ def _model_summary(predictor) -> dict[str, object]:
         "epoch_qc_lifecycle": None if quality is None else quality.get("lifecycle", "fit_inside_calibration"),
         "ocular_fit_sessions": [] if ocular is None else ocular["fit_provenance"]["calibration_session_ids"],
         "ocular_fit_policy": None if ocular is None else (
-            "frozen_inner_training_sessions" if metadata["source_pretraining_used"]
-            and metadata["selection"].get("mode") != "fixed_unified_program"
-            else "authorized_calibration_sessions"
-        ),
+            'authorized_calibration_sessions' if set(ocular['fit_provenance']['calibration_session_ids']) ==
+            {row['session_id'] for row in metadata['calibration_sessions']} else 'frozen_subset_of_authorized_calibration_sessions'),
         "reference": metadata["input_contract"]["source_reference"],
         "acquisition_references": metadata["input_request"].get("acquisition_references", []),
         "input_contract": metadata["input_contract"],
@@ -127,7 +127,7 @@ def inference_trial_counts(*, scheduled_trials: int, input_epochs: int, usable_p
             "unavailable_trials": scheduled_trials - usable_predictions}
 
 
-def inference_record(predictor, dataset, *, repetitions: int | None = None) -> dict[str, object]:
+def inference_record(predictor, dataset, *, repetitions: int | None = None, diagnostic=False) -> dict[str, object]:
     """Use all nine candidates and the scheduled ledger; target labels are never read."""
     predictor.validate_inference_scope(dataset)
     logits = predictor.predict_logit(dataset)
@@ -192,6 +192,10 @@ def inference_record(predictor, dataset, *, repetitions: int | None = None) -> d
             "reason": "incomplete_candidate_coverage" if not complete else "tie" if prediction is None else None,
         })
     final = rows[-1]
+    protocol_compliant = (len(indices) == 45 and requested == 5 and np.array_equal(np.unique(repeat), np.arange(5))
+        and all(np.count_nonzero((repeat == level) & (codes == digit)) == 1 for level in range(5) for digit in vocabulary))
+    if not protocol_compliant and not diagnostic:
+        final = {**final, 'prediction': None, 'status': 'abstained', 'reason': 'requires_one_complete_45_flash_R5_recording'}
     session_ids = np.unique(np.asarray(timeline.session_ids).astype(str))
     if len(session_ids) != 1:
         raise ValueError("one completed inference recording is required")
@@ -204,6 +208,9 @@ def inference_record(predictor, dataset, *, repetitions: int | None = None) -> d
         "target_labels_used": False, "score_kind": (
             "mean_binary_evidence_not_probability" if decision_score is None else decision_score["method"]),
         "mode": "completed_recording_inference",
+        'protocol_compliant': bool(protocol_compliant),
+        'evaluation_role': 'explicit_repetition_diagnostic' if diagnostic else 'product_R5',
+        'required_product_protocol': {'scheduled_trials': 45, 'repetitions': 5, 'candidate_count': 9},
         "filter_phase": dataset.preprocessing.filter_phase,
         "online_causal": timeline.online_causal,
         "evidence_available_time_s": available_at,
@@ -233,40 +240,58 @@ def main(argv: list[str] | None = None) -> None:
                                      help="fit personal signal-evidence QC inside calibration")
     epoch_quality_group.add_argument("--epoch-qc-model", type=Path)
     parser.add_argument("--repetitions", type=int)
+    parser.add_argument('--diagnostic-repetitions', action='store_true', help='explicit retrospective repetition diagnostic; not product hit@all')
     parser.add_argument("--device", default="cpu", help="cpu, cuda[:INDEX], xpu[:INDEX], or auto")
     parser.add_argument("--cpu-threads", type=int, default=4)
     parser.add_argument("--selector-mode", choices=SELECTOR_MODES, default="legacy_product")
     parser.add_argument("--calibration-recipe", type=Path,
-                        help="explicit TargetRecipe JSON for the unified calibration program")
+                        help="explicit TargetRecipe JSON for unified or fixed_erp calibration")
     parser.add_argument("--training-budget", type=Path,
                         help="one UnifiedTrainingBudget JSON with fixed personal training epochs")
     parser.add_argument("--selection-protocol", choices=("binary_auc", "brainsync_operational_r5"),
                         help="recipe scoring for other selectors; unified uses a fixed full-calibration budget")
     parser.add_argument("--batch-size", type=int)
     parser.add_argument("--batch-rule", type=Path)
-    parser.add_argument("--seed", type=int, default=20260906)
+    parser.add_argument("--seed", type=int)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
+    if args.task != 'calibrate' and (args.seed is not None or args.selection_protocol is not None):
+        parser.error('seed and selection protocol belong to calibration')
+    if args.seed is None:
+        args.seed = 20260906
+    if args.task != 'infer' and args.repetitions is not None:
+        parser.error('repetitions belong to inference')
     if args.selector_mode == "unified":
         if args.selection_protocol is not None:
             parser.error("unified uses a fixed full-calibration budget; --selection-protocol belongs to other selectors")
         args.selection_protocol = "fixed_full_calibration"
+    elif args.selector_mode == 'legacy_product':
+        if args.selection_protocol not in {None, 'binary_auc'}:
+            parser.error('legacy_product uses binary_auc; another selection protocol would be unused')
+        args.selection_protocol = 'binary_auc'
     elif args.selection_protocol is None:
         args.selection_protocol = "brainsync_operational_r5"
-    training_budget = None
+    training_budget, transfer_policy = None, None
     if args.training_budget is not None:
         if args.selector_mode != "unified" or args.task != "calibrate":
             parser.error("training-budget belongs to unified calibration")
-        training_budget = json.loads(args.training_budget.read_text(encoding="utf-8"))
-    transfer_policy = None
     if args.calibration_recipe is not None:
-        if args.selector_mode != "unified" or args.task != "calibrate":
-            parser.error("calibration-recipe belongs to unified calibration")
-        transfer_policy = TargetRecipe(**json.loads(args.calibration_recipe.read_text(encoding="utf-8")))
-        if args.batch_size is None:
-            args.batch_size = transfer_policy.batch_size
-    elif args.selector_mode == "unified" and args.task == "calibrate":
-        parser.error("unified calibration requires --calibration-recipe")
+        if args.selector_mode not in {'unified', 'fixed_erp'} or args.task != 'calibrate':
+            parser.error('calibration-recipe belongs to unified or fixed_erp calibration')
+    elif args.selector_mode in {'unified', 'fixed_erp'} and args.task == 'calibrate':
+        parser.error('unified and fixed_erp calibration require --calibration-recipe')
+    if args.model_artifact.resolve() in {(args.output_dir/name).resolve() for name in ('summary.json', 'epoch_quality.json')}:
+        parser.error('model artifact must differ from task summary and exported epoch quality')
+    if args.task == 'inspect' and (args.session_dir or args.source_checkpoint or args.ocular_model or args.ocular_correction
+            or args.reference_channel or args.reference_mode != 'auto' or args.continuous_qc_model or args.epoch_qc
+            or args.epoch_qc_model or args.batch_rule or args.repetitions is not None):
+        parser.error('inspect reads the frozen model only; session and preprocessing overrides are unused')
+    if args.task != 'calibrate' and (args.batch_size is not None or args.selector_mode != 'legacy_product'):
+        parser.error('calibration selector and batch settings do not apply to a saved model workflow')
+    if args.diagnostic_repetitions and args.task != 'infer':
+        parser.error('diagnostic repetitions belong to inference')
+    if args.task == 'infer' and args.repetitions not in {None, 5} and not args.diagnostic_repetitions:
+        parser.error('non-R5 repetitions require --diagnostic-repetitions')
     args.output_dir.mkdir(parents=True, exist_ok=True)
     summary_path = args.output_dir / "summary.json"
     if summary_path.exists():
@@ -288,6 +313,18 @@ def main(argv: list[str] | None = None) -> None:
         "session_dirs": [str(path.resolve()) for path in args.session_dir],
     }
     try:
+        for name in ('training_budget', 'calibration_recipe'):
+            path = getattr(args, name)
+            if path is not None:
+                content = path.read_bytes()
+                summary[name+'_input'] = {'path': str(path.resolve()), 'sha256': hashlib.sha256(content).hexdigest()}
+                value = json.loads(content)
+                if name == 'training_budget':
+                    training_budget = value
+                else:
+                    transfer_policy = TargetRecipe(**value)
+                    if args.batch_size is None:
+                        args.batch_size = transfer_policy.batch_size
         requested_device = args.device
         args.device = model_task_device(requested_device)
         summary["execution"] = {"requested_device": requested_device, "tensor_device": args.device,
@@ -305,6 +342,7 @@ def main(argv: list[str] | None = None) -> None:
             artifact_bytes = args.model_artifact.read_bytes()
             summary["artifact_sha256"] = hashlib.sha256(artifact_bytes).hexdigest()
             predictor = load_calibrated_predictor(io.BytesIO(artifact_bytes), device=args.device)
+            predictor.validate_personal_workflow_metadata()
             summary.update(subject_id=predictor.metadata["subject_id"],
                            simulation_status=predictor.metadata["input_contract"]["simulation_status"])
         if args.task == "inspect":
@@ -322,10 +360,13 @@ def main(argv: list[str] | None = None) -> None:
                 raise FileExistsError("model artifact exists; choose a new version")
             if args.ocular_correction and args.ocular_model is not None:
                 raise ValueError("choose automatic ocular correction or an existing ocular model")
-            validated = sorted(
-                ((validate_brainsync_bids_session(root), root) for root in roots),
-                key=lambda item: item[0].started_timestamp_s,
-            )
+            with ExitStack() as metadata_leases:
+                validated = []
+                for root in roots:
+                    session = validate_brainsync_bids_session(root)
+                    metadata_leases.callback(session.bids.close)
+                    validated.append((session, root))
+                validated.sort(key=lambda item: item[0].started_timestamp_s)
             continuous = load_continuous_qc(args.continuous_qc_model) if args.continuous_qc_model else None
             resolve_brainsync_reference(args.reference_channel, None, continuous, mode=args.reference_mode)
             epoch_quality = load_epoch_quality(args.epoch_qc_model) if args.epoch_qc_model else None
@@ -368,6 +409,7 @@ def main(argv: list[str] | None = None) -> None:
                     tuple(root for _, root in fitting), reference_channel=planned_reference,
                     continuous_qc_model=continuous,
                     eog_reference_policy=args.eog_reference_policy,
+                    preprocessing=preprocessing,
                 )
             reference = resolve_brainsync_reference(args.reference_channel, ocular, continuous, mode=args.reference_mode)
             dataset = apply_brainsync_reference(
@@ -398,6 +440,11 @@ def main(argv: list[str] | None = None) -> None:
                 declared_preprocessing=preprocessing if args.preprocessing_config is not None else None,
             )
             save_calibrated_predictor(args.model_artifact, predictor)
+            artifact_bytes = args.model_artifact.read_bytes()
+            restored = load_calibrated_predictor(io.BytesIO(artifact_bytes), device=args.device)
+            if restored.metadata != predictor.metadata:
+                raise ValueError('saved personal model metadata changed during numeric reload')
+            summary['artifact_reload_verified'] = True
             summary.update(status="completed", **_model_summary(predictor))
             summary["epoch_qc_model_path"] = _export_epoch_quality(predictor, args.output_dir)
         else:
@@ -408,7 +455,8 @@ def main(argv: list[str] | None = None) -> None:
                 raise ValueError("inference preprocessing is frozen in the saved model artifact")
             dataset = predictor.load_inference_session(roots[0])
             _progress(65, "predict_unlabelled_recording")
-            summary.update(inference_record(predictor, dataset, repetitions=args.repetitions))
+            summary.update(inference_record(predictor, dataset, repetitions=args.repetitions if args.diagnostic_repetitions else 5,
+                diagnostic=args.diagnostic_repetitions))
             summary.update(model_kind=predictor.metadata["model_kind"],
                            participant_key=predictor.metadata["participant_key"],
                            simulation_status=predictor.metadata["input_contract"]["simulation_status"])
@@ -422,7 +470,7 @@ def main(argv: list[str] | None = None) -> None:
                            continuous_quality_ledger=error.ledger)
             atomic_write_json(summary_path, summary)
             raise SystemExit(1) from error
-        requested = args.repetitions or error.scheduled_trials // 9
+        requested = (args.repetitions or max(1, (error.scheduled_trials+8)//9)) if args.diagnostic_repetitions else 5
         rows = [{"repetition": level, "prediction": None, "status": "abstained",
                  "scores": {str(digit): None for digit in range(1, 10)},
                  "counts": {str(digit): 0 for digit in range(1, 10)},
@@ -433,6 +481,10 @@ def main(argv: list[str] | None = None) -> None:
             reason="continuous_qc_no_usable_epoch", candidate_scores=rows[-1]["scores"], by_repetition=rows,
             target_labels_used=False, mode="completed_recording_inference",
             continuous_quality_ledger=error.ledger)
+        summary.update(protocol_compliant=False if error.scheduled_trials != 45 else None,
+            protocol_validation='unavailable_after_full_continuous_QC_rejection',
+            evaluation_role='explicit_repetition_diagnostic' if args.diagnostic_repetitions else 'product_R5',
+            required_product_protocol={'scheduled_trials': 45, 'repetitions': 5, 'candidate_count': 9})
         atomic_write_json(summary_path, summary)
         _progress(100, f"abstained {summary_path.resolve()}")
     except Exception as error:

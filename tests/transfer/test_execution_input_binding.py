@@ -85,7 +85,6 @@ def test_reuse_tracks_actual_independent_inner_arrays_and_reuses_unchanged_fit(t
 
     first = run("first")
     inner.X[~training] *= 50
-    inner.y[~training] = 1-inner.y[~training]
     changed = run("changed")
     assert changed["execution_identity"] != first["execution_identity"]
     assert changed["fit_execution"]["fit_calls"] > 0

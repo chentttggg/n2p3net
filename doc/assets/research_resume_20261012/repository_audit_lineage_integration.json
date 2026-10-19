@@ -1,0 +1,57 @@
+{
+  "schema": "n2p3_repository_audit_run_lineage_integration/1",
+  "delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-cli\\lifecycle\\DELIVERY_MANIFEST.json",
+    "sha256": "487609451d8b93ded0ed5be50c72d16952cad3f435ebb83896a1fa633716a860",
+    "bytes": 3191
+  },
+  "review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-cli\\lifecycle\\REVIEW.zh.md",
+    "sha256": "de578e48bb7051ae92a96e6f435e58117be490cda8936d0fe6961298f9e61015",
+    "bytes": 11555
+  },
+  "canonical_sources": [
+    {
+      "path": "experiments/freeze_source_snapshot.py",
+      "sha256": "3d5aa0cb95fe1a73a84d60361fb49a1af1637c9b0bab3899c5755786eec1c5f2"
+    },
+    {
+      "path": "experiments/probe_checkpoint_masks.py",
+      "sha256": "fd98d1b65bd75011d23a3f8114c8bcdcb305edc94092e9b9df0a4ce14a675d8a"
+    },
+    {
+      "path": "experiments/run_binary_subject_transfer.py",
+      "sha256": "10236a0edbf06d73da8f95c636b20ad34041fd40f87eb8d46a494b9a3ce1c031"
+    },
+    {
+      "path": "experiments/run_pretrain.py",
+      "sha256": "0056d19478ff5f39faea9485cf54845124965c38b6eb722aaeba60be21238de1"
+    },
+    {
+      "path": "experiments/run_pretrain_supervised.py",
+      "sha256": "3f0ce153cb27bc29b40447c728e2d60fc1b030486046a0b3ace91a286a1ceeae"
+    },
+    {
+      "path": "src/research/evaluation.py",
+      "sha256": "6b22f2aec2e4aa716e9a2b07fe8340760ce0d54c0ecd96747c863a3840eaa0b1"
+    },
+    {
+      "path": "src/transfer/mask_probe.py",
+      "sha256": "7e187fcf5ac8c0eaf59f3dca8d8cff00c97f12a6e490924c719a07e0bf942c46"
+    }
+  ],
+  "root_review": {
+    "source_capture": "Read capture_executed_run_source and verified_executed_snapshot full relation; valid-original runtime mismatch is distinct from corrupt archive, preserving original initial-model source and new evaluator producer",
+    "producers": "Both pretrain schemas inherit state digest; actual current freeze reaches every non-dry training branch; planning probe explicitly unexecuted",
+    "history": "52 original runs classified by known recovery evidence; no missing source fabricated, query reads index only"
+  },
+  "remaining_overlay": "Explicit development resources/P4 scope is separately reviewed before new execution",
+  "validation": "Author15 focused controls plus independent checkpoint/source operand review reused; combined actual current tests after overlays",
+  "actual_source_fixture_migration": {
+    "delivery": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-cli\\lifecycle\\R3-fixtures\\DELIVERY_MANIFEST.json",
+    "sha256": "e5f39503c5f023f1db55e025f797bf04a6778dbfa7b1ada68033399d432a230b",
+    "source": "D:\\BCI\\worktrees\\research-director\\tests\\train\\test_pretrain_supervised.py",
+    "source_sha256": "e2cdf06cefd9d94cc8776d4b0958f72d30a98e099703b714db73af5d0014d59c",
+    "validation": "two actual-source assertions and initial source cache guard:3 passed; original current-combination RED50685 retained"
+  }
+}

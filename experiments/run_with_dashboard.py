@@ -24,6 +24,8 @@ import sys
 import threading
 import time
 from pathlib import Path
+from urllib.error import URLError
+from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent.parent
 EXPS = ROOT / "experiments"
@@ -37,7 +39,34 @@ def _free_port(start: int = 8812) -> int:
                 return p
             except OSError:
                 continue
-    return start
+    raise OSError(f"dashboard ports {start}..{start + 19} are all unavailable")
+
+
+def _server_output(server, ready, port):
+    expected = f"[dashboard] http://127.0.0.1:{port}/dashboard.html"
+    for line in server.stdout:
+        if line.strip() == expected:
+            # Publish the URL only after this child's bind and HTTP readiness.
+            ready.set()
+        else:
+            print(line, end="", flush=True)
+
+
+def _wait_ready(server, ready, port, *, timeout=5.0):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if server.poll() is not None:
+            raise RuntimeError(f"dashboard server exited during startup (exit {server.returncode})")
+        if ready.is_set():
+            try:
+                request = Request(f"http://127.0.0.1:{port}/dashboard.html", method="HEAD")
+                with urlopen(request, timeout=.2) as response:
+                    if response.status == 200 and server.poll() is None:
+                        return
+            except (OSError, URLError):
+                pass
+        time.sleep(.05)
+    raise RuntimeError("dashboard server did not become ready before the startup deadline")
 
 
 def _start_active_run_monitor(stop_event: threading.Event) -> threading.Thread:
@@ -73,7 +102,10 @@ def main() -> None:
     if not cmd:
         ap.error("需要实验命令，例如：run_with_dashboard.py -- python experiments/xxx.py ...")
 
-    port = _free_port()
+    try:
+        port = _free_port()
+    except OSError as error:
+        ap.exit(1, f"[dashboard] {error}\n")
     server = subprocess.Popen(
         [
             sys.executable,
@@ -84,26 +116,42 @@ def main() -> None:
             "127.0.0.1",
             "--directory",
             str(EXPS),
-        ]
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     stop_event = threading.Event()
-    _start_active_run_monitor(stop_event)
-    time.sleep(1.0)
-
-    print(f"[dashboard] http://localhost:{port}/dashboard.html （自动跟踪最新 run）", flush=True)
+    ready = threading.Event()
+    output = threading.Thread(target=_server_output, args=(server, ready, port), daemon=True)
+    output.start()
+    monitor = None
     rc = 1
     try:
+        _wait_ready(server, ready, port)
+        monitor = _start_active_run_monitor(stop_event)
+        print(f"[dashboard] http://localhost:{port}/dashboard.html （自动跟踪最新 run）", flush=True)
         rc = subprocess.call(cmd, cwd=str(ROOT))
+    except RuntimeError as error:
+        print(f"[dashboard] {error}", file=sys.stderr, flush=True)
     except KeyboardInterrupt:
         print("[dashboard] 收到中断，实验与服务器将依次关闭", flush=True)
         rc = 130
     finally:
         stop_event.set()
-        server.terminate()
+        if server.poll() is None:
+            server.terminate()
         try:
             server.wait(timeout=5)
         except subprocess.TimeoutExpired:
             server.kill()
+            server.wait(timeout=5)
+        output.join(timeout=1)
+        server.stdout.close()
+        if monitor is not None:
+            monitor.join(timeout=1)
         active_path = EXPS / "active_run.txt"
         active = active_path.read_text(encoding="utf-8").strip() if active_path.exists() else ""
         location = f"experiments/runs/{active}/" if active else "no run record was created"

@@ -24,6 +24,7 @@ from transfer.checkpoint import (
     load_n2p3_trunk_checkpoint,
     predict_n2p3_checkpoint,
 )
+from transfer.result_reuse import _tensor_state_digest
 
 MASK_PROBE_CHANNELS = build_channel_identity(SOURCE_CHAIN_LAYOUTS["six"]).names
 MASK_PROBE_REMOVALS = (
@@ -43,11 +44,7 @@ def _array_digest(values: np.ndarray) -> str:
 
 
 def _state_digest(trunk: N2P3Net) -> str:
-    digest = hashlib.sha256()
-    for name, tensor in sorted(trunk.state_dict().items()):
-        digest.update(name.encode())
-        digest.update(_array_digest(tensor.detach().cpu().numpy()).encode("ascii"))
-    return digest.hexdigest()
+    return _tensor_state_digest(dict(trunk.state_dict()))
 
 
 def _per_slot_moments(values: np.ndarray, mask: np.ndarray, *, packed: bool) -> tuple[np.ndarray, np.ndarray]:
@@ -90,6 +87,8 @@ def run_checkpoint_mask_probe(
     study_membership_proofs: Sequence[Mapping] = (),
 ) -> dict[str, object]:
     """Score five matched masks without fitting, selecting, or changing source state."""
+    if not dry_run and evaluation_snapshot_sha256 == '0' * 64:
+        raise ValueError('the unbound planning snapshot placeholder cannot authorize a mask-probe execution')
     dataset.validate(require_labels=True)
     if dataset.identity_table is None:
         raise ValueError("mask probe requires production participant identities")
@@ -164,7 +163,8 @@ def run_checkpoint_mask_probe(
             },
             decision={"kind": "binary", "metric": "roc_auc", "selection": "none"},
             evidence_scope={
-                "level": "development",
+                "level": "planning_only" if dry_run else "development",
+                "execution_performed": not dry_run,
                 "purpose": "fixed_model_deletion_probe",
                 "limitation": "information_loss_and_mask_context_are_not_separated",
             },
@@ -186,6 +186,7 @@ def run_checkpoint_mask_probe(
     output = {
         "schema": "n2p3_fixed_checkpoint_mask_probe/1",
         "dry_run": dry_run,
+        "evidence_scope": "planning_only" if dry_run else "development",
         "participant_key": participant,
         "local_subject_id": target_subject,
         "row_indices": rows.tolist(),
@@ -202,6 +203,7 @@ def run_checkpoint_mask_probe(
         "parent_lineage_sha256": materialize_dataset_lineage(dataset).entity_digest,
         "state_sha256_before": before,
         "state_sha256_after": before,
+        "state_check": "not_executed_dry_run" if dry_run else "pending",
         "requested_device": str(resolved_device),
         "effective_device": None if dry_run else str(resolved_device),
         "inference_batch_size": batch_size,
@@ -299,6 +301,7 @@ def run_checkpoint_mask_probe(
             }
         )
     output["state_sha256_after"] = _state_digest(trunk)
+    output["state_check"] = "verified_after_inference"
     if output["state_sha256_after"] != before:
         raise RuntimeError("frozen mask probe changed source parameters or buffers")
     return output

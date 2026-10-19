@@ -1,0 +1,155 @@
+{
+  "schema": "repository_audit_postintegration_integration/1",
+  "status": "accepted_focused_composition",
+  "root_review": "Source/callers and every six-file fixture diff reviewed. Immutable outputs, R5 product and raw/epoch scopes preserved. Resilient SKIP lease hypothesis disproved by actual Windows probe; no runtime edit for that hypothesis.",
+  "slices": [
+    {
+      "name": "workstation_fixture_migration",
+      "author_manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-workstation\\postintegration\\DELIVERY_MANIFEST.json",
+        "sha256": "2e2230c29c4e74dacdb715b19f664699c252dd8eb35a0884d80bea92f0ec86a0"
+      },
+      "files": [
+        {
+          "path": "tests/brainsync/test_brainsync.py",
+          "before_sha256": "9f7365e796e2d928ee0d8c94c77cbd41cd91bbf7d4f27adb8c510d6fa12c18a5",
+          "after_sha256": "20ed25583973be429df67b8bf1d2fbf343a83b466decc3bb38931fdc0aa4480c"
+        },
+        {
+          "path": "tests/brainsync/test_brainsync_clock_segments.py",
+          "before_sha256": "84e53f439206dd2d4e3ba0ed9201b97ce1fa493fbcc31ad02e098f008565f85b",
+          "after_sha256": "88e07839f0415e7953dc0ab8aa770d6c0b36d93c5abb69d5c57add997c1abbc1"
+        },
+        {
+          "path": "tests/brainsync/test_brainsync_input_replay.py",
+          "before_sha256": "fbc1bb97027c8f95740e47f422b68673f0cfab2ce97d7a0a86bbdef04015b55b",
+          "after_sha256": "36c02fdaaac055a3e651061c655b3cc41b627db1c5f700ba3054f84cb671b1f2"
+        },
+        {
+          "path": "tests/brainsync/test_calibration_quality_ingress.py",
+          "before_sha256": "4eb7c87840382e0745c429d43ebae626eb38417c5b0063e47724187f11d1202f",
+          "after_sha256": "263b8726d7e621a242f025c75a57af0ea0156824ebd4ef7e3a927e299d3a6247"
+        },
+        {
+          "path": "tests/brainsync/test_workstation_audit.py",
+          "before_sha256": "20315da2b4fc5217391a0f2b2dd98938a636643b66f1953d63dd66abede99bcf",
+          "after_sha256": "f6dabcc931318c457905beb655d002a5b006e7358bfc145ab28b07d2680e700d"
+        },
+        {
+          "path": "tests/support/quality.py",
+          "before_sha256": "499e6ab5aa0f19d37fe3524d6d5bca612befc8dfedb06d449c5ea81b3400bc73",
+          "after_sha256": "17407d98df3a2e83d93919ebfaa4602fa962a8dae2539c4d5599540267c8f7c5"
+        }
+      ],
+      "author_verification": "26 focused cases passed; no production changes",
+      "root_verification": "89 focused composition cases passed; source did not change during execution. Separate exact author CloudExecutor interruption/replay test passed and is retained."
+    },
+    {
+      "name": "general_authority_and_numeric_codec",
+      "author_manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\G1-postintegration-review\\DELIVERY_MANIFEST.json",
+        "sha256": "0614af801068c3117a6ca8f7e2ce443b0032866f6f7a94905b26970183c7450e"
+      },
+      "files": [
+        {
+          "path": "src/data/exclusions.py",
+          "before_sha256": "a9f197fdaa66a73f2f5a71b3b69636a385647f4ed6db19f803b9e3ad1d46703f",
+          "after_sha256": "5c6ce553bd92d39f2a5d168826d477d3996bf01be98bd39dcc8ca36a7a682b89"
+        },
+        {
+          "path": "tests/data/test_g1_p2_boundaries.py",
+          "before_sha256": "b214d70e6c622f1c8a13697dac32d49e3e5e05c87813b4ce51e71e58a62f8f3a",
+          "after_sha256": "d423c8a5f981178ac56a27765d64533ba4d58cd8ea101d329daa90d7ec486889"
+        },
+        {
+          "path": "src/transfer/calibrated.py",
+          "before_sha256": "e94ccac94cf0d9a0a2ca45a3c091ff67422b137d289b5d9fbf96e6955e371a0e",
+          "after_sha256": "9b6db34b48c28656c30516f37d0ef20c7cdc8ff7cc51078e8cc60c61915e2ddb"
+        },
+        {
+          "path": "tests/brainsync/test_calibrated_predictor.py",
+          "before_sha256": "15964271446e9d454ae9964fb820e6a22d388a01dc89a622c170012f744e6f09",
+          "after_sha256": "0ab7b1a38dc6ff6853820aad95412467555e0433cd2b9b12521cc3acf9ae2a06"
+        },
+        {
+          "path": "tests/data/test_identity_exclusion_ingress.py",
+          "before_sha256": null,
+          "after_sha256": "10e4ec1917368854632b296df7b3d7bdfc131263aca9d2c4e3d847bce5f1c629"
+        },
+        {
+          "path": "tests/brainsync/test_numeric_predictor_codec.py",
+          "before_sha256": null,
+          "after_sha256": "34617cbeddddcff91e7dc106105b8f4e4808cee1e109138c7e1a3a5c69cdabb8"
+        }
+      ],
+      "root_review": "Reviewed exact data/checkpoint/pretrain authority chain, reserved URI parsing, all six-path diff and numeric/current/legacy codec. Source-library interpretation remains strict, actual workflow gate still rejects incomplete personal artifacts. R5 and diagnostic purposes preserved in migrated tests.",
+      "author_verification": "52 targeted cases passed; original genuine ingress controls had 8 failures and 4 passes; original seven personal cases all reproduced.",
+      "root_verification": "89 focused composition cases passed; source did not change during execution. Separate exact author CloudExecutor interruption/replay test passed and is retained."
+    },
+    {
+      "name": "source_pool_dryrun_fixture",
+      "files": [
+        {
+          "path": "tests/data/test_source_records.py",
+          "before_sha256": "478a3edf446285e126cd051c965d5bd5770dc117c16d6816dcfe5d84243e9dce",
+          "after_sha256": "fb8803eff5a6862309aab1eef005015e4cdd50b76ab32bf2e84b934d0e35d86f"
+        }
+      ],
+      "root_review": "Focused original failure is explicit cloud-vs-local resource declaration. This preparation/resume dry-run test now declares software_correctness; cloud capacity/CUDA gate preserved. No workers/fits are allowed by the existing fail-on-worker test control.",
+      "baseline": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\postintegration-root\\source-pool-red\\junit.xml",
+      "root_verification": "89 focused composition cases passed; source did not change during execution. Separate exact author CloudExecutor interruption/replay test passed and is retained."
+    },
+    {
+      "name": "serialized_cache_state_and_cloud_fixture",
+      "author_manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\postintegration-execution\\DELIVERY_MANIFEST.json",
+        "sha256": "026ffb5d9cd666d79a4b8bbce52df03b85e4c39d263b44ac2b3d8287d0339554"
+      },
+      "files": [
+        {
+          "path": "src/data/epochs.py",
+          "before_sha256": "f7f4c3e6749d039f9efc6c98add0e3257f2230c6c1659a239eb7c21533ae077e",
+          "after_sha256": "08498b9574dbba8fbfcb6eee61926931f82f2a194af50c0e518e1b72069a7e43"
+        },
+        {
+          "path": "tests/research/test_candidate_cloud_execution.py",
+          "before_sha256": "73615834d3fd15b7e66acf8737c10ddec2d6d070bba3542024216af575a45a90",
+          "after_sha256": "c554d102b880586577dce18773a21faa45ee0bdacb075667fedf02e00e8756b1"
+        },
+        {
+          "path": "tests/data/test_epoch_cache_storage_identity.py",
+          "before_sha256": null,
+          "after_sha256": "37907136a8b498155046f047c8c99b4de4688266911a2933228aa3b3516eef7c"
+        }
+      ],
+      "root_review": "Read actual cache payload, digest/record, loaded-state admission and all three-file diff. Store view references actual serialized arrays, retains caller arrays, and checks values only after a real numeric conversion. Strict producer, attestation and publication owners remain. The cloud fixture now declares actual native/inter-op/controller capacity and existing synthetic class cost; no production admission is relaxed.",
+      "author_verification": "44 writer/promotion/producer/integrity cases plus actual local CloudExecutor interruption/replay case passed. All Jobs retired; K0 zero target labels, no K200 optimizer dispatch.",
+      "root_verification": "89 focused composition cases passed; source did not change during execution. Separate exact author CloudExecutor interruption/replay test passed and is retained."
+    }
+  ],
+  "recorded_utc": "2026-10-19T05:25:57Z",
+  "authoritative_epoch_source_sha256": "08498b9574dbba8fbfcb6eee61926931f82f2a194af50c0e518e1b72069a7e43",
+  "validation": {
+    "execution": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\postintegration-root\\focused-composition-02\\execution.json",
+      "sha256": "45276cfe3162114cf120ee3365a195780310657d697730fe173cf9be35fd6008"
+    },
+    "junit": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\postintegration-root\\focused-composition-02\\junit.xml",
+      "sha256": "0887215bad44cbe2610acc408071a669e1b095eaf6224925e35a6bf3feda6c17"
+    },
+    "source_pins": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\postintegration-root\\focused-composition-02\\source_pins.json",
+      "sha256": "84dc6bc93509a55355fb321d911e74f7f748d93a36c9feea5138d22637a71361"
+    },
+    "tests": 89,
+    "failures": 0,
+    "scope": "Previously reproduced audit integration failures and adjacent real identity/codec/cache boundaries. No full-suite completion claim."
+  },
+  "collection_attempt": {
+    "path": "D:/BCI/artifacts/research-deliveries/repository-validation/postintegration-root/focused-composition-01/execution.json",
+    "status": "no_tests_collected_bad_selected_nodeid",
+    "exit_code": 4,
+    "interpretation": "Selection typo corrected before the actual 89-case run; not a product result."
+  }
+}

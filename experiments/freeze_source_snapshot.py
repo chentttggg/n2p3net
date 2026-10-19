@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import io
 import json
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -14,7 +15,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from research.evaluation import verified_executed_snapshot  # noqa: E402
+from research.evaluation import (  # noqa: E402
+    ExecutedSourceMismatchError,
+    verified_executed_snapshot,
+    verified_source_snapshot,
+)
 from research.execution import atomic_write_json  # noqa: E402
 
 
@@ -60,6 +65,50 @@ def freeze_source(output: Path, *, root: Path = ROOT, materialize: bool = False)
             stream.extractall(checkout, filter="data")
         verified_executed_snapshot(manifest, root=checkout)
     return manifest
+
+
+def capture_executed_run_source(output: Path, *, declared_manifest: Path, root: Path,
+        entrypoint: Path) -> dict:
+    """Keep one actual source archive beside new outputs, preserving old origin.
+
+    An original archive that already matches the complete runtime is copied
+    byte-for-byte, retaining its producer identity. Only a typed mismatch of
+    current files triggers a new freeze; corrupt original archives still fail.
+    """
+    root, output = Path(root).resolve(), Path(output).resolve()
+    entrypoint = Path(entrypoint).resolve()
+    if not entrypoint.is_relative_to(root):
+        raise ValueError('the executing entrypoint must belong to the declared runtime root')
+    required = (entrypoint.relative_to(root).as_posix(),)
+    declared_manifest = Path(declared_manifest).resolve()
+    original = verified_source_snapshot(declared_manifest)
+    declared = {'manifest': str(declared_manifest), **original}
+    try:
+        verified_executed_snapshot(declared_manifest, root=root, required_files=required)
+    except ExecutedSourceMismatchError:
+        manifest = freeze_source(output, root=root)
+        mode = 'current_runtime_frozen'
+    else:
+        output.mkdir(parents=True, exist_ok=False)
+        document = json.loads(declared_manifest.read_bytes())
+        original_archive = (declared_manifest.parent/document['archive']).resolve()
+        relative_archive = original_archive.relative_to(declared_manifest.parent)
+        archive = output/relative_archive
+        archive.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(original_archive, archive)
+        manifest = output/'source.manifest.json'
+        if Path(document['archive']).is_absolute():
+            atomic_write_json(manifest, {**document, 'archive': relative_archive.as_posix()})
+        else:
+            shutil.copyfile(declared_manifest, manifest)
+        mode = 'verified_original_source_archive_copied'
+    actual = verified_executed_snapshot(manifest, root=root, required_files=required)
+    result = {'schema': 'n2p3_executed_run_source/1', 'mode': mode,
+        'manifest': str(manifest), **actual, 'declared_source': declared,
+        'entrypoint': required[0], 'entrypoint_sha256': hashlib.sha256(entrypoint.read_bytes()).hexdigest(),
+        'source_role': 'actual_new_run_executing_runtime', 'historical_producer_rewritten': False}
+    atomic_write_json(output/'execution_source.json', result)
+    return result
 
 
 def main(argv=None):

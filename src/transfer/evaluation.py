@@ -1,9 +1,10 @@
 """Within-subject decision evaluation helpers.
 
 These functions evaluate a **held-out chronological suffix** only. Repetition
-indices may retain their original scheduled origin (for example, 8, 9, ...
-after an eight-repetition prefix); the validated contiguous suffix is normalized
-internally for the 1..R curve. Do not pass training prefix trials here.
+indices use the zero-based suffix schedule produced by the split owner.
+The splitter preserves original acquisition chronology separately; this module
+does not infer a new scheduled origin from the observed rows. Do not pass
+training prefix trials here.
 
 All candidate scoring goes through the unified
 :func:`models.candidate_evidence.candidate_evidence_scores` core; this module

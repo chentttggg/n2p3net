@@ -334,6 +334,8 @@ checkpoint读取安全整合（`codex/claude-improvements-20261012`，基于`ed2
 
 测试迁移逐项覆盖原1189个函数，补回一个活跃的旧schema拒绝回归。形式化恢复保留414份原工程源码、66份核心元数据，另按验收manifest原SHA补齐七份位于`artifacts/`的Lean检查源码；329个受保护证明输入均保持原身份。754个旧输出路径已有归档、精确回执重建或清理用途定位。逐函数祖先复核保留了旧主树有用的E2声明选项、实际ridge与完整失败账本，统计一般线性对比范围由同一数学owner承接。来源、主树裁决和复核入口见[收敛绑定](../assets/research_resume_20261012/repository_convergence_integration.json)。
 
+集成后按真实caller修复了一般opaque/registry身份误拒、数值模型codec错误强制selection字段，以及generic缓存存储类型与decoded摘要不一致。原工作站输出、R5诊断、文件读取寿命和CPU/native/inter-op测试前提分别迁移，生产准入保持。89项定向组合检查通过，源码在运行期间不变；另复用实际本地中断重放的零目标标签、完整请求分母和Job退休证据。初始全仓运行中断与本轮有效结果分别保留，见[集成后验收](../assets/research_resume_20261012/repository_audit_postintegration_integration.json)。
+
 ## 文件夹清理复核
 
 独立清理清单的18项已按实际内容和恢复引用逐项复核，见[文件级裁决与来源](../assets/repository_audit_20261019/folder_cleanup_review.json)。随后完成保留内容核验并用cmd精确路径删除：8,940个BI2014b重复下载分片、八个LLP坏下载、一个可再生pyc、九个原始运输包与十个prepared运输tar，共8,968个文件、28.4724 GiB逻辑字节；期间D盘空闲增加28.4555 GiB，卷增量包含并发活动。删除后逐路径确认目标均不存在，命令、退出码及首次引号错误尝试见[实际清理收据](../assets/repository_audit_20261019/folder_cleanup_execution.json)。

@@ -128,7 +128,8 @@ def test_actual_source_chain_four_family_replay_keeps_original_source_and_comple
     snapshot = freeze_source(tmp_path / "snapshot", materialize=True)
     source_plan = independent_source_plan(cache, preprocessing, snapshot)
     source_plan.update(source_seeds=[11], target_seeds=[21], seed_pairs=[[11, 21]],
-        cpu_budget=2, source_workers=1, target_workers=1,
+        cpu_budget=3, source_workers=1, target_workers=1,
+        source_native_threads_per_worker=1, target_native_threads_per_worker=1,
         source_worker_memory_gib=software_worker_memory_gib, target_worker_memory_gib=software_worker_memory_gib,
         shared_staging_memory_gib=.125,
         ready_consumers=[{"kind": "candidate", "name": "fixed-family", "outer": "leave_BNCI",
@@ -144,7 +145,9 @@ def test_actual_source_chain_four_family_replay_keeps_original_source_and_comple
     assert report["execution_end_source_check"] == "actual_runtime_bytes_match_the_ingress_archive"
     verified_executed_snapshot(snapshot, root=Path(__file__).resolve().parents[2])
     resources = report["resource_policy"]
-    assert resources["native_threads_per_worker"] == 1 and resources["cpu_budget"] == 2
+    assert resources["cpu_budget"] == 3 and resources["coordinator_cpu_threads"] == 1
+    assert resources["source_native_threads_per_worker"] == resources["target_native_threads_per_worker"] == 1
+    assert resources["source_cpu_threads_per_worker"] == 2
     assert resources["source_workers"] == resources["target_workers"] == 1
     assert resources["cloud_resource_floor"] is None
 

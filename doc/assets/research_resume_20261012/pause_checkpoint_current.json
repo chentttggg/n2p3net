@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_at_user_request",
-  "recorded_at": "2026-10-19T09:28:55.279198+08:00",
+  "recorded_at": "2026-10-19T10:36:19.039441+08:00",
   "user_request": "resume_research_then_resolve_repository_audit_before_autonomous_continuation",
   "research_worktree": "D:/BCI/worktrees/research-director",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -281,17 +281,7 @@
       "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
     }
   },
-  "active_agents": {
-    "population_source_resume": "source launcher sealed; audit performance/resources",
-    "source_integration_review": "source independent acceptance; audit data ingress",
-    "joint_fit_resume": "direct innovation sealed; no new fit",
-    "joint_boundary_science": "independent boundary/direct score accepted",
-    "history_inference_resume": "compact history sealed; audit workstation",
-    "history_trace_review": "recipe/trace independently accepted; audit mathematics",
-    "trace_codec_resume": "trace2 sealed; audit engineering",
-    "audit_repository_convergence": "main/research/test/formal recovery",
-    "audit_transfer_contracts": "transfer/QC/checkpoint/selection audit"
-  },
+  "active_agents": {},
   "cloud": {
     "state": "not_used_no_SSH",
     "ownership": "separate_cloud_chat"
@@ -302,7 +292,7 @@
     "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
     "commit": "a6f5750"
   },
-  "integration_head": "6fec386dd9833d67748ae02722f9fc0234774f3f",
+  "integration_head": "e101015b15cdd2682017756ff218d57b3f4c0cf4",
   "concurrency_authorization": "later user allowed more threads after the temporary six-agent limit; seven actual parallel roles used for independent scientific slices",
   "execution_priority": "resolve_current_repository_audit_then_resume_full_population_and_joint_history_matrix",
   "accepted_native_input_source_commit": "811fb18dcbde94b9903ee8cce0df4bee16466e4a",
@@ -401,7 +391,46 @@
     "process_state": "parent and workers exited normally; original handle33930 exit0",
     "extra_legacy_NN_tuning_planned": false
   },
-  "pending_root_integrations": {},
+  "pending_root_integrations": {
+    "data": {
+      "path": "D:/BCI/artifacts/research-deliveries/repository-audit-data",
+      "state": "Reviewed fixes and scope dispositions integrated; actual postintegration failures addressed, focused composition accepted. Main materialization remains next."
+    },
+    "transfer": {
+      "path": "D:/BCI/artifacts/research-deliveries/repository-audit-transfer",
+      "state": "Reviewed fixes and scope dispositions integrated; actual postintegration failures addressed, focused composition accepted. Main materialization remains next."
+    },
+    "workstation": {
+      "path": "D:/BCI/artifacts/research-deliveries/repository-audit-workstation",
+      "manifest": "8a46dd587a3e4cc479d3da15e143733abeac95a774186b672fce85f5b920f3b8",
+      "state": "Reviewed fixes and scope dispositions integrated; actual postintegration failures addressed, focused composition accepted. Main materialization remains next."
+    },
+    "runtime_performance": {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/audit-performance",
+      "state": "Reviewed fixes and scope dispositions integrated; actual postintegration failures addressed, focused composition accepted. Main materialization remains next."
+    },
+    "run_lineage": {
+      "path": "D:/BCI/artifacts/research-deliveries/repository-audit-cli/lifecycle",
+      "manifest": "487609451d8b93ded0ed5be50c72d16952cad3f435ebb83896a1fa633716a860",
+      "state": "Reviewed fixes and scope dispositions integrated; actual postintegration failures addressed, focused composition accepted. Main materialization remains next."
+    },
+    "science_source": {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source",
+      "state": "Exact reviewed slice integrated and final import/codec/Ruff checks passed; fresh executed-source freeze and full source/joint/history execution next."
+    },
+    "science_joint": {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-response-noise",
+      "state": "Exact reviewed slice integrated and final import/codec/Ruff checks passed; fresh executed-source freeze and full source/joint/history execution next."
+    },
+    "science_history": {
+      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference",
+      "state": "Exact reviewed slice integrated and final import/codec/Ruff checks passed; fresh executed-source freeze and full source/joint/history execution next."
+    },
+    "checkpoint_publication": {
+      "path": "D:/BCI/artifacts/research-deliveries/repository-audit-checkpoint-publication",
+      "state": "Reviewed fixes and scope dispositions integrated; actual postintegration failures addressed, focused composition accepted. Main materialization remains next."
+    }
+  },
   "confirmed_Lean_error_handoff": {
     "input": {
       "path": "D:\\BCI\\n2p3-net\\doc\\assets\\lean_gaussian_20261016\\research_error_handoff_01.json",
@@ -426,7 +455,6 @@
     "bytes": 2453,
     "sha256": "db443b5ce6302c3f43fabb659dd4953c3517d877024ab4bd434038c1150b8b02"
   },
-  "concurrency_current_roles_including_root": 10,
   "resume_requires_explicit_user_instruction": false,
   "accepted_saved_public_noise_reuse": {
     "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\saved_public_noise_integration.json",
@@ -453,12 +481,52 @@
   },
   "repository_audit": {
     "source": "D:/BCI/n2p3-net/doc/evidence/repository_audit_20261019.zh.md",
-    "state": "current_source_reconciliation_and_implementation",
+    "state": "research_tree_source_accepted_final_commit_and_main_materialization_next",
     "history_protection": "D:/BCI/artifacts/research-deliveries/repository-preservation/HISTORY_PROTECTION.json",
     "bundle": "D:/BCI/artifacts/research-deliveries/repository-preservation/BUNDLE_RECEIPT.json",
     "code_snapshot": "D:/BCI/artifacts/research-deliveries/repository-preservation/CODE_SNAPSHOT_MANIFEST.json",
     "fixture": "nine_focused_cases_passed; actual_20Hz_dimension_and_explicit_fixed_selection_metadata",
-    "training_launch": "deferred_until_execution_and_input_audit_slices_accepted"
+    "training_launch": "deferred_until_execution_and_input_audit_slices_accepted",
+    "accepted_canonical_commits": {
+      "fixture_and_recovery": "6aebbaa",
+      "lossless_trace": "602383c",
+      "engineering": "e7167f3",
+      "math_R1": "12c5b15",
+      "CLI_pure_data": "860d615",
+      "docs": "233b287",
+      "math_R2": "2700d2b",
+      "formal_and_mainonly_E2": "a5e15cde360c19c66c5f5c550090b072f80accd8",
+      "transfer_contracts": "ff7a3ab",
+      "data_and_read_lifetimes": "e101015",
+      "folder_cleanup_review": "47ca2f5"
+    },
+    "source_preservation_commit": "3d5f545d206a4067134a0a6ba3fb6a0f8d21d398",
+    "Git_compaction": "D:/BCI/artifacts/research-deliveries/repository-preservation/GIT_COMPACTION_RECEIPT.json",
+    "formal_recovered_protected_inputs": 329,
+    "formal_current_source_status": "source_changed_not_revalidated; original proof bytes intact; current-target compile mode available",
+    "whole_audit_suite": "not_run_yet; final_broad_validation_after_remaining_interfaces_are_integrated",
+    "main_checkout_reconciliation": "not_applied; executable main source and index preserved; cleanup review CSV/Markdown exported under ignored tmp/audit",
+    "finding_disposition_draft": "D:/BCI/artifacts/research-deliveries/repository-audit-resolution-final/DELIVERY_MANIFEST.json",
+    "remaining_original_scope": [
+      "03 selection-label relation and actual decision-forward budget / right-censor adjudication",
+      "05 source resume immutable identity/refit selection and startup wrapper / finite fold summary",
+      "G1 P2 exact current-contract classification with narrow confirmed fixes",
+      "one final combined validation, source pin/commit/main convergence and owned obsolete-build cleanup"
+    ],
+    "latest_combined_validation": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\canonical-final-01\\TERMINAL.json",
+      "status": "interrupted",
+      "last_durable_progress_percent": 34,
+      "exit_code": null,
+      "full_suite_restart": false
+    },
+    "postintegration_binding": "doc/assets/research_resume_20261012/repository_audit_postintegration_integration.json",
+    "latest_focused_validation": {
+      "tests": 89,
+      "exit_code": 0,
+      "source_changed_during_run": [],
+      "path": "D:/BCI/artifacts/research-deliveries/repository-validation/postintegration-root/focused-composition-02/execution.json"
+    }
   },
   "active_scientific_work": {
     "population_source": {
@@ -480,7 +548,7 @@
       "actual_source_fits": 0,
       "actual_population_complete_hyperfits": 0,
       "latest_helper_and_eleventh_test": "unexecuted_WIP",
-      "candidate_integration": "not_accepted"
+      "candidate_integration": "accepted_final_source_closure159_and_six_source_files; actual execution not yet launched"
     },
     "joint_response_noise": {
       "checkpoint": {
@@ -513,7 +581,8 @@
       },
       "old_v2_parameters": "not_saved_unknown",
       "G1_and_held": "not_executed",
-      "latest_narrow_exception_revision": "unverified_WIP"
+      "latest_narrow_exception_revision": "unverified_WIP",
+      "code_integration": "accepted_direct_innovation_and_same_image_codec; no new optimizer execution"
     },
     "history": {
       "handoff": {
@@ -551,11 +620,20 @@
     }
   },
   "next_actions": [
-    "Resolve audit against current source; integrate reviewed fixes with migration/formal/cleanup receipts before autonomous scientific runs.",
-    "Read this checkpoint, actual handoffs and Git/source/process identities; do not relaunch solely from old session status.",
-    "Review latest private-AR1 domain/finite-score revision and diagnose C8 G0 precision loss using preserved returned/last-valid state; any continuation is a named warm start.",
-    "Finish source-only reference helper/test and complete plan/independent acceptance before executing13 person fits and13 source-only folds.",
-    "Close genuine fitted artifact -> full history -> typed save/replay; finish source-context, compact statistics, proposal recipe, lossless transition trace and batch evaluation.",
-    "Execute complete final4914 requested G0/G1 cells after those implementations are accepted; keep existing9828 anchors as cross-study diagnostics."
-  ]
+    "Commit accepted audit/scientific composition and freeze actual code-only source.",
+    "Launch complete13 person fits and13 source-only folds from the fresh source manifest with measured local CPU/memory admission.",
+    "Materialize reviewed source in main with protected original bytes/index and CAS ref; preserve raw/frozen/recovery payloads.",
+    "Obtain actual joint optimization/codec/first-held typed replay, then run all4914 new cells and retain9828 baseline diagnostics with original producers."
+  ],
+  "active_local_checks": [],
+  "folder_cleanup_review": {
+    "status": "completed",
+    "binding": "doc/assets/repository_audit_20261019/folder_cleanup_execution.json",
+    "receipt": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\cleanup.json",
+    "deleted_files": 8968,
+    "deleted_logical_bytes": 30572037269,
+    "scientific_payloads_retained": true
+  },
+  "last_updated_utc": "2026-10-19T05:43:55Z",
+  "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json"
 }

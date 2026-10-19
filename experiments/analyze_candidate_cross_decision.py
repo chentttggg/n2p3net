@@ -21,6 +21,7 @@ if str(SRC) not in sys.path:
 from data.candidate_task import CandidateTaskContract  # noqa: E402
 from data.digests import file_sha256  # noqa: E402
 from research.contracts import (  # noqa: E402
+    LEGACY_SOURCE_PROCEDURE_SCHEMA,
     MIN_EVIDENCE_LEVEL,
     MIN_PROMOTION_HIT_AT_R,
     ArmContract,
@@ -412,7 +413,8 @@ def _parse_run(
     source_procedure = (
         scratch_procedure_record(evaluation.model_origin["initialization"])
         if checkpoint is None
-        else training_procedure_record(checkpoints[checkpoint].training)
+        else training_procedure_record(checkpoints[checkpoint].training,
+            projection_schema=arm_contract.source_training_procedure.get("schema", LEGACY_SOURCE_PROCEDURE_SCHEMA))
     )
     if source_procedure != arm_contract.source_training_procedure:
         raise ValueError(f"run {run_id!r} source training procedure changed within its arm.")

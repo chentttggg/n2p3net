@@ -13,8 +13,9 @@ from sklearn.metrics import roc_auc_score
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
+for location in (ROOT, SRC):
+    if str(location) not in sys.path:
+        sys.path.insert(0, str(location))
 
 from data.brainsync_contract import (  # noqa: E402
     BRAIN_SYNC_SESSION_SCHEMA,
@@ -27,6 +28,10 @@ from data.brainsync_contract import (  # noqa: E402
 from data.contract import assert_personal_p300_input_contract  # noqa: E402
 from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
 from data.ocular import validate_eog_calibration_budget  # noqa: E402
+from experiments.brainsync_cli_artifacts import (  # noqa: E402
+    new_output_reservation,
+    publish_json_new,
+)
 from research.evaluation import (  # noqa: E402
     build_evaluation_run_contract,
     checkpoint_model_origin,
@@ -145,7 +150,7 @@ def _session_population_rows(dataset) -> tuple[tuple[str, ...], tuple[float | No
     return tuple(subjects), tuple(ages)
 
 
-def main() -> None:
+def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-cache", required=True)
     parser.add_argument("--checkpoint", required=True)
@@ -198,19 +203,33 @@ def main() -> None:
     )
     parser.add_argument("--target-stat-weight", type=float, default=0.25)
     parser.add_argument("--epochs", type=int, default=None)
-    parser.add_argument("--batch-size", type=int, default=256)
+    parser.add_argument("--batch-size", type=int)
     parser.add_argument("--lr", type=float, default=None)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--target-subjects-file", type=Path, default=None)
     parser.add_argument("--max-subjects", type=int, default=None)
     parser.add_argument("--device", default="auto")
     parser.add_argument("--output", required=True)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    inputs = (args.dataset_cache, args.checkpoint, args.source_snapshot_manifest,
+        args.evaluation_snapshot_manifest, args.target_subjects_file)
+    partial = Path(args.output).resolve().with_name('.'+Path(args.output).name+'.partial.json')
+    with new_output_reservation(args.output, inputs=inputs, companion_paths=(partial,)) as output:
+        _evaluate(args, parser, output)
+
+
+def _evaluate(args, parser, output):
     target_only = args.head in {"target_only_tuned", "target_shrinkage_lda"}
     if target_only and args.normalization != "target_prefix":
         parser.error("target-only controls require --normalization target_prefix")
     if args.target_subjects_file is not None and args.max_subjects is not None:
         parser.error("--target-subjects-file cannot be combined with --max-subjects")
+    if args.head in {'zero_shot', 'target_shrinkage_lda'} and (args.epochs is not None or args.lr is not None):
+        parser.error('epochs and lr do not apply to a frozen zero-shot or analytic LDA head')
+    if args.head in {'zero_shot', 'target_shrinkage_lda'} and args.batch_size is not None:
+        parser.error('batch-size does not apply to a frozen zero-shot or analytic LDA head')
+    if args.batch_size is None:
+        args.batch_size = 256
     if args.head == "zero_shot" and args.normalization != "source":
         parser.error("zero_shot requires source normalization")
 
@@ -294,6 +313,7 @@ def main() -> None:
             target_preprocessing_calibrated=True, zero_target_fit_claim=False
         )
     payload = load_checkpoint_payload(args.checkpoint)
+    checkpoint_sha256 = _sha256(args.checkpoint)
     training_contract = checkpoint_training_contract(payload)
     if training_contract.source_snapshot_sha256 != source_snapshot_sha256:
         raise ValueError(
@@ -352,6 +372,17 @@ def main() -> None:
 
     records = []
     outcomes_by_subject: dict[str, tuple[DecisionOutcome, ...]] = {}
+    partial = output.with_name('.'+output.name+'.partial.json')
+    def save_partial():
+        atomic_write_json(partial, {'schema': 'n2p3_brainsync_cross_decision_partial/1',
+            'run_status': 'partial_not_completed_result', 'arm_name': args.arm_name,
+            'target_cache_sha256': target_cache_sha, 'checkpoint_sha256': checkpoint_sha256,
+            'source_snapshot_sha256': source_snapshot_sha256,
+            'evaluation_snapshot_sha256': evaluation_snapshot_sha256,
+            'requested_subjects': list(requested_order),
+            'requested_test_groups_by_subject': split.requested_test_groups_by_subject,
+            'completed_subject_records': records})
+    save_partial()
     for subject in usable_order:
         subject_rows = np.flatnonzero(np.asarray(dataset.subject_ids).astype(str) == subject)
         calibration_rows = subject_rows[split.calibration_mask[subject_rows]]
@@ -462,6 +493,7 @@ def main() -> None:
                         ],
                     }
                 )
+                save_partial()
                 continue
             llr, calibration = checkpoint_scores_to_llr(
                 {
@@ -479,7 +511,8 @@ def main() -> None:
 
         groups = split.group_ids[test_rows]
         truth = {group: split.truth_by_group[group] for group in np.unique(groups)}
-        auc = float(roc_auc_score(dataset.y[test_rows], raw_logits))
+        auc = (float(roc_auc_score(dataset.y[test_rows], raw_logits))
+            if len(np.unique(dataset.y[test_rows])) == 2 else None)
         requested = split.requested_test_groups_by_subject[subject]
         eligible = split.test_groups_by_subject[subject]
         failed = split.failed_test_groups_by_subject[subject]
@@ -544,6 +577,7 @@ def main() -> None:
                 },
             }
         )
+        save_partial()
 
     ledger = []
     for subject in requested_order:
@@ -588,7 +622,8 @@ def main() -> None:
         ],
         evidence_levels=range(1, args.test_reps + 1),
     )
-    checkpoint_sha256 = _sha256(args.checkpoint)
+    if _sha256(args.checkpoint) != checkpoint_sha256:
+        raise ValueError('checkpoint input changed during cross-decision evaluation')
     model_origin = (
         scratch_model_origin(
             {
@@ -647,6 +682,7 @@ def main() -> None:
     decision_accounting["pre_evaluation_failed"] = requested_decisions - eligible_decisions
     summary = {
         "schema": RESULT_SCHEMA,
+        'partial_run_record': {'path': str(partial), 'sha256': _sha256(partial)},
         "run_status": "completed",
         "arm_name": args.arm_name,
         "evaluation_contract": evaluation_contract.record(),
@@ -659,6 +695,7 @@ def main() -> None:
         "evaluation_snapshot_manifest": str(evaluation_manifest.resolve()),
         "evaluation_snapshot_sha256": evaluation_snapshot_sha256,
         "input_preprocessing": dataset.preprocessing.record(),
+        'cache_ingress': {name: dataset.provenance.get(name) for name in ('ingress_policy', 'skipped_sessions')},
         "checkpoint": str(Path(args.checkpoint).resolve()),
         "checkpoint_sha256": checkpoint_sha256,
         "head": args.head,
@@ -702,8 +739,7 @@ def main() -> None:
         "records": records,
         "evidence_scope": evidence_scope_record,
     }
-    output = Path(args.output)
-    atomic_write_json(output, summary)
+    publish_json_new(output, summary)
     print(f"[summary] {output}", flush=True)
 
 

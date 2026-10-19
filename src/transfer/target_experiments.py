@@ -20,17 +20,20 @@ from transfer.result_reuse import (
 )
 
 
-def selector_fit_budget(recipes, *, calibration_rows, inner_rows, inner_legal):
+def selector_fit_budget(recipes, *, calibration_rows, inner_rows, inner_legal,
+                        calibration_decision_rows=0, inner_decision_rows=0):
     """Count requested candidate fits plus one full-scope refit, before reuse."""
     from transfer.recipes import TargetRecipe, target_batch_budget
 
     candidates = tuple(TargetRecipe(**item) for item in recipes)
-    def cost(recipe, rows):
+    def cost(recipe, rows, decision_rows):
         return (target_batch_budget(rows, recipe.batch_size, epochs=recipe.epochs,
-                                   max_updates=recipe.max_updates)
+                                   max_updates=recipe.max_updates,
+                                   decision_rows_per_update=decision_rows
+                                   if recipe.candidate_loss_weight is not None else 0)
                 if recipe.weights != "none" else {"updates": 0, "draws": 0})
-    inner = [cost(recipe, inner_rows) for recipe in candidates] if inner_legal else []
-    refits = [cost(recipe, calibration_rows) for recipe in candidates]
+    inner = [cost(recipe, inner_rows, inner_decision_rows) for recipe in candidates] if inner_legal else []
+    refits = [cost(recipe, calibration_rows, calibration_decision_rows) for recipe in candidates]
     return {"fit_calls_upper_bound": len(inner) + 1,
             "inner_fit_calls_upper_bound": len(inner), "refit_fit_calls_upper_bound": 1,
             "optimizer_updates_upper_bound": sum(item["updates"] for item in inner)
@@ -252,6 +255,15 @@ def build_target_tasks(
                                       [recipe.record() for recipe in candidates], calibration_rows=n_fit,
                                       inner_rows=int(inner.training_mask.sum()), inner_legal=inner.legal)})
                 continue
+            if any(recipe.candidate_loss_weight is not None for recipe in recipes):
+                from transfer.calibration_candidates import calibration_decision_rows_per_update
+
+                scope["decision_rows_per_update"] = {
+                    "calibration": (max((row["available_events"] for row in membership["groups"]), default=0)
+                                    if stage == "unified" else calibration_decision_rows_per_update(dataset, allowed)),
+                    "inner_training": (calibration_decision_rows_per_update(dataset, inner.training_mask)
+                                       if stopping is not None and inner.legal else 0)}
+            decision_rows = scope.get("decision_rows_per_update", {})
             for recipe in recipes:
                 selecting = stopping is not None and recipe.weights != "none"
                 if selecting:
@@ -267,7 +279,9 @@ def build_target_tasks(
                         decision_factor=(None if recipe.candidate_loss_weight is None else
                                          int(recipe.candidate_loss_weight > 0)))
                 task["budget"] = (target_batch_budget(n_fit, recipe.batch_size, epochs=recipe.epochs,
-                                                      max_updates=recipe.max_updates)
+                    max_updates=recipe.max_updates,
+                    decision_rows_per_update=decision_rows.get("calibration", 0)
+                    if recipe.candidate_loss_weight is not None else 0)
                                   if recipe.weights != "none" else {"updates": 0, "draws": 0})
                 if selecting:
                     policy = EpochSelectionPolicy(**stopping.target_selection())
@@ -275,7 +289,9 @@ def build_target_tasks(
                         validation_rows=int(inner.validation_mask.sum()),
                         global_early_stopping=stopping.record(),
                         selection_budget=epoch_selection_budget(recipe, policy, calibration_rows=n_fit,
-                            inner_rows=int(inner.training_mask.sum()), inner_legal=inner.legal))
+                            inner_rows=int(inner.training_mask.sum()), inner_legal=inner.legal,
+                            calibration_decision_rows=decision_rows.get("calibration", 0),
+                            inner_decision_rows=decision_rows.get("inner_training", 0)))
                 if stage in {"B0", "B0_score"}:
                     task.update(requested_batch_aliases=list(batch_size_aliases(n_fit, recipe.batch_size)),
                                 budget_mode="updates" if recipe.max_updates is not None else "epochs")
@@ -372,13 +388,21 @@ def build_unified_scoped_tasks(prefixes, *, requested_subjects, channel_names, p
                         evidence = {"legal": False, "reason": str(error)}
                 part["scopes"][key]["inner_split"] = evidence
                 components["inner_selection"] = evidence
+                decision_rows = part["scopes"][key].get("decision_rows_per_update", {})
+                if decision_rows:
+                    from transfer.calibration_candidates import calibration_decision_rows_per_update
+
+                    decision_rows["inner_training"] = (calibration_decision_rows_per_update(
+                        selection.dataset, selection.training_mask) if evidence["legal"] else 0)
                 for task in part["tasks"]:
                     if "epoch_selection" not in task:
                         continue
                     task["validation_rows"] = evidence.get("validation_rows", 0)
                     task["selection_budget"] = epoch_selection_budget(TargetRecipe(**task["recipe"]),
                         EpochSelectionPolicy(**task["epoch_selection"]), calibration_rows=count,
-                        inner_rows=evidence.get("training_rows", 0), inner_legal=evidence["legal"])
+                        inner_rows=evidence.get("training_rows", 0), inner_legal=evidence["legal"],
+                        calibration_decision_rows=decision_rows.get("calibration", 0),
+                        inner_decision_rows=decision_rows.get("inner_training", 0))
             identity = {"schema": "n2p3_scoped_target_input/1", "components": components,
                         "channel_names": list(channel_names), "K": budget,
                         "scope_policy": "independent_raw_prefix_and_fixed_test"}
@@ -406,6 +430,8 @@ def apply_correctness_budget(manifest: dict, *, epochs: int) -> None:
     if type(epochs) is not int or epochs < 1:
         raise ValueError("software correctness epochs must be a positive integer")
     for task in manifest["tasks"]:
+        scope = manifest.get("scopes", {}).get(task.get("scope_id"), {})
+        decision_rows = scope.get("decision_rows_per_update", {})
         records = task.get("recipes", [task.get("recipe")])
         for record in records:
             if record is None:
@@ -416,7 +442,9 @@ def apply_correctness_budget(manifest: dict, *, epochs: int) -> None:
             recipe = TargetRecipe(**record)
             if "recipe" in task:
                 task["budget"] = (target_batch_budget(task["training_rows"], recipe.batch_size,
-                    epochs=recipe.epochs, max_updates=recipe.max_updates) if recipe.weights != "none"
+                    epochs=recipe.epochs, max_updates=recipe.max_updates,
+                    decision_rows_per_update=decision_rows.get("calibration", 0)
+                    if recipe.candidate_loss_weight is not None else 0) if recipe.weights != "none"
                     else {"updates": 0, "draws": 0})
                 if "epoch_selection" in task:
                     from transfer.epoch_selection import (
@@ -424,15 +452,19 @@ def apply_correctness_budget(manifest: dict, *, epochs: int) -> None:
                         epoch_selection_budget,
                     )
 
-                    scope = manifest["scopes"][task["scope_id"]]
                     task["selection_budget"] = epoch_selection_budget(recipe, EpochSelectionPolicy(**task["epoch_selection"]),
-                        calibration_rows=task["training_rows"], inner_rows=len(scope["inner_training_rows"]),
-                        inner_legal=scope["inner_split"]["legal"])
+                        calibration_rows=task["training_rows"],
+                        inner_rows=scope["inner_split"].get("training_rows", len(scope["inner_training_rows"])),
+                        inner_legal=scope["inner_split"]["legal"],
+                        calibration_decision_rows=decision_rows.get("calibration", 0),
+                        inner_decision_rows=decision_rows.get("inner_training", 0))
         if "recipes" in task:
-            scope = manifest["scopes"][task["scope_id"]]
             task["selection_budget"] = selector_fit_budget(task["recipes"],
-                calibration_rows=task["training_rows"], inner_rows=len(scope["inner_training_rows"]),
-                inner_legal=scope["inner_split"]["legal"])
+                calibration_rows=task["training_rows"],
+                inner_rows=scope["inner_split"].get("training_rows", len(scope["inner_training_rows"])),
+                inner_legal=scope["inner_split"]["legal"],
+                calibration_decision_rows=decision_rows.get("calibration", 0),
+                inner_decision_rows=decision_rows.get("inner_training", 0))
     manifest["fit_calls"] = sum(task.get("selection_budget", {}).get(
         "fit_calls_upper_bound", task["arm"] != "zero_shot") for task in manifest["tasks"])
     manifest.update(evidence_scope="software_correctness", correctness_target_epochs=epochs)

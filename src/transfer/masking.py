@@ -60,8 +60,8 @@ def make_temporal_mask(
         )
         mask[start : start + block] = True
         attempts += 1
-    if int(mask.sum()) == 0:
-        raise RuntimeError("mask generation produced an empty mask.")
+    if int(mask.sum()) == 0 or int(mask.sum()) != target:
+        raise RuntimeError("mask generation requires a nonempty mask with the declared masked-sample count.")
     return mask
 
 
@@ -69,9 +69,10 @@ def apply_time_mask(
     x: torch.Tensor,
     mask: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Zero masked samples and return ``(masked_x, float_mask)``.
+    """Zero masked samples and return ``(masked_x, float_keep_mask)``.
 
-    ``x`` may be ``(B,C,T)`` or ``(C,T)``. The returned float mask has the same
+    ``x`` may be ``(B,C,T)`` or ``(C,T)``. One marks an observed/kept sample;
+    zero marks a masked sample. The returned float mask has the same
     trailing time dimension so it can be pooled or embedded by a decoder.
     """
 

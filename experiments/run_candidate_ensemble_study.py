@@ -1855,6 +1855,9 @@ class CandidateCloudProgramme:
         self.task_prefix, self.dependencies = task_prefix, tuple(dependencies)
         self.input_admission = input_admission
         self.base_plan = json.loads(self.original_plan_path.read_bytes())
+        self.replay_enabled = self.base_plan.get("evaluation_design") == "independent_prefix" and input_admission is not None
+        if self.replay_enabled:
+            self._require_replay_cpu(resources.get("target_native_threads_per_worker", resources["native_threads_per_worker"]))
         from research.prefix_recovery import preserve_prefix_producer_output
 
         preserve_prefix_producer_output(self.base_plan, self.output)
@@ -1892,7 +1895,6 @@ class CandidateCloudProgramme:
         self.replay_pool = None
         self.preparation_failures = {}
         self.source_artifacts = {}
-        self.replay_enabled = self.plan.get("evaluation_design") == "independent_prefix" and input_admission is not None
         if self.replay_enabled:
             from research.prefix_replay_dispatch import PrefixReplayInputPool
             from research.prefix_replay_execution import validate_replay_reader_resources
@@ -1909,6 +1911,13 @@ class CandidateCloudProgramme:
         self.task_roster = tuple(self.tasks)
         self.execution_workers = (resources["max_cache_group_processes"] if self.replay_enabled
             else resources["target_workers"])
+
+    def _require_replay_cpu(self, native_threads):
+        required = native_threads + 1
+        available = self.resources["cpu_budget"] - self.resources.get("coordinator_cpu_threads", 0)
+        if required > available:
+            raise ValueError(f"prefix replay CPU requirement {required} exceeds worker budget {available}; "
+                             "reserve the coordinator plus original native and one inter-op thread")
 
     def bind_source(self, source_seed_catalog=None, source_snapshot=None):
         if source_seed_catalog is not None:
@@ -2031,6 +2040,7 @@ class CandidateCloudProgramme:
         authority = _candidate_participant_authority(producer_task, fit_outcome, plan, source)
         if authority is None:
             raise ValueError("replay preparation requires the original physical participant authority")
+        self._require_replay_cpu(producer_task.resources.native_threads)
         _, index, _, _, _, _ = authority
         source_artifacts = self._source_replay_artifacts()
 
@@ -2681,6 +2691,10 @@ def run_study(plan_path: str | Path, output: str | Path, *, _actor_index=None, _
             "cpu_budget": plan["workers"] * plan["cpu_threads_per_worker"] + 1,
             "source_worker_memory_gib": plan.get("target_worker_memory_gib", .25 if plan["evidence_scope"] == "software_correctness" else 4.),
             "target_worker_memory_gib": .25 if plan["evidence_scope"] == "software_correctness" else 4., **plan}
+        if plan.get("evaluation_design") == "independent_prefix":
+            native = plan.get("target_native_threads_per_worker", plan["cpu_threads_per_worker"])
+            resource_plan.update(target_native_threads_per_worker=native,
+                cpu_budget=plan.get("cpu_budget", plan["workers"] * (native + 1) + 1))
         resources = resolve_source_resources(resource_plan, len(plan["records"]), plan.get("device", "cpu"))
         context = get_context("spawn")
         with context.Manager() as manager:

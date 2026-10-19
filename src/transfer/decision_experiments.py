@@ -65,7 +65,9 @@ def expand_decision_diagnostics(manifest, declaration):
                     "adaptation_package": recipe.name, "decision_factor": int(bool(recipe.candidate_loss_weight)),
                     "decision_information": support}
             task["budget"] = target_batch_budget(task["training_rows"], recipe.batch_size,
-                epochs=recipe.epochs, max_updates=recipe.max_updates)
+                epochs=recipe.epochs, max_updates=recipe.max_updates,
+                decision_rows_per_update=result["scopes"][key].get("decision_rows_per_update", {}).get("calibration", 0)
+                if recipe.candidate_loss_weight is not None else 0)
             tasks.append(task)
         tasks.append(copy.deepcopy(originals["unified_waveform_lda"]))
     result.update(tasks=tasks, task_count=len(tasks), fit_calls=sum(task["arm"] != "zero_shot" for task in tasks),

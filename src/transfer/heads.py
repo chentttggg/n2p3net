@@ -18,6 +18,9 @@ class WaveDecoderHead(nn.Module):
     The mask is pooled to the trunk time resolution and projected to the same
     feature width, then added to the features. This is intentionally small:
     pretraining decoders must not become the downstream model.
+    Floor pooling matches the trunk for any T. For a partial last pool block,
+    the full T-point reconstruction interpolates the final pooled feature;
+    it does not claim a separately observed tail feature or an exact inverse.
     """
 
     def __init__(

@@ -47,7 +47,8 @@ def masked_bids_calibration(tmp_path, *, drop_all_targets=False, continuous=True
         continuous_qc_model=fit_raw_quality(roots[0]) if continuous else None)
     observed = np.ones(dataset.X.shape[:2], dtype=bool)
     if drop_all_targets:
-        observed[dataset.y == 1, 0] = False
+        target_rows = np.flatnonzero(dataset.y == 1)
+        observed[target_rows, np.arange(len(target_rows)) % dataset.n_channels] = False
     else:
         observed[np.arange(dataset.n_channels) * 3, np.arange(dataset.n_channels)] = False
     values = dataset.X.copy()

@@ -132,9 +132,9 @@ class BinaryFoldResult:
 
 @dataclass
 class BinarySummary:
-    balanced_acc_mean: float
-    balanced_acc_std: float
-    auc_mean: float
+    balanced_acc_mean: float | None
+    balanced_acc_std: float | None
+    auc_mean: float | None
     per_fold: list[BinaryFoldResult] = field(default_factory=list)
     execution_backend: str = "serial"
     effective_n_jobs: int = 1
@@ -143,6 +143,45 @@ class BinarySummary:
     artifact_qc_workers: int = 0
     artifact_qc_cpu_threads_per_worker: int = 0
     metric_undefined_folds: list[int] = field(default_factory=list)
+    binary_metric_scope: dict[str, object] | None = None
+
+
+def _binary_metric_summary(
+    fold_results: Sequence[tuple[int, BinaryFoldResult, np.ndarray, np.ndarray, object]],
+    requested_count: int,
+    offset: int,
+) -> dict[str, object]:
+    """Keep finite-subset diagnostics distinct from complete requested estimates."""
+    requested = list(range(offset, offset + requested_count))
+    fold_ids = [row[0] + offset for row in fold_results]
+    if sorted(fold_ids) != requested:
+        raise ValueError("binary metric summary requires every requested fold exactly once")
+    results = [row[1] for row in fold_results]
+    fields: dict[str, object] = {}
+    scope: dict[str, object] = {
+        "schema": "n2p3_fold_binary_metrics/1", "requested_fold_ids": requested,
+        "requested_fold_count": requested_count, "completed_fold_count": len(results),
+        "failed_fold_count": 0, "execution_failure_policy": "raise_without_summary",
+    }
+    counts = []
+    for name in ("balanced_acc", "auc"):
+        values = np.asarray([getattr(fold, name) for fold in results], dtype=float)
+        finite = np.isfinite(values)
+        available = sorted(fold_id for fold_id, valid in zip(fold_ids, finite, strict=True) if valid)
+        unavailable = sorted(fold_id for fold_id, valid in zip(fold_ids, finite, strict=True) if not valid)
+        counts.append(len(available))
+        fields[name + "_mean"] = float(values[finite].mean()) if available else None
+        if name == "balanced_acc":
+            fields["balanced_acc_std"] = float(values[finite].std()) if available else None
+        status = "complete" if not unavailable else "incomplete" if available else "unavailable"
+        scope[name] = {
+            "status": status,
+            "role": "full_requested_estimate" if not unavailable else "available_subset_diagnostic" if available else "no_estimate",
+            "available_fold_ids": available, "available_fold_count": len(available),
+            "unavailable_fold_ids": unavailable, "unavailable_fold_count": len(unavailable),
+        }
+    scope["status"] = "complete" if all(count == len(results) for count in counts) else "incomplete" if any(counts) else "unavailable"
+    return {**fields, "binary_metric_scope": scope}
 
 
 def _metric_undefined_folds(results: Sequence[BinaryFoldResult], offset: int) -> list[int]:
@@ -1444,12 +1483,8 @@ def evaluate_binary(
         ),
     )
     results = [result for _, result, _, _, _ in fold_results]
-    bacc = np.asarray([fold.balanced_acc for fold in results], dtype=float)
-    auc = np.asarray([fold.auc for fold in results], dtype=float)
     return BinarySummary(
-        balanced_acc_mean=float(np.nanmean(bacc)),
-        balanced_acc_std=float(np.nanstd(bacc)),
-        auc_mean=float(np.nanmean(auc)),
+        **_binary_metric_summary(fold_results, len(folds), fold_id_offset),
         per_fold=results,
         execution_backend=backend,
         effective_n_jobs=effective_n_jobs,
@@ -1654,8 +1689,6 @@ def evaluate_candidate_selection(
             on_fold_end(fold_index + fold_id_offset, result)
         records.extend(fold_records)
         raw_records.extend(fold_raw_records)
-    bacc = np.asarray([fold.balanced_acc for fold in results], dtype=float)
-    auc = np.asarray([fold.auc for fold in results], dtype=float)
     hit = np.asarray([fold.hit_rate for fold in results], dtype=float)
     overall = (
         float(np.mean([predicted == truth for predicted, truth, _ in records]))
@@ -1683,9 +1716,7 @@ def evaluate_candidate_selection(
                 for level, outcomes in level_outcomes.items()
             }
     return CandidateSummary(
-        balanced_acc_mean=float(np.nanmean(bacc)),
-        balanced_acc_std=float(np.nanstd(bacc)),
-        auc_mean=float(np.nanmean(auc)),
+        **_binary_metric_summary(fold_results, len(folds), fold_id_offset),
         per_fold=results,
         hit_rate_mean=float(np.nanmean(hit)),
         primary_hit_rate=overall if repetitions is not None else None,

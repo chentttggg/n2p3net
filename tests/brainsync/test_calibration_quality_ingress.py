@@ -176,6 +176,7 @@ def test_preflight_blocks_continuous_quality_fitted_outside_selected_inner_scope
     processing = copy.deepcopy(dataset.provenance["continuous_artifact_processing"])
     scope = processing["model"]["fit_provenance"]
     scope.update(scope_change)
+    processing["model"]["epoch_recovery"]["fit_provenance"].update(scope_change)
     processing["model_digest"] = semantic_sha256(processing["model"])
     changed = replace(
         dataset, provenance={**dataset.provenance, "continuous_artifact_processing": processing}
@@ -197,6 +198,7 @@ def test_preflight_uses_full_continuous_quality_budget_for_fixed_lda_without_inn
     dataset = masked_bids_calibration(tmp_path)
     processing = copy.deepcopy(dataset.provenance["continuous_artifact_processing"])
     processing["model"]["fit_provenance"]["calibration_session_ids"] = ["cal-2"]
+    processing["model"]["epoch_recovery"]["fit_provenance"]["calibration_session_ids"] = ["cal-2"]
     processing["model_digest"] = semantic_sha256(processing["model"])
     changed = replace(dataset, provenance={**dataset.provenance, "continuous_artifact_processing": processing})
     plan = preflight_calibrated_predictor(changed)

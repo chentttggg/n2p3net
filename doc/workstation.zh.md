@@ -6,6 +6,8 @@
 
 研究`FittedEnsemble`与日常`CalibratedPredictor`各持自己的模型接口。新研究方法通过实际九候选membership、45flash协议、合法raw/history权限、保存加载及新记录推理接入工作站。各机制的实验结论与接受范围见[响应与噪声](evidence/response_and_noise.zh.md)和[公共评估](evidence/public_evaluation.zh.md)，当前任务从[checkpoint入口](README.md#当前状态与续接)读取。
 
+固定ERP配方通过`--selector-mode fixed_erp --calibration-recipe <TargetRecipe.json>`显式传入；`--training-budget`仅用于`unified`。配方或预算解析失败也保存失败任务回执。
+
 统一个人校准入口为`brainsync_model_task.py --task calibrate --selector-mode unified --calibration-recipe <TargetRecipe.json> --training-budget configs/unified_training_budget.json`。配方、预算与输入声明一致；QC、EOG和统计拟合按实际授权校准范围保存，后续推理读取完整冻结状态。显式`--preprocessing-config`使用完整配置，示例见`configs/brainsync_bidirectional_preprocessing.json`。
 
 ## 启动与环境
@@ -216,7 +218,7 @@ Cz第二+第四次冻结epoch模型为同目录`signal_evidence.json`；原生�
 
 有源checkpoint时也允许选出scratch或LDA；不兼容的源模型保留具体失败门禁。
 没有合法独立校准session划分时使用可合法拟合的完整校准LDA，标记无内部选模证据。
-每个校准session各自应具备两类，不能拼接两个单类session伪造合格训练集。
+实际执行内部记录划分的选择器要求其每个候选校准session各自具备两类。`unified`固定完整授权C、不做内部选方，要求总C具有两类并保留全部请求分母；不向它额外套用legacy的逐session门。
 选中后重新初始化并完整refit，保存实际normalizer、BN或LDA通道/系数；新模型包schema为
 `n2p3_calibrated_predictor/5`，以必需`selection_contract`绑定选择程序；`/4`、`/3`、`/1`按原合同读取。binary候选按固定requested正负样本对计分，conditional AUC单列诊断；legacy CE使用共同校准class cost与完整验证支持。普通、QC及EOG源选择共用inner/final owner，保存支持、评分、选择与实际refit状态，加载可重放同一选择。
 采集应用已联动冻结QC入口，但没有新增成人/实机确认。
@@ -239,6 +241,22 @@ dry-run与正式执行遵循上述范围；计划自动EOG的dry-run不拟合回
 通道/参考/预处理与EOG状态。推理拒绝重复校准记录、早于校准就绪的记录及不一致输入合同。
 模拟来源声明不能在导出或重载时丢失。科研有标签接入与无标签推理各走其生产入口。
 后端任务入口为`experiments/brainsync_model_task.py`，具体参数以`--help`为准。
+
+## 任务产物与协议验收
+
+产品推理以一个独立完成的45闪烁记录、九候选五重复为R5协议。后端结果明确保存`protocol_compliant`与`evaluation_role`；不满足协议的产品请求保排程分母并拒判。1–4重复的回顾性诊断须显式给出`--diagnostic-repetitions`，不进入产品`hit@all`。连续QC完全拒绝时仍输出R5拒判及全部排程数；若无法恢复完整协议，字段明确记录尚未核定，不能从质量失败反推排程合法。
+
+模型、任务回执、epoch-QC导出不能使用同一路径。校准保存后用原加载器核重载；只有完成回执表示整项任务完成。失败回执与已保存模型保持不可变，重试使用新任务目录和新模型版本；不覆盖失败证据或假定无完成回执的文件已经接受。inspect只读取冻结模型，不接受未使用的会话或预处理覆盖参数。
+
+准备缓存要求新的NPZ及attestation路径。CLI委托共同data owner的`save_epoch_dataset(..., exclusive=True)`，由其统一持双产物锁、唯一staging和失败回收，CLI不再另包writer或复制发布算法。跨决策评估同样要求新输出且与所有输入不同，按原完整请求保存逐subject partial journal；partial不冒充完成结果。单类测试的binary AUC记为不可定义，决策与请求分母继续保存。
+
+工作站manifest显式传入`brainsync_bidirectional_preprocessing.json`，其几何与`brainsync_epoch_support.json`和主输入合同保持一致。连续QC calibration manifest必须声明完整`preprocessing`，不能靠代码默认补齐；拟合provenance保存实际配置。EOG库与CLI消费同一显式配置，真实fit session范围直接记录，不从是否源预训练推断。
+
+所有BIDS validator caller明确持有并释放返回的read lease：纯metadata预检用后立即关闭；实际raw校准或多臂比较由ExitStack覆盖完整消费与异常路径，不能靠仍被traceback保留对象的垃圾回收释放。
+
+REF更正必须显式指定原标签、权限说明和新审计目录。原metadata先归档并保存事务映射，再逐文件原子替换；EDF未变与完整无标签BIDS/记录合同后置核验、完成manifest发布属于同一回滚范围。后置核验持原文件read lease直到EDF、全部metadata实际after字节与完成回执发布都核定；finally显式关闭后才允许回滚metadata，不依赖垃圾回收。第三方metadata异动拒绝完成声明并保留原并发字节，回执异常注明journal需人工核对。中断后可用`correct_brainsync_reference.py --recover-transaction <审计目录>`校验原archive及当前before/after身份后恢复metadata；它不恢复或改写EEG。`--allow-incomplete`仅更正现有metadata并明确不晋升准入。已有采集时content pins仍受原准入保护，更正工具不重签旧producer。
+
+质量报告使用新或空的专用输出目录，不覆盖会话根或既有图片。冻结配置读取或模型输入合同失败保解释报告并以退出码3结束；仅录制本身不可评估仍以报告的状态和完整排程账本说明。报告不接受可执行QC拟合回调。
 
 ## 阻抗与实机边界
 

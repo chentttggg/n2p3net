@@ -194,8 +194,11 @@ def test_recording_admission_precedes_qc_and_empty_evidence(
         inference_main(["--task", "infer", "--session-dir", str(root), "--model-artifact", str(native_case.artifact),
                         "--output-dir", str(tmp_path / "infer")])
     assert read_json(tmp_path / "infer/summary.json")["status"] == "failed"
-    report = report_main(["--session-dir", str(root), "--model-artifact", str(native_case.artifact),
-                          "--output-dir", str(tmp_path / "report")])
+    with pytest.raises(SystemExit) as report_exit:
+        report_main(["--session-dir", str(root), "--model-artifact", str(native_case.artifact),
+                     "--output-dir", str(tmp_path / "report")])
+    assert report_exit.value.code == 3
+    report = read_json(tmp_path / "report/report.json")
     assert report["status"] == "not_evaluable"
     assert error in report["error"]["message"]
     assert processed == []
@@ -249,17 +252,18 @@ def test_channel_geometry_contract_also_applies_to_real_qc_total_rejection(geome
     predictor = load_calibrated_predictor(geometry_case.artifact)
     root = shutil.copytree(geometry_case.testing, tmp_path / "testing")
     recording = validate_brainsync_bids_recording(root)
-    if empty:
-        raw = mne.io.read_raw_edf(recording.bids.raw_path, preload=True, verbose=False)
-        raw._data[:] = 0
-        monkeypatch.setattr("data.brainsync.read_raw", lambda *_args, **_kwargs: raw.copy())
-        with pytest.raises(BrainSyncNoUsableEvidenceError):
+    with recording.bids:
+        if empty:
+            raw = mne.io.read_raw_edf(recording.bids.raw_path, preload=True, verbose=False)
+            raw._data[:] = 0
+            monkeypatch.setattr("data.brainsync.read_raw", lambda *_args, **_kwargs: raw.copy())
+            with pytest.raises(BrainSyncNoUsableEvidenceError):
+                predictor.load_inference_session(root)
+        else:
             predictor.load_inference_session(root)
-    else:
-        predictor.load_inference_session(root)
-    with recording.bids.electrodes_path.open(encoding="utf-8", newline="") as stream:
-        reader = csv.DictReader(stream, delimiter="\t")
-        fields, rows = reader.fieldnames, list(reader)
+        with recording.bids.electrodes_path.open(encoding="utf-8", newline="") as stream:
+            reader = csv.DictReader(stream, delimiter="\t")
+            fields, rows = reader.fieldnames, list(reader)
     row = next(row for row in rows if row["name"] == "Fz")
     x, y = float(row["x"]), float(row["y"])
     row["x"] = str(np.cos(.1) * x - np.sin(.1) * y)
@@ -269,7 +273,8 @@ def test_channel_geometry_contract_also_applies_to_real_qc_total_rejection(geome
         writer.writeheader()
         writer.writerows(rows)
     # BIDS allows explicit non-template geometry; the frozen model does not.
-    validate_brainsync_bids_recording(root)
+    with validate_brainsync_bids_recording(root).bids:
+        pass
     with pytest.raises(ValueError, match="channel geometry"):
         predictor.load_inference_session(root)
 

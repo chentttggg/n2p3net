@@ -13,6 +13,7 @@ for location in (ROOT, ROOT / "src"):
 
 from data.brainsync import (  # noqa: E402
     BRAIN_SYNC_PREPROCESSING,
+    BrainSyncNoUsableEvidenceError,
     apply_brainsync_reference,
     load_brainsync_inference_session,
     resolve_brainsync_reference,
@@ -20,6 +21,7 @@ from data.brainsync import (  # noqa: E402
 from data.continuous_qc import load_continuous_qc  # noqa: E402
 from data.epochs import load_preprocessing_spec  # noqa: E402
 from data.ocular import load_eog_regression  # noqa: E402
+from experiments.brainsync_cli_artifacts import new_output_reservation  # noqa: E402
 from research.recording_quality import create_recording_quality_report, file_sha256  # noqa: E402
 from transfer.calibrated import load_calibrated_predictor  # noqa: E402
 from transfer.quality import load_epoch_quality  # noqa: E402
@@ -38,6 +40,10 @@ def main(argv=None):
     parser.add_argument("--reference-channel")
     parser.add_argument("--reference-mode", choices=("auto", "native"), default="auto")
     args = parser.parse_args(argv)
+    if args.output_dir.resolve() == args.session_dir.resolve():
+        parser.error('quality report output must be a dedicated directory, separate from the session root')
+    if args.output_dir.exists() and any(args.output_dir.iterdir()):
+        parser.error('choose a new or empty quality report directory; existing files are immutable')
     if args.model_artifact and (args.continuous_qc_model or args.epoch_qc_model or args.ocular_model or args.preprocessing_config or args.reference_channel or args.reference_mode != "auto"):
         parser.error("a frozen personal model cannot be combined with preprocessing overrides")
     state = {}
@@ -45,6 +51,17 @@ def main(argv=None):
                if name not in {"session_dir", "output_dir"}}
 
     def loader(root):
+        try:
+            return load_frozen_input(root)
+        except BrainSyncNoUsableEvidenceError:
+            raise
+        except Exception as error:
+            if any((args.model_artifact, args.preprocessing_config, args.continuous_qc_model,
+                    args.epoch_qc_model, args.ocular_model, args.reference_channel, args.reference_mode != 'auto')):
+                state['configuration_error'] = str(error)
+            raise
+
+    def load_frozen_input(root):
         if args.model_artifact:
             predictor = load_calibrated_predictor(args.model_artifact, device="cpu")
             state["epoch"] = predictor.epoch_quality
@@ -71,9 +88,12 @@ def main(argv=None):
     from threadpoolctl import threadpool_limits
 
     torch.set_num_threads(1)
-    with threadpool_limits(limits=1):
-        return create_recording_quality_report(args.session_dir, args.output_dir, loader=loader,
-                                               epoch_quality=lambda: state.get("epoch"), progress=progress, request=request)
+    with new_output_reservation(args.output_dir/'report.json'), threadpool_limits(limits=1):
+        report = create_recording_quality_report(args.session_dir, args.output_dir, loader=loader,
+                                               epoch_quality=state, progress=progress, request=request)
+    if state.get('configuration_error'):
+        raise SystemExit(3)
+    return report
 
 
 if __name__ == "__main__":

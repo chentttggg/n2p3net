@@ -223,6 +223,9 @@ MNE延拓长度，逐采集段限制为段长减一；缺字段为`legacy`，保
 N=4带通实际单遍8阶，含二阶陷波后10阶，双遍等效20阶；幅频响应平方是本次比较的一部分。
 padding不提供恢复或真实样本认证，新旧边界策略都存在位置相关误差，见
 [首轮数学与边界证据](evidence/filter_phase_20260909.zh.md)。
+padding由实际backend、SOS、edge policy和段长共同确定：无notch的legacy零相位分支使用MNE，
+legacy含notch的显式SOS分支与新完整SOS分支分别记录自己的延拓规则。按实际通道类型选择EEG，
+typed EOG保持其独立输入角色。padlen是有限边界延拓参数，恢复或保真时间另由实际误差定义。
 2026-09-29的[全链深审](evidence/deep_chain_audit_20260929.zh.md#f0-合法的独立raw边界仍可产生严重信号失真)
 已在BI2014a真实C200末端与全61人test起点量化该风险：大幅50Hz干扰经有限odd延拓可引入
 毫伏级慢坡，纯50Hz无ERP反例与SciPy同padding结果一致。时间授权正确不能替代信号保真检查；
@@ -316,8 +319,17 @@ E_hat_i = R_fft(E_i; f_src -> f_model,
                 npad=auto, window=auto, pad=edge)
 ```
 
-MNE epoch 的右端点是闭合的；缓存随后只保留合同推导的前 `T` 点，从而得到
-统一的半开区间。滤波必须在连续信号上执行，因为一般有
+MNE epoch 的右端点是闭合的；缓存随后只保留合同推导的前 `T` 点，以统一的标称半开输出索引解释。
+执行回执分别保存实际source-origin、source末样本、nominal model grid和end-exclusive。
+例如原生128Hz的MNE起点为`-26/128 s`，标称索引起点仍为`-0.2 s`；回执披露二者的关系，
+保持原重采样与baseline索引程序。FFT的全支撑可使闭源端点影响保留的前刺激点，半开输出索引
+不代表严格半开的source支撑；可用时刻按完整授权source支撑计算。
+
+抗混叠由声明的完整输入算子解释，包括连续前级滤波、有限epoch、FFT频谱截断和padding。
+短窗输出RMS包含有限边界延拓引起的带内投影，应与无限长稳态滤波增益分别报告；
+不同前级、长度和padding的输入各自绑定其实际程序。具体人工信号复核见
+[有限输入算子的审计复核](evidence/response_and_noise.zh.md#有限输入算子的审计复核)。
+滤波必须在连续信号上执行，因为一般有
 
 ```text
 Crop(Filter(x)) != Filter(Crop(x)).

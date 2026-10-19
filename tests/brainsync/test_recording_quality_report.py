@@ -6,7 +6,6 @@ from types import SimpleNamespace
 import mne
 import numpy as np
 import pytest
-from experiments.report_brainsync_quality import main
 
 from data.artifact import FoldLocalArtifactPolicy
 from data.brainsync import (
@@ -17,6 +16,7 @@ from data.brainsync import (
 from data.brainsync_contract import validate_brainsync_bids_recording
 from data.domain import adapt_observed_montage
 from data.personal_quality import PersonalEpochQualityPolicy
+from experiments.report_brainsync_quality import main
 from research.recording_quality import (
     REPORT_SCHEMA,
     _block_counts,

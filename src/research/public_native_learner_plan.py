@@ -19,15 +19,16 @@ from research.frozen_metadata import freeze_metadata, plain_metadata
 from research.latent_response_reference import ResponseState, _admit_law
 from research.physical_operator_binding import clock_operator_inputs, plan_operator_inputs
 from research.physical_response_design import PhysicalResponsePlan
-from research.public_native_source_admission import require_public_native_source
 from research.public_record_physical_bridge import (
     PublicNativeClockChart,
     admit_public_history,
     observation_interval_union,
     require_public_physical_input,
 )
+from research.public_source_context import public_source_context, require_public_source_context
 from research.response_frontier import LogFactor, Roster, StateKey
 from research.scoped_physical_response import DeclaredExposureAssignments, ScopedPhysicalResponse
+from transfer.binary import calibration_budget_requests
 from transfer.ensemble_views import calibration_prefix_identity
 from transfer.noise_model import array_digest, frozen_array, metadata_digest
 
@@ -259,6 +260,7 @@ def require_public_numeric_state_snapshot(programme):
 @dataclass(frozen=True, eq=False)
 class PublicNativeLearnerProgramme:
     source_admission: object
+    source_context: object
     prefix: object
     calibration_inputs: tuple
     history_input: object
@@ -274,7 +276,7 @@ class PublicNativeLearnerProgramme:
     def save_descriptor(self, path):
         """Small dependency-only state; cold reading it never issues live grants."""
         path = Path(path)
-        payload = {'schema': 'public_native_complete_learner_dependencies/1', 'identity': self.identity,
+        payload = {'schema': 'public_native_complete_learner_dependencies/2', 'identity': self.identity,
             'programme': plain_metadata(self.record), 'numeric_only': True,
             'EEG_or_source_codec_embedded': False, 'raw_or_C_permission_granted': False}
         path.write_text(json.dumps(payload, sort_keys=True, indent=2, allow_nan=False) + '\n', encoding='utf-8')
@@ -283,19 +285,20 @@ class PublicNativeLearnerProgramme:
 
 def admit_public_native_learner(source_admission, prefix, calibration_inputs, history_input,
                                current_view, *, law_by_selection):
-    admission = require_public_native_source(source_admission)
-    prefix = admission.compiler.assert_original_prefix(prefix)
-    if not any(prefix is item for item in admission.prefixes):
+    context = public_source_context(source_admission)
+    admission = context.admission
+    prefix = context.compiler.assert_original_prefix(prefix)
+    if not any(prefix is item for item in context.prefixes):
         raise ValueError('complete learner C must be one exact native source-admitted prefix')
     prefix_identity = calibration_prefix_identity(prefix)
     inputs = tuple(require_public_physical_input(value) for value in calibration_inputs)
-    expected = tuple(value for value in admission.calibration_inputs
+    expected = tuple(value for value in context.calibration_inputs
         if value.public_binding['C_prefix_identity'] == prefix_identity)
     if len(inputs) != len(expected) or any(a is not b for a, b in zip(inputs, expected, strict=True)):
         raise ValueError('complete learner retains every original authorized C record exactly once')
     history = require_public_physical_input(history_input)
     b = history.public_binding
-    replayed_history = admit_public_history(admission.compiler, prefix, current_view,
+    replayed_history = admit_public_history(context.compiler, prefix, current_view,
         conditioning_stop=b['prefix_stop'])
     if (b['role'] != 'history' or b['C_prefix_identity'] != prefix_identity
             or b['target_lock_group'] != current_view.decision_id
@@ -310,7 +313,7 @@ def admit_public_native_learner(source_admission, prefix, calibration_inputs, hi
     if len(set(selection_ids)) != len(selection_ids) or set(laws) != set(selection_ids):
         raise ValueError('declare exactly one complete law for every occurred C/history character')
     selections, rosters = [], {}
-    geometry = admission.model.target_observation_geometry
+    geometry = context.geometry
     for record in unions:
         rb = record.cap.public_binding
         if (tuple(rb['eeg_channels']), rb['sample_rate_hz'], rb['reference'], rb['signal_unit'], rb['operator']) != (
@@ -320,7 +323,7 @@ def admit_public_native_learner(source_admission, prefix, calibration_inputs, hi
             name, law = row['selection_id'], laws[row['selection_id']]
             if type(law) is not PublicSelectionLaw or law.candidate_vocabulary != tuple(row['candidate_vocabulary']):
                 raise ValueError('every character law retains its original ordered complete candidate axis')
-            selection = PublicTemporalSelection(record, name, law, admission.model.continuation)
+            selection = PublicTemporalSelection(record, name, law, context.dictionary)
             selections.append(selection)
             local = (Roster(selection.q_variable, tuple(StateKey(q, 'target') for q in law.candidate_vocabulary),
                             np.log(law.candidate_mass)),
@@ -337,11 +340,17 @@ def admit_public_native_learner(source_admission, prefix, calibration_inputs, hi
     positions = {roster.selection_id: i for i, roster in enumerate(rosters)}
     factors = tuple(factor for selection in selections if (factor := selection.label_factor(positions)) is not None)
     numeric_state = actual_public_numeric_state_inputs(selections, rosters, laws)
-    record = freeze_metadata({'schema': 'public_native_complete_learner_programme/1',
-        'source_admission': metadata_digest(admission.record), 'source_model': metadata_digest(admission.model.dependency_record()),
-        'source_prior_count': 1, 'proper_source_latent_dimensions': admission.model.engine.rank,
-        'source_prior_sha256': array_digest(admission.model.graph().source_mean, admission.model.graph().source_factor),
-        'C_prefix_identity': prefix_identity, 'requested_K': prefix.budget,
+    budget_requests = calibration_budget_requests(context.compiler.budgets,
+        context.compiler.actual_budgets, context.compiler._adjustments)
+    record = freeze_metadata({'schema': 'public_native_complete_learner_programme/2',
+        'source_admission': metadata_digest(admission.record), 'source_context': context.identity,
+        'source_context_record': context.record,
+        'source_prior_count': 1, 'proper_source_latent_dimensions': context.source_chart.rank,
+        'source_prior_sha256': array_digest(context.source_chart.mean.ravel(),
+            context.source_chart.factor.reshape(context.source_chart.mean.size, context.source_chart.rank)),
+        'C_prefix_identity': prefix_identity, 'actual_K': prefix.budget,
+        'original_requested_to_actual_C_budgets': {str(key): value for key, value in budget_requests.items()},
+        'requested_Ks_for_this_actual_prefix': [key for key, value in budget_requests.items() if value['actual_K'] == prefix.budget],
         'calibration_inputs': [item.identity for item in inputs], 'history_input': history.identity,
         'current_view': current_view.record(), 'current_selection_id': current_view.decision_id,
         'observation_union': observation_interval_union(tuple({'record_id': cap.public_binding['record_id'],
@@ -360,7 +369,7 @@ def admit_public_native_learner(source_admission, prefix, calibration_inputs, hi
             'allowed_state_mask': np.isfinite(factor.values).tolist()} for factor in factors],
         'score': 'normalize_J_F', 'current_prefix_candidate_evidence_retained': True,
         'original_inputs_are_live_authority': True, 'producer': IMPLEMENTATION_SHA256})
-    result = PublicNativeLearnerProgramme(admission, prefix, inputs, history, current_view,
+    result = PublicNativeLearnerProgramme(admission, context, prefix, inputs, history, current_view,
         unions, selections, rosters, factors, MappingProxyType(laws), record, metadata_digest(record))
     _PROGRAMMES[result] = record
     return result
@@ -370,11 +379,13 @@ def require_public_native_learner(programme):
     if type(programme) is not PublicNativeLearnerProgramme or _PROGRAMMES.get(programme) is not programme.record:
         raise TypeError('complete public learner requires its original live source/C/history union')
     require_public_numeric_state_snapshot(programme)
-    require_public_native_source(programme.source_admission)
+    context = require_public_source_context(programme.source_context)
+    if context.admission is not programme.source_admission or context.identity != programme.record['source_context']:
+        raise ValueError('public learner retains its actual typed source context and original issuer')
     for record in programme.records:
         for cap in record.inputs:
             require_public_physical_input(cap)
-    dictionary = programme.source_admission.model.continuation
+    dictionary = context.dictionary
     for selection in programme.selections:
         clock = selection.record.cap.clock_for_selection(selection.selection_id)
         expected = PhysicalResponsePlan(clock, dictionary, clock_program='native_sample_index',
@@ -408,7 +419,7 @@ def load_public_learner_descriptor(path, *, expected_sha256):
     if hashlib.sha256(content).hexdigest() != expected_sha256:
         raise ValueError('public learner descriptor changed its externally frozen bytes')
     record = json.loads(content)
-    if (record['schema'] != 'public_native_complete_learner_dependencies/1'
+    if (record['schema'] not in {'public_native_complete_learner_dependencies/1', 'public_native_complete_learner_dependencies/2'}
             or metadata_digest(record['programme']) != record['identity']
             or record['numeric_only'] is not True or record['raw_or_C_permission_granted'] is not False):
         raise ValueError('public learner descriptor changed its numerical dependency-only role')

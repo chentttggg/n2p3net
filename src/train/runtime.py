@@ -12,7 +12,7 @@ import sys
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, replace
-from math import ceil, prod
+from math import prod
 from pathlib import Path
 from threading import Lock, RLock
 from typing import Literal
@@ -56,21 +56,49 @@ def _linux_cgroup_cpu_quota_threads() -> int | None:
         if quota_text != "max":
             quota, period = int(quota_text), int(period_text)
             if quota > 0 and period > 0:
-                return max(1, ceil(quota / period))
+                return max(1, quota // period)
     except (OSError, ValueError):
         pass
     try:
         quota = int(Path("/sys/fs/cgroup/cpu/cpu.cfs_quota_us").read_text().strip())
         period = int(Path("/sys/fs/cgroup/cpu/cpu.cfs_period_us").read_text().strip())
         if quota > 0 and period > 0:
-            return max(1, ceil(quota / period))
+            return max(1, quota // period)
     except (OSError, ValueError):
         pass
     return None
 
 
+def _windows_job_cpu_limit_threads(host_threads: int) -> int | None:
+    """Read the current Job's hard CPU-rate cap without changing that Job.
+
+    CPU-rate limits are a fraction of the host's scheduling capacity. Weight
+    modes are relative priorities and therefore cannot be treated as a cap.
+    """
+    if sys.platform != "win32":
+        return None
+    import ctypes
+    from ctypes import wintypes
+
+    class CpuRateControl(ctypes.Structure):
+        _fields_ = (("ControlFlags", wintypes.DWORD), ("CpuRate", wintypes.DWORD))
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    query = kernel.QueryInformationJobObject
+    query.argtypes = (wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD,
+                      ctypes.POINTER(wintypes.DWORD))
+    query.restype = wintypes.BOOL
+    information, returned = CpuRateControl(), wintypes.DWORD()
+    if not query(None, 15, ctypes.byref(information), ctypes.sizeof(information), ctypes.byref(returned)):
+        return None  # No enclosing Job, or an unavailable query, is unknown.
+    flags = information.ControlFlags
+    if flags & 1 and flags & 4 and not flags & 2 and 0 < information.CpuRate <= 10000:
+        return max(1, host_threads*information.CpuRate//10000)
+    return None
+
+
 def available_cpu_threads() -> int:
-    """Return CPUs usable by this process, including a Linux cgroup quota."""
+    """Bound worker capacity by process affinity, cgroup quota and Windows Job."""
 
     process_count = getattr(os, "process_cpu_count", None)
     detected = process_count() if callable(process_count) else os.cpu_count()
@@ -81,9 +109,19 @@ def available_cpu_threads() -> int:
             limits.append(max(1, len(affinity(0))))
         except OSError:
             pass
+    else:
+        import psutil
+
+        try:
+            limits.append(max(1, len(psutil.Process().cpu_affinity())))
+        except (psutil.Error, AttributeError, NotImplementedError):
+            pass
     quota = _linux_cgroup_cpu_quota_threads()
     if quota is not None:
         limits.append(quota)
+    job_limit = _windows_job_cpu_limit_threads(max(1, os.cpu_count() or 1))
+    if job_limit is not None:
+        limits.append(job_limit)
     return min(limits)
 
 
@@ -408,7 +446,10 @@ class MatrixBatchSource:
 
     ``X`` is always two- or higher-dimensional with rows on axis zero. The
     class never iterates individual samples; the only loop is the required
-    optimizer-batch loop.
+    optimizer-batch loop. Streaming retains the caller's CPU storage. Random
+    gathers produce ordinary CPU tensors and use synchronous copies; explicit
+    pinned caller storage still permits asynchronous contiguous slice copies.
+    No hidden whole-matrix pinned duplicate is allocated for random batches.
     """
 
     row_order_program = MATRIX_ROW_ORDER_PROGRAM
@@ -424,6 +465,7 @@ class MatrixBatchSource:
         row_domains: torch.Tensor | None = None,
         row_channel_mask: torch.Tensor | None = None,
         release_cpu_after_preload: bool = False,
+        row_order_observer=None,
     ) -> None:
         if X.device.type != "cpu" or X.ndim < 2:
             raise ValueError("MatrixBatchSource requires a CPU tensor with a row axis.")
@@ -465,6 +507,7 @@ class MatrixBatchSource:
         self.device_row_weights: torch.Tensor | None = None
         self.device_row_domains: torch.Tensor | None = None
         self.device_row_channel_mask: torch.Tensor | None = None
+        self.row_order_observer = row_order_observer
         self.preloaded = False
         self.transfer_fallback = False
         self.materialize_shuffled_epoch = False
@@ -506,16 +549,6 @@ class MatrixBatchSource:
             # Device storage owns the complete matrix; streaming fallback is
             # already resolved, so the normalized host duplicate can be freed.
             self.cpu_X = None
-        if not self.preloaded and is_accelerator(runtime.device):
-            self.cpu_X = runtime.pin_memory(self.cpu_X)
-            if self.cpu_y is not None:
-                self.cpu_y = runtime.pin_memory(self.cpu_y)
-            if self.cpu_row_weights is not None:
-                self.cpu_row_weights = runtime.pin_memory(self.cpu_row_weights)
-            if self.cpu_row_domains is not None:
-                self.cpu_row_domains = runtime.pin_memory(self.cpu_row_domains)
-            if self.cpu_row_channel_mask is not None:
-                self.cpu_row_channel_mask = runtime.pin_memory(self.cpu_row_channel_mask)
 
     @property
     def n_rows(self) -> int:
@@ -571,6 +604,8 @@ class MatrixBatchSource:
         if not isinstance(generator, torch.Generator) or generator.device.type != "cpu":
             raise ValueError("MatrixBatchSource row permutations require an explicit CPU generator.")
         permutation = torch.randperm(self.n_rows, generator=generator, device="cpu")
+        if self.row_order_observer is not None:
+            self.row_order_observer(permutation)
         return permutation.to(self.runtime.device) if self.preloaded else permutation
 
     def shuffled_batches(
@@ -682,10 +717,16 @@ class MatrixBatchSource:
         *,
         indices: torch.Tensor | None = None,
     ) -> Iterator[tuple[torch.Tensor, torch.Tensor | None]]:
+        """Gather an explicit n_rows-long row plan; repeats remain caller-owned.
+
+        Use random_permutation for an epoch permutation, or a declared sampling
+        plan when rows may repeat. This gather interface proves alignment, not
+        the statistical sampling measure.
+        """
         if batch_size < 1:
             raise ValueError("batch_size must be positive.")
         if indices is not None and (indices.ndim != 1 or len(indices) != self.n_rows):
-            raise ValueError("indices must be a complete one-dimensional row permutation.")
+            raise ValueError("indices must be a one-dimensional row plan with n_rows entries.")
 
         for start in range(0, self.n_rows, batch_size):
             stop = min(start + batch_size, self.n_rows)
@@ -782,6 +823,9 @@ class MatrixBatchSource:
         shuffle when the fast path is eligible, per-batch gather otherwise);
         without it rows arrive in stored order. Row order and alignment are
         identical to the specialized ``shuffled_batches*`` paths.
+        Fast batches are views of a reused epoch buffer. Consume each batch
+        before requesting the next epoch; retain an explicit clone for a
+        snapshot that must outlive that buffer's current contents.
         """
 
         if batch_size < 1:
@@ -1208,12 +1252,12 @@ class GpuPerformanceScheduler:
         *,
         model: torch.nn.Module,
         max_update_batch_size: int | None = None,
+        adaptive: bool = False,
     ) -> int:
-        """Return a conservative batch cap using live allocator headroom.
+        """Keep a fixed declared batch, or explicitly request live-memory admission.
 
-        The configured batch is an upper bound, not a target to maximize. This
-        preserves more optimizer updates when memory permits and never uses
-        gradient accumulation.
+        Adaptive programs record their effective batch and update trace. Fixed
+        programs keep their optimizer partition when storage/preload changes.
         """
 
         if requested < 1:
@@ -1223,7 +1267,7 @@ class GpuPerformanceScheduler:
         cap = requested if max_update_batch_size is None else min(requested, max_update_batch_size)
         if cap < 1:
             raise ValueError("max_update_batch_size must be positive when set.")
-        if not is_accelerator(self.device):
+        if not adaptive or not is_accelerator(self.device):
             return cap
 
         free_bytes, _ = _memory_info(self.device)

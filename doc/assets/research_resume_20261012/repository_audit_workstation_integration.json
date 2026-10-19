@@ -1,0 +1,128 @@
+{
+  "schema": "n2p3_repository_audit_workstation_integration/1",
+  "author_final": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-workstation\\DELIVERY_MANIFEST.json",
+    "sha256": "8a46dd587a3e4cc479d3da15e143733abeac95a774186b672fce85f5b920f3b8",
+    "bytes": 25514
+  },
+  "independent_R3": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-workstation\\independent-review\\SOURCE_REVIEW_R3.json",
+    "sha256": "bca726403a1266386ddf57ebd77a89b04becbe68ca5137fd229736bb537834f2",
+    "bytes": 10105
+  },
+  "independent_R4_R5": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-workstation\\independent-review\\SOURCE_REVIEW_R4_R5.json",
+    "sha256": "4d7909937ef0c31b458e732c60d0ee05c8b2d49c4478d745bbfde56ecd0272e7",
+    "bytes": 2989
+  },
+  "root_review": {
+    "ownership": "CLIs delegate cache exclusive publication and raw/report validation to existing data owners; named no-evidence report outcomes retain full scheduled denominators.",
+    "workflow": "Inspected argument preflight, metadata gate before dereference, saved-model reload, R5 protocol and validator read-lease lifetimes.",
+    "reference": "Read archive/journal-before-mutation, no-label BIDS postvalidation while leases live, complete after-byte checks, third-party-byte preservation and rollback/recovery.",
+    "guide_merge": "Retained accepted publication scope/units while integrating workstation rules."
+  },
+  "integrated_files": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\configs\\brainsync_collection_plan.json",
+      "sha256": "bc348dbc50af26e88753d598ec395e2ebe648815bccaa3f32bee984f4954e5b6",
+      "bytes": 3074
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\configs\\brainsync_workstation.model.json",
+      "sha256": "2e209040026dd4bcb09ed8e6c9c2bd5955e68fc690e7fa7700d9215799bf4f38",
+      "bytes": 2273
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\workstation.zh.md",
+      "sha256": "6aae8fc4ed4b7e5908fa9f340def0f75dd4a916a00c71019050542b9083d58d3",
+      "bytes": 27800
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\brainsync_cli_artifacts.py",
+      "sha256": "a355d456fabe60f4964985e43fdd7b67ba1191320ca69350cad02ce0a1204cfd",
+      "bytes": 1781
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\brainsync_model_task.py",
+      "sha256": "2f0defdc033bded2dfcef5cc96be60ccb1a250828da1b417be285adf7e6dd0f0",
+      "bytes": 30666
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\correct_brainsync_reference.py",
+      "sha256": "29307fe553e93af958965dca21b7632eaf7b006d5b7f686f705867c8c7fdfd99",
+      "bytes": 16941
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\fit_brainsync_continuous_qc.py",
+      "sha256": "2efb5c4bc238d239d8bc70750467d2fc579e1749aa11f20e4d7f5b7690ab0510",
+      "bytes": 8430
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\fit_brainsync_eog.py",
+      "sha256": "6888db37c460c51ccff9c47e932a80441a5670ebf3b1b4a43dbf9d627d84abe7",
+      "bytes": 9192
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\prepare_brainsync_cache.py",
+      "sha256": "9d30e84ad5d5faa23c685b6026e8e397b86085e58c1f7cc704abf77234957954",
+      "bytes": 3809
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\prepare_brainsync_eog_matrix.py",
+      "sha256": "e5fd427b77d9383ae94a8e04e7b134640ff810d4f39c79d73a81560cc5b96e60",
+      "bytes": 10459
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\report_brainsync_quality.py",
+      "sha256": "286ebbab18bee0c3a14de97d9fae5549f1d00bcc8af5101ad74ee902491e0a91",
+      "bytes": 5096
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\run_bidirectional_qc_study.py",
+      "sha256": "f7524c37db01441eb1e077855469854ce2e3897f875e3d2c78a5bc17cbe00fbb",
+      "bytes": 9373
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\run_brainsync_cross_decision.py",
+      "sha256": "8b82914c713799d49aad5135132666ea2d5c7999397fc2036274b1b80946bc02",
+      "bytes": 32231
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\run_brainsync_pilot.py",
+      "sha256": "4e1c68b28c9e3e9e420c7dcf48e4f73baaab18c303b0a218084bf3d3dff85347",
+      "bytes": 15385
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\run_filter_phase_study.py",
+      "sha256": "d8ac661eca6ba1a6a29412e56542a28ed85e9da77baf9e3b6eb0a3a7d24a7aca",
+      "bytes": 13715
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\brainsync\\test_model_task_workflow_gate.py",
+      "sha256": "7a27c1687d05fede717456fe49a838b21b2b08f4143dd7da32afe342722435c6",
+      "bytes": 1507
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\brainsync\\test_report_quality_rejection.py",
+      "sha256": "b5b3ea8787dcd64c240c789e832a9cd021ed940d7aee7fc2db48023a0db527b9",
+      "bytes": 2089
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\brainsync\\test_validator_caller_lifetimes.py",
+      "sha256": "8e8af4f4c362a9b4aa5cb119764f1723e2742f5bb8166461891208e498fd96a9",
+      "bytes": 10533
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\brainsync\\test_workstation_audit.py",
+      "sha256": "20315da2b4fc5217391a0f2b2dd98938a636643b66f1953d63dd66abede99bcf",
+      "bytes": 27864
+    }
+  ],
+  "root_before": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\reviewed-integration\\root_before_workstation_resources.zip",
+    "sha256": "4e9e109cc1ce125ea4e522cb5bc696729956b38d138679e6437db63014a37c06",
+    "bytes": 150258
+  },
+  "canonical_validation": "pending single final composed suite; author and independent original runs retained under their own pins",
+  "new_research_fit_or_EEG": 0
+}

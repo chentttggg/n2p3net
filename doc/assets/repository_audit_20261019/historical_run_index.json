@@ -1,0 +1,3724 @@
+{
+  "schema": "n2p3_historical_run_lineage_retrieval/1",
+  "purpose": "read_only_retrieval_not_run_admission_or_scientific_acceptance",
+  "original_audit_inputs": {
+    "D:\\BCI\\n2p3-net\\tmp\\audit\\scratch\\g8_inventory.json": "ca5657c385af0a5a286a400df56b2dd0f690cdb37840258030058bbccb654724",
+    "D:\\BCI\\n2p3-net\\tmp\\audit\\scratch\\g8_decl.json": "03a276a96fb3e9922255f04fa3fd24642c97f8e3b0263bed3c7766ebac4bfaae"
+  },
+  "limits": {
+    "EEG_or_weight_reads": 0,
+    "archive_members_loaded": 0,
+    "maximum_source_archive_bytes": 8000000,
+    "source_archive_digest_checks_requested": true,
+    "historical_records_modified": 0
+  },
+  "tier_counts": {
+    "original_archive_verified": 9,
+    "no_source": 11,
+    "hash_only": 15,
+    "result_only": 14,
+    "source_only": 3
+  },
+  "runs": [
+    {
+      "run": "_retired",
+      "source_recovery_tier": "original_archive_verified",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\_retired",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 2,
+        "seed": 45,
+        "versions": 2,
+        "ledger": 1,
+        "commit": 1,
+        "dirty": 1
+      },
+      "metadata_probe": {
+        "parsed_files": 66,
+        "candidate_files": 66,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "brainsync_recovery_20260908/development/P001_20260903_172410_01.record.json",
+              "pointer": "/provenance/continuous_artifact_processing/status"
+            },
+            {
+              "path": "brainsync_recovery_20260908/development/P001_20260903_172410_01.record.json",
+              "pointer": "/provenance/ocular_artifact_processing/status"
+            }
+          ],
+          "seed": [
+            {
+              "path": "brainsync_recovery_20260908/gpu_development_v1/preflight.json",
+              "pointer": "/plan/recipes/0/seed"
+            },
+            {
+              "path": "brainsync_recovery_20260908/gpu_development_v1/preflight.json",
+              "pointer": "/plan/recipes/1/seed"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [
+          {
+            "manifest": "D:\\BCI\\n2p3-net\\experiments\\runs\\_retired\\brainsync_recovery_20260908\\gpu_source_v1\\source.manifest.json",
+            "manifest_sha256": "9c3aac4cb5f4565855c34b50ea053829d47a5a2aa0f8da41bfc92fcca242ed64",
+            "archive_sha256": "bee1126c70610facdda9d051859c50ab646c9bfc35622182e2942f5cb5bc787e",
+            "commit_role": "base_commit_only",
+            "verification": "physical_archive_sha256_verified",
+            "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\_retired\\brainsync_recovery_20260908\\gpu_source_v1\\source.source-only.tar.gz",
+            "archive_bytes": 1121763
+          }
+        ],
+        "source_map_locators": [],
+        "source_byte_examples": [
+          "brainsync_recovery_20260908/gpu_source_v1/checkout/src/__init__.py",
+          "brainsync_recovery_20260908/gpu_source_v1/checkout/src/baselines/calibration.py"
+        ],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "brainsync_recovery_20260908/development/P001_20260903_172410_01.npz",
+          "brainsync_recovery_20260908/development/P001_20260903_172410_01.record.json"
+        ],
+        "all_original_source_manifest_locators": [
+          "brainsync_recovery_20260908/gpu_source_v1/source.manifest.json"
+        ]
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 1,
+        "status_counts": {
+          "physical_archive_sha256_verified": 1
+        }
+      }
+    },
+    {
+      "run": "algorithm_chain_20260916_validation",
+      "source_recovery_tier": "no_source",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\algorithm_chain_20260916_validation",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 0,
+        "candidate_files": 0,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {}
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "bi61_retirement_20260906",
+      "source_recovery_tier": "no_source",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\bi61_retirement_20260906",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 5,
+        "candidate_files": 5,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "cloud_cache_retirement.json",
+              "pointer": "/caches/0/status"
+            },
+            {
+              "path": "cloud_cache_retirement.json",
+              "pointer": "/caches/1/status"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "bi64_protocol_factorial_20260906",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\bi64_protocol_factorial_20260906",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 145,
+        "seed": 169,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 145,
+        "dirty": 145
+      },
+      "metadata_probe": {
+        "parsed_files": 80,
+        "candidate_files": 249,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "seed": [
+            {
+              "path": "preflight.json",
+              "pointer": "/seed"
+            },
+            {
+              "path": "verified_summary.json",
+              "pointer": "/seed"
+            }
+          ],
+          "scope": [
+            {
+              "path": "retrieved/bi64_protocol_factorial_20260906/bi64_c16_binary.record.json",
+              "pointer": "/lineage/entities/66/parameters/source_candidate_task_contract/evidence_scope"
+            },
+            {
+              "path": "retrieved/bi64_protocol_factorial_20260906/bi64_c16_binary.record.json",
+              "pointer": "/provenance/binary_evidence_projection/source_candidate_task_contract/evidence_scope"
+            }
+          ],
+          "exit_status": [
+            {
+              "path": "retrieved/bi64_protocol_factorial_20260906/evaluation60_plan.journal.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "retrieved/bi64_protocol_factorial_20260906/evaluation60_plan.journal.json",
+              "pointer": "/jobs/0/status"
+            }
+          ],
+          "data": [
+            {
+              "path": "retrieved/bi64_protocol_factorial_20260906/source60_01.batch.json",
+              "pointer": "/source_cache_sha256"
+            },
+            {
+              "path": "retrieved/bi64_protocol_factorial_20260906/source60_03.batch.json",
+              "pointer": "/source_cache_sha256"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "d7eb716caa4d1e23f688e5ad0a9c8d4007fce8ad85753e9356982e91c730af8d"
+        ],
+        "result_metadata_examples": [
+          "verified_summary.json",
+          "retrieved/bi64_protocol_factorial_20260906/bi64_c16_binary.record.json"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "bidirectional_qc_20260909",
+      "source_recovery_tier": "result_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\bidirectional_qc_20260909",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 2,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 54,
+        "candidate_files": 54,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "data": [
+            {
+              "path": "execution.json",
+              "pointer": "/raw_hashes"
+            },
+            {
+              "path": "execution.json",
+              "pointer": "/source_files"
+            }
+          ],
+          "exit_status": [
+            {
+              "path": "cz6_forward_range_reject/P001_20260903_173947_01.record.json",
+              "pointer": "/provenance/continuous_artifact_processing/status"
+            },
+            {
+              "path": "cz6_forward_range_reject/P001_20260903_173947_01.record.json",
+              "pointer": "/provenance/continuous_quality_ledger/signal_diagnostics/status"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "results.json",
+          "cz6_forward_range_reject/calibration.npz"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "bnci_unseen_target_20260906",
+      "source_recovery_tier": "result_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\bnci_unseen_target_20260906",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 1,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 1,
+        "candidate_files": 1,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "seed": [
+            {
+              "path": "verified_summary.json",
+              "pointer": "/targets/0/seed"
+            },
+            {
+              "path": "verified_summary.json",
+              "pointer": "/targets/1/seed"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "verified_summary.json"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "boundary_state_redesign_20261005",
+      "source_recovery_tier": "source_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\boundary_state_redesign_20261005",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 2,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 80,
+        "candidate_files": 645,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "scope": [
+            {
+              "path": "e2_plan.json",
+              "pointer": "/evidence_scope"
+            },
+            {
+              "path": "e2_smoke_plan.json",
+              "pointer": "/evidence_scope"
+            }
+          ],
+          "exit_status": [
+            {
+              "path": "plan.final.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "plan.json",
+              "pointer": "/status"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "e2_results/result.json",
+              "pointer": "/requested_cells"
+            },
+            {
+              "path": "e2_smoke/result.json",
+              "pointer": "/requested_cells"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [
+          "e2_results/source.json",
+          "e2_smoke/source.json"
+        ],
+        "source_byte_examples": [
+          "e2_results/executed_source/doc/assets/operator_research_20261004/continuous_model.py",
+          "e2_results/executed_source/doc/assets/operator_research_20261004/selection_erp_model.py"
+        ],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "e2_results/result.json",
+          "e2_results/A01/fold0_raw_ar1_innovation/model_ridge0.01.npz"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "source bytes exist; original archive/manifest execution binding is not established"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "brainsync_cause_audit_20260908",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_cause_audit_20260908",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 3,
+        "versions": 1,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 3,
+        "candidate_files": 3,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "data": [
+            {
+              "path": "audit.json",
+              "pointer": "/models/source/source_cache_sha256"
+            },
+            {
+              "path": "summary.json",
+              "pointer": "/source/source_cache_sha256"
+            }
+          ],
+          "seed": [
+            {
+              "path": "audit.json",
+              "pointer": "/models/fits/0/seed"
+            },
+            {
+              "path": "audit.json",
+              "pointer": "/models/fits/0/recipe/seed"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "f3267cd466efac946ee4a79ababa11a79472ba78119694e641cc592940ac05e4"
+        ],
+        "result_metadata_examples": [
+          "raw_waveforms.npz",
+          "summary.json"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "brainsync_p001_20260907",
+      "source_recovery_tier": "result_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_p001_20260907",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 1,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 44,
+        "candidate_files": 44,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "original_archive.manifest.json",
+              "pointer": "/original_records/0/status"
+            },
+            {
+              "path": "original_archive.manifest.json",
+              "pointer": "/original_records/1/status"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "sources/bnci6_cz_source.pt",
+          "sources/source_BI2014a_20260906.pt"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "brainsync_qc_redesign_20260908",
+      "source_recovery_tier": "original_archive_verified",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_qc_redesign_20260908",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 15,
+        "seed": 191,
+        "versions": 11,
+        "ledger": 4,
+        "commit": 2,
+        "dirty": 2
+      },
+      "metadata_probe": {
+        "parsed_files": 79,
+        "candidate_files": 403,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "seed": [
+            {
+              "path": "base_plan.json",
+              "pointer": "/recipes/0/seed"
+            },
+            {
+              "path": "base_plan.json",
+              "pointer": "/recipes/1/seed"
+            }
+          ],
+          "exit_status": [
+            {
+              "path": "document_link_check.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "frontend_test_receipt.json",
+              "pointer": "/exit_code"
+            }
+          ],
+          "scope": [
+            {
+              "path": "post_gate_reload/summary.json",
+              "pointer": "/evidence_scope"
+            },
+            {
+              "path": "retrieved/source_inventory.json",
+              "pointer": "/sources/2/source_training_reuse/signature_record/evidence_scope"
+            }
+          ],
+          "data": [
+            {
+              "path": "retrieved/source_inventory.json",
+              "pointer": "/sources/0/source_cache_sha256"
+            },
+            {
+              "path": "retrieved/source_inventory.json",
+              "pointer": "/sources/1/source_cache_sha256"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [
+          {
+            "manifest": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_qc_redesign_20260908\\final_source\\source.manifest.json",
+            "manifest_sha256": "601b42e516b613f765f5b465ecf9c536d010d94e3e7a9171bfb6f95849970bfb",
+            "archive_sha256": "b4bcf7e6816d853cd0ad44675eaf335d1eda41c2cd43be8c0b7c038268dc9933",
+            "commit_role": "base_commit_only",
+            "verification": "physical_archive_sha256_verified",
+            "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_qc_redesign_20260908\\final_source\\source.source-only.tar.gz",
+            "archive_bytes": 1165174
+          },
+          {
+            "manifest": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_qc_redesign_20260908\\source\\source.manifest.json",
+            "manifest_sha256": "8809759b2ba77141ee153e7f214407fdd97c5a00b01896b6d5937200f1e94b97",
+            "archive_sha256": "de5407dd35514b316be25a22cb25a42601a92ed5fdcab4e2f779afbb95f6c5a6",
+            "commit_role": "base_commit_only",
+            "verification": "physical_archive_sha256_verified",
+            "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_qc_redesign_20260908\\source\\source.source-only.tar.gz",
+            "archive_bytes": 1150756
+          }
+        ],
+        "source_map_locators": [],
+        "source_byte_examples": [
+          "source/checkout/src/__init__.py",
+          "source/checkout/src/baselines/calibration.py"
+        ],
+        "unresolved_source_digests": [
+          "5aa716346e2e15bd39665620cd9e6b33d361a60b6b95e9524be31ba236ec544b"
+        ],
+        "result_metadata_examples": [
+          "inputs/P001_20260903_172410_01.npz",
+          "inputs/P001_20260903_172410_01.record.json"
+        ],
+        "all_original_source_manifest_locators": [
+          "final_source/source.manifest.json",
+          "source/source.manifest.json"
+        ]
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 2,
+        "status_counts": {
+          "physical_archive_sha256_verified": 2
+        }
+      }
+    },
+    {
+      "run": "brainsync_qc_remaining_20260908",
+      "source_recovery_tier": "original_archive_verified",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_qc_remaining_20260908",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 22,
+        "seed": 249,
+        "versions": 16,
+        "ledger": 10,
+        "commit": 4,
+        "dirty": 4
+      },
+      "metadata_probe": {
+        "parsed_files": 80,
+        "candidate_files": 503,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "analysis.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "prepared.json",
+              "pointer": "/status"
+            }
+          ],
+          "seed": [
+            {
+              "path": "analysis.json",
+              "pointer": "/records/0/seed"
+            },
+            {
+              "path": "analysis.json",
+              "pointer": "/records/1/seed"
+            }
+          ],
+          "scope": [
+            {
+              "path": "reload_audit/verified/summary.json",
+              "pointer": "/evidence_scope"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [
+          {
+            "manifest": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_qc_remaining_20260908\\before_source\\source.manifest.json",
+            "manifest_sha256": "d090525c9676f4194632431c3251691dbd7e760c4d030e3170d251fa88363d0d",
+            "archive_sha256": "60f9b132d943ec2b7c82cd5309973c4ea17227ea45ddaf55bc1fe952387939ca",
+            "commit_role": "base_commit_only",
+            "verification": "physical_archive_sha256_verified",
+            "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_qc_remaining_20260908\\before_source\\source.source-only.tar.gz",
+            "archive_bytes": 1165875
+          },
+          {
+            "manifest": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_qc_remaining_20260908\\final_source\\source.manifest.json",
+            "manifest_sha256": "c020ed310691e0f2c699a38655fd996fd5367f3205d04283429c71c7bbc2fc35",
+            "archive_sha256": "954f6494aa165f921d3a494cdbb2225a5fe0d46c19a9de6d3ff8d83dadea0a1e",
+            "commit_role": "base_commit_only",
+            "verification": "physical_archive_sha256_verified",
+            "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_qc_remaining_20260908\\final_source\\source.source-only.tar.gz",
+            "archive_bytes": 1187494
+          }
+        ],
+        "source_map_locators": [],
+        "source_byte_examples": [
+          "source_preparation/checkout/src/__init__.py",
+          "source_preparation/checkout/src/baselines/calibration.py"
+        ],
+        "unresolved_source_digests": [
+          "504ad722713edb3a0faea73a5fdf197a35965c545a8c2eef65bf82efae6070dd",
+          "dd7c0393955a4ba7bb671de2fa16922edcd6dd34e59125ddfc309e0ade790040"
+        ],
+        "result_metadata_examples": [
+          "controls/native7/native7_bp01_eog0/calibration.npz",
+          "controls/native7/native7_bp01_eog0/calibration.record.json"
+        ],
+        "all_original_source_manifest_locators": [
+          "before_source/source.manifest.json",
+          "final_source/source.manifest.json",
+          "source_preparation/source.manifest.json",
+          "source_preparation_v2/source.manifest.json"
+        ]
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 4,
+        "status_counts": {
+          "physical_archive_sha256_verified": 4
+        }
+      }
+    },
+    {
+      "run": "brainsync_quality_20260907",
+      "source_recovery_tier": "result_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_quality_20260907",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 4,
+        "candidate_files": 4,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "session_disposition.json",
+              "pointer": "/sessions/0/status"
+            },
+            {
+              "path": "session_disposition.json",
+              "pointer": "/sessions/1/status"
+            }
+          ],
+          "scope": [
+            {
+              "path": "signal_diagnosis.json",
+              "pointer": "/synthetic"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "P001_20260903_172410_01_curves.npz",
+          "P001_20260903_173947_01_curves.npz"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "brainsync_quality_20260909",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_quality_20260909",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 1,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 39,
+        "candidate_files": 39,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "notch_completion.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "summary.json",
+              "pointer": "/0/raw/channels/0/status"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "summary.json"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "brainsync_quality_implementation_20260907",
+      "source_recovery_tier": "no_source",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_quality_implementation_20260907",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 2,
+        "candidate_files": 2,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "backend_verification.json",
+              "pointer": "/exit_code"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "brainsync_quality_research_20260907",
+      "source_recovery_tier": "no_source",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_quality_research_20260907",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 2,
+        "candidate_files": 2,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {}
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "brainsync_recovery_20260908",
+      "source_recovery_tier": "original_archive_verified",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_recovery_20260908",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 6,
+        "seed": 109,
+        "versions": 5,
+        "ledger": 2,
+        "commit": 3,
+        "dirty": 3
+      },
+      "metadata_probe": {
+        "parsed_files": 80,
+        "candidate_files": 292,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "backend_verification.json",
+              "pointer": "/exit_code"
+            },
+            {
+              "path": "backend_verification_v2.json",
+              "pointer": "/exit_code"
+            }
+          ],
+          "seed": [
+            {
+              "path": "deterministic_replay/plan.json",
+              "pointer": "/recipes/0/seed"
+            },
+            {
+              "path": "deterministic_replay/plan.json",
+              "pointer": "/recipes/1/seed"
+            }
+          ],
+          "scope": [
+            {
+              "path": "math_review/results.json",
+              "pointer": "/synthetic"
+            },
+            {
+              "path": "product_lifecycle_final/verification.json",
+              "pointer": "/evidence_scope"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "actual_injection_review/v3_acceptance/results.json",
+              "pointer": "/rows/0/continuous/failed_cells"
+            },
+            {
+              "path": "actual_injection_review/v3_acceptance/results.json",
+              "pointer": "/rows/0/final/failed_cells"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [
+          {
+            "manifest": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_recovery_20260908\\final_source\\source.manifest.json",
+            "manifest_sha256": "f246c4227715369348db0d815b3adbf77b0054f1866fe076b7c60614faa32228",
+            "archive_sha256": "9b3f5503bdd33a4fbd97b2b49a33aeed4cd15cdaea6871d251cc33873de38f7a",
+            "commit_role": "base_commit_only",
+            "verification": "physical_archive_sha256_verified",
+            "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_recovery_20260908\\final_source\\source.source-only.tar.gz",
+            "archive_bytes": 1129584
+          },
+          {
+            "manifest": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_recovery_20260908\\gpu_source_v2\\source.manifest.json",
+            "manifest_sha256": "fdf8a331bb2c8dac563c23d3fe6805e825d0addf72dd22b29073f74de2564977",
+            "archive_sha256": "41fffc51ff044cd0747adc7615aecbde9fa07c64e5672fa5bbb44ef8f6dd12b2",
+            "commit_role": "base_commit_only",
+            "verification": "physical_archive_sha256_verified",
+            "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_recovery_20260908\\gpu_source_v2\\source.source-only.tar.gz",
+            "archive_bytes": 1126393
+          }
+        ],
+        "source_map_locators": [],
+        "source_byte_examples": [
+          "final_source/checkout/src/__init__.py",
+          "final_source/checkout/src/baselines/calibration.py"
+        ],
+        "unresolved_source_digests": [
+          "92254d93c94a4202ca21df1950d4f13ae92377e92526a3429a5cce314fca81f2",
+          "f246c4227715369348db0d815b3adbf77b0054f1866fe076b7c60614faa32228",
+          "fdf8a331bb2c8dac563c23d3fe6805e825d0addf72dd22b29073f74de2564977"
+        ],
+        "result_metadata_examples": [
+          "actual_injection_review/exponential_tau0.35_300s_continuous.npz",
+          "actual_injection_review/exponential_tau0.35_300s_final.npz"
+        ],
+        "all_original_source_manifest_locators": [
+          "final_source/source.manifest.json",
+          "gpu_source_v2/source.manifest.json"
+        ]
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 2,
+        "status_counts": {
+          "physical_archive_sha256_verified": 2
+        }
+      }
+    },
+    {
+      "run": "brainsync_reference_20260908",
+      "source_recovery_tier": "result_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_reference_20260908",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 2,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 22,
+        "candidate_files": 22,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "cz6/P001_20260903_172410_01.record.json",
+              "pointer": "/provenance/continuous_artifact_processing/status"
+            },
+            {
+              "path": "cz6/P001_20260903_172410_01.record.json",
+              "pointer": "/provenance/ocular_artifact_processing/status"
+            }
+          ],
+          "seed": [
+            {
+              "path": "native_cli_v2/summary.json",
+              "pointer": "/internal_validation/refit_recipe/seed"
+            },
+            {
+              "path": "source_preflight/summary.json",
+              "pointer": "/candidates/0/seed"
+            }
+          ],
+          "scope": [
+            {
+              "path": "source_preflight/summary.json",
+              "pointer": "/evidence_scope"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "cz6/P001_20260903_172410_01.npz",
+          "cz6/P001_20260903_172410_01.record.json"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "brainsync_s1_cloud_20260908",
+      "source_recovery_tier": "original_archive_verified",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_s1_cloud_20260908",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 16,
+        "seed": 80,
+        "versions": 10,
+        "ledger": 5,
+        "commit": 5,
+        "dirty": 5
+      },
+      "metadata_probe": {
+        "parsed_files": 80,
+        "candidate_files": 112,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "seed": [
+            {
+              "path": "base_plan.json",
+              "pointer": "/recipes/0/seed"
+            },
+            {
+              "path": "base_plan.json",
+              "pointer": "/recipes/1/seed"
+            }
+          ],
+          "exit_status": [
+            {
+              "path": "retrieval_verification.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "inputs/P001_20260903_173947_01.record.json",
+              "pointer": "/provenance/continuous_artifact_processing/status"
+            }
+          ],
+          "data": [
+            {
+              "path": "retrieved/source_inventory.json",
+              "pointer": "/sources/0/source_cache_sha256"
+            },
+            {
+              "path": "retrieved/source_inventory.json",
+              "pointer": "/sources/1/source_cache_sha256"
+            }
+          ],
+          "scope": [
+            {
+              "path": "retrieved/source_inventory.json",
+              "pointer": "/sources/2/source_training_reuse/signature_record/evidence_scope"
+            },
+            {
+              "path": "retrieved/source_inventory.json",
+              "pointer": "/sources/3/source_training_reuse/signature_record/evidence_scope"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [
+          {
+            "manifest": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_s1_cloud_20260908\\source\\source.manifest.json",
+            "manifest_sha256": "291792f898ea76818436ca4f92ffed27ebe31d2461194f14959db67301a5d727",
+            "archive_sha256": "d34178e6b982df9ca5de30fb770dc14de3f6c594da4d8eb9e4c75c69a9e85462",
+            "commit_role": "base_commit_only",
+            "verification": "physical_archive_sha256_verified",
+            "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_s1_cloud_20260908\\source\\source.source-only.tar.gz",
+            "archive_bytes": 1130690
+          },
+          {
+            "manifest": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_s1_cloud_20260908\\source_v2\\source.manifest.json",
+            "manifest_sha256": "bac102277b8b264188bfb4bb6e05cd363a0125914b178598b026236356470ecf",
+            "archive_sha256": "728395f927d5677ce502d74215d033efeae47103b9c48d4cc640019fea42a1ef",
+            "commit_role": "base_commit_only",
+            "verification": "physical_archive_sha256_verified",
+            "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_s1_cloud_20260908\\source_v2\\source.source-only.tar.gz",
+            "archive_bytes": 1131193
+          }
+        ],
+        "source_map_locators": [],
+        "source_byte_examples": [
+          "source/checkout/src/__init__.py",
+          "source/checkout/src/baselines/calibration.py"
+        ],
+        "unresolved_source_digests": [
+          "4afea588fe6ecb41560b8019382cd240981555a8b5721bd3f2defd1670a9a954",
+          "5aa716346e2e15bd39665620cd9e6b33d361a60b6b95e9524be31ba236ec544b"
+        ],
+        "result_metadata_examples": [
+          "inputs/old_bnci.pt",
+          "inputs/P001_20260903_173947_01.npz"
+        ],
+        "all_original_source_manifest_locators": [
+          "source/source.manifest.json",
+          "source_v2/source.manifest.json",
+          "source_v3/source.manifest.json"
+        ]
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 3,
+        "status_counts": {
+          "physical_archive_sha256_verified": 3
+        }
+      }
+    },
+    {
+      "run": "brainsync_s1_local_20260908",
+      "source_recovery_tier": "result_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_s1_local_20260908",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 0,
+        "candidate_files": 0,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {}
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "sources/exclude_BI2014a.pt",
+          "sources/exclude_BI2015a.pt"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "chain_attribution_20260916",
+      "source_recovery_tier": "no_source",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\chain_attribution_20260916",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 4,
+        "candidate_files": 4,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "references_filter.json",
+              "pointer": "/fulltext_and_official/0/status"
+            },
+            {
+              "path": "references_filter.json",
+              "pointer": "/fulltext_and_official/1/status"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "chain_improvements_20260929",
+      "source_recovery_tier": "result_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\chain_improvements_20260929",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 4,
+        "candidate_files": 4,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {}
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "boundary/BI01_epochs.npz",
+          "boundary/BI26_epochs.npz"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "cloud_delivery_20260918",
+      "source_recovery_tier": "result_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\cloud_delivery_20260918",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 2,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 25,
+        "candidate_files": 26,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "final_repair_upload.result.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "stage1_upload.result.json",
+              "pointer": "/status"
+            }
+          ],
+          "seed": [
+            {
+              "path": "delivery_summary.json",
+              "pointer": "/scope/seed"
+            },
+            {
+              "path": "upload_inventory.json",
+              "pointer": "/seed"
+            }
+          ],
+          "data": [
+            {
+              "path": "delivery_summary.json",
+              "pointer": "/deployment/source_files"
+            },
+            {
+              "path": "deployment.json",
+              "pointer": "/source_files"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "delivery_summary.json",
+          "final_repair_upload.result.json"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "cross_dataset_start_20260906",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\cross_dataset_start_20260906",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 61,
+        "seed": 63,
+        "versions": 3,
+        "ledger": 0,
+        "commit": 61,
+        "dirty": 61
+      },
+      "metadata_probe": {
+        "parsed_files": 76,
+        "candidate_files": 76,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "seed": [
+            {
+              "path": "preflight.json",
+              "pointer": "/seed"
+            },
+            {
+              "path": "retrieved/cross_dataset_start_20260906/analysis.json",
+              "pointer": "/seed"
+            }
+          ],
+          "exit_status": [
+            {
+              "path": "retrieved/cross_dataset_start_20260906/evaluate_plan.journal.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "retrieved/cross_dataset_start_20260906/evaluate_plan.journal.json",
+              "pointer": "/jobs/0/status"
+            }
+          ],
+          "data": [
+            {
+              "path": "benchmark_retrieved/device_benchmark/summary.json",
+              "pointer": "/runs/0/target_cache_sha256"
+            },
+            {
+              "path": "benchmark_retrieved/device_benchmark/summary.json",
+              "pointer": "/runs/1/target_cache_sha256"
+            }
+          ],
+          "scope": [
+            {
+              "path": "benchmark_retrieved/device_benchmark/cpu_0/record.json",
+              "pointer": "/evidence_scope"
+            },
+            {
+              "path": "benchmark_retrieved/device_benchmark/cpu_0/record.json",
+              "pointer": "/cells/0/evaluation_contract/evidence_scope"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "benchmark_retrieved/device_benchmark/cpu_0/record.json",
+              "pointer": "/cells/0/evaluation_contract/requested_participant_keys"
+            },
+            {
+              "path": "benchmark_retrieved/device_benchmark/cpu_0/record.json",
+              "pointer": "/cells/1/evaluation_contract/requested_participant_keys"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "7486d2ab9ab81353c18ea6cd482094d2f4cbd423466b0b1a3778a8eae9c6d922",
+          "d902c1663f261a6c4530a6661c72bc8c78697a3340001629e029e934107c1304"
+        ],
+        "result_metadata_examples": [
+          "benchmark_retrieved/device_benchmark/summary.json",
+          "benchmark_retrieved/device_benchmark/cpu_0/000_192_full_fine.npz"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "dataset_expansion_audit_20260908",
+      "source_recovery_tier": "no_source",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\dataset_expansion_audit_20260908",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 21,
+        "candidate_files": 23,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "brainform_calibration_views.json",
+              "pointer": "/pilots/0/status"
+            },
+            {
+              "path": "brainform_calibration_views.json",
+              "pointer": "/pilots/1/status"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "deep_chain_audit_20260929",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\deep_chain_audit_20260929",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 1,
+        "seed": 3,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 1,
+        "dirty": 1
+      },
+      "metadata_probe": {
+        "parsed_files": 79,
+        "candidate_files": 267,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "scope": [
+            {
+              "path": "input/real_mask_full_prefixes.record.json",
+              "pointer": "/lineage/entities/2/parameters/source_candidate_task_contract/evidence_scope"
+            },
+            {
+              "path": "input/real_mask_roundtrip.record.json",
+              "pointer": "/lineage/entities/2/parameters/source_candidate_task_contract/evidence_scope"
+            }
+          ],
+          "exit_status": [
+            {
+              "path": "bi_quality/forward_subject_01.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "bi_quality/forward_subject_02.json",
+              "pointer": "/status"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "input/bi01_boundary_linear_components.npz",
+          "input/real_mask_full_prefixes.npz"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "domain_transfer_cloud_20260916",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\domain_transfer_cloud_20260916",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 5,
+        "versions": 2,
+        "ledger": 5,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 78,
+        "candidate_files": 90,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "completion.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "completion.json",
+              "pointer": "/verification/status"
+            }
+          ],
+          "scope": [
+            {
+              "path": "matrix_plan.json",
+              "pointer": "/evidence_scope"
+            },
+            {
+              "path": "training_chain_full512_20260907_plan.json",
+              "pointer": "/evidence_scope"
+            }
+          ],
+          "seed": [
+            {
+              "path": "matrix_plan.json",
+              "pointer": "/source_seeds"
+            },
+            {
+              "path": "matrix_plan.json",
+              "pointer": "/target_seeds"
+            }
+          ],
+          "data": [
+            {
+              "path": "matrix_plan.json",
+              "pointer": "/outer_folds/0/source_cache_sha256"
+            },
+            {
+              "path": "matrix_plan.json",
+              "pointer": "/outer_folds/1/source_cache_sha256"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "matrix.json",
+              "pointer": "/completed_groups/0/results/0/failed_cells"
+            },
+            {
+              "path": "matrix.json",
+              "pointer": "/completed_groups/0/results/1/failed_cells"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [
+          "analysis/family/p2_source.json",
+          "analysis/ordinary/p2_source.json"
+        ],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "8bc34aa273a7cc3955af6416693e5f92116d973a68914832accd03ee27bce0a4",
+          "aaa1514a729a5d2cf35033d697e294f407c1c9014a2af25c15e6a19cc98a3d6e"
+        ],
+        "result_metadata_examples": [
+          "human_summary.json",
+          "probe_optimized_results.json"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "domain_transfer_implementation_20260916",
+      "source_recovery_tier": "no_source",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\domain_transfer_implementation_20260916",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 1,
+        "candidate_files": 1,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {}
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "domain_transfer_research_20260915",
+      "source_recovery_tier": "no_source",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\domain_transfer_research_20260915",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 54,
+        "candidate_files": 57,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "PMC11272559.meta.json",
+              "pointer": "/exit_code"
+            },
+            {
+              "path": "PMC13562021.meta.json",
+              "pointer": "/exit_code"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "early_stopping_full512_20260907",
+      "source_recovery_tier": "original_archive_verified",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\early_stopping_full512_20260907",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 8,
+        "seed": 3,
+        "versions": 4,
+        "ledger": 6,
+        "commit": 9,
+        "dirty": 9
+      },
+      "metadata_probe": {
+        "parsed_files": 13,
+        "candidate_files": 37,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "execution.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "integrity.json",
+              "pointer": "/status"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "execution.json",
+              "pointer": "/requested_cells"
+            },
+            {
+              "path": "execution.json",
+              "pointer": "/results/0/failed_cells"
+            }
+          ],
+          "scope": [
+            {
+              "path": "probe/results/BI2014a_1/record.json",
+              "pointer": "/plan/evidence_scope"
+            },
+            {
+              "path": "probe/results/BI2014a_1/record.json",
+              "pointer": "/evidence_scope"
+            }
+          ],
+          "data": [
+            {
+              "path": "probe/results/BI2014a_1/record.json",
+              "pointer": "/plan/target_cache_sha256"
+            },
+            {
+              "path": "probe/results/BI2014a_1/record.json",
+              "pointer": "/target_cache_sha256"
+            }
+          ],
+          "seed": [
+            {
+              "path": "probe/results/BI2014a_1/record.json",
+              "pointer": "/plan/source_seed"
+            },
+            {
+              "path": "probe/results/BI2014a_1/record.json",
+              "pointer": "/plan/target_seed"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [
+          {
+            "manifest": "D:\\BCI\\n2p3-net\\experiments\\runs\\early_stopping_full512_20260907\\probe\\source\\source.manifest.json",
+            "manifest_sha256": "8d09393af745b847a8b59241b8b20d6e184722c84ffc72b9861b865f60cf8621",
+            "archive_sha256": "8f92f87cf22e9f3faca177963dc2a80add06a92e86858b0042e0d37fcd396db8",
+            "commit_role": "base_commit_only",
+            "verification": "physical_archive_sha256_verified",
+            "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\early_stopping_full512_20260907\\probe\\source\\source.source-only.tar.gz",
+            "archive_bytes": 1070024
+          }
+        ],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "02f2cd3bdcea909b41d789ac1a5688cc4ba5521397fcb8fbaecf21635614e07a",
+          "08a13ae56aef5c1f3469b6a762cbb97cd72b73204e97b51eb7cb3e773b28f9fb",
+          "811e9281f42048c9581278c03d0f5186f66b95be5bd553f3fe09aee30a4273a9"
+        ],
+        "result_metadata_examples": [
+          "current/results/BI2014a_0/00000.npz",
+          "current/results/BI2014a_0/00001.npz"
+        ],
+        "all_original_source_manifest_locators": [
+          "probe/source/source.manifest.json"
+        ]
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 1,
+        "status_counts": {
+          "physical_archive_sha256_verified": 1
+        }
+      }
+    },
+    {
+      "run": "early_stopping_probe_20260907",
+      "source_recovery_tier": "original_archive_verified",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\early_stopping_probe_20260907",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 12,
+        "seed": 241,
+        "versions": 12,
+        "ledger": 6,
+        "commit": 13,
+        "dirty": 13
+      },
+      "metadata_probe": {
+        "parsed_files": 74,
+        "candidate_files": 270,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "execution.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "integrity.json",
+              "pointer": "/status"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "execution.json",
+              "pointer": "/results/0/failed_cells"
+            },
+            {
+              "path": "execution.json",
+              "pointer": "/results/1/failed_cells"
+            }
+          ],
+          "scope": [
+            {
+              "path": "plans/BI2014a.json",
+              "pointer": "/evidence_scope"
+            },
+            {
+              "path": "plans/BI2015a.json",
+              "pointer": "/evidence_scope"
+            }
+          ],
+          "data": [
+            {
+              "path": "plans/BI2014a.json",
+              "pointer": "/target_cache_sha256"
+            },
+            {
+              "path": "plans/BI2015a.json",
+              "pointer": "/target_cache_sha256"
+            }
+          ],
+          "seed": [
+            {
+              "path": "plans/BI2014a.json",
+              "pointer": "/source_seed"
+            },
+            {
+              "path": "plans/BI2014a.json",
+              "pointer": "/target_seed"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [
+          {
+            "manifest": "D:\\BCI\\n2p3-net\\experiments\\runs\\early_stopping_probe_20260907\\source\\source.manifest.json",
+            "manifest_sha256": "8d09393af745b847a8b59241b8b20d6e184722c84ffc72b9861b865f60cf8621",
+            "archive_sha256": "8f92f87cf22e9f3faca177963dc2a80add06a92e86858b0042e0d37fcd396db8",
+            "commit_role": "base_commit_only",
+            "verification": "physical_archive_sha256_verified",
+            "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\early_stopping_probe_20260907\\source\\source.source-only.tar.gz",
+            "archive_bytes": 1070024
+          }
+        ],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "02f2cd3bdcea909b41d789ac1a5688cc4ba5521397fcb8fbaecf21635614e07a",
+          "08a13ae56aef5c1f3469b6a762cbb97cd72b73204e97b51eb7cb3e773b28f9fb",
+          "4afea588fe6ecb41560b8019382cd240981555a8b5721bd3f2defd1670a9a954"
+        ],
+        "result_metadata_examples": [
+          "results/BI2014a_0/00000.npz",
+          "results/BI2014a_0/00001.npz"
+        ],
+        "all_original_source_manifest_locators": [
+          "source/source.manifest.json"
+        ]
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 1,
+        "status_counts": {
+          "physical_archive_sha256_verified": 1
+        }
+      }
+    },
+    {
+      "run": "filter_phase_20260909",
+      "source_recovery_tier": "result_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\filter_phase_20260909",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 2,
+        "candidate_files": 2,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "data": [
+            {
+              "path": "results.json",
+              "pointer": "/protocol/source_files"
+            },
+            {
+              "path": "protocol.json",
+              "pointer": "/source_files"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "cz_forward_0.npz",
+          "cz_forward_1.npz"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "filter_phase_20260909_final",
+      "source_recovery_tier": "result_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\filter_phase_20260909_final",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 4,
+        "candidate_files": 4,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "data": [
+            {
+              "path": "results.json",
+              "pointer": "/protocol/source_files"
+            },
+            {
+              "path": "protocol.json",
+              "pointer": "/source_files"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "cz_forward_0.npz",
+          "cz_forward_1.npz"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "four_dataset_20260907",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\four_dataset_20260907",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 2,
+        "seed": 5,
+        "versions": 1,
+        "ledger": 0,
+        "commit": 2,
+        "dirty": 2
+      },
+      "metadata_probe": {
+        "parsed_files": 80,
+        "candidate_files": 88,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "development_plan.json",
+              "pointer": "/datasets/BI2014a/eligibility/0/status"
+            },
+            {
+              "path": "development_plan.json",
+              "pointer": "/datasets/BI2014a/eligibility/1/status"
+            }
+          ],
+          "seed": [
+            {
+              "path": "rerun_execution.json",
+              "pointer": "/seed"
+            },
+            {
+              "path": "single_seed_execution.json",
+              "pointer": "/seed"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [
+          "bi2015a_source.json"
+        ],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "1953fb6c9b50a3276563303702a49fda4d2982e1e124111da4b37ec7cae3e021",
+          "573f0128f489a36ef06f00d703126ba94ba1202dffc33fff40f774378e07e317",
+          "d58db080b70b65bec8858f82522ed004db63de571dee5480d3c25822d4c7c26e"
+        ],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "input_alignment_audit_20260906",
+      "source_recovery_tier": "result_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\input_alignment_audit_20260906",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 3,
+        "candidate_files": 3,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "scope": [
+            {
+              "path": "cache_audit.json",
+              "pointer": "/datasets/BI/provenance/binary_evidence_projection/source_candidate_task_contract/evidence_scope"
+            },
+            {
+              "path": "cache_audit.json",
+              "pointer": "/datasets/BNCI/provenance/binary_evidence_projection/source_candidate_task_contract/evidence_scope"
+            }
+          ],
+          "data": [
+            {
+              "path": "cache_audit.json",
+              "pointer": "/datasets/BNCI/provenance/source_files"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "BI_first_subject.npz",
+          "BI_to_BNCI_A01_prefix_stats.npz"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "lda_head_bi61_20260906",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\lda_head_bi61_20260906",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 6,
+        "seed": 6,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 6,
+        "dirty": 6
+      },
+      "metadata_probe": {
+        "parsed_files": 15,
+        "candidate_files": 16,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "retrieved/lda_head_bi61_20260906/plan.journal.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "retrieved/lda_head_bi61_20260906/plan.journal.json",
+              "pointer": "/jobs/0/status"
+            }
+          ],
+          "data": [
+            {
+              "path": "retrieved/lda_head_bi61_20260906/plan.json",
+              "pointer": "/target_cache_sha256"
+            },
+            {
+              "path": "retrieved/lda_head_bi61_20260906/BI_to_BNCI_000/record.json",
+              "pointer": "/target_cache_sha256"
+            }
+          ],
+          "seed": [
+            {
+              "path": "retrieved/lda_head_bi61_20260906/BI_to_BNCI_000/record.json",
+              "pointer": "/seed"
+            },
+            {
+              "path": "retrieved/lda_head_bi61_20260906/BI_to_BNCI_000/record.json",
+              "pointer": "/paired_cells/0/arms/neural_head/evaluation_contract/adaptation/seed"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "retrieved/lda_head_bi61_20260906/BI_to_BNCI_000/record.json",
+              "pointer": "/paired_cells/0/arms/neural_head/evaluation_contract/requested_participant_keys"
+            },
+            {
+              "path": "retrieved/lda_head_bi61_20260906/BI_to_BNCI_000/record.json",
+              "pointer": "/paired_cells/0/arms/postfit_shrinkage_lda/evaluation_contract/requested_participant_keys"
+            }
+          ],
+          "scope": [
+            {
+              "path": "retrieved/lda_head_bi61_20260906/BI_to_BNCI_000/record.json",
+              "pointer": "/paired_cells/0/arms/neural_head/evaluation_contract/evidence_scope"
+            },
+            {
+              "path": "retrieved/lda_head_bi61_20260906/BI_to_BNCI_000/record.json",
+              "pointer": "/paired_cells/0/arms/postfit_shrinkage_lda/evaluation_contract/evidence_scope"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "7486d2ab9ab81353c18ea6cd482094d2f4cbd423466b0b1a3778a8eae9c6d922",
+          "b3fa52a4ee4fde924594d20812e2544cc44ff33a109e85f95e09110ea0d1f880",
+          "d902c1663f261a6c4530a6661c72bc8c78697a3340001629e029e934107c1304"
+        ],
+        "result_metadata_examples": [
+          "retrieved/lda_head_bi61_20260906/source_BI61.pt",
+          "retrieved/lda_head_bi61_20260906/BI_to_BNCI_000/000_1200.npz"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "lda_head_budget_20260906",
+      "source_recovery_tier": "no_source",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\lda_head_budget_20260906",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 0,
+        "candidate_files": 0,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {}
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "lda_head_order_20260906",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\lda_head_order_20260906",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 9,
+        "seed": 9,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 9,
+        "dirty": 9
+      },
+      "metadata_probe": {
+        "parsed_files": 15,
+        "candidate_files": 15,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "data": [
+            {
+              "path": "plan.json",
+              "pointer": "/target_cache_sha256"
+            },
+            {
+              "path": "retrieved/lda_head_order_20260906/plan.json",
+              "pointer": "/target_cache_sha256"
+            }
+          ],
+          "exit_status": [
+            {
+              "path": "retrieved/lda_head_order_20260906/plan.journal.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "retrieved/lda_head_order_20260906/plan.journal.json",
+              "pointer": "/jobs/0/status"
+            }
+          ],
+          "seed": [
+            {
+              "path": "retrieved/lda_head_order_20260906/BI_to_BNCI_000/record.json",
+              "pointer": "/seed"
+            },
+            {
+              "path": "retrieved/lda_head_order_20260906/BI_to_BNCI_000/record.json",
+              "pointer": "/paired_cells/0/arms/neural_head/evaluation_contract/adaptation/seed"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "retrieved/lda_head_order_20260906/BI_to_BNCI_000/record.json",
+              "pointer": "/paired_cells/0/arms/neural_head/evaluation_contract/requested_participant_keys"
+            },
+            {
+              "path": "retrieved/lda_head_order_20260906/BI_to_BNCI_000/record.json",
+              "pointer": "/paired_cells/0/arms/postfit_shrinkage_lda/evaluation_contract/requested_participant_keys"
+            }
+          ],
+          "scope": [
+            {
+              "path": "retrieved/lda_head_order_20260906/BI_to_BNCI_000/record.json",
+              "pointer": "/paired_cells/0/arms/neural_head/evaluation_contract/evidence_scope"
+            },
+            {
+              "path": "retrieved/lda_head_order_20260906/BI_to_BNCI_000/record.json",
+              "pointer": "/paired_cells/0/arms/postfit_shrinkage_lda/evaluation_contract/evidence_scope"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "7486d2ab9ab81353c18ea6cd482094d2f4cbd423466b0b1a3778a8eae9c6d922",
+          "b907d47ab8530d3c61ae52745683fb6e7f0aa527943d7beff844c06445661bc7",
+          "d198f3ab5a0172b49009d37e595e6ec8e6faedb6a1e8d73c52509748d7e2436f"
+        ],
+        "result_metadata_examples": [
+          "retrieved/lda_head_order_20260906/BI_to_BNCI_000/000_192.npz",
+          "retrieved/lda_head_order_20260906/BI_to_BNCI_000/000_192.pt"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "legacy",
+      "source_recovery_tier": "result_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\legacy",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 3,
+        "versions": 3,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 4,
+        "candidate_files": 4,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "seed": [
+            {
+              "path": "pre_v3/audit_baseline_8sub/n2p3net/record.json",
+              "pointer": "/model/config/seed"
+            },
+            {
+              "path": "pre_v3/audit_baseline_8sub/eegnet/manifest.json",
+              "pointer": "/model/config/seed"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "pre_v3/audit_baseline_8sub/n2p3net/record.json"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "operator_research_20261004",
+      "source_recovery_tier": "source_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\operator_research_20261004",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 9,
+        "versions": 0,
+        "ledger": 4,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 69,
+        "candidate_files": 3736,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "scope": [
+            {
+              "path": "calibration_groups_stage2/plan.json",
+              "pointer": "/evidence_scope"
+            },
+            {
+              "path": "calibration_groups_stage3/plan.json",
+              "pointer": "/evidence_scope"
+            }
+          ],
+          "seed": [
+            {
+              "path": "calibration_groups_stage2/plan.json",
+              "pointer": "/seed"
+            },
+            {
+              "path": "calibration_groups_stage3/plan.json",
+              "pointer": "/seed"
+            }
+          ],
+          "exit_status": [
+            {
+              "path": "calibration_groups_stage3_repair/result.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "calibration_groups_stage3_repair/result.json",
+              "pointer": "/cells/0/status"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "calibration_groups_stage3_repair/result.json",
+              "pointer": "/requested_cells"
+            },
+            {
+              "path": "calibration_groups_stage3_repair2/result.json",
+              "pointer": "/requested_cells"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [
+          "calibration_groups_stage2/source.json",
+          "calibration_groups_stage3/source.json",
+          "calibration_groups_stage3_repair/source.json",
+          "calibration_groups_stage3_repair2/source.json",
+          "calibration_groups_stage3_repair3/source.json",
+          "calibration_groups_v1/source.json",
+          "calibration_groups_v2/source.json",
+          "phase4_flexible_spatial_hybrid/source.json",
+          "phase4_flexible_spatial_hybrid_v2/source.json",
+          "phase4_flexible_spatial_hybrid_v3/source.json"
+        ],
+        "source_byte_examples": [
+          "calibration_groups_stage2/executed_source/doc/assets/operator_research_20261004/continuous_model.py",
+          "calibration_groups_stage2/executed_source/doc/assets/operator_research_20261004/run_calibration_study.py"
+        ],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "calibration_groups_stage2/result.json",
+          "calibration_groups_stage2/A01/fold0_filtered_design/model.npz"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "source bytes exist; original archive/manifest execution binding is not established"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "p300_mainline_20260906",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\p300_mainline_20260906",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 131,
+        "seed": 148,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 131,
+        "dirty": 125
+      },
+      "metadata_probe": {
+        "parsed_files": 78,
+        "candidate_files": 192,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "seed": [
+            {
+              "path": "analysis/auc_leakage_audit_20260906.json",
+              "pointer": "/datasets/0/audits/0/seed"
+            },
+            {
+              "path": "analysis/auc_leakage_audit_20260906.json",
+              "pointer": "/datasets/0/audits/1/seed"
+            }
+          ],
+          "exit_status": [
+            {
+              "path": "retrieved/p300_mainline_20260906/bnci6cz_loso_evaluation_plan.journal.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "retrieved/p300_mainline_20260906/bnci6cz_loso_evaluation_plan.journal.json",
+              "pointer": "/jobs/0/status"
+            }
+          ],
+          "data": [
+            {
+              "path": "retrieved/p300_mainline_20260906/bnci6cz_loso_s20260906_batch.json",
+              "pointer": "/source_cache_sha256"
+            },
+            {
+              "path": "retrieved/p300_mainline_20260906/bnci6cz_loso_s20260907_batch.json",
+              "pointer": "/source_cache_sha256"
+            }
+          ],
+          "scope": [
+            {
+              "path": "retrieved/p300_mainline_20260906/bi_strong_replicate_20260907/record.json",
+              "pointer": "/evidence_scope"
+            },
+            {
+              "path": "retrieved/p300_mainline_20260906/bi_strong_replicate_20260907/record.json",
+              "pointer": "/cells/0/evaluation_contract/evidence_scope"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "retrieved/p300_mainline_20260906/bi_strong_replicate_20260907/record.json",
+              "pointer": "/cells/0/evaluation_contract/requested_participant_keys"
+            },
+            {
+              "path": "retrieved/p300_mainline_20260906/bi_strong_replicate_20260907/record.json",
+              "pointer": "/cells/1/evaluation_contract/requested_participant_keys"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "25a2ab1b63bbcd3dcfd42bf798bf06d1c5a20af2100333e18cb765e7d1420445",
+          "4325d50f8e025006c78364060a318fb1c21065160445edeaec05bb63a1f686a8",
+          "6a3db087ee1015501f7176e07afb78baf1526715fb1515ba261b5e7379144f63"
+        ],
+        "result_metadata_examples": [
+          "analysis/probe_summary.json",
+          "analysis/verified_summary.json"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "refit_scope_audit_20260906",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\refit_scope_audit_20260906",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 1,
+        "candidate_files": 1,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {}
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "25a2ab1b63bbcd3dcfd42bf798bf06d1c5a20af2100333e18cb765e7d1420445",
+          "4325d50f8e025006c78364060a318fb1c21065160445edeaec05bb63a1f686a8",
+          "6a3db087ee1015501f7176e07afb78baf1526715fb1515ba261b5e7379144f63"
+        ],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "source_eog_20260909",
+      "source_recovery_tier": "original_archive_verified",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 5,
+        "seed": 23,
+        "versions": 1,
+        "ledger": 1,
+        "commit": 31,
+        "dirty": 31
+      },
+      "metadata_probe": {
+        "parsed_files": 77,
+        "candidate_files": 1939,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "delivery_progress.json",
+              "pointer": "/0/status"
+            },
+            {
+              "path": "p001_prepared_remote.json",
+              "pointer": "/status"
+            }
+          ],
+          "seed": [
+            {
+              "path": "final_reports/source_execution_summary.json",
+              "pointer": "/full/0/seed"
+            },
+            {
+              "path": "final_reports/source_execution_summary.json",
+              "pointer": "/full/1/seed"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "cloud_evidence/analysis/results.json",
+              "pointer": "/public/failed_cells"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [
+          {
+            "manifest": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\compact_source_runtime_v5\\source.manifest.json",
+            "manifest_sha256": "ac981e81ecbd883492bb1656c44ac26517f3532d0cc78624dbc844d80d3c24b5",
+            "archive_sha256": "b6d74e01f557541d1a9861e39b02b5374e6ab405266625c632b5e0bd8906fa8d",
+            "commit_role": "base_commit_only",
+            "verification": "physical_archive_sha256_verified",
+            "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\compact_source_runtime_v5\\source.source-only.tar.gz",
+            "archive_bytes": 1265175
+          },
+          {
+            "manifest": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\export\\execution_snapshots\\compact_source_runtime_v5\\source.manifest.json",
+            "manifest_sha256": "ac981e81ecbd883492bb1656c44ac26517f3532d0cc78624dbc844d80d3c24b5",
+            "archive_sha256": "b6d74e01f557541d1a9861e39b02b5374e6ab405266625c632b5e0bd8906fa8d",
+            "commit_role": "base_commit_only",
+            "verification": "physical_archive_sha256_verified",
+            "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\export\\execution_snapshots\\compact_source_runtime_v5\\source.source-only.tar.gz",
+            "archive_bytes": 1265175
+          }
+        ],
+        "source_map_locators": [],
+        "source_byte_examples": [
+          "compact_source_runtime_v5/checkout/src/__init__.py",
+          "compact_source_runtime_v5/checkout/src/baselines/calibration.py"
+        ],
+        "unresolved_source_digests": [
+          "010ec43d583fc986bc1a8d0d05946048f716b6a63eee8b7b48af2d8c818ec4a1",
+          "1c2f5ffb89d581686a12fa0d7790313e33a58b872de2349f04debf05ff131ab0",
+          "3492cea7ee9930940365c830f986a612de1e966c208004cc0d4104f28afd0fb2"
+        ],
+        "result_metadata_examples": [
+          "C_interim_summary.json",
+          "public_cohort_summary.json"
+        ],
+        "all_original_source_manifest_locators": [
+          "compact_source_runtime_v5/source.manifest.json",
+          "export/execution_snapshots/compact_source_runtime_v5/source.manifest.json",
+          "export/execution_snapshots/personal_a_runtime_v4/source.manifest.json",
+          "export/execution_snapshots/public_runtime_v3/source.manifest.json",
+          "export/execution_snapshots/source/source.manifest.json",
+          "export/execution_snapshots/source_runtime_final/source.manifest.json",
+          "export/execution_snapshots/source_runtime_optimized/source.manifest.json",
+          "export/execution_snapshots/source_runtime_optimized_causal/source.manifest.json",
+          "export/execution_snapshots/source_runtime_v1/source.manifest.json",
+          "export/execution_snapshots/source_runtime_v2/source.manifest.json",
+          "export/execution_snapshots/source_runtime_v3/source.manifest.json",
+          "export/execution_snapshots/target_runtime_v1/source.manifest.json",
+          "export/execution_snapshots/target_runtime_v2/source.manifest.json",
+          "personal_a_runtime_v4/source.manifest.json",
+          "preparation_source/source.manifest.json",
+          "public_runtime_v3/source.manifest.json",
+          "source_runtime_final/source.manifest.json",
+          "source_runtime_optimized/source.manifest.json",
+          "source_runtime_optimized_causal/source.manifest.json",
+          "source_runtime_v1/source.manifest.json",
+          "source_runtime_v2/source.manifest.json",
+          "source_runtime_v3/source.manifest.json",
+          "source_runtime_v6/source.manifest.json",
+          "target_runtime_v1/source.manifest.json",
+          "target_runtime_v2/source.manifest.json"
+        ]
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 25,
+        "status_counts": {
+          "physical_archive_sha256_verified": 25
+        }
+      }
+    },
+    {
+      "run": "source_modules_20260918",
+      "source_recovery_tier": "no_source",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_modules_20260918",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 1,
+        "candidate_files": 1,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {}
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "system_implementation_20261004",
+      "source_recovery_tier": "source_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\system_implementation_20261004",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 9,
+        "versions": 0,
+        "ledger": 3,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 80,
+        "candidate_files": 111,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "scope": [
+            {
+              "path": "bnci_continuous_real_v1/plan.json",
+              "pointer": "/evidence_scope"
+            },
+            {
+              "path": "bnci_continuous_real_v1/result.json",
+              "pointer": "/evidence_scope"
+            }
+          ],
+          "exit_status": [
+            {
+              "path": "bnci_continuous_real_v1/result.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "bnci_continuous_real_v1/result.json",
+              "pointer": "/cells/0/status"
+            }
+          ],
+          "seed": [
+            {
+              "path": "e0_review/changed_inner_fresh/record.json",
+              "pointer": "/source_seed"
+            },
+            {
+              "path": "e0_review/changed_inner_fresh/record.json",
+              "pointer": "/task_manifest/tasks/0/recipe/seed"
+            }
+          ],
+          "data": [
+            {
+              "path": "e0_review/changed_inner_fresh/record.json",
+              "pointer": "/target_cache_sha256"
+            },
+            {
+              "path": "e0_review/changed_inner_fresh/record.json",
+              "pointer": "/cells/0/evaluation_contract/target_cache_sha256"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "e0_review/changed_inner_fresh/record.json",
+              "pointer": "/cells/0/evaluation_contract/requested_participant_keys"
+            },
+            {
+              "path": "e0_review/changed_inner_fresh/record.json",
+              "pointer": "/failed_cells"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [
+          "bnci_continuous_real_v1/execution_source.json",
+          "bnci_continuous_real_v2/execution_source.json"
+        ],
+        "source_byte_examples": [
+          "bnci_continuous_real_v1/executed_source/experiments/run_bnci_continuous_study.py",
+          "bnci_continuous_real_v1/executed_source/src/baselines/features.py"
+        ],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "bnci_continuous_real_v1/result.json",
+          "bnci_continuous_real_v1/A01/K200/model.npz"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [
+        {
+          "path": "e0_review/changed_inner_fresh/record.json",
+          "pointer": "/evaluation_snapshot/archive_sha256",
+          "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        {
+          "path": "e0_review/changed_inner_fresh/record.json",
+          "pointer": "/cells/0/evaluation_contract/source_snapshot_sha256",
+          "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        {
+          "path": "e0_review/changed_inner_reused/record.json",
+          "pointer": "/evaluation_snapshot/archive_sha256",
+          "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        }
+      ],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "source bytes exist; original archive/manifest execution binding is not established",
+        "obvious historical placeholder source digests found; original records preserved unchanged"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "system_research_20261004",
+      "source_recovery_tier": "result_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\system_research_20261004",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 18,
+        "versions": 0,
+        "ledger": 6,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 31,
+        "candidate_files": 31,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "interfaces/probe_results.json",
+              "pointer": "/scored_identity/paired_result/0/status"
+            },
+            {
+              "path": "interfaces/reuse_1/direct/record.json",
+              "pointer": "/status"
+            }
+          ],
+          "seed": [
+            {
+              "path": "interfaces/reuse_1/direct/record.json",
+              "pointer": "/source_seed"
+            },
+            {
+              "path": "interfaces/reuse_1/direct/record.json",
+              "pointer": "/task_manifest/tasks/0/recipe/seed"
+            }
+          ],
+          "data": [
+            {
+              "path": "interfaces/reuse_1/direct/record.json",
+              "pointer": "/target_cache_sha256"
+            },
+            {
+              "path": "interfaces/reuse_1/direct/record.json",
+              "pointer": "/cells/0/evaluation_contract/target_cache_sha256"
+            }
+          ],
+          "scope": [
+            {
+              "path": "interfaces/reuse_1/direct/record.json",
+              "pointer": "/cells/0/evidence_scope"
+            },
+            {
+              "path": "interfaces/reuse_1/direct/record.json",
+              "pointer": "/cells/0/evaluation_contract/evidence_scope"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "interfaces/reuse_1/direct/record.json",
+              "pointer": "/cells/0/evaluation_contract/requested_participant_keys"
+            },
+            {
+              "path": "interfaces/reuse_1/direct/record.json",
+              "pointer": "/failed_cells"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "interfaces/arbitrary_features_accepted.npz",
+          "interfaces/arbitrary_features_accepted.record.json"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [
+        {
+          "path": "interfaces/reuse_1/direct/record.json",
+          "pointer": "/evaluation_snapshot/archive_sha256",
+          "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        {
+          "path": "interfaces/reuse_1/direct/record.json",
+          "pointer": "/cells/0/evaluation_contract/source_snapshot_sha256",
+          "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        {
+          "path": "interfaces/reuse_1/first/record.json",
+          "pointer": "/evaluation_snapshot/archive_sha256",
+          "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        }
+      ],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD",
+        "obvious historical placeholder source digests found; original records preserved unchanged"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "target_epoch90_full512_20260908",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\target_epoch90_full512_20260908",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 1,
+        "seed": 1,
+        "versions": 0,
+        "ledger": 1,
+        "commit": 1,
+        "dirty": 1
+      },
+      "metadata_probe": {
+        "parsed_files": 3,
+        "candidate_files": 5,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "execution.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "diagnostics.json",
+              "pointer": "/integrity/status"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "execution.json",
+              "pointer": "/requested_cells"
+            },
+            {
+              "path": "execution.json",
+              "pointer": "/prior_records/8/failed_cells"
+            }
+          ],
+          "seed": [
+            {
+              "path": "diagnostics.json",
+              "pointer": "/panels/200/contrasts/full/bootstrap/seed"
+            },
+            {
+              "path": "diagnostics.json",
+              "pointer": "/panels/200/contrasts/scratch/bootstrap/seed"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "b325aa3088b246ba9fa2e0655ea5956585e4bcd79de9cb45c2458cb698c480f2",
+          "f6de7949a4b52a89691d520b05a896275ba48d11526b9cb90ab98c0e35d8676c"
+        ],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "training_chain_auto_20260907",
+      "source_recovery_tier": "original_archive_verified",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\training_chain_auto_20260907",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 4,
+        "seed": 2,
+        "versions": 1,
+        "ledger": 1,
+        "commit": 6,
+        "dirty": 6
+      },
+      "metadata_probe": {
+        "parsed_files": 13,
+        "candidate_files": 25,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "completion_inspection.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "completion_inspection.json",
+              "pointer": "/sample_cells/0/status"
+            }
+          ],
+          "scope": [
+            {
+              "path": "completion_inspection.json",
+              "pointer": "/evidence_scope"
+            },
+            {
+              "path": "completion_inspection.json",
+              "pointer": "/sample_cells/0/evidence_scope"
+            }
+          ],
+          "seed": [
+            {
+              "path": "completion_inspection.json",
+              "pointer": "/source_seeds"
+            },
+            {
+              "path": "completion_inspection.json",
+              "pointer": "/target_seeds"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "completion_inspection.json",
+              "pointer": "/selection/0/requested_cells"
+            },
+            {
+              "path": "completion_inspection.json",
+              "pointer": "/selection/1/requested_cells"
+            }
+          ],
+          "data": [
+            {
+              "path": "completion_inspection.json",
+              "pointer": "/sample_cells/0/evaluation_contract/target_cache_sha256"
+            },
+            {
+              "path": "completion_inspection.json",
+              "pointer": "/sample_cells/1/evaluation_contract/target_cache_sha256"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [
+          {
+            "manifest": "D:\\BCI\\n2p3-net\\experiments\\runs\\training_chain_auto_20260907\\source\\source.manifest.json",
+            "manifest_sha256": "4afea588fe6ecb41560b8019382cd240981555a8b5721bd3f2defd1670a9a954",
+            "archive_sha256": "5aa716346e2e15bd39665620cd9e6b33d361a60b6b95e9524be31ba236ec544b",
+            "commit_role": "base_commit_only",
+            "verification": "physical_archive_sha256_verified",
+            "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\training_chain_auto_20260907\\source\\source.source-only.tar.gz",
+            "archive_bytes": 1059425
+          }
+        ],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "4afea588fe6ecb41560b8019382cd240981555a8b5721bd3f2defd1670a9a954",
+          "5aa716346e2e15bd39665620cd9e6b33d361a60b6b95e9524be31ba236ec544b"
+        ],
+        "result_metadata_examples": [
+          "smoke_summary.json"
+        ],
+        "all_original_source_manifest_locators": [
+          "source/source.manifest.json"
+        ]
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 1,
+        "status_counts": {
+          "physical_archive_sha256_verified": 1
+        }
+      }
+    },
+    {
+      "run": "training_chain_compact512_20260907",
+      "source_recovery_tier": "no_source",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\training_chain_compact512_20260907",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 1,
+        "versions": 0,
+        "ledger": 1,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 3,
+        "candidate_files": 4,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "execution.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "execution.json",
+              "pointer": "/jobs/0/status"
+            }
+          ],
+          "denominator": [
+            {
+              "path": "execution.json",
+              "pointer": "/jobs/0/failed_cells"
+            },
+            {
+              "path": "execution.json",
+              "pointer": "/jobs/1/failed_cells"
+            }
+          ],
+          "seed": [
+            {
+              "path": "execution.json",
+              "pointer": "/source_seed"
+            },
+            {
+              "path": "execution.json",
+              "pointer": "/target_seed"
+            }
+          ],
+          "scope": [
+            {
+              "path": "integrity.json",
+              "pointer": "/evidence_scope"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "training_chain_full512_metadata_20260907",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\training_chain_full512_metadata_20260907",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 2,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 2,
+        "dirty": 2
+      },
+      "metadata_probe": {
+        "parsed_files": 2,
+        "candidate_files": 2,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "scope": [
+            {
+              "path": "benchmark_default.json",
+              "pointer": "/evidence_scope"
+            },
+            {
+              "path": "benchmark_deterministic.json",
+              "pointer": "/evidence_scope"
+            }
+          ],
+          "exit_status": [
+            {
+              "path": "benchmark_default.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "benchmark_deterministic.json",
+              "pointer": "/status"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "0e8cbf82a75a6955b3f6bea1ba87ef594617a232cf453b61b3b4a19c295ca40c",
+          "8032dd3feb3ed2268d25071b9b0a1520915d797779199b4dcb3db7c9c4b36757"
+        ],
+        "result_metadata_examples": [],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "unified12_20260918",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\unified12_20260918",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 1,
+        "seed": 2,
+        "versions": 2,
+        "ledger": 0,
+        "commit": 1,
+        "dirty": 1
+      },
+      "metadata_probe": {
+        "parsed_files": 15,
+        "candidate_files": 22,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "local_validation_v2.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "local_validation_v4.json",
+              "pointer": "/status"
+            }
+          ],
+          "seed": [
+            {
+              "path": "results/bnci_decisions.json",
+              "pointer": "/rows/0/seed"
+            },
+            {
+              "path": "results/bnci_decisions.json",
+              "pointer": "/rows/1/seed"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [
+          "5701d51f04dc1111e30f1bb9058f5e8992383abae3860250a1c8b87e2c3bcbce",
+          "c71a4d2109eaed23bea734c76845940bcf05d51a3af4478ac3c1db54fe75fd24",
+          "f4da36495fa5c62dfd00410ff6fadadb86bac83452bd50a6654893eb787d38e4"
+        ],
+        "result_metadata_examples": [
+          "BI2012_invalid_record.json",
+          "development_domain_admission_summary.json"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "unified_cloud_20260916",
+      "source_recovery_tier": "hash_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\unified_cloud_20260916",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 1,
+        "seed": 1,
+        "versions": 0,
+        "ledger": 1,
+        "commit": 1,
+        "dirty": 1
+      },
+      "metadata_probe": {
+        "parsed_files": 80,
+        "candidate_files": 147,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "analysis_status_result.json",
+              "pointer": "/exit_code"
+            },
+            {
+              "path": "early_launch_record.json",
+              "pointer": "/exit_code"
+            }
+          ],
+          "scope": [
+            {
+              "path": "old_plan.json",
+              "pointer": "/evidence_scope"
+            }
+          ],
+          "seed": [
+            {
+              "path": "old_plan.json",
+              "pointer": "/source_seeds"
+            },
+            {
+              "path": "old_plan.json",
+              "pointer": "/target_seeds"
+            }
+          ],
+          "data": [
+            {
+              "path": "old_plan.json",
+              "pointer": "/outer_folds/0/source_cache_sha256"
+            },
+            {
+              "path": "old_plan.json",
+              "pointer": "/outer_folds/1/source_cache_sha256"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [
+          "upload_source.json"
+        ],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "analysis_status_result.json",
+          "early_launch_record.json"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "original source digest is a retrieval key; local original archive is unresolved by this index"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    },
+    {
+      "run": "unified_model_implementation_20260916",
+      "source_recovery_tier": "result_only",
+      "run_locator": "D:\\BCI\\n2p3-net\\experiments\\runs\\unified_model_implementation_20260916",
+      "original_G8_field_presence_counts": {
+        "snapshot_decl": 0,
+        "seed": 0,
+        "versions": 0,
+        "ledger": 0,
+        "commit": 0,
+        "dirty": 0
+      },
+      "metadata_probe": {
+        "parsed_files": 15,
+        "candidate_files": 15,
+        "limit": 80,
+        "maximum_json_bytes": 1500000,
+        "findings_are_presence_only": true,
+        "pointers": {
+          "exit_status": [
+            {
+              "path": "raw_scope_probe/prepared/preparation.json",
+              "pointer": "/status"
+            },
+            {
+              "path": "raw_scope_probe/prepared_multirecord/preparation.json",
+              "pointer": "/records/0/early_stopping_inner/200/status"
+            }
+          ]
+        }
+      },
+      "restoration": {
+        "original_source_archives": [],
+        "source_map_locators": [],
+        "source_byte_examples": [],
+        "unresolved_source_digests": [],
+        "result_metadata_examples": [
+          "raw_scope_probe/public_multirecord.json",
+          "raw_scope_probe/public_record.json"
+        ],
+        "all_original_source_manifest_locators": []
+      },
+      "historical_placeholder_examples": [],
+      "gaps": [
+        "source recovery tier does not certify every result producer or scientific acceptance",
+        "no original executed source established; do not reconstruct it from current HEAD"
+      ],
+      "nested_archive_checks": {
+        "declared_manifests": 0,
+        "status_counts": {}
+      }
+    }
+  ]
+}

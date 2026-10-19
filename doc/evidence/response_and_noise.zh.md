@@ -1,5 +1,13 @@
 # 响应模型、空间先验与噪声数值
 
+## Source群体学习、联合噪声与完整历史
+
+source、joint、history三切片已按精确前像组合，原数学证据依源码/AST关系复用，见[整合绑定](../assets/research_resume_20261012/source_joint_history_integration.json)。source每人拟合一次并导出同次数据likelihood；留人折复用各个人包，源均值不确定性与人际差异分别保留。固定两曝光参考由各折其余源人建立，个人后验不作无噪声观测。
+
+private AR1的新score先在完整后验mean/factor上形成创新，再累计二阶量，避免两个巨大raw二阶矩相减。完整startup、full Q、shared/local列及物理flat漂移保持。真实C8原返回点的梯度约3.741310，与独立objective有限差分约3.741309一致；这支持从原返回向量继续具名数值warm start。优化停止仍用原gtol=.001、maxiter=2000。
+
+完整history以原record观测并集构造全候选目标，Gaussian算术按tile计算，原离散sum-product、proposal、SMC及trace `/2`保留。实际组合已核20个owner的导入来源，新同字节codec控制通过；真实拟合、首题保存重放和完整矩阵的结果沿各自实际producer登记。
+
 ## 原保存C噪声的真实复用
 
 H1的K200/K800已由当前原source/C owner实际重新准入：分别200位/47正例/68570行，以及800位/188正例/171569＋115892行。原固定source均值、完整随机因子、均值误差、残差与噪声参数关系一致，source/noise/响应C新拟合均为0；两格保存关系和数值重放完成，各7项权限反控通过。
@@ -21,6 +29,14 @@ canonical新增三项组合检查：原小数值模型的均值/完整factor逐b
 总监据此选择G0/G1作为第一项机制实验，分别以一次授权C联合定标响应与噪声；旧fixed-source-mean residualnoise另保开发baseline。原B07非线性delay/width四臂继续保留，H1的8.273秒间隔只用于law冻结后的支持核验。研究问题、七类数学反例、proper warp候选、联合marginal及可复用代码图见[科学裁决绑定](../assets/research_resume_20261012/response_law_science_direction.json)。
 
 G1的外部物理reference以原dictionary和noise定义两个独立、零漂移的unit响应记录，non-target设计`[Phi,0]`、target设计`[Phi,Phi]`。若单曝光GLS误差根为F，则完整common/increment reference根为`[[F,0],[-F,F]]`，保负crosscovariance且不随source重复数作1/n收缩。它是prior的物理刻度，实际within尺度由授权C联合估计；原个人posterior F不作生理within协方差。该reference的完整秩、坐标pushforward、proper logvariance policy与新fit来源由具名联合校准owner保存。
+
+## 有限输入算子的审计复核
+
+实际backend复核纠正了两项笼统解释：纯带通legacy与新路径同用MNE的2192-sample延拓，人工输出逐字节相同；只有含50Hz notch的legacy显式SOS分支使用33-sample短pad，新完整SOS为2201 samples。四个EEG/HEOG人工控制中，typed EOG均保持原字节。source-origin与标称模型索引分别入回执，数值程序继续沿同一个source support与resampling owner执行。
+
+351点、未先低通的70Hz人工短窗经FFT+edge-padding后，输出RMS比为−22.1978dB；整数周期500点、无padding的同频控制输出峰值约6.89e−14。两者反映有限窗口与延拓的不同投影；完整默认输入还包含连续30Hz前级。单位源端点到前26点的最大响应为9.5159e−4、均值为−8.90006e−6；以1mV端点换算，局部峰值约0.9516µV，均值扣除的全局偏移约−0.0089µV。这些是具名有限算子的人工控制，原真实数据和分母保留。
+
+源码、独立微型控制和逐项裁决保存在`D:/BCI/artifacts/research-deliveries/repository-audit-math/signal-contract-review/REVIEW_RECEIPT.json`，SHA256为`bdf229c1af103ef77470a254d6be28b1a39dad665e793c1d34ce54d401567b0d`。本轮只修正合同解释；后续若选择新的边界程序，同步signal、template、noise传播与recovery的同一实际算子。
 
 ## 原生C均值的精确整数累计
 

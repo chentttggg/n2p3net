@@ -279,6 +279,7 @@ def test_all_raw_rejected_inference_writes_abstention_with_complete_request(tmp_
     later = validate_brainsync_bids_session(testing)
     signal = mne.io.read_raw_edf(later.bids.raw_path, preload=True, verbose=False)
     signal._data[3, 100:] += .02
+    later.bids.close()
     signal.export(later.bids.raw_path, overwrite=True, physical_range="auto", verbose=False)
     output = tmp_path / "abstention"
     model_task(["--task", "infer", "--session-dir", str(testing), "--model-artifact", str(path),
@@ -947,6 +948,11 @@ def test_structural_personal_recipes_refit_and_reload_without_losing_their_model
         altered["metadata"]["recipe"]["target_adapter_config"]["target_kernel_size"] += 2
         from transfer.calibrated import CalibratedPredictor
 
+        with pytest.raises(ValueError, match="selection differs from its actual final refit"):
+            CalibratedPredictor(altered["metadata"], altered["state"])
+        # The numeric constructor also checks architecture independently when
+        # no personal selection workflow is declared.
+        del altered["metadata"]["selection"]
         with pytest.raises(ValueError, match="architecture"):
             CalibratedPredictor(altered["metadata"], altered["state"])
 
@@ -1024,7 +1030,10 @@ def test_fixed_lda_cli_calibration_inference_and_inspection(
                 "--output-dir", str(inference_output), "--session-dir", str(testing)])
     inference = read_json(inference_output / "summary.json")
     assert inference["status"] in {"predicted", "abstained"}
-    assert inference["requested_repetitions"] == len(inference["by_repetition"]) == 3
+    assert inference["requested_repetitions"] == len(inference["by_repetition"]) == 5
+    assert inference["evaluation_role"] == "product_R5"
+    assert not inference["protocol_compliant"]  # This fixture contains three repetitions.
+    assert inference["reason"] == "requires_one_complete_45_flash_R5_recording"
     assert inference["target_labels_used"] is False
     assert set(inference["candidate_scores"]) == set(map(str, range(1, 10)))
     inspected = tmp_path / "inspected"
@@ -1038,7 +1047,9 @@ def test_fixed_lda_cli_calibration_inference_and_inspection(
 def test_requested_repetition_shortage_abstains_without_shrinking_candidates(sessions):
     roots, testing = sessions
     predictor = fit_calibrated_predictor(load_brainsync_sessions(roots))
-    output = inference_record(predictor, load_brainsync_inference_session(testing), repetitions=4)
+    output = inference_record(predictor, load_brainsync_inference_session(testing), repetitions=4,
+                              diagnostic=True)
+    assert output["evaluation_role"] == "explicit_repetition_diagnostic"
     assert output["prediction"] is None
     assert output["status"] == "abstained"
     assert output["reason"] == "incomplete_candidate_coverage"
@@ -1099,7 +1110,7 @@ def test_legacy_failed_source_fits_never_fit_a_fallback_lda(sessions, monkeypatc
         raise ValueError("source optimizer probe failure")
 
     monkeypatch.setattr(candidates, "fit_calibration_candidate", fail_source)
-    with pytest.raises(ValueError, match="legacy source calibration failed.*optimizer probe failure"):
+    with pytest.raises(ValueError, match="legacy_product source calibration failed.*optimizer probe failure"):
         candidates.select_calibration_candidate(
             dataset, candidates.calibration_candidate_recipes("legacy_product"),
             calibration_mask=np.ones(dataset.n_epochs, dtype=bool), selector_mode="legacy_product",
