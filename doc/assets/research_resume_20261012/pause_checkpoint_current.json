@@ -281,7 +281,9 @@
       "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
     }
   },
-  "active_agents": {},
+  "active_agents": {
+    "history_slice_integration_review": "Read-only necessity study of full source artifacts and new compact numeric producer; current programme continues."
+  },
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
     "ownership": "separate_cloud_chat",
@@ -538,13 +540,18 @@
         "completed_folds": 0,
         "scientific_acceptance_issued": false,
         "last_observation": {
-          "time": 1792404972.2464948,
+          "time": 1792405276.8629913,
           "action": "running",
-          "host_cpu_percent": 58.7,
-          "host_memory_percent": 71.6,
-          "owned_cpu_percent_of_host": 11.736899067277442
+          "host_cpu_percent": 31.6,
+          "host_memory_percent": 57.9,
+          "owned_cpu_percent_of_host": 3.2310605390493565
         },
-        "next_action": "Monitor actual source publications and utilisation; after complete execution and actual tree retirement run the prepared independent acceptance with this new launch/manifest pins."
+        "next_action": "Monitor actual source publications and utilisation; after complete execution and actual tree retirement run the prepared independent acceptance with this new launch/manifest pins.",
+        "independent_static_preflight": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-execution-acceptance\\STREAMED_PREFLIGHT.json",
+          "bytes": 101263,
+          "sha256": "f876b1cd244e30f442dab62bcf43948d8d59405464f3484c344d16a54174ce8a"
+        }
       },
       "code_preparation": {
         "conditioning": "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
