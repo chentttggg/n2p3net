@@ -338,6 +338,10 @@ checkpoint读取安全整合（`codex/claude-improvements-20261012`，基于`ed2
 
 完整source执行入口进一步完成显式local/cloud分派与全量源码绑定：161个模块、实际中央资源配置及环境输入由同一manifest核验，动态actor与两个线程operation有完整审阅关系；本地分支复用原资源owner，按整机80%剩余量准入。外层Windows监督器先加聚合commit限额再放行，实际嵌套Job、暂停/恢复及整树退出控制通过。源码接受、首轮两路并发触及commit上限的原失败，以及同科学字节下调整为逐人拟合的资源来源，分别见[受管执行整合](../assets/research_resume_20261012/source_managed_execution_integration.json)；当前进展由checkpoint维护。
 
+外层监督日志v2将重复checkpoint内容保存为按SHA命名的不可变原字节快照，资源帧保实际CPU/RAM/GPU、PID/出生身份及action，再引用快照。相同metadata的48帧、两个版本对照中，总落盘量1,083,002→138,303字节，减少87.23%；writer总wall为0.165→0.211秒，收益集中于磁盘占用。原控制函数与main控制路径AST一致，实际target大payload及完整训练吞吐沿相应执行测量。
+
+独审的终态缺口已修：有实际资源帧的退出/停止记录必须含匹配末帧的last_observation，异常与退休包装遵循原writer合同。15项微型audit及2项decoder路径覆盖修订；原payload重建、存储对照与控制AST证据按未变源码复用。接受的是未来监督组件；新的固定checker入口和seal须绑定supervisor、snapshot reader/writer、adapter、实际执行输入与snapshot闭包，并继续核完整科学产物、exit和进程树退休。组件SHA、原反例、修订独审和清理范围见[日志组件接受](../assets/research_resume_20261012/local_telemetry_v2_acceptance.json)，实际部署与运行状态由checkpoint维护。
+
 跨主机位置工具保原metadata和opaque叶子字节，仅迁移common记录的实际输入位置并依次重算父摘要。独审发现的新metadata目的地覆盖原图问题已在写出前拒绝，原位复用raw输入仍可用；future/排除记录不进入投影读取，原marker receipt内部历史archive位置保留。实际13人、234/213/21记录、101388标签和完整fold范围核对保持，代码与微型metadata控制的接受见[输入位置整合](../assets/research_resume_20261012/source_input_location_integration.json)。
 
 完整source的两项内存路径已按原数学关系接受：每record保完整增广R再合并，避免拼接全记录大矩阵；空间模型沿原JSON字节协议流式保存，同次拟合保存准入复用原live模型，避免整串、数值列表及第二份冷模型同时常驻。独立Fraction高斯控制及codec/lifecycle正反控分别核验数学与字节、所有权关系，实际训练峰值由新执行记录另报。代码、独审和范围分别见[QR与生命周期](../assets/research_resume_20261012/source_memory_lifecycle_integration.json)及[序列化整合](../assets/research_resume_20261012/source_serialization_integration.json)。

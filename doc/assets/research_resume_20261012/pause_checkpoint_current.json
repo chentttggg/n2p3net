@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_at_user_request",
-  "recorded_at": "2026-10-19T22:50:33.458287+08:00",
+  "recorded_at": "2026-10-19T22:58:35.207597+08:00",
   "user_request": "resume_research_then_resolve_repository_audit_before_autonomous_continuation",
   "research_worktree": "D:\\BCI\\n2p3-net",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -284,7 +284,8 @@
   "active_agents": {
     "/root/history_slice_integration_review": "Implement complete adult source forecast and transport factory/codec.",
     "/root/audit_disposition_refresh": "Implement actual-functional adult C/history seam and complete downstream contract.",
-    "/root/workstation_failures": "Repair reviewed telemetry terminal closure and seal revised candidate."
+    "/root/adult_population_transport_independent": "Independently review B complete adult source forecast and transport factory/codec.",
+    "/root/execution_failures": "Prepare future complete target-matrix v2 telemetry checker; preserve current source checker/seals."
   },
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
@@ -580,30 +581,40 @@
         "scientific_checkpoint_present": true,
         "scientific_acceptance_issued": false,
         "last_observation": {
-          "time": 1792421433.237626,
+          "time": 1792421914.4523954,
           "action": "pause_external_gpu_pressure",
-          "host_cpu_percent": 9.7,
-          "host_memory_percent": 56.5,
+          "host_cpu_percent": 27.1,
+          "host_memory_percent": 48.7,
           "owned_cpu_percent_of_host": 0.0,
           "gpu_observation": {
-            "observed_time": 1792421429.9151611,
+            "observed_time": 1792421912.1642966,
             "status": "observed",
             "devices": [
               {
                 "index": 0,
-                "utilization_percent": 1.0,
+                "utilization_percent": 79.0,
                 "memory_total_mib": 8151.0,
-                "memory_used_mib": 7243.0,
-                "memory_percent": 88.86026254447307
+                "memory_used_mib": 6911.0,
+                "memory_percent": 84.78714268187953
               }
             ]
           },
-          "verified_scientific_identity": {
-            "pid": 2016,
-            "created": 1792416854.9401252,
-            "status": "stopped",
-            "cpu_seconds": 20.109375
-          }
+          "verified_live_identities": [
+            {
+              "role": "scientific_process",
+              "pid": 2016,
+              "created": 1792416854.9401252,
+              "status": "stopped",
+              "cpu_seconds": 20.109375
+            },
+            {
+              "role": "supervisor",
+              "pid": 35752,
+              "created": 1792416783.4605472,
+              "status": "running",
+              "cpu_seconds": 1874.015625
+            }
+          ]
         },
         "next_action": "Continue the same managed recovery actor when external resource pressure releases; verify original12imports and freshperson1, then all13folds, complete exit0/tree retirement and sealed independent acceptance before target matrix.",
         "person_states": {
@@ -1082,12 +1093,12 @@
       "root_cleanup_status": "complete"
     },
     "future_supervision_telemetry": {
-      "state": "original_candidate_terminal_closure_gap_confirmed_author_revision_in_progress_not_deployed",
+      "state": "accepted_future_components_new_actual_checker_and_execution_seal_required_not_deployed",
       "owner": "/root/audit_repository_convergence",
       "delivery": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\DELIVERY_MANIFEST.json",
-        "bytes": 61385,
-        "sha256": "e2e45b844e7a45ada704e3568ab4875472ad0f025ad29b8be7101f34bd1b52ec"
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\independent-review\\accepted-revision\\DELIVERY_MANIFEST.json",
+        "bytes": 78694,
+        "sha256": "f8ca3a0e4f34b9e78278fe7db26feab2b1e876527a535efefb097c1521cc74d4"
       },
       "current_supervisor_replaced": false,
       "cleanup_status": "incomplete_automatic_approval_rejected_deletion",
@@ -1097,6 +1108,27 @@
         "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\independent-review\\CONDITIONAL_REVIEW.json",
         "bytes": 9495,
         "sha256": "238ee3e8a389e26ceb48243a059877065066d4df91a6b45db69a8586c086a7dd"
+      },
+      "previous_conditional_delivery": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\independent-review\\reviewed-preimage\\DELIVERY_MANIFEST.json",
+        "bytes": 61385,
+        "sha256": "e2e45b844e7a45ada704e3568ab4875472ad0f025ad29b8be7101f34bd1b52ec"
+      },
+      "targeted_correction": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\LAST_OBSERVATION_CORRECTION.json",
+        "bytes": 3565,
+        "sha256": "4c849043750a3488d6a315709f0267f11eb8120be1d17f95b5c67cd86b418ed2"
+      },
+      "acceptance_binding": "doc/assets/research_resume_20261012/local_telemetry_v2_acceptance.json",
+      "independent_acceptance": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\independent-review\\T1_REVISION_ACCEPTANCE.json",
+        "bytes": 5892,
+        "sha256": "33d13929f52e834af6771c98b446d5963e7ecff68300178c7baf1a850ede5274"
+      },
+      "future_execution_seal_requirements": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\independent-review\\FUTURE_EXECUTION_SEAL_BINDINGS.json",
+        "bytes": 3174,
+        "sha256": "63c151fbeefe54c9b502acd73658aa520d0e8ca526b5408cb9769c6a303f2f54"
       }
     },
     "adult_joint_history": {
@@ -1106,6 +1138,15 @@
       "handoff": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\ADULT_JOINT_HISTORY_HANDOFF.zh.md",
       "confirmed_seam": "existing JointCalibrationProblem assumes materialized physical source and same source/target clock; new actual-functional shared-latent compiler required",
       "next_exit": "preserve original joint QR/score/noise/local kernel and all actual multi-C/held/session-q/clock/drift contracts; complete save/cold/parent-readmission and typed nine-choice publishing"
+    },
+    "future_target_checker": {
+      "state": "new_fixed_v2_target_checker_implementation_in_progress",
+      "owner": "/root/execution_failures",
+      "candidate_root": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/population-matrix-execution/telemetry-v2-checker",
+      "upstream_components_binding": "doc/assets/research_resume_20261012/local_telemetry_v2_acceptance.json",
+      "scientific_scope": "complete78Cfits/4914heldcells and original819panel; preserve source acceptance, actual target freeze, exit/tree retirement and cold replay",
+      "actual_execution_seal_issued": false,
+      "scientific_acceptance_issued": false
     }
   },
   "next_actions": [
@@ -1124,7 +1165,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T14:50:33.418472+00:00",
+  "last_updated_utc": "2026-10-19T14:58:35.207652+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",

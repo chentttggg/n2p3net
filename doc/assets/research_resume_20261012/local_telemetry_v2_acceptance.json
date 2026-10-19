@@ -1,0 +1,95 @@
+{
+  "schema": "local_telemetry_v2_component_acceptance/1",
+  "status": "accepted_future_components_actual_execution_seal_pending",
+  "recorded_utc": "2026-10-19T14:57:49.371488+00:00",
+  "independent_acceptance": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\independent-review\\T1_REVISION_ACCEPTANCE.json",
+    "bytes": 5892,
+    "sha256": "33d13929f52e834af6771c98b446d5963e7ecff68300178c7baf1a850ede5274"
+  },
+  "accepted_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\independent-review\\accepted-revision\\DELIVERY_MANIFEST.json",
+    "bytes": 78694,
+    "sha256": "f8ca3a0e4f34b9e78278fe7db26feab2b1e876527a535efefb097c1521cc74d4"
+  },
+  "component_files": {
+    "local_supervisor_v2.py": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\local_supervisor_v2.py",
+      "bytes": 16201,
+      "sha256": "21aafcc1973dad4b69f2e360f899613f28aab3836048ee8708b45572abfe4a4c"
+    },
+    "progress_snapshots.py": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\progress_snapshots.py",
+      "bytes": 10742,
+      "sha256": "ecc6e3404bdee0020beb8a6739b8e96ffa43a3307e235fb1993f9d88db699aae"
+    },
+    "telemetry_acceptance.py": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\telemetry_acceptance.py",
+      "bytes": 1960,
+      "sha256": "4554398b631a61fe8757ff4f8e1cf1cc84576f2b22fb5bea4a9e77de4e8558f7"
+    },
+    "verify_complete_source_v2_candidate.py": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\verify_complete_source_v2_candidate.py",
+      "bytes": 33410,
+      "sha256": "ed262dd0995d92139b4378436c7dc51517e6387ef92d3a869fce17b24ff9ab58"
+    },
+    "complete_checker_telemetry_v2.patch": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\complete_checker_telemetry_v2.patch",
+      "bytes": 2174,
+      "sha256": "62c1ce1d6bda2dcc0cb185421b412520566cda36ccea6679523dd52278b663e2"
+    },
+    "SUPERVISION_INPUTS.template.json": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\SUPERVISION_INPUTS.template.json",
+      "bytes": 1579,
+      "sha256": "80dc65c7a8c4d7c3d55eb9eb1bdc58a77dd771826e3b292184c3814e4e4d2c30"
+    }
+  },
+  "future_execution_seal_requirements": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\independent-review\\FUTURE_EXECUTION_SEAL_BINDINGS.json",
+    "bytes": 3174,
+    "sha256": "63c151fbeefe54c9b502acd73658aa520d0e8ca526b5408cb9769c6a303f2f54"
+  },
+  "source_unchanged_control_evidence": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\CONTROL_AST_EQUIVALENCE.json",
+    "bytes": 837,
+    "sha256": "5ec562131e112986355c918ac9d9b58f116e50dbd323f53e0f6078634bb5d78c"
+  },
+  "storage_comparison": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\SAME_METADATA_BENCHMARK.json",
+    "bytes": 1691,
+    "sha256": "1e57a12acfffe05e4fb7a8c48185be9793d76328f49486ab9f08a888288834dd"
+  },
+  "correction": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\LAST_OBSERVATION_CORRECTION.json",
+    "bytes": 3565,
+    "sha256": "4c849043750a3488d6a315709f0267f11eb8120be1d17f95b5c67cd86b418ed2"
+  },
+  "accepted_scope": {
+    "immutable_original_progress_snapshots_and_reconstruction": true,
+    "original_resource_and_process_control_paths_preserved": true,
+    "required_successful_terminal_last_observation": true,
+    "new_fixed_scientific_checker_entry_and_seal": "required_before_new_execution",
+    "scientific_execution_acceptance": false,
+    "deployed_to_in_flight_execution": false,
+    "root_new_tests_or_fits": 0
+  },
+  "root_review": {
+    "exact_five_line_revision_and_actual_writer_status_paths_reviewed": true,
+    "accepted_component_pins_verified": 6,
+    "independent_acceptance_references_verified": 7,
+    "Spec": "pass_for_future_telemetry_components",
+    "Standards": "pass_for_original_control_and_execution_identity"
+  },
+  "cleanup": {
+    "author_receipt": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\CLEANUP_RECEIPT.json",
+      "bytes": 865,
+      "sha256": "4ba0b38a29ef65163b42809f4e0bcd78853592081b6d69976c4d5c270744b298"
+    },
+    "author_status": "incomplete_automatic_approval_rejected_deletion",
+    "remaining_generated_files": 53,
+    "remaining_generated_bytes": 2469001,
+    "root_builds_or_generated_fixtures": 0
+  },
+  "active_state_owner": "pause_checkpoint_current.json"
+}
