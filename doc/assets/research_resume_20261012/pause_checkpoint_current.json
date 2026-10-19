@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_at_user_request",
-  "recorded_at": "2026-10-19T22:58:35.207597+08:00",
+  "recorded_at": "2026-10-19T23:03:32.130218+08:00",
   "user_request": "resume_research_then_resolve_repository_audit_before_autonomous_continuation",
   "research_worktree": "D:\\BCI\\n2p3-net",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -285,7 +285,8 @@
     "/root/history_slice_integration_review": "Implement complete adult source forecast and transport factory/codec.",
     "/root/audit_disposition_refresh": "Implement actual-functional adult C/history seam and complete downstream contract.",
     "/root/adult_population_transport_independent": "Independently review B complete adult source forecast and transport factory/codec.",
-    "/root/execution_failures": "Prepare future complete target-matrix v2 telemetry checker; preserve current source checker/seals."
+    "/root/execution_failures": "Prepare future complete target-matrix v2 telemetry checker; preserve current source checker/seals.",
+    "/root/zero_latent_graph_fix": "Consolidate original adult and paused-recording builders into tests/support; preserve bodies/assertions."
   },
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
@@ -1072,7 +1073,7 @@
       "production_code_accepted": false
     },
     "adult_population_transport": {
-      "state": "implementation_in_progress",
+      "state": "production_source_controls_passed_independent_review_and_shared_fixture_convergence_in_progress",
       "owner": "/root/history_slice_integration_review",
       "candidate_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\candidate",
       "upstream_science_binding": "doc/assets/research_resume_20261012/adult_population_transport_science_integration.json",
@@ -1147,6 +1148,18 @@
       "scientific_scope": "complete78Cfits/4914heldcells and original819panel; preserve source acceptance, actual target freeze, exit/tree retirement and cold replay",
       "actual_execution_seal_issued": false,
       "scientific_acceptance_issued": false
+    },
+    "adult_fixture_convergence": {
+      "state": "shared_fixture_extraction_in_progress",
+      "owner": "/root/zero_latent_graph_fix",
+      "owned_main_files": [
+        "tests/data/test_brainsync_raw_authority.py",
+        "tests/research/test_adult_programme_input.py",
+        "tests/support/brainsync.py",
+        "tests/support/adult_programme.py"
+      ],
+      "reason": "adult A/B tests import sibling test fixtures; shared original BIDS/clock builders belong to tests/support",
+      "verification": "controlled AST/body/arguments and existing assertions; original software evidence retained; no repeated large fixtures or fits"
     }
   },
   "next_actions": [
@@ -1165,7 +1178,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T14:58:35.207652+00:00",
+  "last_updated_utc": "2026-10-19T15:03:32.130269+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
