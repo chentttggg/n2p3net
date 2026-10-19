@@ -393,7 +393,7 @@
   },
   "pending_root_integrations": {
     "compact_source_factor": {
-      "state": "implementation_in_independent_candidate_after_root_code_and_math_plan_review",
+      "state": "root_compression_AST_and_full_consumer_review_complete_author_final_and_independent_closure_pending",
       "plan": {
         "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\SOURCE_ARTIFACT_PLAN.zh.md",
         "bytes": 18608,
@@ -427,7 +427,36 @@
         "disposition": "Retain all three current negative-control/reproduction inputs during unsealed implementation review; no deletion retried. Root will review actual references at final candidate acceptance.",
         "retained_apparent_bytes": 2570,
         "actual_deleted_bytes": 0
-      }
+      },
+      "root_components_review": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\ROOT_COMPONENTS_REVIEW.json",
+        "bytes": 4348,
+        "sha256": "6c9fb856c3e17c0a2a51d7f7da5770ed882292a86655b35932e91b5604adb2d5"
+      },
+      "software_vertical_progress": {
+        "actual_small_noise_fits": 13,
+        "original_block_compressions": 26,
+        "auxiliary_physical_posterior_fits": 0,
+        "source_only_fold_hyperfits": 13,
+        "native_cold_loads": 13,
+        "target_source_admissions": 1,
+        "real_EEG_reads": 0,
+        "scientific_acceptance_issued": false,
+        "result_path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\PROGRAMME_CONTROLS.json"
+      },
+      "full_response_columns": 496,
+      "remaining": "Author final controls/seal; independent mathematical/publication review and full effective-source closure; root integration and focused current-source checks before new actual v2 execution.",
+      "recipe_candidate": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\SOURCE_DATA_FACTOR_RECIPE.json",
+        "bytes": 4005,
+        "sha256": "9ba8df49a5d3e25a9c50c9b7638c199ee557a080c9b125450b64e2d0ab67afdb"
+      },
+      "recipe_scope_check": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\ROOT_RECIPE_SCOPE_CHECK.json",
+        "bytes": 30396,
+        "sha256": "76a606ac2a511d18fa0805ab37a2d0358a894f372bf69c5c222c3b75d1a0aa14"
+      },
+      "independent_source_closure_review": "audit_repository_convergence; fresh complete v2 closure and caller/runtime source provenance; final sealed delivery pending"
     }
   },
   "confirmed_Lean_error_handoff": {
@@ -896,7 +925,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T11:07:54.621985+00:00",
+  "last_updated_utc": "2026-10-19T11:26:31.092170+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
