@@ -104,36 +104,45 @@ def _consume_frozen_public_joint_history(fit, *, current_view, history_input, di
     began = time.perf_counter()
     result_sha = persist_joint_history_smc(directory, result, arrays, cloud_trace=cloud_trace)
     costs['transition_trace_save_seconds'] = time.perf_counter()-began
+    # Persisted replay recipes replace the original proposal and observer arrays.
+    del proposal, cloud_trace, arrays
     began = time.perf_counter()
     storage = history_storage_closure(directory/'target.json', target_sha256=target_sha,
         inference_path=directory/'inference.json', inference_sha256=result_sha)
     storage_sha = save_log_record(directory/'NUMERIC_STORAGE_CLOSURE.json', storage)
     costs['storage_closure_seconds'] = time.perf_counter()-began
     began = time.perf_counter()
+    verified = admit_joint_history_inference(target, directory/'inference.json', expected_sha256=result_sha)
+    prediction = publish_public_joint_history(verified, target, quality_policy=quality_policy, scoring_law='whole')
+    frontier_layout, q_values = target.frontier_layout, target.q_values
+    costs['live_replay_admission_and_typed_save_reload_seconds'] = time.perf_counter()-began
+    # The typed value and receipt fields contain metadata, so retire the live table
+    # before reconstructing the independent cold table. Publish after both replays.
+    del target
+    began = time.perf_counter()
     cold_target = load_joint_history_target(directory/'target.json', expected_sha256=target_sha)
     costs['cold_native_target_recompile_seconds'] = time.perf_counter()-began
     began = time.perf_counter()
     cold_replay = replay_joint_history_smc(cold_target, result)
     costs['cold_model_proposal_and_cloud_replay_seconds'] = time.perf_counter()-began
+    del cold_target
     began = time.perf_counter()
-    verified = admit_joint_history_inference(target, directory/'inference.json', expected_sha256=result_sha)
-    prediction = publish_public_joint_history(verified, target, quality_policy=quality_policy, scoring_law='whole')
     prediction_sha = prediction.save(directory/'prediction.json')
     cold_prediction = PublicJointHistoryPrediction.load(directory/'prediction.json', expected_sha256=prediction_sha)
     if (metadata_digest(cold_prediction.evidence.expert_identities[0].record()) !=
             metadata_digest(prediction.evidence.expert_identities[0].record())
             or not np.array_equal(cold_prediction.evidence.log_probability, prediction.evidence.log_probability)):
         raise ValueError('cold typed evidence changed the original source/fit/input identity or complete probability axis')
-    costs['live_replay_admission_and_typed_save_reload_seconds'] = time.perf_counter()-began
+    costs['live_replay_admission_and_typed_save_reload_seconds'] += time.perf_counter()-began
     receipt = {'schema': 'same_process_new_joint_fit_complete_history_typed_replay/1',
         'joint_fit': fit.identity, 'actual_relation': relation, 'proposal_binding': proposal_binding,
-        'actual_frontier_layout': target.frontier_layout, 'inference_result_sha256': result_sha,
+        'actual_frontier_layout': frontier_layout, 'inference_result_sha256': result_sha,
         'complete_numeric_target_sha256': target_sha, 'cold_numeric_model_replay': cold_replay,
         'numeric_storage_closure_sha256': storage_sha,
         'numeric_storage_closure_path': str((directory/'NUMERIC_STORAGE_CLOSURE.json').resolve()),
         'actual_numeric_target_cost': actual_target_cost, 'actual_phase_wall_seconds': costs,
         'typed_prediction_sha256': prediction_sha, 'typed_evidence_status': prediction.evidence.status,
-        'full_candidate_axis': target.q_values, 'target_fits_here': 0, 'source_fits_here': 0,
+        'full_candidate_axis': q_values, 'target_fits_here': 0, 'source_fits_here': 0,
         'old_noise_artifacts_relabelled': False, 'future_truth_reads': 0,
         'source_context_identity': programme.source_context.identity,
         'actual_K': programme.record['actual_K'],

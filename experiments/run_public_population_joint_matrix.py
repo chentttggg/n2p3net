@@ -345,6 +345,8 @@ def fit_and_score_programme(runtime, inputs, *, compiler, prefix, recipe, argume
     runtime.require_public_joint_fit(live)
     if live.identity != fit.identity:
         raise ValueError('the saved/reloaded original-C readmission changed the actual complete fit')
+    # The admitted live wrapper owns the cold payload; the original fit is retired.
+    del fit, numeric
     status.update(status='fitted_and_readmitted', fit=artifact(path), fit_identity=live.identity,
         full_shared_dimensions=live.source.rank, private_noise_channels=len(live.noise.phi),
         full_innovation_covariance_shape=list(live.noise.innovation_covariance.shape),

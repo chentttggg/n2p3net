@@ -30,6 +30,8 @@ scorer统一使用原绝对`1e-12`分差floor，移除共同分数基线对平�
 
 九个已源审的population、source-data likelihood、Gaussian-local/conditional、public programme/noise和joint response/noise模块以原字节接入正常research命名空间。旧frontier源码及修改前指南物理保存在ZIP并逐成员核验，旧执行producer与结果保持原身份。三项新组合检查和相关Ruff通过，原定向数学/保存证据按实际源码关系复用；少量导入排序沿既有producer保存规则声明。
 
+完整公共目标caller的持有期已改为一套fit payload与先后使用的live/cold整表：原proposal和采样数组在轨迹持久化后释放，原live准入及typed对象构造先完成，再退休live表并冷读重放，预测写盘仍在两次重放之后。14次原/新实际函数AST编排控制区分旧持有问题，并核成功字段、两次重放与失败发布门；数学、采样、质量和完整992列保持。原32候选、单selection component场景的保留量与held暂存包络合计约8.51 GiB，其中已含2 GiB运行时余量；root据此声明10 GiB单actor静态预算，实际scope重叠与RSS由真实准入及运行记录给出。原2d冻结树继续服务legacy reader；接受、源码对应与18份旧测试副本删除0的实际回执见[持有期整合](../assets/research_resume_20261012/public_target_lifetime_integration.json)。
+
 确认上述替代代码后，逐目录用cmd删除旧Ruff及三个模块目录的Python缓存，共140文件、5264870字节，四条命令均exit0且复查不存在。独立面板另已归档251成员的实际producer并删除6662916字节生成代码/缓存；科研输出及原H1证据保留。五个工作树均在D盘，本片未新建工作树；旧joint树仍含唯一恢复依赖，继续保留。
 
 既有NN面板按原冻结计划完整收敛，科学用途纠正集中在[公共评估](public_evaluation.zh.md#旧nn跨研究适配的完整诊断)。它提供跨研究迁移诊断及工程复用来源，通用响应/噪声主线继续按实际依赖推进。当前任务和进程只由checkpoint维护；源码、检查与清理回执见[核心整合绑定](../assets/research_resume_20261012/general_response_core_integration.json)。

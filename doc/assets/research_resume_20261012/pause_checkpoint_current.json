@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_at_user_request",
-  "recorded_at": "2026-10-20T00:35:10.165213+08:00",
+  "recorded_at": "2026-10-20T00:56:21.673771+08:00",
   "user_request": "resume_research_then_resolve_repository_audit_before_autonomous_continuation",
   "research_worktree": "D:\\BCI\\n2p3-net",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -1187,7 +1187,7 @@
       }
     },
     "adult_joint_history": {
-      "state": "bounded_actual_functional_C_D_implementation_and_full_vertical_validation_in_progress",
+      "state": "fixed_reference_density_optimizer_chart_implementation_same_smallfit03_comparison_pending",
       "owner": "/root/audit_disposition_refresh",
       "candidate_root": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/adult-programme-input/adult-joint-history/candidate",
       "handoff": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\ADULT_JOINT_HISTORY_HANDOFF.zh.md",
@@ -1199,7 +1199,8 @@
         "P flat axes and all-candidate segment coverage fixed and independently verified.",
         "Bounded point02 completed with finite objective and full35dim score; responsibility normalization exposed common-log cancellation, universal relative-log fix in progress.",
         "Actual256row profile identifies repeated physical-drift Fraction rounding and exact-zero-column residual work; bounded cache and equivalent-state numeric workspace preserve original9 states."
-      ]
+      ],
+      "optimizer_working_chart": "optional theta-independent fixed-reference normalizer; physical marginal, full score and original gtol/initial kept; original smallfit03 precision-loss evidence retained"
     },
     "future_target_checker": {
       "state": "components_and_current_source_interface_independently_accepted_actual_execution_bindings_pending",
@@ -1267,7 +1268,7 @@
       "next_owner_scope": "C/E validate original C roster, actual fit freeze time and fresh held permissions"
     },
     "target_execution_preparation": {
-      "state": "complete_code_only_runtime_frozen_source_complete_acceptance_and_actual_resources_pending",
+      "state": "source_complete_grant_accepted_target_lifetime_code_integrated_new_freeze_interface_and_overlap_preflight_pending",
       "runtime_binding": {
         "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\CURRENT_TARGET_RUNTIME.json",
         "bytes": 1259,
@@ -1290,19 +1291,26 @@
       "requested_C_programmes": 78,
       "requested_held_cells": 4914,
       "new_target_fits_started": 0,
-      "readiness": "newfixedtargetchecker component accepted; bind complete source grant/resources/command/supervision_inputs2/launch, then actual execution seal and fullrun"
+      "readiness": "newfixedtargetchecker component accepted; bind complete source grant/resources/command/supervision_inputs2/launch, then actual execution seal and fullrun",
+      "source_acceptance": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_RUNTIME_ORIGIN_FULL_ACCEPTANCE.json",
+        "bytes": 6366,
+        "sha256": "d29ae9305e1d3410f5d39317d960543ddf4db7f033c7bad1dc4f724b5238046d"
+      }
     },
     "adult_joint_personal": {
-      "state": "independent_E_vertical_implementation_dispatched",
+      "state": "candidate_and10_controls_written_source_review_active_true_frozen_C_and_actual_controls_pending",
       "owner": "/root/history_slice_integration_review",
       "candidate_root": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/adult-programme-input/adult-joint-personal",
       "production_file_scope": "src/research/adult_joint_personal.py; isolated from six C/D owner files",
       "upstream": "integrated readonly personal source relation@ece7586 and actual C/D interfaces",
       "scope": "actual fresh A source exclusion, original C operand equivalence despite changed held scope SHA, fit-freeze-time and new held permissions, original source plus one C history and typed nine-choice save/cold/replay",
-      "new_source_or_C_fit_authority": false
+      "new_source_or_C_fit_authority": false,
+      "independent_reviewer": "/root/zero_latent_graph_fix",
+      "actual_behavior_controls_run": 0
     },
     "target_memory_lifecycle": {
-      "state": "full_actor_static_live_array_budget_and_independent_lifecycle_review_in_progress",
+      "state": "two_file_lifetime_code_integrated_full32_m1_static_scope_accepted_actual_overlap_preflight_pending",
       "owners": [
         "/root/workstation_failures",
         "/root/audit_repository_convergence"
@@ -1310,7 +1318,10 @@
       "runtime": "fixed2d target-runtime/checkout; no in-place mutations",
       "source_shared_factor_rank": 992,
       "budget_role": "conservative static estimate, not RSS measurement; same fit/cold/live and current/replay tables must be separated by actual lifetime",
-      "next_exit": "review exact shapes and simultaneity, then accept full actor reservation or named semantics-preserving lifecycle improvement; never lower declared reservation to force admission"
+      "next_exit": "review exact shapes and simultaneity, then accept full actor reservation or named semantics-preserving lifecycle improvement; never lower declared reservation to force admission",
+      "integration": "doc/assets/research_resume_20261012/public_target_lifetime_integration.json",
+      "actor_static_reservation_bytes": 10737418240,
+      "actual_RSS_measured": false
     },
     "source_latent_marginalization_design": {
       "state": "independent_math_and_actual_caller_investigation",
@@ -1322,7 +1333,7 @@
     }
   },
   "next_actions": [
-    "Source complete acceptance and original consumer load are issued; accept target lifetime revision, freeze new execution source, bind actual grant/resources and launch the full78/4914 programme.",
+    "Freeze integrated target lifetime code, finalize named28gate interface, complete actual public component-overlap preflight and bind10GiB resource policy/true d29 grant to the full78C/4914held managed run.",
     "Bind accepted source grant to fixed2d target runtime and exact original819panel, resolve actual resources and seal new v2 execution, then execute all78Cfits/4914held cells.",
     "Complete bounded C query caches and exact equivalent-state reuse, original-reader legacy exit, C save/cold/actual parent readmission, D full history and E typed new-session inference.",
     "Integrate readonly fixed-source exclusion relation for new personal queries after source/store review; preserve original producers."
@@ -1336,7 +1347,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T16:35:10.165213+00:00",
+  "last_updated_utc": "2026-10-19T16:56:21.673771+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",

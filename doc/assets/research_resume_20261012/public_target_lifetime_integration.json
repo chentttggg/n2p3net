@@ -1,0 +1,100 @@
+{
+  "schema": "public_target_lifetime_root_integration/1",
+  "status": "accepted_two_file_code_and_static_scope_cleanup_incomplete",
+  "recorded_utc": "2026-10-19T16:56:21.669329+00:00",
+  "base_commit": "c7b2eca",
+  "independent_acceptance": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-lifetime-integration\\independent-review\\ACCEPTANCE.json",
+    "bytes": 6689,
+    "sha256": "8f542f8ff8c4c46410f18587962170c8ffcfd311237d7f6ccb04c0f9bd04677a"
+  },
+  "independent_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-lifetime-integration\\independent-review\\DELIVERY_MANIFEST.json",
+    "bytes": 2864,
+    "sha256": "3cf2dd3ecf0b497470eeeb8d87cc4a25f6ebc6912b58028be01c4831dc6b7e15"
+  },
+  "files": [
+    {
+      "path": "D:\\BCI\\n2p3-net\\experiments\\run_public_population_joint_matrix.py",
+      "bytes": 61174,
+      "sha256": "1b345fce9035341bbf96abadd839c9e0356438d479ad26f53d29088d1630923e",
+      "relative": "experiments/run_public_population_joint_matrix.py",
+      "preimage_sha256": "8b68bcec4384507deed14f50e7b7f2359ceb5987677347b459a7a0b1cf6641a3"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\src\\research\\public_joint_history_execution.py",
+      "bytes": 9118,
+      "sha256": "3c5201e065e8c7191100f6d400a18164a700cc5e8fc9b14931b86d87c13c7af2",
+      "relative": "src/research/public_joint_history_execution.py",
+      "preimage_sha256": "ca46a662fc8edcc5decb11d09402d8945f8ae40c45874a35060443df16d30149"
+    }
+  ],
+  "source_correspondence": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-lifetime-integration\\independent-review\\SOURCE_CORRESPONDENCE.json",
+    "bytes": 3238,
+    "sha256": "703efbb01ef04e62009d96121b96aeeb9984cf1151c601eed62f324e6936383f"
+  },
+  "actual_old_new_AST_controls": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-lifetime-integration\\independent-review\\CONTROL_LIFETIMES.json",
+    "bytes": 72220,
+    "sha256": "c1d8ae8656a8b10319c71084846ed8f275711413474f0e5787bbd6c9612153bc"
+  },
+  "held_transients": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-memory-lifecycle-review\\HELD_TRANSIENT_SHAPES.json",
+    "bytes": 12011,
+    "sha256": "c69a9389f0307be88f6a6ad16ecd804bce290f9b9b180af93e2ca2281c218de3"
+  },
+  "full_static_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-memory-lifecycle-review\\FINAL_DELIVERY_MANIFEST.json",
+    "bytes": 1618,
+    "sha256": "a6b5a5cef6e056b8f9ca70f36fcbb4bc4717c4b6af9c740733ac63219ae155ed"
+  },
+  "root_review": {
+    "complete_two_functions_and_all_affected_callers_read": true,
+    "actual_shared_wrapper_and_weak_registry_ownership_read": true,
+    "typed_output_held_until_both_replays_pass": true,
+    "old_math_sampling_quality_requested_roster_and_identity_kept": true,
+    "Ruff_candidate_exit_code": 0,
+    "verified_unique_independent_references": 13,
+    "new_fit_SMC_or_EEG_read": 0,
+    "original_numeric_controls_reexecuted": 0,
+    "actual_AST_controls_reused": 14
+  },
+  "memory_policy": {
+    "bytes": 10737418240,
+    "retained_plus_held_transient_scenario_GiB": 8.510485924780369,
+    "includes_existing_source_python_codec_policy_GiB": 2,
+    "additional_margin_GiB": 1.4895140752196312,
+    "separate20percent_not_applied_again": true,
+    "policy_owner": "root explicit instruction",
+    "actual_RSS_measured": false,
+    "original_Job_memory_cap_and_host78stop_retained": true
+  },
+  "resource_policy": {
+    "controller_reservation_bytes": 536870912,
+    "extra_reserve_bytes": 268435456,
+    "host_pause_percent": 78,
+    "host_resume_percent": 72,
+    "host_memory_stop_percent": 78,
+    "actual_full_actor_RSS_pending_launch": true,
+    "nominal_component_scope_assumption": "m1/full32candidate static scenario; actual public schedule overlap preflight pending"
+  },
+  "preserved_original_target_runtime": "manifest16e143/commit2d2cfd3 remains legacy reader and frozen provenance dependency",
+  "source_complete_acceptance": "doc/assets/research_resume_20261012/population_source_complete_acceptance.json",
+  "cleanup": {
+    "status": "incomplete_automatic_approval_rejected_deletion",
+    "receipt": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-lifetime-integration\\independent-review\\REVIEW_CLEANUP.json",
+      "bytes": 1444,
+      "sha256": "7a1adc8460e7c59520156ba79415b04c3d73336b6dd4cfd22bb9cb9350517be2"
+    },
+    "remaining_generated_files": 18,
+    "remaining_generated_bytes": 16270,
+    "actual_deleted_files": 0,
+    "actual_deleted_bytes": 0,
+    "new_worktrees": 0,
+    "new_environments": 0,
+    "root_extra_builds": 0
+  },
+  "active_state_owner": "pause_checkpoint_current.json"
+}
