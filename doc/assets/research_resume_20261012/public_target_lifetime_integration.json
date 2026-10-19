@@ -76,8 +76,8 @@
     "host_pause_percent": 78,
     "host_resume_percent": 72,
     "host_memory_stop_percent": 78,
-    "actual_full_actor_RSS_pending_launch": true,
-    "nominal_component_scope_assumption": "m1/full32candidate static scenario; actual public schedule overlap preflight pending"
+    "nominal_component_scope_assumption": "Full public structural and active-unknown overlap preflight confirms m1/full32candidate scenario;117records/819requests with28 unavailable requests retained.",
+    "actual_active_phase_peak_RSS_pending": true
   },
   "preserved_original_target_runtime": "manifest16e143/commit2d2cfd3 remains legacy reader and frozen provenance dependency",
   "source_complete_acceptance": "doc/assets/research_resume_20261012/population_source_complete_acceptance.json",
@@ -96,5 +96,15 @@
     "new_environments": 0,
     "root_extra_builds": 0
   },
-  "active_state_owner": "pause_checkpoint_current.json"
+  "active_state_owner": "pause_checkpoint_current.json",
+  "public_scope_preflight": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-memory-lifecycle-review\\PUBLIC_SCOPE_PREFLIGHT.json",
+    "bytes": 8012306,
+    "sha256": "e31404374104e53afb4cdd759e19307d8787230af277a027ebd78569a74285c8"
+  },
+  "public_scope_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-memory-lifecycle-review\\PUBLIC_SCOPE_DELIVERY.json",
+    "bytes": 23603,
+    "sha256": "22babf6afcddd2e2da8907cd4c4c9f6a0e9029b86a94ba8f451e26d9ccba36bd"
+  }
 }

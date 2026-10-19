@@ -299,7 +299,7 @@
     "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
     "commit": "a6f5750"
   },
-  "integration_head": "0f198d818fa6a7f3ce801dc175961cb45183b03c",
+  "integration_head": "7bc886af4039e4bdea5d1f646a54e4f0700c1e97",
   "concurrency_authorization": "later user allowed more threads after the temporary six-agent limit; seven actual parallel roles used for independent scientific slices",
   "execution_priority": "resolve_current_repository_audit_then_resume_full_population_and_joint_history_matrix",
   "accepted_native_input_source_commit": "811fb18dcbde94b9903ee8cce0df4bee16466e4a",
@@ -580,7 +580,7 @@
         },
         "scientific_checkpoint_present": true,
         "scientific_acceptance_issued": true,
-        "next_action": "Bind this complete grant to the accepted target lifetime revision/new full runtime and original panel, then launch all78C/4914held under the same resource policy; no source refit.",
+        "next_action": "Accepted13people/13folds source grant already consumed by original full target attempt; reuse all source artifacts without refitting.",
         "person_states": {
           "complete": 13
         },
@@ -1187,12 +1187,12 @@
       }
     },
     "adult_joint_history": {
-      "state": "fixed_reference_density_optimizer_chart_implementation_same_smallfit03_comparison_pending",
+      "state": "final_explicit_transition_trace_consumer_revision_pending_D_codec_closure",
       "owner": "/root/audit_disposition_refresh",
       "candidate_root": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/adult-programme-input/adult-joint-history/candidate",
       "handoff": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\ADULT_JOINT_HISTORY_HANDOFF.zh.md",
       "confirmed_seam": "existing JointCalibrationProblem assumes materialized physical source and same source/target clock; new actual-functional shared-latent compiler required",
-      "next_exit": "preserve original joint QR/score/noise/local kernel and all actual multi-C/held/session-q/clock/drift contracts; complete save/cold/parent-readmission and typed nine-choice publishing",
+      "next_exit": "Explicit CommonCloudTrace in adult inference entry; keep shared run/persist API unchanged. Preserve C06 producer; one necessary final-source smallfit allowed under original four-resource policy, then D schema2 save/cold/replay and typed nine axes.",
       "candidate_isolation": "C core files moved by SHA from shared B namespace; B uses its own explicit production whitelist",
       "confirmed_preintegration_issues": [
         "Legacy cold reader control has bitexact old closure replay; final reader integration review remains.",
@@ -1200,27 +1200,38 @@
         "Bounded point02 completed with finite objective and full35dim score; responsibility normalization exposed common-log cancellation, universal relative-log fix in progress.",
         "Actual256row profile identifies repeated physical-drift Fraction rounding and exact-zero-column residual work; bounded cache and equivalent-state numeric workspace preserve original9 states."
       ],
-      "optimizer_working_chart": "optional theta-independent fixed-reference normalizer; physical marginal, full score and original gtol/initial kept; original smallfit03 precision-loss evidence retained"
+      "optimizer_working_chart": "optional theta-independent fixed-reference normalizer; physical marginal, full score and original gtol/initial kept; original smallfit03 precision-loss evidence retained",
+      "accepted_core_math_review": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\core-math-review\\REVIEW_MANIFEST.json"
     },
     "future_target_checker": {
-      "state": "components_and_current_source_interface_independently_accepted_actual_execution_bindings_pending",
+      "state": "lifetime_source_interface_and_actual_execution_seal_independently_accepted_scientific_completion_pending",
       "acceptance": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\telemetry-v2-checker\\independent-review\\CURRENT_SOURCE_ACCEPTANCE.json",
-        "bytes": 7011,
-        "sha256": "b717ad4a95214d1793668d8ae35b042f76c1112e6b250ce120542c30139ae6fe"
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\telemetry-v2-checker\\lifetime-source-independent-review\\ACCEPTANCE.json",
+        "bytes": 14409,
+        "sha256": "3d9c429cc8e88c48dfa26d247ce0ec87fb07b57077459586f6801288d0001818"
       },
       "component_interface": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\telemetry-v2-checker\\TARGET_CHECKER_INTERFACE.current-source.json",
-        "bytes": 15370,
-        "sha256": "6870f05d439153b944de9a4e933e45986f42bf2b57e2a266d678e62cc43e128d"
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\telemetry-v2-checker\\TARGET_CHECKER_INTERFACE.lifetime-source.json",
+        "bytes": 25070,
+        "sha256": "b996d2336ddf9a57b2b99d001c35a9c17b9e174adf30786513b794dd60dabfd7"
       },
       "delivery": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\telemetry-v2-checker\\DELIVERY_CURRENT_SOURCE.json",
-        "bytes": 8230,
-        "sha256": "056006762c9091b3ac9d29748533d2dda79241a0f623858b333b4080951b9fa8"
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\telemetry-v2-checker\\DELIVERY_LIFETIME_SOURCE.json",
+        "bytes": 16744,
+        "sha256": "6d66e48fe7931577263d4bdd71cdf5cbf9cc733e4140368e56894b78111fd5e4"
       },
-      "actual_execution_seal_issued": false,
-      "scientific_acceptance_issued": false
+      "actual_execution_seal_issued": true,
+      "scientific_acceptance_issued": false,
+      "actual_execution_seal": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\telemetry-v2-checker\\EXECUTION_LIFETIME_LOCAL_R1_SEAL.json",
+        "bytes": 4874,
+        "sha256": "83c8c7a3a4977f3b03b33b0153956f68e75feed06b6fc046ebcf2016a0d4cce6"
+      },
+      "resolved_checker_bindings": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\local-target-launch-v2-admission-r1\\attempt-01\\CHECKER_BINDINGS.resolved.json",
+        "bytes": 3885,
+        "sha256": "036af41f685cc2ea6eb16593b156f74248dd516c43b276a8a41ddc8e87b631c1"
+      }
     },
     "adult_fixture_convergence": {
       "state": "integrated_shared_builders_original_body_and_assertions_verified",
@@ -1268,38 +1279,132 @@
       "next_owner_scope": "C/E validate original C roster, actual fit freeze time and fresh held permissions"
     },
     "target_execution_preparation": {
-      "state": "source_complete_grant_accepted_target_lifetime_code_integrated_new_freeze_interface_and_overlap_preflight_pending",
+      "state": "complete_matrix_launched_execution_sealed_resource_supervised",
       "runtime_binding": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\CURRENT_TARGET_RUNTIME.json",
-        "bytes": 1259,
-        "sha256": "0a0a236888c96ee3a41b023e792621b77e8e7b47aad73fb7fb38a0674a2cb44c"
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-runtime-lifetime\\RUNTIME_RECORD.json",
+        "bytes": 1964,
+        "sha256": "6c2e6e3c4d5f2793a558ad77a94e9cc2ebb622adbbb2173b861652f5a24a18e2"
       },
       "source_manifest": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-runtime\\source.manifest.json",
-        "bytes": 94265,
-        "sha256": "16e1431cff73893428fa7717d495b0d9fdd94353fb1860338ccdfa48ce826e75"
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-runtime-lifetime\\source.manifest.json",
+        "bytes": 94391,
+        "sha256": "0f4b60bc7def4d5f8d992cafd03323d5ca195e92fde8e4f61de27d698e9ce077"
       },
       "source_archive": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-runtime\\source.source-only.tar.gz",
-        "bytes": 3394948,
-        "sha256": "193fd79e7e32701a5f95147c5de75087d3f80b1b0bb242f601735aff0e1cc9ab"
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-runtime-lifetime\\source.source-only.tar.gz",
+        "bytes": 3399161,
+        "sha256": "5a94897ba4ee04e57b51cda37fe45b3e3fac4814a274ad451c921891defe61d2"
       },
-      "source_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-runtime\\checkout",
-      "base_commit": "2d2cfd3a730de8e6b0c0a27a4c897f24fd0cd78a",
+      "source_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-runtime-lifetime\\checkout",
+      "base_commit": "7bc886af4039e4bdea5d1f646a54e4f0700c1e97",
       "environment_or_data_copied": false,
       "fixed_original_requested_panel_SHA256": "6732e296cce03f21f8167a09ef08879361003ae85349029691960c00e23b9766",
       "requested_C_programmes": 78,
       "requested_held_cells": 4914,
       "new_target_fits_started": 0,
-      "readiness": "newfixedtargetchecker component accepted; bind complete source grant/resources/command/supervision_inputs2/launch, then actual execution seal and fullrun",
+      "readiness": "Original full78C/4914held process tree is live; follow this same attempt. Scientific fit/held progress comes from actual output, not execution seal.",
       "source_acceptance": {
         "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_RUNTIME_ORIGIN_FULL_ACCEPTANCE.json",
         "bytes": 6366,
         "sha256": "d29ae9305e1d3410f5d39317d960543ddf4db7f033c7bad1dc4f724b5238046d"
+      },
+      "preserved_legacy_runtime": {
+        "runtime_binding": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\CURRENT_TARGET_RUNTIME.json",
+          "bytes": 1259,
+          "sha256": "0a0a236888c96ee3a41b023e792621b77e8e7b47aad73fb7fb38a0674a2cb44c"
+        },
+        "source_manifest": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-runtime\\source.manifest.json",
+          "bytes": 94265,
+          "sha256": "16e1431cff73893428fa7717d495b0d9fdd94353fb1860338ccdfa48ce826e75"
+        },
+        "source_archive": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-runtime\\source.source-only.tar.gz",
+          "bytes": 3394948,
+          "sha256": "193fd79e7e32701a5f95147c5de75087d3f80b1b0bb242f601735aff0e1cc9ab"
+        },
+        "source_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-runtime\\checkout",
+        "base_commit": "2d2cfd3a730de8e6b0c0a27a4c897f24fd0cd78a"
+      },
+      "public_scope_preflight": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-memory-lifecycle-review\\PUBLIC_SCOPE_PREFLIGHT.json",
+        "bytes": 8012306,
+        "sha256": "e31404374104e53afb4cdd759e19307d8787230af277a027ebd78569a74285c8"
+      },
+      "public_scope_delivery": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-memory-lifecycle-review\\PUBLIC_SCOPE_DELIVERY.json",
+        "bytes": 23603,
+        "sha256": "22babf6afcddd2e2da8907cd4c4c9f6a0e9029b86a94ba8f451e26d9ccba36bd"
+      },
+      "launch_plan": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\local-target-launch-v2-admission-r1\\LOCAL_TARGET_LAUNCH_PLAN.json",
+        "bytes": 6493,
+        "sha256": "f4ab3ff0c21cf40e790204861028ad9cba70c8161c6c96641005009e871b9ae6"
+      },
+      "launch_delivery": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\local-target-launch-v2-admission-r1\\FINAL_DELIVERY.json",
+        "bytes": 9134,
+        "sha256": "aea5993d1df47f003a3e42aca25b4270827b703f597b620278c7d6b1d32e49b3"
+      },
+      "command": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\local-target-launch-v2-admission-r1\\attempt-01\\LOCAL_TARGET_COMMAND.json",
+        "bytes": 3923,
+        "sha256": "bdae9f1c3dbecc8a406789dd4da658bd4b3906fea6971596cb08d405b51f20d1"
+      },
+      "execution": {
+        "attempt_directory": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\local-target-launch-v2-admission-r1\\attempt-01",
+        "root_launch": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\local-target-launch-v2-admission-r1\\attempt-01\\ROOT_LAUNCH.json",
+          "bytes": 2969,
+          "sha256": "09ab5936f180f191c4dda8c89f18da45f96ee844d721fce18f3b8fd2c22c4726"
+        },
+        "waiter": {
+          "pid": 35896,
+          "created": 1792431078.489751
+        },
+        "tool_session": 49777,
+        "supervisor": {
+          "pid": 68812,
+          "created": 1792431267.3252842
+        },
+        "scientific_process": {
+          "pid": 34612,
+          "created": 1792431268.0683804
+        },
+        "all_original_birth_identities_live_at_checkpoint": true,
+        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\local-target-launch-v2-admission-r1\\attempt-01\\supervision\\progress.json",
+        "resource_ledger": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\local-target-launch-v2-admission-r1\\attempt-01\\supervision\\resources.jsonl",
+        "waiter_state": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\local-target-launch-v2-admission-r1\\attempt-01\\WAITER_STATE.json",
+        "stop_request": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\local-target-launch-v2-admission-r1\\attempt-01\\stop.request.json",
+        "observed_sequence": 879,
+        "observed_time": 1792431884.1277092,
+        "observed_action": "pause_external_gpu_pressure",
+        "observed_owned_RSS_bytes": 39866368,
+        "observed_host_cpu_percent": 15.6,
+        "observed_host_memory_percent": 44.2,
+        "observed_GPU": {
+          "observed_time": 1792431880.7997634,
+          "status": "observed",
+          "devices": [
+            {
+              "index": 0,
+              "utilization_percent": 84.0,
+              "memory_total_mib": 8151.0,
+              "memory_used_mib": 6595.0,
+              "memory_percent": 80.91031775242301
+            }
+          ]
+        },
+        "scientific_matrix_request_exists": false,
+        "completed_C_programmes": 0,
+        "completed_held_cells": 0,
+        "scientific_acceptance_issued": false,
+        "resume_rule": "Existing supervisor owns pause/resume:78percent pause,72percent recovery; do not restart the scientific command or alter the frozen policy."
       }
     },
     "adult_joint_personal": {
-      "state": "candidate_and10_controls_written_source_review_active_true_frozen_C_and_actual_controls_pending",
+      "state": "source_review_complete_original_waiter_waiting_for_passed_D_codec_dependency",
       "owner": "/root/history_slice_integration_review",
       "candidate_root": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/adult-programme-input/adult-joint-personal",
       "production_file_scope": "src/research/adult_joint_personal.py; isolated from six C/D owner files",
@@ -1307,21 +1412,39 @@
       "scope": "actual fresh A source exclusion, original C operand equivalence despite changed held scope SHA, fit-freeze-time and new held permissions, original source plus one C history and typed nine-choice save/cold/replay",
       "new_source_or_C_fit_authority": false,
       "independent_reviewer": "/root/zero_latent_graph_fix",
-      "actual_behavior_controls_run": 0
+      "actual_behavior_controls_run": 0,
+      "waiter": {
+        "pid": 67164,
+        "created": 1792430327.837306,
+        "tool_session": 89539,
+        "original_birth_identity_live_at_checkpoint": true,
+        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-personal\\control-runtime-v1\\waiter.progress.json",
+        "dependency_ready": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-personal\\CODEC_READY.json"
+      }
     },
     "target_memory_lifecycle": {
-      "state": "two_file_lifetime_code_integrated_full32_m1_static_scope_accepted_actual_overlap_preflight_pending",
+      "state": "code_and_full_public_scope_overlap_accepted_original_attempt_launched_peak_RSS_pending",
       "owners": [
         "/root/workstation_failures",
         "/root/audit_repository_convergence"
       ],
-      "runtime": "fixed2d target-runtime/checkout; no in-place mutations",
+      "runtime": "target-runtime-lifetime/checkout@7bc886af; preserved2d runtime remains original-reader dependency",
       "source_shared_factor_rank": 992,
       "budget_role": "conservative static estimate, not RSS measurement; same fit/cold/live and current/replay tables must be separated by actual lifetime",
-      "next_exit": "review exact shapes and simultaneity, then accept full actor reservation or named semantics-preserving lifecycle improvement; never lower declared reservation to force admission",
+      "next_exit": "Follow original full matrix; measure active phase RSS and progress, then issue scientific acceptance after complete requested denominator.",
       "integration": "doc/assets/research_resume_20261012/public_target_lifetime_integration.json",
       "actor_static_reservation_bytes": 10737418240,
-      "actual_RSS_measured": false
+      "actual_RSS_measured": false,
+      "actual_scope_preflight": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-memory-lifecycle-review\\PUBLIC_SCOPE_PREFLIGHT.json",
+        "bytes": 8012306,
+        "sha256": "e31404374104e53afb4cdd759e19307d8787230af277a027ebd78569a74285c8"
+      },
+      "actual_scope_delivery": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\target-memory-lifecycle-review\\PUBLIC_SCOPE_DELIVERY.json",
+        "bytes": 23603,
+        "sha256": "22babf6afcddd2e2da8907cd4c4c9f6a0e9029b86a94ba8f451e26d9ccba36bd"
+      }
     },
     "source_latent_marginalization_design": {
       "state": "independent_math_and_actual_caller_investigation",
@@ -1333,10 +1456,9 @@
     }
   },
   "next_actions": [
-    "Freeze integrated target lifetime code, finalize named28gate interface, complete actual public component-overlap preflight and bind10GiB resource policy/true d29 grant to the full78C/4914held managed run.",
-    "Bind accepted source grant to fixed2d target runtime and exact original819panel, resolve actual resources and seal new v2 execution, then execute all78Cfits/4914held cells.",
-    "Complete bounded C query caches and exact equivalent-state reuse, original-reader legacy exit, C save/cold/actual parent readmission, D full history and E typed new-session inference.",
-    "Integrate readonly fixed-source exclusion relation for new personal queries after source/store review; preserve original producers."
+    "Track existing target attempt01 supervisor68812/birth1792431267.3252842; resource pause/resume belongs to original handle, complete all78C/4914held and final scientific verify/issue.",
+    "Review and finish explicit adult transition-trace consumer, preserve full C06 producer closure, validate final D codec and release original E waiter67164; integrate six C/D plus E after source and behavior reviews.",
+    "Review exact source-latent marginalization design as a separate versioned physical law; preserve old rounded C and replay identity."
   ],
   "active_local_checks": [],
   "folder_cleanup_review": {
@@ -1347,7 +1469,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T16:56:21.673771+00:00",
+  "last_updated_utc": "2026-10-19T17:44:44.183435+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
@@ -1357,7 +1479,7 @@
     "cloud_training_launch_requires_user_resource_authorization": true,
     "earlier_local_stop": "Original USER_STOP and failed/interrupted artifacts retain their own terminal identity; latest authorization applies to a new attempt."
   },
-  "integration_head_role": "Base commit for the latest accepted working-byte revision; actual scientific files and review are pinned by the execution SOURCE_MANIFEST.",
+  "integration_head_role": "Current integrated scientific source and full frozen target runtime; subsequent checkpoint-only commits do not rebind the running source.",
   "subagent_service_observation": {
     "event": "source author and serialization reviewer turns ended with403insufficient balance",
     "resolution": "root continued concrete source inspection/sealing and independent prewritten controls; another existing independent reviewer received final source package.",
