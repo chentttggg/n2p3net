@@ -356,6 +356,8 @@ checkpoint读取安全整合（`codex/claude-improvements-20261012`，基于`ed2
 
 成人多录制输入切片A已接入主树：原入口验证所有C/held session的成人证据、实际reader与物理时钟，统一完整录制名单、标签支持及source文件排除并集。缺项或读取失败保存全部请求与已授予量，成功保存态由全部原parent重新准入。独审逐读owner及原caller，主树七项真实合成BIDS合同通过，源模型、输运与完整joint/history由后续切片消费这一中立输入层。代码、证据和实际清理状态集中于[成人输入整合](../assets/research_resume_20261012/adult_programme_input_integration.json)。
 
+该成人链的暂停录制与完整2C/held造数已统一到[共享输入工具](../../tests/support/adult_programme.py)及`tests/support/brainsync.py`，各测试保本地fixture入口。原builder逐段AST对应、三项常量改名及原九个测试函数/权限断言保持关系均已核清，原generic builder的函数体字节也保持。验证复用原数据3项、A输入7项控制和静态对应，未另生成EDF或拟合模型；准确前后SHA与对应脚本见[收敛清单](D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/adult-programme-input/test-fixture-convergence/DELIVERY_MANIFEST.json)。
+
 ## 文件夹清理复核
 
 主目录交付先核Git blob，随后补充核原working bytes：发现904项仅行尾差异，含624份历史/形式化记录；原科研树完整保留并用于逐字节恢复。Git改为保存实际字节，EditorConfig与工程规范约束新编辑LF；主目录2,500文件、28份原审计、329份受保护Lean输入及159件冻结source均重新核对。全新index与独立新clone通过，旧raw-blob检查由此补充，见[主目录收敛](../assets/research_resume_20261012/main_materialization_integration.json)。本机旧历史原件按精确清单保留原位，另与接受代码分开登记。

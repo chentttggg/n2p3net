@@ -11,9 +11,17 @@ import mne
 import numpy as np
 
 from data.brainsync_contract import BRAIN_SYNC_RAW_TIME_BASE, BRAIN_SYNC_SESSION_SCHEMA
-from data.contract import BRAIN_SYNC_ACQUISITION_CHANNELS, BRAIN_SYNC_ACQUISITION_TYPES
+from data.contract import (
+    BRAIN_SYNC_ACQUISITION_CHANNELS,
+    BRAIN_SYNC_ACQUISITION_TYPES,
+    brainsync_reference_record,
+)
+from tests.support.io import read_json, read_tsv, write_json, write_tsv
 
 CHANNELS = BRAIN_SYNC_ACQUISITION_CHANNELS
+PAUSED_SESSION_ID = "canonical-raw-authority"
+PAUSE_BOUNDARY = 7625
+PAUSED_ANCHOR_NS = 10**15
 
 
 POSITIONS = [
@@ -291,3 +299,77 @@ def write_recording_clock(root: Path, *, acquired: int = 251, serialized: int = 
             "journal_path": journal_path.name,
         }
     }
+
+def write_paused_recording(tmp_path):
+    """Real synthetic EDF, two balanced blocks and an interrupted pause attempt."""
+    root = write_bids_session(
+        tmp_path / "recording", session_id=PAUSED_SESSION_ID, target=8,
+        started_utc="2026-10-01T08:00:00Z",
+        blocks=(tuple(range(1, 10)) * 5, tuple(range(9, 0, -1)) * 5),
+    )
+    manifest = read_json(root / "session.json")
+    bids = manifest["recording"]["bids"]
+    sidecar = read_json(root / bids["eeg_json"])
+    reference = brainsync_reference_record()
+    manifest["montage"] = {"ref_label": reference["label"], "reference_details": reference}
+    sidecar.update(EEGReference=reference["label"], EEGReferenceDetails=reference)
+    sidecar["EOGDerivation"]["EOG"]["reference"] = reference["label"]
+    count = round(sidecar["RecordingDuration"] * 250)
+    clock = write_recording_clock(root, acquired=count, serialized=count)["clock"]
+    metadata_path = root / clock["metadata_path"]
+    journal_path = root / clock["journal_path"]
+    metadata, original = read_json(metadata_path), read_json(journal_path)
+    batches = [
+        {
+            **original, "batch_id": index, "received_start": start,
+            "stored_start": start, "n_received": stop - start, "n_stored": stop - start,
+            "segment_id": index, "seq_num": original["seq_num"][start:stop],
+            "delta_time_raw": original["delta_time_raw"][start:stop],
+        }
+        for index, (start, stop) in enumerate(((0, PAUSE_BOUNDARY), (PAUSE_BOUNDARY, count)))
+    ]
+    journal_path.write_text("".join(json.dumps(row) + "\n" for row in batches), encoding="utf-8")
+    anchor = {"anchor_source": "first_batch_delivery_minus_nominal_span",
+              "relative_rate_assumption": "nominal_sample_rate"}
+    metadata.update(
+        batch_count=2, journal_sha256=hashlib.sha256(journal_path.read_bytes()).hexdigest(),
+        segments=[
+            {**anchor, "segment_id": 0, "stored_start": 0, "stored_stop": PAUSE_BOUNDARY,
+             "first_sample_estimate_monotonic_ns": PAUSED_ANCHOR_NS,
+             "closed_monotonic_ns": PAUSED_ANCHOR_NS + 30_500_000_000},
+            {**anchor, "segment_id": 1, "stored_start": PAUSE_BOUNDARY, "stored_stop": count,
+             "first_sample_estimate_monotonic_ns": PAUSED_ANCHOR_NS + 32_500_000_000},
+        ],
+    )
+    write_json(metadata_path, metadata)
+    manifest["recording"]["clock"] = {
+        **metadata, "metadata_path": clock["metadata_path"], "journal_path": clock["journal_path"],
+    }
+    pauses = [{"pause_id": 1, "boundary_sample": PAUSE_BOUNDARY,
+               "start_wall_seconds": 30.5, "end_wall_seconds": 32.5}]
+    manifest["recording"]["timeline"].update(
+        time_base="segmented_recording", acquisition_pauses=pauses, pause_samples_retained=False,
+    )
+    sidecar.update(RecordingType="discontinuous", AcquisitionPauses=pauses)
+    write_json(root / bids["eeg_json"], sidecar)
+    events = read_tsv(root / bids["events_tsv"])
+    retry = next(row for row in events if row["trial_id"] == "B001-T021")
+    retry["trial_id"] = "B001-T021-A002"
+    interrupted = {
+        **retry, "onset": "30.3", "sample": "7575", "duration": "0.2",
+        "trial_type": "interrupted_stimulus", "event_kind": "interrupted_stimulus",
+        "trial_id": "B001-T021-A001", "digit": "n/a", "value": "n/a",
+    }
+    boundary = dict.fromkeys(retry, "n/a")
+    boundary.update(
+        onset="30.5", sample=str(PAUSE_BOUNDARY), duration="0", trial_type="acquisition_boundary",
+        event_kind="acquisition_boundary", value="pause", block_id="1",
+    )
+    events.extend((interrupted, boundary))
+    events.sort(key=lambda row: float(row["onset"]))
+    write_tsv(root / bids["events_tsv"], events)
+    start = datetime.fromisoformat(manifest["started_utc"].replace("Z", "+00:00"))
+    manifest["target_label"]["confirmed_utc"] = (start + timedelta(seconds=143)).isoformat()
+    manifest["ended_utc"] = (start + timedelta(seconds=144)).isoformat()
+    write_json(root / "session.json", manifest)
+    return root
