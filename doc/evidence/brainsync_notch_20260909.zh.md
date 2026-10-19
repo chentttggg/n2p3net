@@ -74,6 +74,17 @@ BrainSync缓存CLI、本人校准CLI及质量报告均支持完整`--preprocessi
 原执行前dirty源码已物理压缩并逐成员核验：
 `frozen/brainsync_notch_20260909_before/{source.zip,manifest.json}`，264份源码/测试/指导文件。
 本次结果仍位于`experiments/runs/brainsync_quality_20260909/`：
-`notch_validation.json`为真实信号和完整ERP算子验证，`notch_final_tests.xml`及对应日志为全套测试，
+`verify_notch.py`及`notch_validation_final.json`为可复算的真实信号和完整ERP算子验证，
+`notch_accepted_tests.xml`及对应日志为最终通过的全套测试，
 `notch_current_report/`为新默认的真实基础报告，`notch_legacy_canonical_report/`为旧模型重放报告。
 先前质量报告及旧实验数值不改写。源文件摘要绑定实际运行时文件，不把父Git commit当作全部执行源码。
+
+最终完整复核为**1555通过、4跳过、0失败**（422.76秒），Ruff与`git diff --check HEAD`通过。
+其中一次复核在未修改的`raw_artifacts`并发快照清理遇到Windows临时文件WinError5；
+单独复查通过，随后完整复核也通过。相关失败日志保留，没有通过修改无关模块掩盖结果。
+收尾还补强了源签名缺字段反例，避免旧格式读取用默认值补造带通/Q声明；该门禁及迁移链95项再验证通过。
+已运行的全套加最终针对性检查分别保留日志，不冒称一次运行覆盖所有后续源码编辑。
+最终实现代码267文件已压缩逐成员核验，见`frozen/brainsync_notch_20260909/manifest.json`；
+本轮完成摘要、源码和产物摘要在`notch_completion.json`。工作树中的并发暂存保持原样。
+归档后并发维护重整了`tests/`夹具，生产代码与归档仍逐字节相同；已记录受影响测试文件，
+并在当前夹具上再次通过全部16项陷波测试，没有覆盖或撤销并发修改。

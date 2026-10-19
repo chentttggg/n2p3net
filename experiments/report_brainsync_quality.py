@@ -11,15 +11,15 @@ for location in (ROOT, ROOT / "src"):
     if str(location) not in sys.path:
         sys.path.insert(0, str(location))
 
-from data.brainsync import load_brainsync_inference_session  # noqa: E402
-from data.continuous_qc import continuous_qc_from_record, load_continuous_qc  # noqa: E402
-from data.epochs import PreprocessingSpec  # noqa: E402
-from data.ocular import eog_regression_from_record, load_eog_regression  # noqa: E402
-from experiments.brainsync_model_task import (  # noqa: E402
-    _apply_reference,
-    _resolve_reference_request,
-    calibration_preprocessing,
+from data.brainsync import (  # noqa: E402
+    BRAIN_SYNC_PREPROCESSING,
+    apply_brainsync_reference,
+    load_brainsync_inference_session,
+    resolve_brainsync_reference,
 )
+from data.continuous_qc import load_continuous_qc  # noqa: E402
+from data.epochs import load_preprocessing_spec  # noqa: E402
+from data.ocular import load_eog_regression  # noqa: E402
 from research.recording_quality import create_recording_quality_report, file_sha256  # noqa: E402
 from transfer.calibrated import load_calibrated_predictor  # noqa: E402
 from transfer.quality import load_epoch_quality  # noqa: E402
@@ -45,32 +45,20 @@ def main(argv=None):
                if name not in {"session_dir", "output_dir"}}
 
     def loader(root):
-        channels = None
-        predictor = None
         if args.model_artifact:
             predictor = load_calibrated_predictor(args.model_artifact, device="cpu")
-            preprocessing = PreprocessingSpec(**predictor.metadata["input_contract"]["preprocessing"])
-            frozen = predictor.metadata["input_request"]
-            continuous = continuous_qc_from_record(frozen["continuous_qc_model"]) if frozen.get("continuous_qc_model") else None
-            ocular = eog_regression_from_record(frozen["ocular_model"]) if frozen.get("ocular_model") else None
-            reference = _resolve_reference_request(frozen.get("reference_channel"), ocular, continuous,
-                                                   mode=frozen.get("reference_mode", "auto"))
-            channels = tuple(frozen["channel_names"])
             state["epoch"] = predictor.epoch_quality
             request["model_sha256"] = file_sha256(args.model_artifact)
-        else:
-            preprocessing = calibration_preprocessing(args.preprocessing_config)
-            continuous = load_continuous_qc(args.continuous_qc_model) if args.continuous_qc_model else None
-            ocular = load_eog_regression(args.ocular_model) if args.ocular_model else None
-            reference = _resolve_reference_request(args.reference_channel, ocular, continuous, mode=args.reference_mode)
-            state["epoch"] = load_epoch_quality(args.epoch_qc_model) if args.epoch_qc_model else None
-        dataset = _apply_reference(load_brainsync_inference_session(root, channels=channels,
-                                   preprocessing=preprocessing, ocular_model=ocular,
-                                   continuous_qc_model=continuous), reference, ocular, channels=channels)
-        if predictor is not None:
-            predictor.validate_input(dataset)
-            predictor.validate_inference_scope(dataset)
-        return dataset
+            return predictor.load_inference_session(root)
+        preprocessing = load_preprocessing_spec(args.preprocessing_config) if args.preprocessing_config else BRAIN_SYNC_PREPROCESSING
+        continuous = load_continuous_qc(args.continuous_qc_model) if args.continuous_qc_model else None
+        ocular = load_eog_regression(args.ocular_model) if args.ocular_model else None
+        reference = resolve_brainsync_reference(args.reference_channel, ocular, continuous, mode=args.reference_mode)
+        state["epoch"] = load_epoch_quality(args.epoch_qc_model) if args.epoch_qc_model else None
+        return apply_brainsync_reference(
+            load_brainsync_inference_session(root, preprocessing=preprocessing, ocular_model=ocular,
+                                            continuous_qc_model=continuous), reference, ocular,
+        )
 
     def progress(value, message):
         print(f"PROGRESS {value}", flush=True)

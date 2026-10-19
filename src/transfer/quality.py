@@ -17,6 +17,7 @@ from data.continuous_qc import (
     CONTINUOUS_QC_CONSTANT_SCHEMA,
     continuous_qc_from_record,
     minimum_usable_channel_count,
+    validate_recovery_contract,
 )
 from data.epochs import EpochDataset, materialize_dataset_identity, materialize_dataset_lineage
 from data.lineage import DataLineage
@@ -63,7 +64,16 @@ def validate_personal_epoch_raw_quality(processing: dict, quality) -> None:
 
 def _validate_dataset_raw_quality(dataset: EpochDataset, quality) -> None:
     if dataset.provenance.get("session_schema") == BRAIN_SYNC_SESSION_SCHEMA:
-        validate_personal_epoch_raw_quality(dataset.provenance.get("continuous_artifact_processing", {}), quality)
+        processing = dataset.provenance.get("continuous_artifact_processing", {})
+        validate_personal_epoch_raw_quality(processing, quality)
+        if isinstance(quality, (PersonalEpochQualityPolicy, PersonalEpochQualityModel)) and dataset.preprocessing.filter_phase == "zero":
+            try:
+                frozen = continuous_qc_from_record(processing["model"])
+                validate_recovery_contract(frozen, dataset.preprocessing,
+                                           source_reference=dataset.provenance["source_reference"])
+            except (KeyError, TypeError, ValueError) as error:
+                raise PersonalEpochRawQualityError(
+                    "zero-phase personal QC requires matching bidirectional boundary recovery") from error
 
 
 def epoch_quality_from_record(record: dict[str, object]) -> EpochQualityModel:

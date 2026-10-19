@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import json
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
 
@@ -11,13 +12,22 @@ import numpy as np
 import torch
 from sklearn.metrics import roc_auc_score
 
+from baselines.structured_erp import ERP_FAMILIES, StructuredERP
+from baselines.temporal_transfer import resolve_temporal_basis
+from data.candidate_task import (
+    CandidateTaskContract,
+    MembershipDecision,
+    validate_candidate_membership_metadata,
+)
 from data.continuous_qc import minimum_usable_channel_count, validate_continuous_calibration_budget
 from data.epochs import EpochDataset, materialize_dataset_identity
 from data.ocular import validate_eog_calibration_budget
+from models.adapters import FeatureDomainTransfer
 from models.candidate_evidence import candidate_evidence_scores
 from models.n2p3net import N2P3Net
 from research.contracts import semantic_sha256
 from research.execution import ExpectedSubjectError
+from train.early_stopping import DEFAULT_EARLY_STOP_PATIENCE
 from transfer.binary import (
     fit_shrinkage_feature_model,
     plain_trunk_configuration,
@@ -29,7 +39,7 @@ from transfer.quality import EpochQualityModel, EpochQualityPolicy, validate_epo
 from transfer.recipes import TargetRecipe
 from transfer.subject_adapter import SubjectAdapter
 
-SELECTOR_MODES = ("five_candidates", "transfer_only", "no_transfer", "legacy_product")
+SELECTOR_MODES = ("five_candidates", "transfer_only", "no_transfer", "legacy_product", "unified", "fixed_erp")
 
 
 def calibration_candidate_recipes(
@@ -38,6 +48,14 @@ def calibration_candidate_recipes(
 ) -> tuple[TargetRecipe, ...]:
     if selector_mode not in SELECTOR_MODES:
         raise ValueError(f"unknown calibration selector mode: {selector_mode}")
+    if selector_mode == "fixed_erp":
+        if not isinstance(transfer_policy, TargetRecipe) or transfer_policy.initialization not in ERP_FAMILIES:
+            raise ValueError("fixed_erp requires one explicit ERP TargetRecipe")
+        return (transfer_policy,)
+    if selector_mode == "unified":
+        if not isinstance(transfer_policy, TargetRecipe):
+            raise ValueError("unified calibration requires one explicit TargetRecipe")
+        return (transfer_policy,)
     policy = transfer_policy or TargetRecipe("transfer", batch_size=batch_size, seed=seed)
     if selector_mode == "legacy_product":
         policy = replace(policy, input_statistics="source", bn_buffers="source")
@@ -69,9 +87,10 @@ def waveform_lda_recipe(*, batch_size: int = 64, seed: int = 0) -> TargetRecipe:
 
 
 def _observed(dataset: EpochDataset) -> np.ndarray:
-    return np.broadcast_to(dataset.channel_mask, dataset.X.shape[:2]) if dataset.trial_channel_mask is None else (
-        np.asarray(dataset.trial_channel_mask, dtype=bool)
-    )
+    observed = np.broadcast_to(dataset.channel_mask, dataset.X.shape[:2]).copy()
+    if dataset.trial_channel_mask is not None:
+        observed &= dataset.trial_channel_mask
+    return observed
 
 
 def _mask(mask: np.ndarray, n: int) -> np.ndarray:
@@ -111,13 +130,20 @@ def waveform_lda_training_selection(
     return channels, training, policy
 
 
-def _validate_ocular_fit_scope(dataset: EpochDataset, training: np.ndarray) -> None:
+def validate_calibration_raw_fit_scope(dataset: EpochDataset, training_mask: np.ndarray) -> None:
+    """Check personal raw-fit authority within complete training recordings.
+
+    Physical recording identity and raw operator support remain loader gates;
+    session membership alone does not certify a within-recording split.
+    Source checkpoint statistics have their own authority and are not checked here.
+    """
+    training = _mask(training_mask, dataset.n_epochs)
     ocular = dataset.provenance.get("ocular_artifact_processing", {"status": "not_applied"})
     continuous = dataset.provenance.get("continuous_artifact_processing", {"status": "not_applied"})
     if ocular.get("status") != "applied" and continuous.get("status") != "applied":
         return
     if "session" not in dataset.metadata:
-        raise ValueError("session-fitted ocular preprocessing requires explicit session identities")
+        raise ValueError("session-fitted raw preprocessing requires explicit session identities")
     subjects = np.asarray(dataset.subject_ids).astype(str)
     sessions = dataset.metadata["session"].astype(str).to_numpy()
     identity = materialize_dataset_identity(dataset)
@@ -129,7 +155,132 @@ def _validate_ocular_fit_scope(dataset: EpochDataset, training: np.ndarray) -> N
     for subject in np.unique(subjects[training]):
         selected_sessions = np.unique(sessions[training & (subjects == subject)])
         if ((subjects == subject) & np.isin(sessions, selected_sessions) & ~training).any():
-            raise ValueError("session-fitted ocular preprocessing cannot certify a partial-recording training scope")
+            raise ValueError("session-fitted raw preprocessing cannot certify a partial-recording training scope")
+
+
+def calibration_decision_groups(dataset: EpochDataset, training_mask: np.ndarray, *, repetitions: int = 5):
+    """Build authorized complete requested groups before epoch QC removes rows.
+
+    Direct tasks use nonoverlapping declared repetition windows; row/column
+    tasks retain each physical selection. No target outside the row budget is
+    read to complete a partial group. Raw/time-scope admission remains upstream.
+    """
+    training = _mask(training_mask, dataset.n_epochs)
+    if dataset.y is None:
+        raise ValueError("calibration decisions require authorized epoch labels")
+    if isinstance(repetitions, bool) or not isinstance(repetitions, int) or repetitions < 1:
+        raise ValueError("decision repetition budget must be a positive integer")
+    timeline = dataset.event_timeline
+    evidence = np.asarray(timeline.evidence_indices, dtype=np.int64)
+    present = evidence >= 0
+    if not np.array_equal(np.sort(evidence[present]), np.arange(dataset.n_epochs)):
+        raise ValueError("calibration decisions require one physical event per epoch row")
+    ledger = {"schema": "n2p3_calibration_decisions/1", "available": False,
+              "risk": "participant_macro_original_decision_macro", "groups": [], "excluded_groups": []}
+    task = dataset.provenance.get("candidate_task_contract")
+    task = None if task is None else CandidateTaskContract.from_record(task)
+    vocabulary = dataset.provenance.get("candidate_vocabulary")
+    if task is None and vocabulary is None:
+        from data.brainsync_contract import BRAIN_SYNC_BIDS_CONTRACT, BRAIN_SYNC_SESSION_SCHEMA
+
+        if dataset.provenance.get("session_schema") == BRAIN_SYNC_SESSION_SCHEMA:
+            vocabulary = BRAIN_SYNC_BIDS_CONTRACT.candidate_vocabulary
+    if task is None and vocabulary is None:
+        ledger["reason"] = "membership_unavailable"
+        return (), (), np.empty(0), ledger
+    if not timeline.complete:
+        ledger["reason"] = "incomplete_physical_timeline"
+        return (), (), np.empty(0), ledger
+    vocabulary = None if vocabulary is None else tuple(str(value) for value in vocabulary)
+    subjects = np.asarray(timeline.subject_ids).astype(str)
+    group_ids = np.asarray(timeline.group_ids).astype(str)
+    repeat = np.asarray(timeline.repetition_indices)
+    groups, targets, origins = [], [], []
+    for subject, original in dict.fromkeys(zip(subjects, group_ids, strict=True)):
+        original_events = (subjects == subject) & (group_ids == original)
+        if task is None:
+            if np.any(repeat[original_events] < 0):
+                raise ValueError("direct decisions require declared physical repetition indices")
+            windows = tuple(dict.fromkeys((repeat[original_events] // repetitions).tolist()))
+        else:
+            windows = (None,)
+        for window in windows:
+            selected = original_events if window is None else original_events & (repeat // repetitions == window)
+            rows = evidence[selected]
+            rows = rows[rows >= 0]
+            identifier = json.dumps([subject, original, window], separators=(",", ":"))
+            if not len(rows) or not training[rows].any():
+                ledger["excluded_groups"].append({"decision_id": identifier, "reason": "no_authorized_label_evidence"})
+                continue
+            if not training[rows].all():
+                ledger["excluded_groups"].append({"decision_id": identifier, "reason": "outside_training_budget"})
+                continue
+            if task is None:
+                group = MembershipDecision.from_timeline(timeline, selected, repetitions=repetitions,
+                    repetition_start=window * repetitions, candidate_vocabulary=vocabulary)
+                retained_events = selected & present
+                truths = np.unique(np.asarray(timeline.target_candidate_ids).astype(str)[retained_events])
+                if len(truths) != 1 or truths[0] not in group.candidate_vocabulary:
+                    raise ValueError("authorized direct decision must have one declared target")
+                target = group.candidate_vocabulary.index(str(truths[0]))
+                if "block_id" in dataset.metadata and dataset.metadata.iloc[rows]["block_id"].nunique() != 1:
+                    raise ValueError("direct decision window crosses physical BrainSync blocks")
+            else:
+                # Physical schedules, not only surviving metadata rows, own the group.
+                group_repetitions = int(np.max(repeat[selected])) + 1
+                if "selection_repetitions" in dataset.metadata:
+                    declared = dataset.metadata.iloc[rows]["selection_repetitions"].unique()
+                    if (len(declared) != 1 or isinstance(declared[0], (bool, np.bool_))
+                            or not isinstance(declared[0], (int, np.integer)) or declared[0] < 1):
+                        raise ValueError("row/column selection requires one positive declared repetition count")
+                    group_repetitions = int(declared[0])
+                group = MembershipDecision.from_timeline(timeline, selected, repetitions=group_repetitions,
+                                                         task_contract=task)
+                if not group.schedule_complete:
+                    ledger["excluded_groups"].append({"decision_id": identifier, "reason": "incomplete_requested_schedule"})
+                    continue
+                metadata = validate_candidate_membership_metadata(dataset.metadata.iloc[rows], task,
+                                                                  labels=dataset.y[rows])
+                target_pairs = np.unique(np.column_stack((metadata.target_rows, metadata.target_columns)), axis=0)
+                if len(target_pairs) != 1:
+                    raise ValueError("authorized row/column decision must have one target intersection")
+                target = int(target_pairs[0, 0] * task.n_columns + target_pairs[0, 1])
+                observed_events = np.flatnonzero(selected & present)
+                by_event = {int(row): index for index, row in enumerate(rows)}
+                if any(str(metadata.candidate_ids[by_event[int(evidence[event])]]) != str(timeline.candidate_ids[event])
+                       for event in observed_events):
+                    raise ValueError("row/column epoch membership differs from the physical timeline")
+            group.validate_epoch_labels(dataset.y, target)
+            if not group.schedule_complete:
+                ledger["excluded_groups"].append({"decision_id": identifier, "reason": "incomplete_requested_schedule"})
+                continue
+            groups.append(group)
+            targets.append(target)
+            origins.append((subject, original))
+            ledger["groups"].append({"decision_id": identifier, "target_candidate": group.candidate_vocabulary[target],
+                "scheduled_events": len(group.event_ids), "available_events": int(np.sum(group.evidence_indices >= 0)),
+                "membership_sha256": semantic_sha256(group.record())})
+    people = set(subject for subject, _ in origins)
+    weights = np.asarray([1. / len(people) / len({origin for owner, origin in origins if owner == subject})
+                          / origins.count((subject, original)) for subject, original in origins], dtype=float)
+    ledger.update(available=bool(groups), requested_groups=len(groups), risk_weights=weights.tolist(),
+                  reason=None if groups else "no_complete_decision_inside_training_budget")
+    return tuple(groups), tuple(targets), weights, ledger
+
+
+def remap_decision_groups(groups, source_rows):
+    """Map authorized event evidence through an explicit row subset/QC result.
+
+    This mapping does not grant label authority. Build groups against the
+    authorized pre-QC scope first; removed evidence then remains requested as -1.
+    """
+    rows = np.asarray(source_rows)
+    if rows.ndim != 1 or not np.issubdtype(rows.dtype, np.integer) or np.any(rows < 0) or len(np.unique(rows)) != len(rows):
+        raise ValueError("decision row remapping requires unique original integer row indices")
+    mapping = {int(row): index for index, row in enumerate(rows)}
+    return tuple(replace(group, evidence_indices=np.asarray([
+        mapping.get(int(row), -1) if row >= 0 else -1 for row in group.evidence_indices], dtype=np.int64))
+        for group in groups)
 
 
 def _state_digest(state: dict[str, torch.Tensor]) -> str:
@@ -154,10 +305,15 @@ class FittedCalibrationCandidate:
     epoch_quality: EpochQualityModel | None = None
     channel_quality_availability: bool = False
     minimum_usable_channels: int = 1
+    erp: StructuredERP | None = None
 
     @property
     def state(self) -> dict[str, torch.Tensor]:
         state = {}
+        if self.erp is not None:
+            _, arrays = self.erp.export_state()
+            state.update({f"erp.{key}": torch.as_tensor(value) for key, value in arrays.items()})
+            state["waveform_channels"] = torch.as_tensor(self.waveform_channels, dtype=torch.int64)
         if self.adapter is not None:
             state = {f"trunk.{key}": value.detach().cpu().clone()
                      for key, value in self.adapter.trunk.state_dict().items()}
@@ -176,6 +332,10 @@ class FittedCalibrationCandidate:
         return state
 
     def predict_logit(self, X: np.ndarray, trial_channel_mask: np.ndarray | None = None) -> np.ndarray:
+        if trial_channel_mask is not None:
+            trial_channel_mask = np.asarray(trial_channel_mask)
+            if trial_channel_mask.dtype != bool or trial_channel_mask.shape != np.asarray(X).shape[:2]:
+                raise ValueError("prediction channel mask must be an aligned boolean (N,C) array")
         if self.epoch_quality is not None:
             transformed = self.epoch_quality.transform(X, trial_channel_mask)
             available = ~transformed.drop_epoch_mask & ~transformed.all_channels_bad
@@ -195,6 +355,16 @@ class FittedCalibrationCandidate:
                     logits[usable] = replace(self, minimum_usable_channels=1).predict_logit(
                         X[usable], np.asarray(trial_channel_mask)[usable])
                 return logits
+        if self.erp is not None:
+            available = np.ones(len(X), dtype=bool)
+            if trial_channel_mask is not None:
+                available &= np.asarray(trial_channel_mask)[:, self.waveform_channels].all(axis=1)
+                if not self.channel_quality_availability and not available.all():
+                    raise ValueError("ERP classifier requires every selected channel to be observed")
+            result = np.full(len(X), np.nan)
+            if available.any():
+                result[available] = self.erp.predict_logit(np.asarray(X)[available][:, self.waveform_channels])
+            return result
         if self.lda is None:
             return self.adapter.predict_logit(X, trial_channel_mask=trial_channel_mask)
         available = np.ones(len(X), dtype=bool)
@@ -265,19 +435,26 @@ class CalibrationCandidateFitCache:
         source_input_stats: tuple[np.ndarray, np.ndarray] | None = None,
         device: str = "cpu", validation_mask: np.ndarray | None = None,
         validation_behavior: str = "select_epoch",
-        early_stop_patience: int = 6, early_stop_min_delta: float = 1e-6,
+        early_stop_patience: int = DEFAULT_EARLY_STOP_PATIENCE, early_stop_min_delta: float = 1e-6,
         epoch_quality_policy: EpochQualityPolicy | None = None,
         epoch_quality_model: EpochQualityModel | None = None,
+        source_temporal_basis=None,
     ) -> FittedCalibrationCandidate:
         validate_calibration_quality_ingress(dataset)
         if phase not in {"inner", "full_prefix"}:
             raise ValueError("cached candidate phase must be inner or full_prefix")
         training = _mask(training_mask, dataset.n_epochs)
         validate_epoch_quality_fit_scope(dataset, training, policy=epoch_quality_policy, model=epoch_quality_model)
-        _validate_ocular_fit_scope(dataset, training)
+        validate_calibration_raw_fit_scope(dataset, training)
+        decision_key = {}
+        if recipe.candidate_loss_weight is not None:
+            groups, targets, weights, _ = calibration_decision_groups(dataset, training)
+            decision_key = {"decision_scope": {"groups": [group.record() for group in groups],
+                "targets": targets, "weights": weights.tolist()}}
         key = semantic_sha256({
             "schema": "n2p3_calibration_fit_key/1", "phase": phase,
             "recipe": recipe.record(), "training": _fit_rows_digest(dataset, training),
+            "source_temporal_basis": None if source_temporal_basis is None else source_temporal_basis.record(),
             "validation": None if validation_mask is None else _fit_rows_digest(dataset, validation_mask),
             "validation_behavior": validation_behavior,
             "early_stop_patience": early_stop_patience, "early_stop_min_delta": early_stop_min_delta,
@@ -287,6 +464,7 @@ class CalibrationCandidateFitCache:
             "continuous_processing": dataset.provenance.get("continuous_artifact_processing"),
             "epoch_quality_policy": None if epoch_quality_policy is None else asdict(epoch_quality_policy),
             "epoch_quality_model_digest": None if epoch_quality_model is None else semantic_sha256(epoch_quality_model.record()),
+            **decision_key,
             "source": None if source_trunk is None else {
                 "architecture": asdict(plain_trunk_configuration(source_trunk)),
                 "state": _state_digest(dict(source_trunk.state_dict())),
@@ -312,7 +490,8 @@ class CalibrationCandidateFitCache:
                 source_trunk=source_trunk, source_input_stats=source_input_stats, device=device,
                 validation_mask=validation_mask, validation_behavior=validation_behavior,
                 early_stop_patience=early_stop_patience, early_stop_min_delta=early_stop_min_delta,
-                epoch_quality_policy=epoch_quality_policy, epoch_quality_model=epoch_quality_model)
+                epoch_quality_policy=epoch_quality_policy, epoch_quality_model=epoch_quality_model,
+                source_temporal_basis=source_temporal_basis)
             fitted.fit_history["fit_reuse"] = {
                 "fit_key_sha256": key, "phase": phase, "origin_fit_id": self.fit_calls,
                 "cache_hit": False, "fit_executed": True,
@@ -328,9 +507,10 @@ def fit_calibration_candidate(
     source_input_stats: tuple[np.ndarray, np.ndarray] | None = None, device: str = "cpu",
     validation_mask: np.ndarray | None = None,
     validation_behavior: str = "select_epoch",
-    early_stop_patience: int = 6, early_stop_min_delta: float = 1e-6,
+    early_stop_patience: int = DEFAULT_EARLY_STOP_PATIENCE, early_stop_min_delta: float = 1e-6,
     epoch_quality_policy: EpochQualityPolicy | None = None,
     epoch_quality_model: EpochQualityModel | None = None,
+    source_temporal_basis=None,
 ) -> FittedCalibrationCandidate:
     """Fit declared rows; validation either replays selection or records fixed-budget diagnostics."""
     validate_calibration_quality_ingress(dataset)
@@ -340,7 +520,7 @@ def fit_calibration_candidate(
         source_input_stats=source_input_stats, device=device, validation_mask=validation_mask,
         validation_behavior=validation_behavior, early_stop_patience=early_stop_patience,
         early_stop_min_delta=early_stop_min_delta, epoch_quality_policy=epoch_quality_policy,
-        epoch_quality_model=epoch_quality_model,
+        epoch_quality_model=epoch_quality_model, source_temporal_basis=source_temporal_basis,
     )
 
 
@@ -350,15 +530,27 @@ def _fit_calibration_candidate(
     source_input_stats: tuple[np.ndarray, np.ndarray] | None = None, device: str = "cpu",
     validation_mask: np.ndarray | None = None,
     validation_behavior: str = "select_epoch",
-    early_stop_patience: int = 6, early_stop_min_delta: float = 1e-6,
+    early_stop_patience: int = DEFAULT_EARLY_STOP_PATIENCE, early_stop_min_delta: float = 1e-6,
     epoch_quality_policy: EpochQualityPolicy | None = None,
     epoch_quality_model: EpochQualityModel | None = None,
+    source_temporal_basis=None,
+    _decision_scope=None,
 ) -> FittedCalibrationCandidate:
     """Internal fitting also accepts the current call's quality-transformed rows."""
     if validation_behavior not in {"select_epoch", "select_epoch_full_trajectory", "diagnostics_only"}:
         raise ValueError("unsupported candidate validation_behavior")
+    temporal_basis = None
+    if recipe.initialization == "temporal_lda":
+        temporal_basis = resolve_temporal_basis(dataset, kind=recipe.temporal_basis_kind,
+                                               rank=recipe.temporal_rank, source_basis=source_temporal_basis)
+    elif source_temporal_basis is not None:
+        raise ValueError("source temporal basis belongs only to temporal_lda")
     training = _mask(training_mask, dataset.n_epochs)
-    _validate_ocular_fit_scope(dataset, training)
+    validate_calibration_raw_fit_scope(dataset, training)
+    if recipe.candidate_loss_weight is not None and _decision_scope is None:
+        _decision_scope = calibration_decision_groups(dataset, training)
+        if not _decision_scope[0]:
+            raise ValueError(f"decision recipe has no authorized complete group: {_decision_scope[3]['reason']}")
     if epoch_quality_policy is not None or epoch_quality_model is not None:
         from transfer.quality import apply_epoch_quality, fit_epoch_quality
         quality = (fit_epoch_quality(dataset, training, epoch_quality_policy)
@@ -367,11 +559,16 @@ def _fit_calibration_candidate(
         positions = np.flatnonzero(cleaned.event_timeline.evidence_indices >= 0)
         positions = positions[np.argsort(cleaned.event_timeline.evidence_indices[positions])]
         original_rows = dataset.event_timeline.evidence_indices[positions]
+        cleaned_scope = None
+        if _decision_scope is not None:
+            groups, targets, weights, ledger = _decision_scope
+            cleaned_scope = (remap_decision_groups(groups, original_rows), targets, weights, ledger)
         fitted = _fit_calibration_candidate(cleaned, recipe, training[original_rows],
             source_trunk=source_trunk, source_input_stats=source_input_stats, device=device,
             validation_mask=None if validation_mask is None else np.asarray(validation_mask)[original_rows],
             validation_behavior=validation_behavior, early_stop_patience=early_stop_patience,
-            early_stop_min_delta=early_stop_min_delta)
+            early_stop_min_delta=early_stop_min_delta, _decision_scope=cleaned_scope,
+            source_temporal_basis=source_temporal_basis)
         fitted.epoch_quality = quality
         fitted.fit_history["epoch_quality"] = {"model": quality.record(),
             "model_digest": semantic_sha256(quality.record()),
@@ -385,6 +582,7 @@ def _fit_calibration_candidate(
     observed = _observed(dataset)
     adapter = None
     fitted_lda = None
+    fitted_erp = None
     waveform_channels = None
     history = {"fit_scope": {"training_rows": int(training.sum()), "validation_rows": 0,
                              "prefix_mask_explicit": True}}
@@ -392,7 +590,7 @@ def _fit_calibration_candidate(
     for array in (dataset.X[training], labels, observed[training]):
         training_digest.update(np.ascontiguousarray(array).tobytes())
     requested_training_digest = training_digest.hexdigest()
-    if recipe.initialization != "waveform_lda":
+    if recipe.initialization not in {"waveform_lda"} | ERP_FAMILIES:
         if source_trunk is None and recipe.initialization != "scratch":
             raise ValueError("source initialized candidate has no compatible source checkpoint")
         if recipe.initialization == "scratch":
@@ -409,6 +607,12 @@ def _fit_calibration_candidate(
         else:
             trunk = copy.deepcopy(source_trunk)
             stats = source_input_stats or (None, None)
+        if recipe.weights == "adapter":
+            if type(trunk) is not N2P3Net or trunk.splitbn_config is not None:
+                raise ValueError("target residual construction requires a plain source core")
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed(recipe.seed)
+                trunk = FeatureDomainTransfer(trunk, config=recipe.target_adapter_config)
         initial_state_sha256 = _state_digest(dict(trunk.state_dict()))
         adapter = SubjectAdapter(
             trunk, device=torch.device(device),
@@ -418,20 +622,32 @@ def _fit_calibration_candidate(
                 early_stop_patience=early_stop_patience, early_stop_min_delta=early_stop_min_delta,
             ),
         )
-        if validation_mask is None:
-            adapter.fit(dataset.X[training], labels, prefix_mask=np.ones(int(training.sum()), dtype=bool),
-                        trial_channel_mask=observed[training])
-        else:
+        scope = training
+        if validation_mask is not None:
             validation = _mask(validation_mask, dataset.n_epochs)
             if (training & validation).any():
                 raise ValueError("candidate training and validation must be disjoint")
             scope = training | validation
+        decision_kwargs = {}
+        if _decision_scope is not None:
+            groups, targets, weights, ledger = _decision_scope
+            decision_kwargs = {"decision_groups": remap_decision_groups(groups, np.flatnonzero(scope)),
+                               "decision_targets": targets, "decision_weights": weights}
+        if validation_mask is None:
+            adapter.fit(dataset.X[training], labels, prefix_mask=np.ones(int(training.sum()), dtype=bool),
+                        trial_channel_mask=observed[training], **decision_kwargs)
+        else:
             adapter.fit(dataset.X[scope], dataset.y[scope], training_mask=training[scope],
                         validation_mask=validation[scope], prefix_mask=np.ones(int(scope.sum()), dtype=bool),
-                        trial_channel_mask=observed[scope])
+                        trial_channel_mask=observed[scope], **decision_kwargs)
         history = copy.deepcopy(adapter.last_history)
         history["initial_state_sha256"] = initial_state_sha256
-    if recipe.initialization in {"waveform_lda", "source_feature_lda"}:
+        if _decision_scope is not None:
+            history["decision_scope"] = {**copy.deepcopy(ledger),
+                "post_quality_groups": [group.record() for group in groups],
+                "post_quality_complete_groups": sum(group.schedule_complete and bool((group.evidence_indices >= 0).all())
+                                                     for group in groups)}
+    if recipe.initialization in {"waveform_lda", "source_feature_lda"} | ERP_FAMILIES:
         if adapter is None:
             waveform_channels, lda_training, waveform_policy = waveform_lda_training_selection(dataset, training)
             if waveform_policy == "complete_observations_of_fixed_training_channel_union":
@@ -442,9 +658,9 @@ def _fit_calibration_candidate(
                 history["waveform_training_policy"] = waveform_policy
             if not len(waveform_channels):
                 raise ValueError("raw waveform LDA requires channels observed on every training row")
-            features = target_shrinkage_features(
-                dataset.X[lda_training][:, waveform_channels], sfreq=dataset.preprocessing.sfreq,
-            )
+            values = dataset.X[lda_training][:, waveform_channels]
+            features = (None if recipe.initialization in ERP_FAMILIES else
+                        target_shrinkage_features(values, sfreq=dataset.preprocessing.sfreq))
             labels = dataset.y[lda_training]
             training_digest = hashlib.sha256()
             for array in (
@@ -455,7 +671,13 @@ def _fit_calibration_candidate(
             history["waveform_channel_indices"] = waveform_channels.tolist()
         else:
             features = adapter.predict_features(dataset.X[training], trial_channel_mask=observed[training])
-        fitted_lda = fit_shrinkage_feature_model(features, labels)
+        if recipe.initialization in ERP_FAMILIES:
+            fitted_erp = StructuredERP(recipe.initialization, bin_width=recipe.erp_bin_width,
+                                      baseline_mode=dataset.preprocessing.baseline_mode,
+                                      temporal_basis=temporal_basis).fit(values, labels)
+            history["erp_artifact"] = fitted_erp.export_state()[0]
+        else:
+            fitted_lda = fit_shrinkage_feature_model(features, labels)
     history["requested_training_data_sha256"] = requested_training_digest
     history["training_data_sha256"] = training_digest.hexdigest()
     continuous = dataset.provenance.get("continuous_artifact_processing", {})
@@ -467,6 +689,7 @@ def _fit_calibration_candidate(
         recipe, dataset.preprocessing.sfreq, adapter, fitted_lda, history, waveform_channels,
         channel_quality_availability=channel_quality_availability,
         minimum_usable_channels=minimum_usable_channel_count(continuous, dataset.n_channels),
+        erp=fitted_erp,
     )
 
 
@@ -526,7 +749,7 @@ def score_calibration_candidate(
             block_rows = evidence[block][retained]
             score = candidate_evidence_scores(
                 by_row[block_rows], codes[retained], tuple(range(1, 10)),
-                aggregation="mean", missing_candidate_policy="abstain",
+                aggregation="mean",
             )
             complete = all(score.counts[code] == 5 for code in range(1, 10))
             predicted = score.predicted if complete else None
@@ -581,7 +804,7 @@ def select_calibration_candidate(
         score_calibration_candidate(dataset, np.zeros(int(split.validation_mask.sum())),
                                     split.validation_mask, protocol=protocol)
     if selection_legal:
-        _validate_ocular_fit_scope(dataset, split.training_mask)
+        validate_calibration_raw_fit_scope(dataset, split.training_mask)
         validate_epoch_quality_fit_scope(dataset, split.training_mask, policy=epoch_quality_policy, model=epoch_quality_model)
         for recipe in candidates:
             item = {**recipe.record(), "candidate_id": recipe.name}
@@ -611,7 +834,8 @@ def select_calibration_candidate(
             record["recipes"].append(item)
     completed = [item for item in record["recipes"] if item["status"] == "completed"]
     if completed:
-        rank = {"waveform_lda": 0, "source_feature_lda": 0, "scratch": 1, "source": 2}
+        rank = {"waveform_lda": 0, "source_feature_lda": 0, "scratch": 1, "source": 2,
+                **{family: 0 for family in ERP_FAMILIES}}
         selected = (
             min(completed, key=lambda item: -item["primary_score"])
             if selector_mode == "legacy_product" else min(completed, key=lambda item: (

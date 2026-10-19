@@ -12,64 +12,16 @@ import sys
 import time
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, as_completed, wait
 from dataclasses import asdict, replace
+from functools import lru_cache
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-import numpy as np  # noqa: E402
-import torch  # noqa: E402
-from sklearn.metrics import roc_auc_score  # noqa: E402
 
-from baselines.deep import DeepConfig  # noqa: E402
-from data.contract import SOURCE_COHORT_DATA_CONTRACTS, assert_p300_input_contract  # noqa: E402
-from data.epochs import (  # noqa: E402
-    load_epoch_dataset,
-    loaded_epoch_cache_attestation,
-    save_epoch_dataset,
-    select_epoch_channels,
-)
-from data.study import dataset_study_membership, study_ids_for_identity  # noqa: E402
 from research.contracts import TrainingRunContract, semantic_sha256  # noqa: E402
-from research.evaluation import (  # noqa: E402
-    build_evaluation_run_contract,
-    verified_source_snapshot,
-)
 from research.execution import ExpectedSubjectError, atomic_write_json  # noqa: E402
-from research.source_execution import (  # noqa: E402
-    HostMemoryAdmission,
-    SharedTrajectoryRegistry,
-    gpu_task_slot,
-    release_source_worker,
-    resolve_source_resources,
-)
-from research.source_resume import SourceChainResume  # noqa: E402
-from research.source_selection import (  # noqa: E402
-    SOURCE_CHAIN_LAYOUTS,
-    SOURCE_UPDATE_CANDIDATES,
-    fit_source_trajectory,
-    select_source_updates,
-    source_fit_ledger,
-    source_fixed_dose,
-    source_identity_axes,
-    source_inner_folds,
-)
-from train.runtime import available_cpu_threads, cpu_thread_budget  # noqa: E402
-from transfer.binary import (  # noqa: E402
-    STANDARD_CALIBRATION_TRIALS,
-    dataset_calibration_splits,
-    matched_split_digests,
-)
-from transfer.calibration_candidates import fit_calibration_candidate  # noqa: E402
-from transfer.checkpoint import (  # noqa: E402
-    PreparedTransferCheckpoint,
-    checkpoint_training_contract,
-    load_checkpoint_payload,
-    predict_n2p3_checkpoint,
-)
-from transfer.recipes import TargetRecipe  # noqa: E402
-from transfer.target_experiments import resolve_target_batch_rule  # noqa: E402
 
 
 def _sha256(path):
@@ -78,6 +30,8 @@ def _sha256(path):
 
 
 def _model_state_digest(trunk):
+    import torch
+
     digest = hashlib.sha256()
     for name, value in sorted(trunk.state_dict().items()):
         tensor = value.detach().cpu().contiguous()
@@ -91,9 +45,20 @@ def _model_state_digest(trunk):
 def fit_or_reuse_source_trajectory(
     *, registry, dataset, rows, config, destination, task_id,
     source_cache_sha256, source_snapshot_sha256, excluded_source_datasets,
-    device, evidence_scope, gpu_slots=None,
+    device, evidence_scope, gpu_slots=None, architecture=None,
+    runtime_preload_budget_bytes=None,
+    runtime_input_staging_gate=None,
 ):
     """Reuse exact source training inputs while binding each consumer's own contract."""
+    import numpy as np
+    import torch
+
+    from models.n2p3net import DEFAULT_N2P3_ARCHITECTURE
+    from research.source_execution import SharedTrajectoryRegistry
+    from research.source_selection import source_fit_ledger, source_identity_axes
+
+    architecture = DEFAULT_N2P3_ARCHITECTURE if architecture is None else architecture
+
     rows = np.asarray(rows, dtype=np.int64)
     fit_ledger = source_fit_ledger(dataset, rows, excluded_source_datasets=excluded_source_datasets)
     domains, people, _ = source_identity_axes(dataset)
@@ -117,6 +82,7 @@ def fit_or_reuse_source_trajectory(
         "channel_mask": dataset.channel_mask.tolist(),
         "source_reference": dataset.provenance.get("source_reference"),
         "config": training_config, "device": str(torch.device(device)),
+        "architecture_configuration": asdict(architecture),
         "source_snapshot_sha256": source_snapshot_sha256, "evidence_scope": evidence_scope,
         "initialization": "scratch_N2P3NetBaseline_fixed_source_seed",
     }
@@ -124,7 +90,10 @@ def fit_or_reuse_source_trajectory(
     arguments = dict(dataset=dataset, rows=rows, config=config, destination=destination, task_id=task_id,
         source_cache_sha256=source_cache_sha256, source_snapshot_sha256=source_snapshot_sha256,
         excluded_source_datasets=excluded_source_datasets, device=device, evidence_scope=evidence_scope,
-        signature=signature, signature_record=signature_record, fit_ledger=fit_ledger, gpu_slots=gpu_slots)
+        signature=signature, signature_record=signature_record, fit_ledger=fit_ledger, gpu_slots=gpu_slots,
+        architecture=architecture)
+    arguments["runtime_preload_budget_bytes"] = runtime_preload_budget_bytes
+    arguments["runtime_input_staging_gate"] = runtime_input_staging_gate
     if isinstance(registry, SharedTrajectoryRegistry):
         with registry.transaction(signature) as local:
             return _materialize_source_trajectory(registry=local, **arguments)
@@ -133,10 +102,21 @@ def fit_or_reuse_source_trajectory(
 
 def _materialize_source_trajectory(*, registry, dataset, rows, config, destination, task_id,
         source_cache_sha256, source_snapshot_sha256, excluded_source_datasets, device, evidence_scope,
-        signature, signature_record, fit_ledger, gpu_slots):
-    requested_updates = sorted(set(config.snapshot_updates) | {int(config.fixed_updates)})
+        signature, signature_record, fit_ledger, gpu_slots, architecture, runtime_preload_budget_bytes=None,
+        runtime_input_staging_gate=None):
+    import torch
+
+    from data.study import dataset_study_membership
+    from research.source_execution import gpu_task_slot, release_source_worker
+    from research.source_selection import fit_source_trajectory
+    from transfer.checkpoint import checkpoint_training_contract, load_checkpoint_payload
+
+    selecting = config.global_early_stopping is not None
+    requested_updates = [] if selecting else sorted(set(config.snapshot_updates) | {int(config.fixed_updates)})
     existing = next((entry for entry in registry.get(signature, [])
                      if set(requested_updates) <= set(entry["checkpoints"])), None)
+    if selecting and existing is not None:
+        requested_updates = sorted(existing["checkpoints"])
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
     checkpoints = {}
@@ -156,6 +136,9 @@ def _materialize_source_trajectory(*, registry, dataset, rows, config, destinati
                     source_snapshot_sha256=source_snapshot_sha256,
                     excluded_source_datasets=excluded_source_datasets,
                     device=torch.device(device), evidence_scope=evidence_scope,
+                    architecture=architecture,
+                    runtime_preload_budget_bytes=runtime_preload_budget_bytes,
+                    runtime_input_staging_gate=runtime_input_staging_gate,
                 )
                 physical_updates = int(model.last_history["optimizer_updates"])
                 physical_draws = int(model.last_history["trial_draws"])
@@ -179,6 +162,9 @@ def _materialize_source_trajectory(*, registry, dataset, rows, config, destinati
                 raise ValueError("cached source checkpoint changed after its original training")
             payload = load_checkpoint_payload(origin["path"])
             original = checkpoint_training_contract(payload)
+            from research.source_selection import source_architecture_record
+            if semantic_sha256(original.architecture) != semantic_sha256(source_architecture_record(dataset, architecture)):
+                raise ValueError("cached source checkpoint has a different model architecture")
             if set(original.training_participant_keys) != set(fit_ledger["training_participant_keys"]):
                 raise ValueError("cached source checkpoint has different training participants")
             origin_record = {**origin, "training_contract_digest": original.digest(),
@@ -192,9 +178,9 @@ def _materialize_source_trajectory(*, registry, dataset, rows, config, destinati
                 source_identity_digest=dataset.identity_table.digest(),
                 source_snapshot_sha256=source_snapshot_sha256,
                 architecture=original.architecture, preprocessing=original.preprocessing,
-                optimizer={**original.optimizer, "config": asdict(config), "actual_updates": update,
+                optimizer={**original.optimizer, "config": original.optimizer["config"] if selecting else asdict(config), "actual_updates": update,
                            "physical_optimizer_updates": 0, "physical_trial_draws": 0},
-                validation={"strategy": "exact_fitted_source_trajectory_reuse", "fit_ledger": fit_ledger,
+                validation={**original.validation, "strategy": "exact_fitted_source_trajectory_reuse", "fit_ledger": fit_ledger,
                             "evidence_scope": evidence_scope, "source_training_reuse": provenance},
                 objective={**original.objective, "source_study_membership": membership},
                 seed=config.seed, training_participant_keys=tuple(fit_ledger["training_participant_keys"]),
@@ -217,6 +203,10 @@ def _materialize_source_trajectory(*, registry, dataset, rows, config, destinati
 
 
 def _chronological_rows(dataset, protocols):
+    import numpy as np
+
+    from research.source_selection import source_identity_axes
+
     domains, people, _ = source_identity_axes(dataset)
     timeline = dataset.event_timeline
     ev = np.flatnonzero(timeline.evidence_indices >= 0)
@@ -246,6 +236,11 @@ def _chronological_rows(dataset, protocols):
 
 
 def _pseudo_target_cohort(dataset, validation_rows, protocols, budgets):
+    import numpy as np
+
+    from research.source_selection import source_identity_axes
+    from transfer.binary import dataset_calibration_splits, matched_split_digests
+
     domains, people, _ = source_identity_axes(dataset)
     subjects = np.asarray(dataset.subject_ids).astype(str)
     requested, failures = [], []
@@ -264,7 +259,8 @@ def _pseudo_target_cohort(dataset, validation_rows, protocols, budgets):
                 cell = {"domain": domain, "subject": subject, "participant_key": participant,
                         "actual_K": budget, "train_rows": train.tolist(), "test_rows": test.tolist(),
                         "purged_rows": subject_rows[split.purged_rows].tolist(),
-                        "budget_adjustments": adjustments, **matched_split_digests(train, test)}
+                        "budget_adjustments": adjustments, "test_budget": split.test_budget.record(),
+                        **matched_split_digests(train, test)}
                 if legal:
                     requested.append(cell)
                 else:
@@ -276,6 +272,16 @@ def _pseudo_target_cohort(dataset, validation_rows, protocols, budgets):
 
 
 def _score_checkpoint(path, dataset, cohort, *, cache_sha256, snapshot_sha256, recipe, output, device, evidence_scope):
+    import numpy as np
+    import torch
+    from sklearn.metrics import roc_auc_score
+
+    from research.comparison import evaluation_input_identity
+    from research.evaluation import build_evaluation_run_contract
+    from transfer.binary import matched_input_digests
+    from transfer.calibration_candidates import fit_calibration_candidate
+    from transfer.checkpoint import PreparedTransferCheckpoint, predict_n2p3_checkpoint
+
     outcomes = []
     observed = (np.broadcast_to(dataset.channel_mask, dataset.X.shape[:2])
                 if dataset.trial_channel_mask is None else dataset.trial_channel_mask)
@@ -292,6 +298,9 @@ def _score_checkpoint(path, dataset, cohort, *, cache_sha256, snapshot_sha256, r
     for cell in cohort:
         outcome = {key: value for key, value in cell.items() if key not in {"train_rows", "test_rows", "purged_rows"}}
         outcome.update(status="fit_failure", auc=None, source_ce=None)
+        test = np.asarray(cell["test_rows"], int)
+        outcome.update(matched_input_digests(dataset.X, dataset.y, test, observed, dataset.preprocessing))
+        outcome["comparison_identity"] = evaluation_input_identity(dataset, cell["train_rows"], test)
         try:
             if preparation_error is not None:
                 raise ValueError(preparation_error)
@@ -300,7 +309,6 @@ def _score_checkpoint(path, dataset, cohort, *, cache_sha256, snapshot_sha256, r
             outcome["updates"] = int(payload["source_fixed_updates"])
             training = np.zeros(dataset.n_epochs, bool)
             training[cell["train_rows"]] = True
-            test = np.asarray(cell["test_rows"], int)
             if cell["actual_K"]:
                 fitted = fit_calibration_candidate(dataset, recipe, training, source_trunk=trunk,
                     source_input_stats=prepared.input_statistics,
@@ -349,12 +357,16 @@ _E2_DATASET = None
 
 
 def _initialize_e2_worker(dataset):
+    import torch
+
     global _E2_DATASET
     torch.set_num_threads(1)
     _E2_DATASET = dataset
 
 
 def _score_e2_worker(arguments):
+    from research.source_execution import gpu_task_slot, release_source_worker
+
     path, cohort, options = arguments
     slots = options.pop("gpu_slots", None)
     with gpu_task_slot(slots):
@@ -366,6 +378,9 @@ def _score_e2_worker(arguments):
 
 def _score_e2_candidates(dataset, path, cohort, candidates, *, workers, progress_path, checkpoint_paths=None,
                          gpu_slots=None, memory_admission=None, **options):
+    from research.source_execution import gpu_task_slot, release_source_worker
+    from train.runtime import available_cpu_threads
+
     if memory_admission is not None:
         with memory_admission.target_workers(workers) as effective:
             return _score_e2_candidates(dataset, path, cohort, candidates, workers=effective,
@@ -420,32 +435,42 @@ def _save_chain_report(output, report):
 
 
 def source_execution_groups(plan, stages):
+    from research.source_selection import SOURCE_CHAIN_LAYOUTS
+
     groups = []
     names = [outer["name"] for outer in plan["outer_folds"]]
-    layouts = tuple(plan.get("source_layouts", ("six", "common_three")))
+    layouts = tuple(plan.get("source_layouts", ("six",) if set(stages) in ({"P2_source"}, {"unified_source"}) else ("six", "common_three")))
     if len(names) != len(set(names)) or len(layouts) != len(set(layouts)):
         raise ValueError("source groups require unique outer names and layouts")
     for outer in plan["outer_folds"]:
         for layout in layouts:
             if layout not in SOURCE_CHAIN_LAYOUTS:
                 raise ValueError("unsupported source layout")
-            if layout == "six" and ("S1" not in stages or outer.get("family_exclusion", False)):
+            if layout == "six" and not {"P2_source", "unified_source"}.intersection(stages) and (
+                "S1" not in stages or outer.get("family_exclusion", False)
+            ):
                 continue
             groups.append((outer, layout))
     return groups
 
 
 def _source_group_worker(arguments):
+    from train.runtime import cpu_thread_budget
+
     plan, output, device, stages = arguments
     os.environ["TORCHINDUCTOR_COMPILE_THREADS"] = "1"
-    with cpu_thread_budget(1), plan["_memory_admission"].source_group():
+    with cpu_thread_budget(plan.get("_native_threads_per_worker", 1)), plan["_memory_admission"].source_group():
         execute_source_chain(plan, output=Path(output), dry_run=False, device=device,
                              stages=stages, evaluate_outer=False)
     return str(Path(output) / "source_chain_record.json")
 
 
 def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, groups):
+    import torch
+
     from research.evaluation import verified_executed_snapshot
+    from research.source_execution import HostMemoryAdmission, resolve_source_resources
+    from transfer.target_experiments import resolve_target_batch_rule
 
     resources = resolve_source_resources(plan, len(groups), device)
     snapshot = verified_executed_snapshot(plan["source_snapshot_manifest"], root=ROOT)
@@ -464,14 +489,18 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
     context = multiprocessing.get_context("spawn")
     with context.Manager() as manager:
         slots = manager.BoundedSemaphore(resources["gpu_slots"]) if torch.device(device).type == "cuda" else None
+        load_slots = manager.BoundedSemaphore(int(plan.get("source_load_workers", resources["source_workers"])))
         memory_admission = HostMemoryAdmission(manager, resources)
-        with ProcessPoolExecutor(max_workers=resources["source_workers"], mp_context=context, max_tasks_per_child=1) as pool:
+        with ProcessPoolExecutor(max_workers=resources["source_workers"], mp_context=context) as pool:
             futures = {}
             for index, (outer, layout) in enumerate(groups):
                 directory = output / "groups" / f"{index:02d}_{outer['name']}_{layout}"
                 child = {**plan, "outer_folds": [outer], "source_layouts": [layout],
                          "_source_group": True, "_defer_outer_plans": True, "_gpu_slots": slots,
                          "_memory_admission": memory_admission,
+                         "_native_threads_per_worker": resources["native_threads_per_worker"],
+                         "_source_load_slots": load_slots,
+                         "_runtime_preload_budget_bytes": resources["resident_memory_budget_bytes"],
                          "shared_registry_directory": str(output / "trajectory_registry"),
                          "target_workers": resources["inner_workers_per_group"]}
                 entry = {"outer": outer["name"], "layout": layout, "directory": str(directory), "status": "running"}
@@ -500,6 +529,7 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
             child = json.loads(Path(entry["record"]).read_text(encoding="utf-8"))
             for key in ("tasks", "selection", "preflight_failures", "outer_evaluation_jobs"):
                 report[key].extend(child[key])
+            report.setdefault("source_prior_selection", []).extend(child.get("source_prior_selection", []))
         report.update(task_count=len(report["tasks"]),
             optimizer_updates=sum(task["optimizer_updates"] for task in report["tasks"]),
             trial_draws=sum(task["trial_draws"] for task in report["tasks"]),
@@ -515,8 +545,56 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
 
 
 def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stages: tuple[str, ...], evaluate_outer: bool = False):
+    import numpy as np
+
+    from baselines.deep import DeepConfig
+    from data.contract import SOURCE_COHORT_DATA_CONTRACTS, assert_p300_input_contract
+    from data.epochs import (
+        load_epoch_dataset,
+        loaded_epoch_cache_attestation,
+        select_epoch_channels,
+    )
+    from models.n2p3net import DEFAULT_N2P3_ARCHITECTURE, N2P3ArchitectureConfig
+    from research.evaluation import verified_source_snapshot
+    from research.source_execution import SharedTrajectoryRegistry
+    from research.source_matrix import unified_source_conditions, validate_unified_source_input
+    from research.source_resume import SourceChainResume
+    from research.source_selection import (
+        SOURCE_CHAIN_LAYOUTS,
+        SOURCE_UPDATE_CANDIDATES,
+        source_architecture_record,
+        source_fit_ledger,
+        source_fixed_dose,
+        source_identity_axes,
+        source_inner_folds,
+    )
+    from train.runtime import available_cpu_threads
+    from transfer.target_experiments import resolve_target_batch_rule
+
     if plan.get("schema") != "n2p3_source_training_chain/1":
         raise ValueError("unsupported source training chain plan schema")
+    unified = "unified_source" in stages
+    from train.early_stopping import GlobalEarlyStoppingPolicy, UnifiedTrainingBudget
+
+    stopping = None
+    budget = None
+    if unified:
+        if plan.get("global_early_stopping") is not None:
+            raise ValueError("unified uses unified_training_budget; global early stopping is a separate research program")
+        budget = UnifiedTrainingBudget(**plan.get("unified_training_budget", {}))
+        plan = {**plan, "unified_training_budget": budget.record(),
+                "calibration_trials": plan.get("calibration_trials", [0, 200, 800])}
+    if not unified and plan.get("global_early_stopping") is not None:
+        stopping = GlobalEarlyStoppingPolicy(**plan.get("global_early_stopping", {}))
+        plan = {**plan, "global_early_stopping": stopping.record()}
+        if "E2" in stages:
+            raise ValueError("global stopping cannot be combined with the historical E2 update scan")
+    if unified and set(stages) != {"unified_source"}:
+        raise ValueError("unified source requires its own explicit stage and input plan")
+    if unified and not isinstance(plan.get("source_preprocessing"), dict):
+        raise ValueError("unified source requires an explicit complete source_preprocessing record")
+    conditions = unified_source_conditions(**plan.get("unified_source", {})) if unified else ()
+    condition_by_arm = {condition["source_arm"]: condition for condition in conditions}
     if not dry_run and not plan.get("_source_group", False):
         groups = source_execution_groups(plan, stages)
         if groups:
@@ -531,6 +609,10 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
     evidence_scope = plan.get("evidence_scope", "development")
     if evidence_scope not in {"development", "software_correctness"}:
         raise ValueError("source chain supports only development or software_correctness evidence")
+    if (unified and not dry_run and plan.get("source_prior_selection") is None
+            and not all(outer.get("source_prior_selection") is not None for outer in plan["outer_folds"])
+            ):
+        raise ValueError("unified development requires source_prior_selection with independent source-inner raw prefixes")
     correctness_fields = {key for key in plan if key.startswith("correctness_")}
     if correctness_fields and evidence_scope != "software_correctness":
         raise ValueError("correctness budgets cannot be used under public development evidence")
@@ -543,8 +625,20 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
         candidates, source_updates = SOURCE_UPDATE_CANDIDATES, 4000
     source_seeds = tuple(plan.get("source_seeds", [20260906]))
     target_seeds = tuple(plan.get("target_seeds", [20260906]))
+    from transfer.source_objective import source_objective_recipes
+
+    objectives = source_objective_recipes(plan.get("source_objectives")) if "P2_source" in stages else {}
+    from stats.transfer import resolve_seed_pairs
+
+    if type(plan.get("paired_source_target_seeds", True)) is not bool:
+        raise ValueError("paired_source_target_seeds must be an explicit boolean")
+    if (objectives or unified) and plan.get("paired_source_target_seeds", True) and set(source_seeds) != set(target_seeds):
+        raise ValueError("paired source-objective experiments require matching declared source/target seeds")
     if not source_seeds or not target_seeds or len(set(source_seeds)) != len(source_seeds) or len(set(target_seeds)) != len(target_seeds):
         raise ValueError("source and target seeds must be independently unique")
+    crossed_pairs = resolve_seed_pairs(source_seeds, target_seeds)
+    objective_pairs = resolve_seed_pairs(source_seeds, target_seeds,
+        mode="paired" if plan.get("paired_source_target_seeds", True) else "crossed") if objectives or unified else ()
     batch, batch_rule = resolve_target_batch_rule(plan, dry_run=dry_run)
     plan = {**plan, "target_batch_size": batch, "batch_rule": batch_rule}
     snapshot_path = Path(plan["source_snapshot_manifest"])
@@ -557,6 +651,7 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
     output.mkdir(parents=True, exist_ok=True)
     report = {"schema": "n2p3_source_training_chain_run/1", "dry_run": dry_run,
               "evidence_scope": evidence_scope,
+              "source_program": "unified" if unified else "declared_legacy_stages",
               "batch_rule": batch_rule,
               "source_snapshot": snapshot, "source_seeds": list(source_seeds),
               "target_seeds": list(target_seeds), "tasks": [], "selection": [],
@@ -567,32 +662,61 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
     resume = SourceChainResume(plan.get("resume_source_run"))
     for outer in plan["outer_folds"]:
         source_cache = Path(outer["source_cache"])
-        source = load_epoch_dataset(source_cache, require_labels=True, validation="attested")
-        assert_p300_input_contract(source.preprocessing, SOURCE_COHORT_DATA_CONTRACTS["causal"])
+        from contextlib import nullcontext
+
+        with (plan["_source_load_slots"] if plan.get("_source_load_slots") is not None else nullcontext()):
+            source = load_epoch_dataset(source_cache, require_labels=True, validation="attested")
+        if unified:
+            validate_unified_source_input(source, plan["source_preprocessing"])
+        else:
+            assert_p300_input_contract(source.preprocessing, SOURCE_COHORT_DATA_CONTRACTS["causal"])
         if source.provenance.get("source_reference") != "measured_channel:CZ":
             raise ValueError("source-chain caches must contain measured Cz differences")
         source_sha = loaded_epoch_cache_attestation(source)["sha256"]
         excluded = tuple(outer["excluded_source_datasets"])
-        if not excluded:
-            raise ValueError("outer whole-library exclusions must be explicitly named")
         source_fit_ledger(source, np.arange(source.n_epochs), excluded_source_datasets=excluded)
         domains, _, _ = source_identity_axes(source)
-        if len(set(domains)) != (2 if outer.get("family_exclusion", False) else 3):
-            raise ValueError("source chain requires three ordinary or two family-excluded source libraries")
-        for layout in plan.get("source_layouts", ("six", "common_three")):
-            if outer.get("family_exclusion", False) and layout != "common_three":
+        from research.source_catalog import SourceCatalog
+
+        SourceCatalog(plan.get("source_pools")).validate_fold(outer, domains)
+        for layout in plan.get("source_layouts", ("six",) if set(stages) in ({"P2_source"}, {"unified_source"}) else ("six", "common_three")):
+            if outer.get("family_exclusion", False) and layout != "common_three" and not objectives and not unified:
                 continue
-            if layout == "six" and "S1" not in stages:
+            if layout == "six" and "S1" not in stages and not objectives and not unified:
                 continue
-            dataset = select_epoch_channels(source, SOURCE_CHAIN_LAYOUTS[layout])
+            dataset = select_epoch_channels(source, SOURCE_CHAIN_LAYOUTS[layout], copy=False)
             domains, _, _ = source_identity_axes(dataset)
             if layout == "common_three" and dataset.trial_channel_mask is not None and not dataset.trial_channel_mask.all():
                 raise ValueError("common-three source experiments require genuinely observed channels on every row")
             all_rows = np.arange(dataset.n_epochs)
+            prior_selection = None
+            if unified and (outer.get("source_prior_selection") is not None or plan.get("source_prior_selection") is not None):
+                prior_selection = _select_unified_source_prior(dataset, outer, layout=layout, plan=plan, report=report,
+                    output=output, source_sha=source_sha, snapshot_sha=snapshot["archive_sha256"],
+                    seed_pairs=objective_pairs, registry=trajectory_registry, device=device, dry_run=dry_run, resume=resume)
+                report.setdefault("source_prior_selection", []).append(prior_selection)
+                if not dry_run and prior_selection["status"] != "selected":
+                    report["preflight_failures"].append({"outer": outer["name"], "layout": layout,
+                        "status": "source_prior_selection_pending", "reason": prior_selection.get("reason", "no_complete_legal_candidate")})
+                    continue
             for seed in source_seeds:
-                base = DeepConfig(fixed_updates=source_updates, batch_size=512, seed=seed, val_group_frac=None,
+                source_budget = None
+                if budget is not None:
+                    selected_epochs = (budget.reference_max_epochs if dry_run else
+                                       prior_selection["source_budget"]["selected_epochs"])
+                    source_budget = (None if dry_run else prior_selection["source_budget"])
+                    main_updates = selected_epochs * ((len(all_rows) + 511) // 512)
+                else:
+                    main_updates = source_updates
+                base = DeepConfig(fixed_updates=main_updates if stopping is None else None,
+                                  source_budget=source_budget,
+                                  global_early_stopping=stopping, batch_size=512, seed=seed, val_group_frac=None,
                                   sampling="uniform_rows", compile_mode=plan.get("compile_mode", "reduce-overhead"))
                 work = []
+                work.extend((f"P2_source_{name}", all_rows, replace(base, source_objective=objective))
+                            for name, objective in objectives.items())
+                work.extend((condition["source_arm"], all_rows,
+                             replace(base, source_objective=condition["source_objective"])) for condition in conditions)
                 if "S1" in stages and not outer.get("family_exclusion", False):
                     work.extend((f"S1_{statistics}_{sampling}", all_rows, replace(base, input_statistics=statistics, sampling=sampling))
                                 for statistics in ("observed_rows", "observed_domain_participant")
@@ -607,7 +731,7 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
                         if outer.get("family_exclusion", False):
                             continue
                         dose = source_fixed_dose(dataset, domain_ids=selected_domains,
-                            trials_per_participant=128 if label == "multi" else 384,
+                            trials_per_participant=128 if label == "multi" else 128 * len(set(domains)),
                             seed=seed, chronological_rows=chronology)
                         if dose["status"] != "ready":
                             report["preflight_failures"].append({"outer": outer["name"], "arm": f"S2_dose_{label}", **dose})
@@ -618,27 +742,42 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
                         work.append((f"E2_{fold['axis']}_{fold['fold_id']}", np.asarray(fold["train_rows"], int),
                                      replace(base, fixed_updates=max(candidates), snapshot_updates=candidates)))
                 for label, rows, config in work:
+                    condition = condition_by_arm.get(label)
+                    architecture = (N2P3ArchitectureConfig(**condition["architecture_configuration"])
+                                    if condition is not None else DEFAULT_N2P3_ARCHITECTURE)
                     key = f"{outer['name']}/{layout}/seed{seed}/{label}"
                     ledger = source_fit_ledger(dataset, rows, excluded_source_datasets=excluded)
-                    task = {"key": key, "status": "planned", "config": config.__dict__, "fit_ledger": ledger,
+                    updates_bound = (config.fixed_updates if stopping is None else
+                                     2 * stopping.source_max_epochs * ((len(rows) + config.batch_size - 1) // config.batch_size))
+                    task = {"key": key, "status": "planned", "config": asdict(config), "fit_ledger": ledger,
                             "source_cache": str(source_cache), "source_cache_sha256": source_sha,
-                            "optimizer_updates": config.fixed_updates,
-                            "trial_draws": config.fixed_updates * config.batch_size,
+                            "optimizer_updates": updates_bound,
+                            "trial_draws": updates_bound * config.batch_size,
+                            **({"budget_kind": "inner_plus_refit_upper_bound"} if stopping is not None else {}),
                             "layout_contrast": "information_and_input_dimension_change"}
+                    task["architecture_configuration"] = asdict(architecture)
+                    if budget is not None:
+                        task["budget_kind"] = ("reference_selected_exposure_upper_bound" if dry_run
+                                               else "frozen_reference_exposure")
+                    if condition is not None:
+                        task["source_factors"] = condition["source_factors"]
                     report["tasks"].append(task)
                     if dry_run:
                         continue
                     destination = output / key
                     destination.mkdir(parents=True, exist_ok=True)
                     try:
-                        acquired = resume.acquire(key, config, ledger, source_sha)
+                        acquired = resume.acquire(key, config, ledger, source_sha,
+                            architecture_record=source_architecture_record(dataset, architecture))
                         if acquired is None:
                             acquired = fit_or_reuse_source_trajectory(
                                 registry=trajectory_registry, dataset=dataset, rows=rows, config=config,
                                 destination=destination, task_id=key,
                                 source_cache_sha256=source_sha, source_snapshot_sha256=snapshot["archive_sha256"],
                                 excluded_source_datasets=excluded, device=device, evidence_scope=evidence_scope,
-                                gpu_slots=plan.get("_gpu_slots"))
+                                gpu_slots=plan.get("_gpu_slots"), architecture=architecture,
+                                runtime_preload_budget_bytes=plan.get("_runtime_preload_budget_bytes"),
+                                runtime_input_staging_gate=plan.get("_source_load_slots"))
                     except RuntimeError as error:
                         task.update(status="fit_failure", failure=str(error))
                         _save_chain_report(output, report)
@@ -650,11 +789,28 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
                     task["checkpoints"] = {str(update): value for update, value in acquired["checkpoints"].items()}
                     gc.collect()
                     _save_chain_report(output, report)
-                    if not label.startswith("E2_"):
-                        report["outer_evaluation_jobs"].append({"source_checkpoint": acquired["checkpoints"][source_updates],
+                    if not label.startswith("E2_") and outer.get("role", "evaluation") != "deployment":
+                        selected_checkpoint = (next(iter(acquired["checkpoints"].values())) if stopping is not None
+                                               else acquired["checkpoints"][config.fixed_updates])
+                        report["outer_evaluation_jobs"].append({"source_checkpoint": selected_checkpoint,
                             "outer": outer["name"], "layout": layout, "source_seed": seed,
                             "source_arm": label,
-                            "target_seeds": list(target_seeds), "target_cache": outer.get("target_cache"),
+                            "analysis_seed_pairs": [list(pair) for pair in (
+                                objective_pairs if label.startswith("P2_source_") or unified else crossed_pairs)],
+                            **({"analysis_source_arms": [f"P2_source_{name}" for name in objectives]}
+                               if label.startswith("P2_source_") else {}),
+                            **({"analysis_source_arms": list(condition_by_arm), "source_factors": condition["source_factors"]}
+                               if condition is not None else {}),
+                            **({"source_prior_weight": prior_selection["selected_weight"],
+                                "unified_training_budget": budget.record(),
+                                "source_budget": prior_selection["source_budget"],
+                                "source_prior_selection": {"record_sha256": semantic_sha256(prior_selection),
+                                    "path": str((output / outer["name"] / layout / "source_prior_selection/selection.json").resolve())}}
+                               if prior_selection is not None and prior_selection["status"] == "selected" else {}),
+                            "target_seeds": ([seed] if (label.startswith("P2_source_") or unified)
+                                and plan.get("paired_source_target_seeds", True) else list(target_seeds)),
+                            "target_stage": "unified" if unified else "P2" if label.startswith("P2_source_") else None,
+                            "target_cache": outer.get("target_cache"),
                             "target_protocol": outer.get("target_protocol")})
                 if layout == "common_three" and "E2" in stages and not outer.get("family_exclusion", False):
                     _run_e2_selection(dataset, outer, seed, target_seeds, output, source_sha,
@@ -688,6 +844,18 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
 
 def _run_e2_selection(dataset, outer, seed, target_seeds, output, source_sha, snapshot_sha, plan, report, dry_run, device,
                       trajectory_registry, resume=None):
+    import numpy as np
+
+    from baselines.deep import DeepConfig
+    from research.source_selection import (
+        SOURCE_UPDATE_CANDIDATES,
+        select_source_updates,
+        source_fit_ledger,
+        source_inner_folds,
+    )
+    from transfer.binary import STANDARD_CALIBRATION_TRIALS
+    from transfer.recipes import TargetRecipe
+
     folds = source_inner_folds(dataset, seed=seed, excluded_source_datasets=outer["excluded_source_datasets"])
     evidence_scope = plan.get("evidence_scope", "development")
     candidates = tuple(plan.get("correctness_candidate_updates", [1, 2])) if evidence_scope == "software_correctness" else SOURCE_UPDATE_CANDIDATES
@@ -769,7 +937,7 @@ def _run_e2_selection(dataset, outer, seed, target_seeds, output, source_sha, sn
                     except RuntimeError as error:
                         report["tasks"].append({"key": str(destination), "refit_key": list(refit_key),
                             "status": "fit_failure", "failure": str(error), "optimizer_updates": updates,
-                            "trial_draws": updates * 512, "source_seed": seed, "config": config.__dict__})
+                            "trial_draws": updates * 512, "source_seed": seed, "config": asdict(config)})
                         _save_chain_report(output, report)
                         continue
                     destination = Path(acquired["checkpoints"][updates])
@@ -777,7 +945,7 @@ def _run_e2_selection(dataset, outer, seed, target_seeds, output, source_sha, sn
                         "status": "completed", "checkpoint": str(destination),
                         "optimizer_updates": updates, "trial_draws": updates * 512,
                         "source_seed": seed, "fit_ledger": acquired["fit_ledger"],
-                        "refit_initialization": "scratch_same_source_seed", "config": config.__dict__,
+                        "refit_initialization": "scratch_same_source_seed", "config": asdict(config),
                         **{name: acquired[name] for name in (
                             "source_training_reuse", "physical_optimizer_updates", "physical_trial_draws")}})
                 report["outer_evaluation_jobs"].append({"source_checkpoint": str(destination), "outer": outer["name"],
@@ -787,8 +955,247 @@ def _run_e2_selection(dataset, outer, seed, target_seeds, output, source_sha, sn
                     "target_cache": outer.get("target_cache"), "target_protocol": outer.get("target_protocol")})
 
 
+@lru_cache(maxsize=2)
+def _source_prior_prefix(path, digest, subject):
+    from data.source_records import load_target_prefixes
+
+    if _sha256(path) != digest:
+        raise ValueError("source-prior raw prefix manifest changed after planning")
+    return load_target_prefixes(path, subjects=(subject,), load_inner=False)[subject]
+
+
+def _score_source_prior_person(arguments):
+    """One isolated person/seed owns its RNG, checkpoint and all lambda candidates."""
+    import numpy as np
+    from sklearn.metrics import roc_auc_score
+
+    from data.epochs import select_epoch_channels
+    from research.source_execution import gpu_task_slot, release_source_worker
+    from research.source_matrix import validate_unified_source_input
+    from train.early_stopping import UnifiedTrainingBudget
+    from train.runtime import cpu_thread_budget
+    from transfer.calibration_candidates import (
+        calibration_decision_groups,
+        fit_calibration_candidate,
+    )
+    from transfer.checkpoint import PreparedTransferCheckpoint, load_checkpoint_payload
+    from transfer.recipes import unified_target_recipes
+
+    args = arguments
+    outcomes = []
+    with cpu_thread_budget(args.get("cpu_threads", 1)), gpu_task_slot(args.get("gpu_slots")):
+        try:
+            budget = UnifiedTrainingBudget(**args["unified_training_budget"])
+            entry = _source_prior_prefix(args["prefix_manifest"], args["prefix_manifest_sha256"], args["subject"])
+            original = entry["calibration"][args["K"]]
+            calibration = select_epoch_channels(original, args["channel_names"])
+            query = select_epoch_channels(entry["test"], args["channel_names"])
+            validate_unified_source_input(calibration, args["preprocessing"])
+            validate_unified_source_input(query, args["preprocessing"])
+            payload = load_checkpoint_payload(args["checkpoint"])
+            prepared = PreparedTransferCheckpoint(payload, calibration)
+            source_trunk = prepared.trunk_for_target(calibration.identity_table.local_subject_ids[0])
+            source_state = _model_state_digest(source_trunk)
+            groups, _, _, _ = calibration_decision_groups(calibration, np.ones(calibration.n_epochs, bool))
+            for weight in args["candidates"]:
+                cell = {"participant_key": args["participant_key"], "source_seed": args["source_seed"],
+                        "target_seed": args["target_seed"], "source_prior_weight": weight,
+                        "checkpoint_sha256": _sha256(args["checkpoint"]),
+                        "membership_available": bool(groups), "decision_factor": 1 if groups else None}
+                try:
+                    recipes = unified_target_recipes(membership_available=bool(groups), source_prior_weight=weight,
+                        batch_size=args["batch_size"], seed=args["target_seed"], epochs=budget.target_epochs,
+                        decision_weight=args["decision_weight"])
+                    recipe = next(recipe for recipe in recipes if recipe.name == "unified_q1")
+                    fitted = fit_calibration_candidate(calibration, recipe, np.ones(calibration.n_epochs, bool),
+                        source_trunk=source_trunk, source_input_stats=prepared.input_statistics, device=args["device"])
+                    fit_budget = fitted.fit_history["fit_budget"]
+                    selection = {"mode": "fixed_full_calibration", "selected_epochs": budget.target_epochs,
+                        "total_optimizer_updates": fit_budget["updates"], "physical_optimizer_updates": fit_budget["updates"],
+                        "total_trial_draws": fit_budget["draws"], "physical_trial_draws": fit_budget["draws"]}
+                    mask = query.trial_channel_mask
+                    if mask is None:
+                        mask = np.broadcast_to(query.channel_mask, query.X.shape[:2])
+                    scores = fitted.predict_logit(query.X, mask)
+                    if _model_state_digest(source_trunk) != source_state:
+                        raise RuntimeError("source-prior adaptation changed its shared source checkpoint")
+                    prediction = Path(args["output"]) / "predictions" / (semantic_sha256(cell)[:24] + ".npz")
+                    prediction.parent.mkdir(parents=True, exist_ok=True)
+                    np.savez_compressed(prediction, scores=scores, y=query.y)
+                    cell.update(status="completed", auc=float(roc_auc_score(query.y, scores)),
+                        prediction_path=str(prediction.resolve()), prediction_sha256=_sha256(prediction),
+                        target_recipe=recipe.record(), epoch_selection=selection)
+                except (ValueError, RuntimeError) as error:
+                    cell.update(status="fit_failed", auc=None, failure={"type": type(error).__name__, "message": str(error)})
+                outcomes.append(cell)
+        finally:
+            release_source_worker(args["device"])
+    return outcomes
+
+
+def _select_unified_source_prior(dataset, outer, *, layout, plan, report, output, source_sha,
+                                 snapshot_sha, seed_pairs, registry, device, dry_run, resume=None):
+    """Select one reference exposure and one lambda per outer fold, never per main seed."""
+    import numpy as np
+
+    from baselines.deep import DeepConfig
+    from data.source_records import load_target_prefixes
+    from models.n2p3net import N2P3ArchitectureConfig
+    from research.source_matrix import unified_source_conditions
+    from research.source_selection import (
+        select_source_prior_weight,
+        source_architecture_record,
+        source_identity_axes,
+        source_prior_development_fold,
+    )
+    from train.early_stopping import UnifiedTrainingBudget
+    from transfer.checkpoint import load_checkpoint_payload
+
+    declaration = outer.get("source_prior_selection", plan.get("source_prior_selection", {}))
+    if set(declaration) - {"prefix_manifests", "candidates", "calibration_trials", "development_domains", "excluded_development_domains"}:
+        raise ValueError("source-prior split settings belong to unified_training_budget")
+    from research.source_catalog import study_names
+
+    domains, _, _ = source_identity_axes(dataset)
+    development_domains = declaration.get("development_domains")
+    excluded_development = declaration.get("excluded_development_domains", {})
+    if development_domains is not None:
+        development_domains = study_names(development_domains, field="development_domains")
+        if (not isinstance(excluded_development, dict)
+                or set(development_domains) & set(excluded_development)
+                or set(development_domains) | set(excluded_development) != set(domains)
+                or any(not isinstance(reason, str) or not reason.strip() for reason in excluded_development.values())):
+            raise ValueError("development support must partition actual source domains with explicit exclusion reasons")
+    elif excluded_development:
+        raise ValueError("development exclusions require explicit development_domains")
+    budget = UnifiedTrainingBudget(**plan.get("unified_training_budget", {}))
+    candidates = tuple(declaration.get("candidates", (0., 1e-3, 1e-2, .1)))
+    select_source_prior_weight([], requested_cells=[], candidates=candidates)
+    calibration_k = int(declaration.get("calibration_trials", 200))
+    if calibration_k != 200 and plan.get("evidence_scope") != "software_correctness":
+        raise ValueError("source-prior development uses the predeclared K200 estimand")
+    admitted = set(dataset.identity_table.authority_keys())
+    locations, eligible, inputs = {}, set(), []
+    # Keep only identities and paths in the parent: a whole source pool of C_k
+    # tensors must not remain resident while reference training is running.
+    for name in declaration.get("prefix_manifests", []):
+        path = Path(name)
+        digest = _sha256(path)
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        inputs.append({"path": str(path.resolve()), "sha256": digest})
+        for raw_entry in manifest["records"]:
+            subject = str(raw_entry.get("subject", raw_entry.get("record", {}).get("subject")))
+            loaded = load_target_prefixes(path, subjects=(subject,), load_inner=False)
+            entry = loaded[subject]
+            key = entry["test"].identity_table.authority_keys()[0]
+            if key not in admitted or key in locations:
+                raise ValueError("source-prior prefix participant is outside the admitted source or repeated")
+            locations[key] = {"prefix_manifest": str(path.resolve()), "prefix_manifest_sha256": digest, "subject": subject}
+            calibration = entry["calibration"].get(calibration_k)
+            if (calibration is not None and set(np.unique(calibration.y)) == {0, 1}
+                    and set(np.unique(entry["test"].y)) == {0, 1}):
+                eligible.add(key)
+            del loaded, entry, calibration
+    destination = output / outer["name"] / layout / "source_prior_selection"
+    record = {"schema": "n2p3_source_prior_selection/2", "outer": outer["name"], "layout": layout,
+        "candidates": list(candidates), "calibration_trials": calibration_k,
+        "unified_training_budget": budget.record(), "source_cache_sha256": source_sha,
+        "source_snapshot_sha256": snapshot_sha, "input_manifests": inputs,
+        "development_support": {"domains": sorted(set(domains) if development_domains is None else development_domains),
+                                "excluded_domains": excluded_development},
+        "reference_factors": {"R": 1, "S": 1, "M": 1},
+        "reference_decision": "Q1_when_membership_available_otherwise_trial_plus_prior", "outcomes": []}
+    try:
+        fold = source_prior_development_fold(dataset, seed=budget.development_seed,
+            people_per_domain=budget.development_people_per_domain, eligible_people=eligible,
+            development_domains=development_domains,
+            excluded_source_datasets=outer["excluded_source_datasets"])
+    except ValueError as error:
+        record.update(status="pending", selected_weight=None, reason=str(error))
+        atomic_write_json(destination / "selection.json", record)
+        return record
+    record["fold"] = fold
+    heldout = fold["validation_participant_keys"]
+    if dry_run:
+        record.update(status="planned", selected_weight=None, requested_fits=len(heldout) * len(candidates))
+        atomic_write_json(destination / "selection.json", record)
+        return record
+    condition = next(item for item in unified_source_conditions(**plan.get("unified_source", {}))
+                     if item["source_factors"] == record["reference_factors"])
+    architecture = N2P3ArchitectureConfig(**condition["architecture_configuration"])
+    source_seed = target_seed = budget.development_seed
+    config = DeepConfig(global_early_stopping=budget.reference_policy(), batch_size=512, seed=source_seed,
+        val_group_frac=None, sampling="uniform_rows", source_objective=condition["source_objective"],
+        compile_mode=plan.get("compile_mode", "reduce-overhead"))
+    task_id = f"{outer['name']}/{layout}/source_prior_reference"
+    acquired = (None if resume is None else resume.acquire(task_id, config, fold["fit_ledger"], source_sha,
+        architecture_record=source_architecture_record(dataset, architecture)))
+    if acquired is None:
+        acquired = fit_or_reuse_source_trajectory(registry=registry, dataset=dataset, rows=np.asarray(fold["train_rows"]),
+            config=config, destination=destination / "reference", task_id=task_id,
+            source_cache_sha256=source_sha, source_snapshot_sha256=snapshot_sha,
+            excluded_source_datasets=outer["excluded_source_datasets"], device=device,
+            evidence_scope=plan.get("evidence_scope", "development"), architecture=architecture, gpu_slots=plan.get("_gpu_slots"),
+            runtime_preload_budget_bytes=plan.get("_runtime_preload_budget_bytes"),
+                                runtime_input_staging_gate=plan.get("_source_load_slots"))
+    checkpoint = next(iter(acquired["checkpoints"].values()))
+    payload = load_checkpoint_payload(checkpoint)
+    record["source_budget"] = {"mode": "reference_selected_exposure", "selected_epochs": payload["source_epoch_selection"]["selected_epochs"],
+        "reference_checkpoint_sha256": _sha256(checkpoint), "reference_policy": budget.reference_policy().record(),
+        "reference_fit_ledger_sha256": semantic_sha256(fold["fit_ledger"])}
+    report["fitting_performed"] = report.get("fitting_performed", False) or acquired["physical_optimizer_updates"] > 0
+    report["tasks"].append({"key": task_id, "status": "completed", "role": "source_prior_development",
+        "optimizer_updates": payload["source_epoch_selection"]["total_optimizer_updates"],
+        "trial_draws": payload["source_epoch_selection"]["total_trial_draws"],
+        "config": asdict(config), "architecture_configuration": asdict(architecture),
+        "checkpoints": {str(key): value for key, value in acquired["checkpoints"].items()},
+        **{name: acquired[name] for name in ("fit_ledger", "source_training_reuse", "physical_optimizer_updates", "physical_trial_draws")}})
+    jobs = [{**locations[person], "checkpoint": checkpoint, "participant_key": person,
+        "source_seed": source_seed, "target_seed": target_seed, "K": calibration_k, "candidates": candidates,
+        "channel_names": dataset.channel_names, "preprocessing": plan["source_preprocessing"],
+        "unified_training_budget": budget.record(), "decision_weight": plan.get("decision_weight", 1.),
+        "batch_size": plan.get("target_batch_size", 512), "device": device, "output": str(destination),
+        "gpu_slots": plan.get("_gpu_slots")} for person in heldout]
+    for job in jobs:
+        job["cpu_threads"] = plan.get("_native_threads_per_worker", 1)
+    from contextlib import nullcontext
+
+    requested_workers = min(plan.get("target_workers", 1), len(jobs))
+    admission = plan.get("_memory_admission")
+    with (admission.target_workers(requested_workers) if admission is not None else nullcontext(requested_workers)) as workers:
+        record["target_workers"] = workers
+        if workers == 1:
+            for job in jobs:
+                record["outcomes"].extend(_score_source_prior_person(job))
+                atomic_write_json(destination / "selection.json", record)
+        else:
+            with ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context("spawn")) as pool:
+                futures = [pool.submit(_score_source_prior_person, job) for job in jobs]
+                for future in as_completed(futures):
+                    record["outcomes"].extend(future.result())
+                    atomic_write_json(destination / "selection.json", record)
+    record.update(select_source_prior_weight(record["outcomes"],
+        requested_cells=[(person, source_seed, target_seed) for person in heldout], candidates=candidates,
+        participant_domains=fold["participant_domains"]))
+    record["target_cost"] = {field: sum(row.get("epoch_selection", {}).get(field, 0) for row in record["outcomes"])
+        for field in ("total_optimizer_updates", "total_trial_draws", "physical_optimizer_updates", "physical_trial_draws")}
+    atomic_write_json(destination / "selection.json", record)
+    return record
+
+
 def _prepare_outer_plans(report, plan, output, *, device, execute):
     """Resolve projected targets only after all source selection has finished."""
+    from data.epochs import (
+        concatenate_epoch_datasets,
+        load_epoch_dataset,
+        save_epoch_dataset,
+        select_epoch_channels,
+    )
+    from data.study import dataset_study_membership, study_ids_for_identity
+    from research.source_selection import SOURCE_CHAIN_LAYOUTS
+    from transfer.binary import STANDARD_CALIBRATION_TRIALS
+    from transfer.checkpoint import PreparedTransferCheckpoint, load_checkpoint_payload
+
     outers = {outer["name"]: outer for outer in plan["outer_folds"]}
     prepared = {}
     final_jobs = []
@@ -796,21 +1203,37 @@ def _prepare_outer_plans(report, plan, output, *, device, execute):
     workers = plan.get("target_workers", 1)
     for job in report["outer_evaluation_jobs"]:
         outer = outers[job["outer"]]
-        targets = outer.get("targets") or [{"cache": outer["target_cache"],
+        unified = job.get("target_stage") == "unified"
+        targets = outer.get("targets") or [{**({"prefix_manifest": outer["target_prefix_manifest"]}
+                                              if unified else {"cache": outer["target_cache"]}),
             "protocol": outer["target_protocol"], "study": outer.get("target_study", outer["name"])}]
         payload = load_checkpoint_payload(job["source_checkpoint"])
         for target in targets:
-            cache_key = (str(target["cache"]), job["layout"])
+            input_path = target["prefix_manifest"] if unified else target["cache"]
+            cache_key = (str(input_path), job["layout"], unified)
             if cache_key not in prepared:
-                raw = load_epoch_dataset(target["cache"], require_labels=True, validation="attested")
+                if unified:
+                    from data.source_records import load_target_prefixes
+                    from research.source_matrix import validate_unified_source_input
+
+                    prefixes = load_target_prefixes(input_path, load_inner=False)
+                    tests = [entry["test"] for entry in prefixes.values()]
+                    raw = concatenate_epoch_datasets(tests, name="unified_fixed_raw_tests",
+                        provenance={"source_reference": tests[0].provenance["source_reference"]})
+                    validate_unified_source_input(raw, plan["source_preprocessing"])
+                else:
+                    raw = load_epoch_dataset(target["cache"], require_labels=True, validation="attested")
                 if not set(study_ids_for_identity(raw.identity_table, dataset_study_membership(raw))) <= set(outer["excluded_source_datasets"]):
                     raise ValueError("outer target library disagrees with the source exclusion ledger")
                 selected = select_epoch_channels(raw, SOURCE_CHAIN_LAYOUTS[job["layout"]])
-                cache_name = semantic_sha256({"parent": _sha256(target["cache"]), "layout": job["layout"]})[:20]
+                cache_name = semantic_sha256({"parent": _sha256(input_path), "layout": job["layout"]})[:20]
                 cache = output / "target_views" / f"{cache_name}.npz"
                 save_epoch_dataset(cache, selected)
                 prepared[cache_key] = {"cache": str(cache.resolve()), "sha256": _sha256(cache),
                                       "subjects": selected.identity_table.local_subject_ids}
+                if unified:
+                    prepared[cache_key].update(target_prefix_manifest=str(Path(input_path).resolve()),
+                        target_prefix_manifest_sha256=_sha256(input_path))
                 prepared_checkpoint = PreparedTransferCheckpoint(payload, selected)
                 for subject in selected.identity_table.local_subject_ids:
                     prepared_checkpoint.assert_target_excluded(subject)
@@ -827,26 +1250,35 @@ def _prepare_outer_plans(report, plan, output, *, device, execute):
                         "evidence_scope": plan.get("evidence_scope", "development"),
                         "checkpoint": str(Path(job["source_checkpoint"]).resolve()),
                         "target_cache": view["cache"], "target_cache_sha256": view["sha256"],
+                        **{field: view[field] for field in ("target_prefix_manifest", "target_prefix_manifest_sha256") if field in view},
                         "target_study": target["study"], "source_studies": payload["source_fit_ledger"]["actual_source_libraries"],
                         "expected_source_participant_keys": payload["training_contract"]["training_participant_keys"],
                         "source_snapshot_manifest": str(Path(plan.get("source_snapshot_manifests", {}).get(
                             payload["source_snapshot_sha256"], plan["source_snapshot_manifest"])).resolve()),
                         "evaluation_snapshot_manifest": str(Path(plan.get("evaluation_snapshot_manifest", plan["source_snapshot_manifest"])).resolve()),
-                        "target_protocol": target["protocol"], "calibration_trials": list(STANDARD_CALIBRATION_TRIALS),
+                        "target_protocol": target["protocol"], "calibration_trials": list(plan.get("calibration_trials", STANDARD_CALIBRATION_TRIALS)),
                         "source_seed": job["source_seed"], "target_seed": target_seed,
+                        **{field: job[field] for field in ("analysis_seed_pairs", "analysis_source_arms", "source_factors") if field in job},
+                        **{field: plan[field] for field in ("source_preprocessing", "source_prior_weight", "decision_weight", "target_max_updates") if field in plan},
+                        **{field: job[field] for field in ("source_prior_weight", "source_prior_selection", "source_budget", "unified_training_budget") if field in job},
                         "target_batch_size": int(plan.get("target_batch_size", 32)),
                         "batch_rule": plan["batch_rule"],
-                        "target_epochs": int(plan.get("correctness_target_epochs", 1)) if plan.get("evidence_scope") == "software_correctness" else 60,
+                        "target_epochs": (job["unified_training_budget"]["target_epochs"] if unified
+                            else int(plan.get("correctness_target_epochs", 1)) if plan.get("evidence_scope") == "software_correctness" else 60),
                         "target_lr": 1e-3,
+                        **({"global_early_stopping": plan["global_early_stopping"]}
+                           if plan.get("global_early_stopping") is not None else {}),
                         "source_arm": job["source_arm"] + ("_" + selector if "selectors" in job else ""),
                         "source_selector": selector, "source_layout": job["layout"],
                     }
                     plan_path = output / "outer_plans" / f"{name}.json"
                     atomic_write_json(plan_path, evaluation_plan)
                     result_path = output / "outer_results" / name
-                    command = [str(ROOT / ".venv/Scripts/python.exe"), str(ROOT / "experiments/run_cross_dataset_transfer.py"),
+                    command = [sys.executable, str(ROOT / "experiments/run_cross_dataset_transfer.py"),
                                "--plan", str(plan_path.resolve()), "--subjects", ",".join(view["subjects"]),
                                "--output", str(result_path.resolve()), "--device", device, "--cpu-threads", "1"]
+                    if job.get("target_stage"):
+                        command.extend(("--stage", job["target_stage"]))
                     final_jobs.append({"plan": str(plan_path.resolve()), "argv": command,
                                        "source_arm": evaluation_plan["source_arm"], "shards": []})
                     for shard in range(workers):
@@ -856,6 +1288,7 @@ def _prepare_outer_plans(report, plan, output, *, device, execute):
                         shard_output = result_path if workers == 1 else result_path / f"shard{shard}"
                         entry = {"plan": str(plan_path.resolve()), "subjects": subjects,
                                  "output": str(shard_output), "device": device, "target_cache": view["cache"],
+                                 "target_stage": job.get("target_stage"),
                                  "gpu_slots": plan.get("_gpu_slots")}
                         grouped_jobs.setdefault((view["cache"], shard), []).append(entry)
                         final_jobs[-1]["shards"].append(str(shard_output))
@@ -878,6 +1311,10 @@ def _prepare_outer_plans(report, plan, output, *, device, execute):
 def _evaluate_outer_group(jobs):
     from types import SimpleNamespace
 
+    from data.epochs import load_epoch_dataset
+    from research.source_execution import gpu_task_slot, release_source_worker
+    from train.runtime import cpu_thread_budget
+
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
     from experiments.run_cross_dataset_transfer import execute as evaluate
@@ -885,8 +1322,16 @@ def _evaluate_outer_group(jobs):
 
     results = []
     reuse = TargetResultReuse()
-    with cpu_thread_budget(1):
+    threads = jobs[0].get("cpu_threads", 1)
+    with cpu_thread_budget(threads):
         dataset = load_epoch_dataset(jobs[0]["target_cache"], require_labels=True, validation="attested")
+        target_prefixes = None
+        if jobs[0].get("target_stage") == "unified":
+            from data.source_records import load_target_prefixes
+
+            first_plan = json.loads(Path(jobs[0]["plan"]).read_text(encoding="utf-8"))
+            target_prefixes = load_target_prefixes(first_plan["target_prefix_manifest"],
+                subjects=tuple(sorted({subject for job in jobs for subject in job["subjects"]})), load_inner=False)
         for job in jobs:
             if job["target_cache"] != jobs[0]["target_cache"]:
                 raise ValueError("outer worker group must use one attested target cache")
@@ -894,8 +1339,9 @@ def _evaluate_outer_group(jobs):
             with gpu_task_slot(job.get("gpu_slots")):
                 try:
                     evaluate(SimpleNamespace(plan=Path(job["plan"]), subjects=",".join(job["subjects"]),
-                        output=result_path, device=job["device"], cpu_threads=1, stage=None,
-                        result_reuse=reuse, target_dataset=dataset))
+                        output=result_path, device=job["device"], cpu_threads=threads,
+                        stage=job.get("target_stage"), dry_run=False,
+                        result_reuse=reuse, target_dataset=dataset, target_prefixes=target_prefixes))
                 finally:
                     release_source_worker(job["device"])
             record = json.loads((result_path / "record.json").read_text())
@@ -910,13 +1356,15 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--stages", nargs="+", choices=("S1", "E2", "S2"), default=["S1", "E2", "S2"])
+    parser.add_argument("--stages", nargs="+", choices=("S1", "E2", "S2", "P2_source", "unified_source"), default=["S1", "E2", "S2"])
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--evaluate-outer", action="store_true")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--cpu-threads", type=int, help="Total CPU budget; default uses the process quota")
     parser.add_argument("--source-workers", type=int, help="Independent source groups; default automatic")
     args = parser.parse_args(argv)
+    from train.runtime import cpu_thread_budget
+
     plan_path = args.plan.resolve()
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
     if args.cpu_threads is not None:

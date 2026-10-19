@@ -26,7 +26,11 @@ from data.contract import (  # noqa: E402
     SOURCE_COHORT_DATA_CONTRACTS,
     assert_p300_input_contract,
 )
-from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
+from data.epochs import (  # noqa: E402
+    load_epoch_dataset,
+    loaded_epoch_cache_attestation,
+    preprocessing_execution_binding,
+)
 from data.identity import training_identity_ledger_from_rows  # noqa: E402
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
@@ -392,6 +396,7 @@ def main() -> None:
         source_snapshot_sha256=source_snapshot_sha256,
         architecture=trunk.architecture_record(),
         preprocessing={
+            **preprocessing_execution_binding(dataset.provenance.get("preprocessing_execution"), dataset.preprocessing),
             "epoch": dataset.preprocessing.record(),
             "channel_names": list(dataset.channel_names),
             "source_reference": dataset.provenance.get("source_reference"),
@@ -449,6 +454,7 @@ def main() -> None:
         "input_sample_rate_hz": float(dataset.preprocessing.sfreq),
         "input_tmin_s": float(dataset.preprocessing.tmin_ms) / 1000.0,
         "input_preprocessing": dataset.preprocessing.record(),
+        "input_preprocessing_execution": dataset.provenance.get("preprocessing_execution"),
         "input_channel_names": list(dataset.channel_names),
         "input_source_reference": dataset.provenance.get("source_reference"),
         "source_cache_sha256": source_cache_sha256,

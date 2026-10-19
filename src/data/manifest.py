@@ -13,7 +13,12 @@ import pandas as pd
 
 from data.channel import DEFAULT_MONTAGE, canonical_channel_name
 from data.dataset import EEGRecord, SubjectData, load_dataset, read_raw
-from data.epochs import EpochDataset, PreprocessingSpec, concatenate_epoch_datasets
+from data.epochs import (
+    EpochDataset,
+    PreprocessingSpec,
+    concatenate_epoch_datasets,
+    parse_preprocessing_spec,
+)
 
 MANIFEST_SCHEMA = "n2p3net_raw_manifest/2"
 _MANIFEST_FIELDS = {
@@ -118,7 +123,7 @@ def load_manifest(path: str | Path) -> DatasetManifest:
     preprocessing_payload = payload.get("preprocessing", {})
     if not isinstance(preprocessing_payload, dict):
         raise ValueError("Manifest preprocessing must be an object.")
-    preprocessing = PreprocessingSpec(**preprocessing_payload)
+    preprocessing = parse_preprocessing_spec(preprocessing_payload)
     global_label_map = payload.get("label_map")
     if global_label_map is not None and not isinstance(global_label_map, dict):
         raise ValueError("Manifest label_map must be an object.")
@@ -240,6 +245,8 @@ def _subject_epoch_dataset(
         "sex": np.repeat(subject.sex, subject.n_epochs),
     }
     for key, value in subject.metadata.items():
+        if key == "preprocessing_execution":
+            continue
         if np.isscalar(value) or value is None:
             metadata[str(key)] = np.repeat(value, subject.n_epochs)
         else:
@@ -262,6 +269,8 @@ def _subject_epoch_dataset(
             "subject_id": subject.subject_id,
             "source_reference": str(subject.metadata.get("reference", "unspecified")),
             "coordinate_registration": subject.coordinate_registration.record(),
+            **({"preprocessing_execution": subject.metadata["preprocessing_execution"]}
+               if "preprocessing_execution" in subject.metadata else {}),
         },
     )
     dataset.validate()
@@ -288,30 +297,8 @@ def build_manifest_dataset(manifest: DatasetManifest) -> EpochDataset:
         subjects.extend(
             load_dataset(
                 (record,),
+                preprocessing=spec,
                 preprocess_kwargs={
-                    "sfreq": spec.sfreq,
-                    "l_freq": spec.l_freq,
-                    "h_freq": spec.h_freq,
-                    "tmin": spec.tmin_ms / 1000.0,
-                    "tmax": spec.tmax_ms / 1000.0,
-                    "n_times": spec.n_times,
-                    "reject_threshold": spec.reject_threshold_v,
-                    "baseline": None,
-                    "baseline_mode": spec.baseline_mode,
-                    "trial_reference_window_ms": spec.trial_reference_window_ms,
-                    "trial_reference_center": spec.trial_reference_center,
-                    "trial_reference_scale": spec.trial_reference_scale,
-                    "filter_method": spec.filter_method,
-                    "filter_order": spec.filter_order,
-                    "notch_freqs_hz": spec.notch_freqs_hz,
-                    "notch_quality_factor": spec.notch_quality_factor,
-                    "filter_phase": spec.filter_phase,
-                    "causal_iir_initial_state": spec.causal_iir_initial_state,
-                    "resample_domain": spec.resample_domain,
-                    "resample_method": spec.resample_method,
-                    "resample_npad": spec.resample_npad,
-                    "resample_window": spec.resample_window,
-                    "resample_pad": spec.resample_pad,
                     "channels": selected_channels,
                     "positions_m": manifest.channel_positions_m,
                     "coordinate_source": "manifest" if manifest.channel_positions_m is not None else None,

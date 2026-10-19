@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from pathlib import Path
@@ -29,8 +29,9 @@ from data.continuous_qc import (
     signal_dependency_matrix,
     validate_recovery_contract,
 )
-from data.contract import BRAIN_SYNC_CAUSAL_DATA_CONTRACT, BRAIN_SYNC_LAYOUT_SCHEMA
+from data.contract import BRAIN_SYNC_BIDIRECTIONAL_DATA_CONTRACT, BRAIN_SYNC_LAYOUT_SCHEMA
 from data.dataset import build_subject, read_raw
+from data.domain import adapt_observed_montage
 from data.epochs import (
     EpochDataset,
     PreprocessingSpec,
@@ -45,7 +46,7 @@ from data.qc_features import compute_epoch_qc_features
 from research.contracts import semantic_sha256
 
 BRAIN_SYNC_PREPROCESSING = preprocessing_spec_from_contract(
-    BRAIN_SYNC_CAUSAL_DATA_CONTRACT
+    BRAIN_SYNC_BIDIRECTIONAL_DATA_CONTRACT
 )
 
 
@@ -107,6 +108,46 @@ class BrainSyncNoUsableEvidenceError(ValueError):
         self.started_timestamp_s = validated.started_timestamp_s
         self.scheduled_trials = len(validated.bids.stimuli)
         self.ledger = ledger
+
+
+def resolve_brainsync_reference(reference_channel, ocular_model, continuous_model, *, mode="auto"):
+    """Resolve one explicit reference across the request and frozen raw operators."""
+    if mode not in {"auto", "native"}:
+        raise ValueError("unknown BrainSync reference mode")
+    anchors = [canonical_channel_name(value) for value in (
+        reference_channel,
+        None if ocular_model is None else ocular_model.reference_channel,
+        None if continuous_model is None else continuous_model.spec.reference_channel,
+    ) if value is not None]
+    if len(set(anchors)) > 1:
+        raise ValueError("Requested, ocular and continuous-QC references must agree")
+    if mode == "native" and anchors:
+        raise ValueError("Native acquisition reference cannot use a measured-reference QC/EOG model or channel")
+    reference = anchors[0] if anchors else None
+    if ocular_model is not None and ocular_model.reference_channel != reference:
+        raise ValueError("requested reference differs from the fitted EOG model reference")
+    return reference
+
+
+def apply_brainsync_reference(dataset, reference_channel, ocular_model, *, channels=None):
+    """Select the final montage, applying a measured reference exactly once."""
+    if reference_channel is None:
+        return dataset
+    anchor = canonical_channel_name(reference_channel)
+    if ocular_model is not None:
+        if ocular_model.reference_channel != anchor:
+            raise ValueError("requested reference differs from the fitted EOG model reference")
+        return dataset
+    qc = dataset.provenance.get("continuous_artifact_processing", {}).get("model", {})
+    qc_reference = qc.get("spec", {}).get("reference_channel")
+    if qc_reference is not None:
+        if anchor != qc_reference or dataset.provenance["source_reference"] != "measured_channel:" + anchor:
+            raise ValueError("requested reference differs from the frozen continuous QC reference")
+        if channels is not None and tuple(channels) != tuple(dataset.channel_names):
+            raise ValueError("QC-owned final montage differs from the saved input request")
+        return dataset
+    selected = channels or tuple(name for name in dataset.channel_names if canonical_channel_name(name) != anchor)
+    return adapt_observed_montage(dataset, selected, reference_channel=anchor)
 
 
 def load_brainsync_session(
@@ -253,6 +294,10 @@ def _build_validated_brainsync_session(
         if not local_qc:
             raw = continuous_result.annotate(raw)
     if ocular_model is not None:
+        participant = DatasetIdentityTable.from_source_rows(
+            [subject_id], ["BrainSync-GTN"]).record_for(subject_id).authority_key("source_or_global")
+        if participant != ocular_model.participant_key:
+            raise ValueError("ocular model calibration belongs to a different participant_key.")
         fit_sessions = ocular_model.fit_provenance.get("calibration_session_ids", [])
         fit_end = ocular_model.fit_provenance.get("calibration_end_timestamp_s")
         if not fit_sessions or not isinstance(fit_end, (int, float)) or not np.isfinite(fit_end):
@@ -331,6 +376,12 @@ def _build_validated_brainsync_session(
     if local_qc:
         channel_quality = continuous_result.epoch_channel_mask(source_samples, channels=selected_channels,
             tmin_s=preprocessing.tmin_ms / 1000, tmax_s=preprocessing.tmax_ms / 1000)
+        if preprocessing.filter_phase == "zero":
+            recovery = continuous_qc_model.epoch_recovery.project(mixing, selected_channels)
+            boundary_mask, boundary_record = recovery.assess_epochs(raw, source_samples,
+                boundary_action=continuous_qc_model.spec.boundary_action)
+            channel_quality &= boundary_mask
+            signal_diagnostics["bidirectional_boundary_recovery"] = boundary_record
         active = {canonical_channel_name(name): status == "good"
                   for name, status in zip(labels, bids.channel_statuses, strict=True)}
         channel_quality &= np.array([active[canonical_channel_name(name)] for name in selected_channels])[None, :]
@@ -357,29 +408,7 @@ def _build_validated_brainsync_session(
         target_candidate_ids=targets,
         repetition_indices=repetitions,
         selection_ids=decision_ids,
-        sfreq=preprocessing.sfreq,
-        l_freq=preprocessing.l_freq,
-        h_freq=preprocessing.h_freq,
-        tmin=preprocessing.tmin_ms / 1000.0,
-        tmax=preprocessing.tmax_ms / 1000.0,
-        n_times=preprocessing.n_times,
-        reject_threshold=preprocessing.reject_threshold_v,
-        baseline=None,
-        baseline_mode=preprocessing.baseline_mode,
-        trial_reference_window_ms=preprocessing.trial_reference_window_ms,
-        trial_reference_center=preprocessing.trial_reference_center,
-        trial_reference_scale=preprocessing.trial_reference_scale,
-        filter_method=preprocessing.filter_method,
-        filter_order=preprocessing.filter_order,
-        notch_freqs_hz=preprocessing.notch_freqs_hz,
-        notch_quality_factor=preprocessing.notch_quality_factor,
-        filter_phase=preprocessing.filter_phase,
-        causal_iir_initial_state=preprocessing.causal_iir_initial_state,
-        resample_domain=preprocessing.resample_domain,
-        resample_method=preprocessing.resample_method,
-        resample_npad=preprocessing.resample_npad,
-        resample_window=preprocessing.resample_window,
-        resample_pad=preprocessing.resample_pad,
+        preprocessing=preprocessing,
         channels=selected_channels,
         positions_m=positions,
         montage=None,
@@ -411,7 +440,8 @@ def _build_validated_brainsync_session(
     # callback delivery cannot be represented as onset+tmax availability.
     if continuous_result is not None or validated.manifest["recording"].get("clock") is not None:
         available = np.array(subject.event_timeline.evidence_available_times_s, copy=True)
-        available[np.isfinite(available)] = observed_duration
+        finite = np.isfinite(available)
+        available[finite] = np.maximum(available[finite], observed_duration)
         subject = replace(subject, event_timeline=replace(subject.event_timeline,
             evidence_available_times_s=available,
             timing_source=subject.event_timeline.timing_source + ";continuous_qc_complete_recording"))
@@ -499,6 +529,8 @@ def _build_validated_brainsync_session(
         metadata=metadata,
         provenance={
             "source": "brainsync_session",
+            **({"preprocessing_execution": subject.metadata["preprocessing_execution"]}
+               if "preprocessing_execution" in subject.metadata else {}),
             "session_schema": BRAIN_SYNC_SESSION_SCHEMA,
             "simulation_status": simulation_status,
             "simulation_status_source": "session.device.transport",
@@ -592,14 +624,6 @@ def _build_validated_brainsync_session(
     dataset.validate(require_labels=labelled)
     if recording_scope is not None:
         dataset.provenance["raw_calibration_scope"] = recording_scope.record()
-    if ocular_model is not None:
-        participant = (
-            materialize_dataset_identity(dataset)
-            .record_for(subject_id)
-            .authority_key("source_or_global")
-        )
-        if participant != ocular_model.participant_key:
-            raise ValueError("ocular model calibration belongs to a different participant_key.")
     if continuous_qc_model is not None:
         participant = materialize_dataset_identity(dataset).record_for(subject_id).authority_key("source_or_global")
         if participant != continuous_qc_model.fit_provenance.get("participant_key"):
@@ -626,11 +650,15 @@ def load_brainsync_inference_session(
     ocular_model: FittedEOGRegression | None = None,
     continuous_qc_model: FittedContinuousQC | None = None,
     recording_scope: IndependentRecordingScope | None = None,
+    recording_validator: Callable[[ValidatedBrainSyncRecording], None] | None = None,
 ) -> EpochDataset:
-    """Read completed raw as target-free evidence, including before label confirmation."""
+    """Read target-free evidence; apply caller admission before signal processing/QC."""
     preprocessing.validate()
+    validated = validate_brainsync_bids_recording(session_dir)
+    if recording_validator is not None:
+        recording_validator(validated)
     return _build_validated_brainsync_session(
-        validate_brainsync_bids_recording(session_dir),
+        validated,
         preprocessing=preprocessing,
         channels=channels,
         ocular_model=ocular_model,

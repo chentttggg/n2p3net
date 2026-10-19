@@ -18,6 +18,43 @@ provenance必须写 `ocular_artifact_processing.status=not_applied`，不能称�
 
 ## 1. 证据边界
 
+2026-10-05 [边界状态核对](evidence/boundary_state_redesign_20261005.zh.md)：S 个 SOS 的双端 state basis 为 `(N,4S)`，padding 长度不等于 IIR 衰减支持。长短算子差须在实际已观测上下文和共同输出网格上定义。
+当前矩阵正态核先验 `Σ⊗I/λ` 在 `K→αK, Σ→Σ/α` 时要求 `λ→λ/α`；电压单位 `Y→sY, Σ→s²Σ` 则保持 λ。真实 AR 阶数变化通常改变协方差形状，不能视为纯尺度 gauge。ERP 输出投影幅度与完整校正映射的 ERP 增量保真分别检验。
+
+2026-10-04研究补充：有限滤波、epoch/resample和baseline是实际输入算子的一部分，亦改变噪声协方差。
+baseline `B=I−1bᵀ` 后应传播为`BΣBᵀ`，不能默认仍具Toeplitz平稳性；对不同输入算子需要显式不同身份。
+边缘误差可处于低秩状态子空间，但硬删该子空间可能同时删除ERP；新研究以合法估计的不确定性权衡，未更改默认滤波。
+重审发现的旧EA物理cache普通入口缺口已在[本轮实施](evidence/system_implementation_20261004.zh.md)关闭：
+普通EpochDataset/checkpoint均拒绝非物理EA；历史专用loader仅供审计。EA feature artifact必须核父输入、
+授权fit行与实际state/output关系，不能将无量纲component改名为伏特电极。
+
+BNCI连续研究保持原生8导、256Hz和原右耳参考，不重标为BrainSync合同；用现有0.1–30Hz/50HzQ30滤波，
+不做epoch baseline或resampling。校准在下一未授权flash前截止，1.2s核实际307 samples，末尾观察不足显式右删失，
+不能零补成已观察样本。测试要求完整响应尾、物理membership与独立scorer真值。完整T双向滤波让结果实际到T结束才可用；
+decision样本坐标不重叠不等于滤后统计独立，1.2s有限因果ERP核在双向滤波后仅为明确的建模近似。
+
+稳健工频回归只保护其声明的局部0–30Hz子空间；测试片段重新估频率/权重属于离线自适应处理。
+固定线性A/B噪声传播另需真实合法Γ/Ω估计，不能把自适应回归条件下的矩阵当作无条件固定算子。
+
+2026-09-16分段记录新增左右原因集合：record、acquisition、artifact及未分类实际reset。
+同坐标和合并gap的原因取并集；包含artifact或未知reset时不享受自然边界豁免，任一端需要认证均保留
+完整双端状态项。混合gap的保守处置可新增拒绝，原因和数量保留；持续输入污染仍不在状态界保证内。
+历史MNE全局skip与逐导后端各按实际支持执行，不因共享解释器改变旧滤波坐标/顺序。
+永久坏非参考导先从数值输入剔除，坏/缺/错误角色参考导在投影前拒绝；只在最终固定槽表示缺失为0。
+空间输出可用性为其全部非零系数依赖导可用性的逻辑与，Cz失效传播到所有Cz差分输出；不以`NaN*0`代替掩码。
+相应来源、mask、QC特征、lineage及凭证同步，见[修复与反例](evidence/domain_transfer_major_20260920.zh.md)。
+
+2026-09-16的P1空间/时间参数组和P2源特征辅助损失均不改变物理输入合同。
+P2中的L2归一化只作用于source训练的post-MST特征；它不是raw重参考、EA白化或通道补全。
+现有参考、实测mask、epoch时间支持和校准/test隔离仍独立验证；后续EA接入必须另存合法fit范围，
+不能把全目标cache预处理当成校准范围内拟合。
+
+EA若改变坐标系，输出必须进入 `data.ea_artifact.EAFeatureArtifact`：组件名为
+`ea_component_###`，单位为dimensionless，不携带物理 electrode positions 或 voltage QC。
+父cache bytes、decoded dataset、subject/event 行身份、拟合行和authority participant keys由
+`EAFitAuthorization`固定；静态或trial级缺导不通过。旧 `EpochDataset.provenance.data_alignment`
+只作历史审计记录，活动 promotion 不将其当作可消费的物理 cache。
+
 设源记录的采样率为 `f_src`，第 `c` 个物理 EEG 通道为
 `x_c[n] in V`，第 `i` 个刺激在源记录中的 sample index 为 `e_i`。
 `x_c[n]`、`f_src` 和 `e_i` 属于采集证据，不因模型输入采样率改变。
@@ -33,8 +70,13 @@ unit = V
 baseline = per-trial, per-channel mean over [-200, 0) ms
 ```
 
-该默认来自已完成 GTN steady-state 2x2 的 achieved-best recipe；成人 BrainSync
-仍需 prospective confirmation，但在出现更强证据前不保留较差降级接口。
+该数值保留既有cache/模型的执行身份，并不表示1200ms已经被单因素验证为最优。
+历史GTN `2Hz/800ms` 对 `0.1Hz/1200ms` 同时改变高通与窗长，不能分离窗长收益，
+也不能由儿童三导队列推出成人跨库最优窗口。窗口判定先于下一轮EA/RPA/GALIA路线，
+详见[复核与反例](evidence/input_contract_review_20260922.zh.md)及[执行计划](roadmap.zh.md)。
+`600/800/1200ms`对应102/128/179点；裁已有FFT缓存只检验保留特征的效果，
+保留父缓存完整raw支持、可用时间、QC及分割身份，不能把裁后的名义tmax写回原预处理合同。
+真实短窗必须从raw重建；双向处理须先隔离fit/test raw范围，时间分块仍须清除跨界epoch。
 online causal profile 另声明 `filter_phase=forward` 和
 `causal_iir_initial_state=steady_state_first_sample`。
 
@@ -108,6 +150,38 @@ x_bar_c = filtfilt(B4, x_c)
 它是离线、非因果算子。不能把 `e_i + 800 ms` 解释为在线系统真正可用
 证据的时刻。
 
+2026-09-09新增显式`zero_phase_edge_policy=mne_reflect_limited`：完整SOS的脉冲响应决定
+MNE延拓长度，逐采集段限制为段长减一；缺字段为`legacy`，保留历史有/无陷波各自的处理。
+新BrainSync默认个人合同为`brainsync_bidirectional_v1`，使用完整记录双向处理。
+双向有效时通用账本按完整raw结束样本计可用时间，不能写成`onset+tmax`；
+整记录双向后取前R轮只代表整记录结束后的回顾性分数。严格在线R需按实际可用前缀重滤。
+校准/测试先划分独立raw再滤波，不能拼接后双向；短epoch不能单独代替连续输入。
+这里的“独立 raw”规定授权样本及处理状态的隔离；概率模型另行记录跨段噪声的联合分布。
+连续 Gaussian 预测的分段独立噪声前提，需要与实际记录/状态绑定；不同 record ID 和不重叠
+区间本身不提供零跨协方差的证明。相关 AR 噪声需要联合协方差或带有完整条件对象的创新处理，
+见[Lean 连续候选的模型边界](evidence/lean_gaussian_20261016.zh.md#跨段噪声与预测模型边界)。
+声明有限ERP字典下，公开BNCI视图的decoder排列、原事件子集、物理覆盖和邻域检查已组合到
+实际逐事件累加设计，见[事件史验证](evidence/lean_gaussian_20261016.zh.md#事件设计完整事件史与构造器账本)。
+通用record/score校验不证明完整刺激史；仅计数相同也须保持原事件身份子集。
+该有限响应结论不改变上述整段双向滤波支持，也不推出物理噪声独立。
+个人模型的正式新录制入口在原始QC前核对participant、独立session和严格晚于标签可用时间；
+通用epoch接口的scope helper会跳过missing session键和空metadata表，真实反例见
+[个人入口验证](evidence/lean_gaussian_20261016.zh.md#个人封装lda恢复与正式录制入口)。
+因此实际调用链必须保留raw callback及处理后的input/scope检查，弃权仍计入完整scheduled分母。
+N=4带通实际单遍8阶，含二阶陷波后10阶，双遍等效20阶；幅频响应平方是本次比较的一部分。
+padding不提供恢复或真实样本认证，新旧边界策略都存在位置相关误差，见
+[首轮数学与边界证据](evidence/filter_phase_20260909.zh.md)。
+2026-09-29的[全链深审](evidence/deep_chain_audit_20260929.zh.md#f0-合法的独立raw边界仍可产生严重信号失真)
+已在BI2014a真实C200末端与全61人test起点量化该风险：大幅50Hz干扰经有限odd延拓可引入
+毫伏级慢坡，纯50Hz无ERP反例与SciPy同padding结果一致。时间授权正确不能替代信号保真检查；
+完整record仅作算子诊断，不能作为合法校准/独立test的无说明替换。
+原始持续污染与有限段边缘须分开处理；固定PTP诊断计数不是新的自动拒绝阈值。
+双向状态误差为`J F_N J O_N delta_zL + J O_N delta_zR`，后向状态包含第一遍误差耦合。
+`data.bidirectional`在真实段长和epoch位置计算两端模态包络的条件界，不假设单调恢复秒数。
+自然记录/采集段端点属于声明的有限算子，敏感度保留为诊断；只要片段任一端由伪迹切段引入，
+就使用完整双端界作门禁，不能删掉另一端的耦合项。默认QC新拟合使用`range_action=diagnostic`、
+`boundary_action=artifact_edges`，旧缺字段保留原含义，详见[推导与验证](evidence/bidirectional_qc_20260909.zh.md)。
+
 online `phase=forward` 使用单向 SOS：
 
 ```text
@@ -125,7 +199,7 @@ stream chunk，后续 chunk 必须携带上一 chunk 的 `z_end`；首文件才�
 也不能以提高高通或加强平滑后图形变好作为选方依据，见[瞬态诊断](evidence/brainsync_transient_quality_20260907.zh.md)。
 
 `data.continuous_qc`已实现冻结差分/滚动范围检测、完整异常区间及状态恢复合同。全局区间由因果和
-零相位路径共同消费；逐通道经验恢复只支持绑定的forward IIR。局部异常注释仅重置受影响导，
+零相位路径共同消费；forward使用单向模态恢复，zero使用显式双端有效状态模型。局部异常注释仅重置受影响导，
 恢复注释只屏蔽相交通道，不反复重置；普通休息仍连续滤波。最终空间参考的依赖决定传播范围。
 重置不保证立即可用，未知恢复上界仍拒绝该段后续证据；不能用首次过零或固定预热秒数放行。
 
@@ -170,6 +244,17 @@ epoch支持的最早位置。age从reset后首源采样到epoch起点，不是�
 在现模态不确定集内不能缩短；换频带须重新计算SOS/经验包络及最终投影，不复用旧等待数字。
 
 ### 2.2 源事件切片与重采样
+
+2026-09-15执行器按MNE实际闭端源网格记账。绝对源索引
+`p_i=e_i+round(tmin*f_src)`、`q_i=e_i+round(tmax*f_src)`；数组切片须减`raw.first_samp`。
+通用可用时间为`max(onset+tmax, q_i/f_src)`，实际双向滤波再取完整recording结束；
+adapter继续合并更晚的QC、clock和交付时刻。每个排程事件都有源起止sample，未产出证据的事件
+保留原拒绝原因和分母。250Hz、1199ms窗口的1ms早报已修复；FFT会把闭端样本传到最终保留点。
+数值顺序保持源epoch→FFT→前T点→半开基线；接近目标频率时沿用生产np.isclose的跳过规则，
+恢复证书共用该实际数值映射。median仅可作数值基线，不能获得线性矩阵/恢复界能力。
+这些是时间账本和证书语义修正；新派生cache使用新执行凭证，既有cache/成绩保持原义。
+见[数学裁决](evidence/preprocessing_contract_research_20260915.zh.md)与
+[实施反例](evidence/preprocessing_execution_20260915.zh.md)。
 
 先在源 sample 轴上按 `e_i` 切片，再对每个 epoch 重采样：
 
@@ -255,6 +340,20 @@ K1 = 1 + round_even((K0 - 1) * f1 / f0).
 `492.1875 ms`，不是纯采样率对照；若保留，必须标成额外的感受野扰动。
 
 ## 4. 参考电极与跨数据集
+
+2026-09-16统一模型设计要求新源与个人输入从raw执行共同声明的产品profile；旧因果缓存不重标成双向。
+双向处理须在互斥raw fit/validation/test范围内分别执行，先整记录处理再切epoch不足以保证隔离；
+同profile的长短记录仍有不同有限时间算子与真实支持。计划比较`[六个Cz差分;实测Cz]`的可逆空间表示，
+第七维须真实观测并保留原参考，缺Cz继续使差分无效；旧六导不可恢复该信息。
+首版已实现：`RawSampleScope=[start,stop)`先裁原始连续输入再滤波；事件授权独立列出，响应尾窗内后续刺激不自动获得标签。
+每个K分别生成C、inner T/V，与固定later test独立处理，原始事件ID、真实session/run和剔除台账保留。
+当前精简排程的个人校准固定90轮，准备CLI默认仅生成实际消费的C_K和固定test，省去个人inner T/V。
+若研究另启个人早停，仍须使用独立raw inner视图；停止模式不改变事件授权和时间隔离要求。
+模型用CPU布尔`[N,C]`实测mask逐batch传递；temporal Conv/BN只消费pack后的实测轨迹，再scatter回物理槽。
+缺导不计入BN均值/方差，亦不让NaN占位进入卷积梯度；全实测时与原生Conv/BN语义一致。
+source准备入口当前只执行有限值、恒值及通道准入，learned QC/EOG启用仍须另行绑定合法fit范围。
+原生七导的可逆参考扩展仍待研究。公式、mask及源/目标联动见
+[统一模型输入方案](evidence/unified_model_plan_20260916.zh.md#5-输入统一与信息保留)。
 
 若真实头皮电势为 `s_c(t)`，参考电极为 `r(t)`，记录值是
 

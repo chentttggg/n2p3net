@@ -22,6 +22,7 @@ if str(ROOT / "src") not in sys.path:
 from data.contract import assert_causal_p300_input_contract  # noqa: E402
 from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
 from models.n2p3net import N2P3Net  # noqa: E402
+from research.comparison import evaluation_input_identity  # noqa: E402
 from research.evaluation import (  # noqa: E402
     build_evaluation_run_contract,
     checkpoint_model_origin,
@@ -33,6 +34,7 @@ from transfer.binary import (  # noqa: E402
     STANDARD_CALIBRATION_TRIALS,
     binary_time_split,
     calibration_arms,
+    matched_input_digests,
     matched_split_digests,
     paired_transfer_effects,
     resolve_calibration_splits,
@@ -74,6 +76,8 @@ def main(argv=None) -> None:
     parser.add_argument("--target-subjects", required=True)
     parser.add_argument("--calibration-trials", default=",".join(map(str, STANDARD_CALIBRATION_TRIALS)))
     parser.add_argument("--minimum-test-trials", type=int, default=200)
+    parser.add_argument("--test-size-policy", choices=("limited_data_80_percent", "strict_minimum"),
+                        default=None)
     parser.add_argument("--epochs", type=int, default=15)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--scratch-epochs", type=int, default=60)
@@ -90,12 +94,14 @@ def main(argv=None) -> None:
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--training-plan", type=Path)
-    parser.add_argument("--stage", choices=("B0", "B0_score", "E1", "E3", "compact", "ES"))
+    parser.add_argument("--stage", choices=("B0", "B0_score", "E1", "E3", "compact", "ES", "P1", "P2", "unified"))
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--batch-rule", type=Path)
     parser.add_argument("--batch-cohort", type=Path)
     args = parser.parse_args(argv)
     if args.stage:
+        if args.test_size_policy is not None:
+            parser.error("stage test-size-policy belongs in training-plan.target_protocol")
         if args.training_plan is None:
             parser.error("training-chain stages require --training-plan with whole-study source exclusion")
         command = [sys.executable, str(ROOT / "experiments/run_cross_dataset_transfer.py"),
@@ -160,6 +166,8 @@ def main(argv=None) -> None:
         "candidate_performance_claim": False,
     }
     protocol = {
+        "minimum_test_trials": args.minimum_test_trials,
+        "test_size_policy": args.test_size_policy or "limited_data_80_percent",
         "kind": "single_recording_chronological_binary_calibration",
         "calibration_trials": list(budgets),
         "common_test_after_trials": max(budgets),
@@ -204,6 +212,7 @@ def main(argv=None) -> None:
                 ),
             minimum_test_trials=args.minimum_test_trials,
             available_trials=len(rows),
+            test_size_policy=protocol["test_size_policy"],
         )
         splits[subject] = (rows, resolved)
         unavailable_budgets.extend({"participant_key": dataset.identity_table.record_for(subject).authority_key("source_or_global"),
@@ -233,6 +242,14 @@ def main(argv=None) -> None:
             train_rows, test_rows = rows[split.calibration_rows], rows[split.test_rows]
             y_train, y_test = dataset.y[train_rows], dataset.y[test_rows]
             split_digests = matched_split_digests(train_rows, test_rows)
+            observed = (
+                np.broadcast_to(dataset.channel_mask, dataset.X.shape[:2])
+                if dataset.trial_channel_mask is None else dataset.trial_channel_mask
+            )
+            input_digests = matched_input_digests(
+                dataset.X, dataset.y, test_rows, observed, dataset.preprocessing
+            )
+            comparison_identity = evaluation_input_identity(dataset, train_rows, test_rows)
             for arm in calibration_arms(arms, budget, budgets):
                 started = time.perf_counter()
                 trunk = copy.deepcopy(reference_trunks[subject])
@@ -295,6 +312,9 @@ def main(argv=None) -> None:
                 )
                 cell = {
                     **split_digests,
+                    **input_digests,
+                    "comparison_identity": comparison_identity,
+                    "test_budget": split.test_budget.record(),
                     "participant_key": participant,
                     "local_subject_id": subject,
                     "arm": arm,

@@ -1,4 +1,4 @@
-"""Differentiable row/column candidate-ranking loss for target adaptation.
+"""Historical mean-scale row/column candidate-ranking loss for target adaptation.
 
 Trial-level cross-entropy does not see the evaluation object: the evaluator
 aggregates evidence per row and per column, then takes the intersection of the
@@ -16,6 +16,11 @@ The row and column axes are treated as two independent candidate sets:
 This is the direct differentiable surrogate of "row argmax x column argmax"
 used by the operational evaluator.  It is not ``hit@R`` itself and remains an
 additive term next to trial CE.
+
+The unified sum method uses MembershipDecision.row_column and
+transfer.decision_loss.membership_decision_loss. This wrapper retains the saved
+mean temperature interpretation; its DecisionLevelLoss arithmetic delegates to
+the common membership kernel.
 """
 
 from __future__ import annotations

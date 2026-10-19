@@ -7,10 +7,7 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 
-import torch
-
 from research.execution import atomic_write_json
-from train.runtime import available_cpu_threads
 
 
 @contextmanager
@@ -79,6 +76,8 @@ def gpu_task_slot(semaphore):
 
 
 def release_source_worker(device):
+    import torch
+
     if torch.device(device).type == "cuda":
         torch.compiler.reset()
         from train.device import release_device_memory
@@ -94,7 +93,12 @@ def available_host_memory_bytes():
         quota = Path("/sys/fs/cgroup/memory.max").read_text().strip()
         used = int(Path("/sys/fs/cgroup/memory.current").read_text())
         if quota != "max":
-            limits.append(max(0, int(quota) - used))
+            # Persisted inactive disk pages are reclaimable. tmpfs/shmem is
+            # working memory and must never be counted as reclaimable capacity.
+            stat = dict(line.split() for line in Path("/sys/fs/cgroup/memory.stat").read_text().splitlines())
+            reclaimable = min(int(stat.get("inactive_file", 0)),
+                              max(0, int(stat.get("file", 0)) - int(stat.get("shmem", 0))))
+            limits.append(max(0, int(quota) - used + reclaimable))
     except (OSError, ValueError):
         pass
     return min(limits)
@@ -105,7 +109,7 @@ class HostMemoryAdmission:
 
     def __init__(self, manager, resources):
         self.state = manager.Namespace()
-        self.state.free = resources["host_memory_budget_bytes"]
+        self.state.free = resources["host_memory_budget_bytes"] - resources.get("shared_staging_memory_bytes", 0)
         self.state.groups = 0
         self.state.child_cpus = 0
         self.lock = manager.RLock()
@@ -113,6 +117,7 @@ class HostMemoryAdmission:
         self.target_bytes = resources["target_worker_memory_bytes"]
         self.target_limit = resources["target_workers"]
         self.cpu_budget = resources["cpu_budget"]
+        self.gpu_worker_limit = resources["gpu_slots"]
 
     @contextmanager
     def source_group(self):
@@ -136,7 +141,8 @@ class HostMemoryAdmission:
         with self.lock:
             desired = min(self.target_limit, max(requested, self.cpu_budget // max(1, self.state.groups)))
             cpu_free = self.cpu_budget - self.state.groups - self.state.child_cpus + 1
-            allowed = min(desired, self.state.free // self.target_bytes, cpu_free)
+            task_free = self.gpu_worker_limit - self.state.groups - self.state.child_cpus + 1
+            allowed = min(desired, self.state.free // self.target_bytes, cpu_free, task_free)
             workers = int(allowed) if allowed >= 2 else 1
             reservation = workers * self.target_bytes if workers > 1 else 0
             self.state.free -= reservation
@@ -150,6 +156,10 @@ class HostMemoryAdmission:
 
 
 def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_device_bytes=None, free_host_bytes=None):
+    import torch
+
+    from train.runtime import available_cpu_threads
+
     available = available_cpu_threads() if cpu_count is None else cpu_count
     if group_count < 1 or available < 1:
         raise ValueError("task count and available CPU budget must be positive")
@@ -165,28 +175,53 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
         raise ValueError("resource budgets must be positive and finite")
     if free_host_bytes is None:
         free_host_bytes = available_host_memory_bytes()
-    host_budget = int(free_host_bytes * 0.85)
+    host_fraction = plan.get("host_memory_fraction", .85)
+    if not isinstance(host_fraction, (float, int)) or isinstance(host_fraction, bool) or not 0 < host_fraction <= .95:
+        raise ValueError("host_memory_fraction must be in (0, .95]")
+    host_budget = int(free_host_bytes * host_fraction)
+    staging_bytes = int(float(plan.get("shared_staging_memory_gib", 0)) * 2**30)
+    if staging_bytes < 0:
+        raise ValueError("shared staging memory must be nonnegative")
+    group_budget = host_budget - staging_bytes
     group_bytes = int(float(plan.get("source_worker_memory_gib", 6.0)) * 2**30)
     target_bytes = int(float(plan.get("target_worker_memory_gib", 4.0)) * 2**30)
-    if min(group_bytes, target_bytes) <= 0 or host_budget < max(group_bytes, target_bytes):
+    if min(group_bytes, target_bytes) <= 0 or group_budget < max(group_bytes, target_bytes):
         raise ValueError("available host memory is below the declared worker requirement")
-    groups = min(groups, host_budget // group_bytes)
+    groups = min(groups, group_budget // group_bytes)
     if torch.device(device).type == "cuda":
         if free_device_bytes is None:
             free_device_bytes = torch.cuda.mem_get_info(torch.device(device))[0]
         slots = max(1, min(budget, int(0.8 * free_device_bytes / (memory_gib * 2**30))))
     else:
         slots = budget
+    requested_gpu = plan.get("gpu_workers")
+    if requested_gpu is not None:
+        if type(requested_gpu) is not int or requested_gpu < 1:
+            raise ValueError("gpu_workers must be positive")
+        slots = min(slots, requested_gpu)
     target_request = plan.get("target_workers", "auto")
     if target_request not in (None, "auto") and (type(target_request) is not int or target_request < 1):
         raise ValueError("target_workers must be auto or a positive integer")
     target = min(host_budget // target_bytes, slots if target_request in (None, "auto") else min(target_request, slots))
+    floor = plan.get("cloud_resource_floor")
+    if floor is not None:
+        if (not isinstance(floor, dict) or set(floor) != {"cpu_threads", "gpu_workers"}
+                or any(type(value) is not int or value < 1 for value in floor.values())):
+            raise ValueError("cloud_resource_floor requires positive cpu_threads and gpu_workers")
+        if (budget < floor["cpu_threads"] or slots < floor["gpu_workers"]
+                or target < floor["gpu_workers"] or groups < min(group_count, floor["gpu_workers"])):
+            raise ValueError("resources cannot meet declared cloud CPU/GPU worker floor; do not silently serialize")
+    native_threads = max(1, budget // max(groups, target))
     return {"policy": "automatic_resource_admission", "available_cpu_threads": available,
             "cpu_budget": budget, "requested_source_workers": requested or "auto",
             "source_groups": group_count, "source_workers": groups,
             "gpu_slots": slots, "target_workers": target,
             "inner_workers_per_group": min(target, max(1, (budget - groups) // min(groups, 4))),
-            "native_threads_per_worker": 1, "compiler_threads_per_worker": 1,
+            "native_threads_per_worker": native_threads, "compiler_threads_per_worker": 1,
+            "cloud_resource_floor": floor,
             "gpu_task_memory_gib": memory_gib, "free_device_bytes": free_device_bytes,
+            "resident_memory_budget_bytes": (int(free_device_bytes * .90 / slots)
+                                             if torch.device(device).type == "cuda" else None),
             "available_host_memory_bytes": free_host_bytes, "host_memory_budget_bytes": host_budget,
+            "host_memory_fraction": host_fraction, "shared_staging_memory_bytes": staging_bytes,
             "source_worker_memory_bytes": group_bytes, "target_worker_memory_bytes": target_bytes}

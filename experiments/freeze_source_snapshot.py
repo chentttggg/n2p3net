@@ -25,6 +25,13 @@ def freeze_source(output: Path, *, root: Path = ROOT, materialize: bool = False)
     if (root / "conftest.py").is_file():
         relative_paths.add("conftest.py")
     relative_paths.update(path.relative_to(root).as_posix() for path in (root / "src").rglob("*.py"))
+    relative_paths.update(path.relative_to(root).as_posix() for path in (root / "tests").rglob("*.py"))
+    for directory in ("src", "tests", "configs"):
+        for pattern in ("*.json", "*.html", "*.css", "*.js", "*.LICENSE"):
+            relative_paths.update(path.relative_to(root).as_posix()
+                                  for path in (root / directory).rglob(pattern))
+    for pattern in ("*.html", "*.css", "*.js"):
+        relative_paths.update(path.relative_to(root).as_posix() for path in (root / "experiments").glob(pattern))
     for directory, pattern in (("experiments", "*.py"), ("tests", "*.py"), ("configs", "*.json"), ("doc", "*.md")):
         relative_paths.update(path.relative_to(root).as_posix() for path in (root / directory).glob(pattern))
     files = {name: (root / name).read_bytes() for name in sorted(relative_paths)}

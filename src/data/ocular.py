@@ -19,6 +19,7 @@ from research.execution import atomic_write_json
 
 OCULAR_MODEL_SCHEMA = "n2p3_calibration_eog_regression/3"
 OCULAR_PRESERVED_EOG_SCHEMA = "n2p3_calibration_eog_regression/4"
+OCULAR_STRENGTH_SCHEMA = "n2p3_calibration_eog_regression/5"
 SHARED_MEASURED_REFERENCE = "shared_measured_reference"
 PRESERVE_ACQUIRED_EOG = "preserve_acquired_eog"
 EOG_REFERENCE_POLICIES = (SHARED_MEASURED_REFERENCE, PRESERVE_ACQUIRED_EOG)
@@ -86,8 +87,12 @@ class FittedEOGRegression:
     reference_channel: str | None = None
     eog_derivation: Mapping[str, Any] = field(default_factory=dict)
     eog_reference_policy: str = SHARED_MEASURED_REFERENCE
+    correction_strength: float = 1.0
 
     def __post_init__(self) -> None:
+        if (isinstance(self.correction_strength, bool) or not np.isscalar(self.correction_strength)
+                or not np.isfinite(self.correction_strength) or not 0 <= self.correction_strength <= 1):
+            raise ValueError("ocular correction_strength must be finite and between zero and one")
         if self.eog_reference_policy not in EOG_REFERENCE_POLICIES:
             raise ValueError("unsupported EOG reference policy")
         if self.eog_reference_policy == PRESERVE_ACQUIRED_EOG:
@@ -143,7 +148,15 @@ class FittedEOGRegression:
         }
         if self.eog_reference_policy != SHARED_MEASURED_REFERENCE:
             record["eog_reference_policy"] = self.eog_reference_policy
+        if self.correction_strength != 1.0:
+            record.update(schema=OCULAR_STRENGTH_SCHEMA, correction_strength=float(self.correction_strength),
+                          eog_reference_policy=self.eog_reference_policy)
         return record
+
+    @property
+    def effective_coefficients(self) -> np.ndarray:
+        """The applied map; fitted coefficients remain the original calibration estimate."""
+        return float(self.correction_strength) * np.asarray(self.coefficients)
 
     def apply(self, raw: mne.io.BaseRaw, *, source_reference: str,
               eog_derivation: Mapping[str, Any] | None = None) -> mne.io.BaseRaw:
@@ -171,11 +184,13 @@ class FittedEOGRegression:
         )
         if effective_reference != self.source_reference:
             raise ValueError("ocular model and recording references differ.")
+        if self.correction_strength == 0:
+            return output
         artifact = output.get_data(picks=list(eog))
         if not np.isfinite(artifact).all():
             raise ValueError("ocular inference requires finite EOG samples.")
         artifact -= np.asarray(self.calibration_eog_mean_v)[:, None]
-        correction = np.asarray(self.coefficients) @ artifact
+        correction = self.effective_coefficients @ artifact
         output.apply_function(
             lambda signal: signal - correction, picks=list(eeg), channel_wise=False
         )
@@ -276,13 +291,16 @@ def load_eog_regression(path: str | Path) -> FittedEOGRegression:
 def eog_regression_from_record(record: Mapping[str, Any]) -> FittedEOGRegression:
     """Restore an embedded fitted model whose enclosing artifact binds its digest."""
     if not isinstance(record, Mapping) or record.get("schema") not in (
-        OCULAR_MODEL_SCHEMA, OCULAR_PRESERVED_EOG_SCHEMA
+        OCULAR_MODEL_SCHEMA, OCULAR_PRESERVED_EOG_SCHEMA, OCULAR_STRENGTH_SCHEMA
     ):
         raise ValueError("ocular model schema is invalid.")
     if record["schema"] == OCULAR_MODEL_SCHEMA and "eog_reference_policy" in record:
         raise ValueError("ocular schema /3 does not define an EOG reference policy field")
     if record["schema"] == OCULAR_PRESERVED_EOG_SCHEMA and record.get("eog_reference_policy") != PRESERVE_ACQUIRED_EOG:
         raise ValueError("ocular schema /4 requires preserve_acquired_eog policy")
+    if record["schema"] == OCULAR_STRENGTH_SCHEMA and (
+            "correction_strength" not in record or "eog_reference_policy" not in record):
+        raise ValueError("ocular schema /5 requires explicit correction strength and reference policy")
     model = FittedEOGRegression(
         eeg_channels=tuple(record["eeg_channels"]),
         eog_channels=tuple(record["eog_channels"]),
@@ -294,6 +312,7 @@ def eog_regression_from_record(record: Mapping[str, Any]) -> FittedEOGRegression
         reference_channel=record["reference_channel"],
         eog_derivation=record["eog_derivation"],
         eog_reference_policy=record.get("eog_reference_policy", SHARED_MEASURED_REFERENCE),
+        correction_strength=record.get("correction_strength", 1.0),
     )
     if model.record() != record:
         raise ValueError("ocular model record has unsupported or inconsistent fields.")

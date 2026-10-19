@@ -1,0 +1,9 @@
+import N2P3.PosteriorSlice
+import N2P3.GaussianJointLaw
+import N2P3.GaussianConvolution
+import N2P3.RetainedGaussianLaw
+import N2P3.GaussianAffineLaw
+import N2P3.GaussianMoments
+import N2P3.MatrixNormalMoments
+import N2P3.ProjectedRegression
+import N2P3.ContinuousPosteriorModel

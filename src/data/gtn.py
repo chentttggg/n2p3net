@@ -1,32 +1,13 @@
-"""GTN（Guess the Number）NIX 数据读取器。
+"""GTN（Guess the Number）NIX数据读取器。
 
-职责（Phase 1 数据接入）：
-    把 GTN 猜数字数据集的单个被试从 .nix（HDF5/NIX 格式）读成 MNE Raw + 刺激事件 + 元数据。
-    这是唯一「9 选 1 猜数字」的公开数据（Vařeka 77.2% 锚点来源），心选数字是决策层的 ground truth。
+读取原始Fz/Cz/Pz EEG、刺激事件、心选数字及采集元数据，返回GTNData。
+NIX/HDF5内按通道名识别EEG，从元数据读取原始采样率；刺激秒数转换为源sample。
+心选数字来自配套文本，不从模型输出或候选频次猜测。
+GTN为九选一公开儿童数据，不构成成人BrainSync有效性确认。
+通道映射、epoch切分、滤波与重采样由下游数据模块负责。
 
-明确「不做」：
-    - 不做通道映射到 8 导蒙太奇（GTN 只有 Fz/Cz/Pz 3 导，映射/缺失填充是 data/dataset 层职责，
-      本模块只读原始 3 导）。
-    - 不做 epoch 切分/滤波/重采样（那走 data/preprocess.py）。
-
-三思决策记录（供后续会话追溯）：
-    D-gtn-nix       GTN 在 EEGBase 上是 NIX 格式（HDF5 文件头 \\x89HDF），**非 BrainVision**。用 h5py
-                    直接读（h5py 是 MNE 依赖已装），无需 nixio。NIX 结构：EEG 在
-                    data/EEG Data/data_arrays/P3Numbers_XXX/data（(4, N) float64），刺激事件在
-                    data/EEG Data/data_arrays/STIMULUS_XXX_positions/data（(n_events, 2)）。
-    D-gtn-channels  NIX 的 4 通道 = Fz/Cz/Pz/EOG（dimensions/1/labels）。只取 Fz/Cz/Pz（3 导 EEG），
-                    丢弃 EOG；按通道名过滤而非硬编码前 3 导（健壮）。
-    D-gtn-events    事件 label 形如 'Stimulus/S  3'（数字前有空格）或 'New Segment/'（记录起点，非刺激）。
-                    用正则提取数字，过滤 'New Segment/'；position[:,1] 是时间（秒），×sfreq → 采样点。
-    D-gtn-thought   心选数字（9 选 1 ground truth）从配套 .txt 的 'the number thought' 字段提取；
-                    .txt 在同 experiment 目录的 Data/ 子目录下。
-    D-gtn-sfreq     采样率从 .nix metadata 读（Amplifier/properties/SampleRate=1000Hz），不硬编码。
-
-契约（输入 → 输出）：
-    read_gtn_experiment(exp_dir) → GTNData{raw(Fz/Cz/Pz 3 导), events(n,3)[sample,0,digit],
-        thought_number, metadata, subject_id}。
-
-依赖的决策：roadmap Phase 1、data/preprocess.py（下游消费 Raw+events）。
+数据角色与标签隔离见doc/research_program.zh.md；模块边界见doc/technical_structure.zh.md；
+信号和时间支持见doc/input_contract_math.zh.md。
 """
 
 from __future__ import annotations

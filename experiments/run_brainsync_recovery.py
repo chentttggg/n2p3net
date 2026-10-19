@@ -151,7 +151,7 @@ def complete_cycle_diagnostic(dataset, logits, *, minimum_cycles):
                 selected.extend(rows.tolist())
                 cycles.append(cycle)
         evidence = candidate_evidence_scores(values[selected], codes[selected], vocabulary,
-            aggregation="mean", missing_candidate_policy="abstain")
+            aggregation="mean")
         prediction = evidence.predicted if len(cycles) >= minimum_cycles else None
         truth = np.unique(targets[start:start+45])
         if len(truth) != 1 or truth[0] not in vocabulary:

@@ -4,13 +4,218 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from numbers import Integral
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
 CANDIDATE_TASK_CONTRACT_SCHEMA = "n2p3_candidate_task_contract/1"
+MEMBERSHIP_DECISION_SCHEMA = "n2p3_membership_decision/1"
+
+
+def _membership_texts(values, name):
+    if isinstance(values, (str, bytes)):
+        raise ValueError(f"{name} must be a sequence of exact string identities")
+    values = tuple(values)
+    if any(not isinstance(value, str) or not value or value != value.strip() for value in values):
+        raise ValueError(f"{name} requires exact nonempty string identities")
+    return values
+
+
+def _membership_integers(values, name):
+    values = np.asarray(values)
+    if values.ndim != 1 or not np.issubdtype(values.dtype, np.integer) or values.dtype == bool:
+        raise ValueError(f"{name} must be an aligned integer vector")
+    result = np.array(values, dtype=np.int64, copy=True)
+    result.setflags(write=False)
+    return result
+
+
+@dataclass(frozen=True)
+class MembershipDecision:
+    """One complete requested schedule, with physical events retained when EEG is absent.
+
+    Columns identify final choices; stimulus_indices identify the physical flash
+    sets. A row/column flash therefore covers several choice columns. Evidence
+    indices map scheduled events to their original epoch rows; -1 means missing.
+    This contract contains no target labels or learned candidate preferences.
+    """
+
+    candidate_vocabulary: tuple[str, ...]
+    membership: np.ndarray
+    event_ids: tuple[str, ...]
+    stimulus_vocabulary: tuple[str, ...]
+    stimulus_indices: np.ndarray
+    repetition_indices: np.ndarray
+    evidence_indices: np.ndarray
+    repetitions: int
+    protocol: str = "set_membership"
+    timeline_complete: bool = True
+
+    def __post_init__(self):
+        for field in ("candidate_vocabulary", "stimulus_vocabulary", "event_ids"):
+            values = _membership_texts(getattr(self, field), field)
+            minimum = 2 if field == "candidate_vocabulary" else 1
+            if len(values) < minimum or len(set(values)) != len(values):
+                raise ValueError(f"{field} must contain unique physical identities")
+            object.__setattr__(self, field, values)
+        if (isinstance(self.repetitions, bool) or not isinstance(self.repetitions, Integral)
+                or self.repetitions < 1):
+            raise ValueError("repetitions must be a positive integer")
+        object.__setattr__(self, "repetitions", int(self.repetitions))
+        if not isinstance(self.timeline_complete, (bool, np.bool_)):
+            raise ValueError("timeline_complete must be boolean")
+        object.__setattr__(self, "timeline_complete", bool(self.timeline_complete))
+        if self.protocol not in {"direct", "row_column", "set_membership"}:
+            raise ValueError("unsupported membership protocol")
+        rows = len(self.event_ids)
+        matrix = np.asarray(self.membership)
+        if matrix.dtype != bool or matrix.shape != (rows, len(self.candidate_vocabulary)):
+            raise ValueError("membership must be a boolean event-by-candidate matrix")
+        matrix = matrix.copy()
+        matrix.setflags(write=False)
+        object.__setattr__(self, "membership", matrix)
+        for field in ("stimulus_indices", "repetition_indices", "evidence_indices"):
+            values = _membership_integers(getattr(self, field), field)
+            if len(values) != rows:
+                raise ValueError(f"{field} must align with the physical event ledger")
+            object.__setattr__(self, field, values)
+        if (np.any(self.stimulus_indices < 0)
+                or np.any(self.stimulus_indices >= len(self.stimulus_vocabulary))
+                or np.any(self.repetition_indices < 0)
+                or np.any(self.repetition_indices >= self.repetitions)
+                or np.any(self.evidence_indices < -1)):
+            raise ValueError("membership indices lie outside their declared axes")
+        observed = self.evidence_indices[self.evidence_indices >= 0]
+        if len(np.unique(observed)) != len(observed):
+            raise ValueError("one physical evidence row cannot stand for multiple scheduled events")
+        slots = np.column_stack((self.repetition_indices, self.stimulus_indices))
+        if len(np.unique(slots, axis=0)) != rows:
+            raise ValueError("duplicate scheduled stimulus within one repetition")
+        for stimulus in np.unique(self.stimulus_indices):
+            patterns = matrix[self.stimulus_indices == stimulus]
+            if not np.all(patterns == patterns[0]):
+                raise ValueError("a stimulus identity has inconsistent physical membership")
+
+    @property
+    def schedule_complete(self) -> bool:
+        return self.timeline_complete and len(self.event_ids) == self.repetitions * len(self.stimulus_vocabulary)
+
+    def prefix(self, repetitions: int) -> MembershipDecision:
+        if (isinstance(repetitions, bool) or not isinstance(repetitions, Integral)
+                or not 1 <= repetitions <= self.repetitions):
+            raise ValueError("prefix repetitions must lie inside the declared schedule")
+        selected = self.repetition_indices < repetitions
+        return replace(self, membership=self.membership[selected],
+            event_ids=tuple(np.asarray(self.event_ids)[selected]),
+            stimulus_indices=self.stimulus_indices[selected],
+            repetition_indices=self.repetition_indices[selected],
+            evidence_indices=self.evidence_indices[selected], repetitions=int(repetitions))
+
+    def validate_epoch_labels(self, labels, target_candidate: int) -> None:
+        """Check retained epoch labels against the authorized decision truth.
+
+        ``labels`` uses the same original epoch row axis as evidence_indices.
+        Inference never calls this training-only check.
+        """
+        if (isinstance(target_candidate, bool) or not isinstance(target_candidate, Integral)
+                or not 0 <= target_candidate < len(self.candidate_vocabulary)):
+            raise ValueError("target candidate must index the frozen choice vocabulary")
+        labels = np.asarray(labels)
+        observed = self.evidence_indices >= 0
+        rows = self.evidence_indices[observed]
+        if labels.ndim != 1 or (len(rows) and rows.max() >= len(labels)):
+            raise ValueError("epoch labels do not cover the original evidence row axis")
+        if not np.array_equal(labels[rows], self.membership[observed, target_candidate]):
+            raise ValueError("epoch labels disagree with physical candidate membership")
+
+    def record(self):
+        return {"schema": MEMBERSHIP_DECISION_SCHEMA, "protocol": self.protocol,
+                "candidate_vocabulary": list(self.candidate_vocabulary),
+                "membership": self.membership.tolist(), "event_ids": list(self.event_ids),
+                "stimulus_vocabulary": list(self.stimulus_vocabulary),
+                "stimulus_indices": self.stimulus_indices.tolist(),
+                "repetition_indices": self.repetition_indices.tolist(),
+                "evidence_indices": self.evidence_indices.tolist(),
+                "repetitions": self.repetitions, "timeline_complete": self.timeline_complete}
+
+    @classmethod
+    def from_record(cls, record):
+        expected = {"schema", *cls.__dataclass_fields__}
+        if not isinstance(record, Mapping) or set(record) != expected or record["schema"] != MEMBERSHIP_DECISION_SCHEMA:
+            raise ValueError("membership decision record fields or schema differ")
+        return cls(**{key: value for key, value in record.items() if key != "schema"})
+
+    @classmethod
+    def direct(cls, candidate_ids, vocabulary, *, event_ids, repetition_indices, repetitions,
+               evidence_indices=None, timeline_complete=True):
+        vocabulary = _membership_texts(vocabulary, "candidate_vocabulary")
+        codes = _membership_texts(candidate_ids, "candidate_ids")
+        lookup = {value: index for index, value in enumerate(vocabulary)}
+        try:
+            indices = np.asarray([lookup[value] for value in codes], dtype=np.int64)
+        except KeyError as error:
+            raise ValueError("candidate identity outside the frozen vocabulary") from error
+        return cls(vocabulary, np.eye(len(vocabulary), dtype=bool)[indices], tuple(event_ids),
+            vocabulary, indices, repetition_indices,
+            np.arange(len(codes)) if evidence_indices is None else evidence_indices,
+            repetitions, "direct", timeline_complete)
+
+    @classmethod
+    def row_column(cls, stimulus_ids, *, n_rows, n_columns, event_ids,
+                   repetition_indices, repetitions, evidence_indices=None, timeline_complete=True):
+        if any(isinstance(size, bool) or not isinstance(size, Integral) or size < 2
+               for size in (n_rows, n_columns)):
+            raise ValueError("row/column dimensions must be integers of at least two")
+        indices = _membership_integers(stimulus_ids, "stimulus_ids")
+        if np.any(indices < 0) or np.any(indices >= n_rows + n_columns):
+            raise ValueError("stimulus identity outside the row/column vocabulary")
+        rows = np.repeat(np.arange(n_rows), n_columns)
+        columns = np.tile(np.arange(n_columns), n_rows)
+        matrix = ((indices[:, None] < n_rows) & (indices[:, None] == rows)
+                  | (indices[:, None] >= n_rows) & (indices[:, None] - n_rows == columns))
+        return cls(tuple(f"row:{r}|column:{c}" for r, c in zip(rows, columns, strict=True)),
+            matrix, tuple(event_ids), tuple(str(index) for index in range(n_rows + n_columns)),
+            indices, repetition_indices, np.arange(len(indices)) if evidence_indices is None else evidence_indices,
+            repetitions, "row_column", timeline_complete)
+
+    @classmethod
+    def from_timeline(cls, timeline, event_mask, *, repetitions, candidate_vocabulary=None,
+                      task_contract=None, repetition_start=0):
+        """Adapt an explicitly scoped physical schedule without reading target fields.
+
+        The caller owns the decision/block scope. A later block's repetition
+        origin must be declared explicitly rather than inferred from surviving EEG.
+        """
+        selected = np.asarray(event_mask)
+        if selected.dtype != bool or selected.shape != (timeline.n_events,) or not selected.any():
+            raise ValueError("membership requires a nonempty explicit scheduled-event scope")
+        if (isinstance(repetition_start, bool) or not isinstance(repetition_start, Integral)
+                or repetition_start < 0):
+            raise ValueError("repetition_start must be a nonnegative integer")
+        if len(np.unique(np.asarray(timeline.group_ids)[selected])) != 1 or len(
+                np.unique(np.asarray(timeline.subject_ids)[selected])) != 1:
+            raise ValueError("one membership decision requires one physical group and participant")
+        common = {"event_ids": tuple(np.asarray(timeline.event_ids)[selected]),
+                  "repetition_indices": np.asarray(timeline.repetition_indices)[selected] - repetition_start,
+                  "evidence_indices": np.asarray(timeline.evidence_indices)[selected],
+                  "repetitions": repetitions, "timeline_complete": timeline.complete}
+        codes = tuple(np.asarray(timeline.candidate_ids)[selected])
+        if task_contract is None:
+            if candidate_vocabulary is None:
+                raise ValueError("direct membership requires the frozen candidate vocabulary")
+            return cls.direct(codes, candidate_vocabulary, **common)
+        if not isinstance(task_contract, CandidateTaskContract) or candidate_vocabulary is not None:
+            raise ValueError("row/column membership requires one explicit task contract")
+        lookup = {str(code): code for code in task_contract.candidate_ids}
+        try:
+            indices = np.asarray([lookup[code] for code in codes], dtype=np.int64)
+        except KeyError as error:
+            raise ValueError("scheduled stimulus differs from its row/column task contract") from error
+        return cls.row_column(indices, n_rows=task_contract.n_rows,
+                              n_columns=task_contract.n_columns, **common)
 
 
 def _nonempty_text(value: object, name: str) -> str:

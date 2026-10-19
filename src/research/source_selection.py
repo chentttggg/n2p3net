@@ -3,19 +3,32 @@
 from __future__ import annotations
 
 import hashlib
+import time
 from collections.abc import Mapping, Sequence
-from dataclasses import asdict
+from dataclasses import asdict, replace
+from math import ceil
 
 import numpy as np
 import torch
 
-from baselines.deep import DeepConfig
+from baselines.deep import DeepConfig, resolve_source_risk_weights
 from baselines.n2p3net import N2P3NetBaseline
 from baselines.validation import domain_stratified_group_validation_split
 from data.domain import source_domain_ids
-from data.epochs import EpochDataset, epoch_row_identity_digest, materialize_dataset_lineage
+from data.epochs import (
+    EpochDataset,
+    epoch_row_identity_digest,
+    materialize_dataset_lineage,
+    preprocessing_execution_binding,
+)
 from data.identity import DatasetIdentityTable, training_identity_ledger_from_rows
 from data.study import dataset_study_membership, study_ids_for_identity
+from models.n2p3net import (
+    DEFAULT_N2P3_ARCHITECTURE,
+    DEFAULT_N2P3_POOLING_MODE,
+    N2P3ArchitectureConfig,
+    N2P3Net,
+)
 from research.contracts import TrainingRunContract, semantic_sha256
 from research.domain_folds import domain_lodo_folds
 from transfer.checkpoint import CHECKPOINT_SCHEMA
@@ -35,14 +48,15 @@ def source_identity_axes(dataset: EpochDataset) -> tuple[np.ndarray, np.ndarray,
     study_membership = dataset_study_membership(dataset)
     local_records = {record.local_subject_id: record for record in table.records}
     keys = {local: record.authority_key() for local, record in local_records.items()}
-    people = np.asarray([keys[str(local)] for local in dataset.subject_ids])
+    local_ids, first_rows, inverse = np.unique(np.asarray(dataset.subject_ids).astype(str, copy=False),
+                                               return_index=True, return_inverse=True)
+    domains_by_local = domains[first_rows]
+    if not np.array_equal(domains, domains_by_local[inverse]):
+        raise ValueError("one actual participant appears in multiple source domains")
+    people = np.asarray([keys[str(local)] for local in local_ids])[inverse]
     libraries: dict[str, set[str]] = {}
     library_domains: dict[str, str] = {}
-    for local in np.unique(dataset.subject_ids):
-        local_domains = np.unique(domains[dataset.subject_ids == local])
-        if len(local_domains) != 1:
-            raise ValueError("one actual participant appears in multiple source domains")
-        domain = local_domains[0]
+    for local, domain in zip(local_ids, domains_by_local, strict=True):
         record = local_records[str(local)]
         for library in study_ids_for_identity(DatasetIdentityTable((record,)), study_membership):
             if library_domains.setdefault(library, domain) != domain:
@@ -124,6 +138,88 @@ def source_inner_folds(dataset: EpochDataset, *, seed: int, excluded_source_data
                        "validation_participant_keys": sorted(set(people[validation])),
                        "ledger": ledger})
     return output
+
+
+def source_prior_development_fold(dataset, *, seed, excluded_source_datasets, fraction=.08,
+                                  people_per_domain=None, eligible_people=None, development_domains=None):
+    """One declared participant split for a common source-prior strength across factors."""
+    domains, people, _ = source_identity_axes(dataset)
+    from research.source_catalog import study_names
+
+    declared = (tuple(sorted(set(domains))) if development_domains is None else
+                study_names(development_domains, field="development_domains"))
+    if not set(declared) <= set(domains):
+        raise ValueError("development_domains must be actual source domains")
+    if development_domains is not None and people_per_domain is None:
+        raise ValueError("explicit development_domains requires people_per_domain")
+    if people_per_domain is None:
+        split = domain_stratified_group_validation_split(people, domains, fraction=fraction,
+                                                         min_groups=1, max_groups=12, seed=seed)
+        training, validation = np.flatnonzero(split.train_mask), np.flatnonzero(split.validation_mask)
+    else:
+        if type(people_per_domain) is not int or people_per_domain < 1:
+            raise ValueError("development people per domain must be positive")
+        eligible = set(people if eligible_people is None else eligible_people)
+        held = []
+        for domain in sorted(declared):
+            population = sorted(set(people[domains == domain]))
+            candidates = [person for person in population if person in eligible]
+            if len(candidates) < people_per_domain or len(population) - people_per_domain < 4:
+                raise ValueError(f"source-prior development lacks eligible people or source validation support: {domain}")
+            rng = np.random.default_rng(int(semantic_sha256({"seed": seed, "domain": domain})[:16], 16))
+            held.extend(rng.permutation(candidates)[:people_per_domain])
+        mask = np.isin(people, held)
+        training, validation = np.flatnonzero(~mask), np.flatnonzero(mask)
+    ledger = source_fit_ledger(dataset, training, excluded_source_datasets=excluded_source_datasets,
+                               forbidden_participant_keys=np.unique(people[validation]).tolist())
+    return {"train_rows": training.tolist(), "validation_rows": validation.tolist(),
+            "validation_participant_keys": sorted(set(people[validation])), "fit_ledger": ledger,
+            "split_seed": seed, "validation_fraction": fraction if people_per_domain is None else None,
+            "people_per_domain": people_per_domain,
+            "development_domains": sorted(declared),
+            "participant_domains": {person: str(domains[np.flatnonzero(people == person)[0]])
+                                    for person in sorted(set(people[validation]))}}
+
+
+def select_source_prior_weight(outcomes, *, requested_cells, candidates, participant_domains=None):
+    """Keep every requested person/seed; select one finite lambda by person-equal AUC."""
+    candidates = tuple(candidates)
+    if (not candidates or len(set(candidates)) != len(candidates)
+            or any(isinstance(value, bool) or not np.isfinite(value) or value < 0 for value in candidates)):
+        raise ValueError("source-prior candidates must be unique nonnegative finite strengths")
+    requested = set(tuple(cell) for cell in requested_cells)
+    if not requested:
+        return {"status": "pending", "reason": "no_legal_source_inner_K200", "selected_weight": None, "curves": []}
+    curves = []
+    for weight in candidates:
+        matching = [row for row in outcomes if row["source_prior_weight"] == weight]
+        cells = {(row["participant_key"], row["source_seed"], row["target_seed"]): row for row in matching}
+        if len(cells) != len(matching) or set(cells) - requested:
+            raise ValueError("source-prior results contain duplicate or undeclared participant/seed cells")
+        failed = sorted(cell for cell in requested if cell not in cells or cells[cell].get("status") != "completed"
+                        or not isinstance(cells[cell].get("auc"), (int, float))
+                        or not np.isfinite(cells[cell]["auc"]) or not 0 <= cells[cell]["auc"] <= 1)
+        people = sorted({cell[0] for cell in requested})
+        score = None if failed else float(np.mean([
+            np.mean([row["auc"] for cell, row in cells.items() if cell[0] == person]) for person in people]))
+        if not failed and participant_domains is not None:
+            if set(participant_domains) != set(people):
+                raise ValueError("source-prior domain weights must cover exactly the requested people")
+            score = float(np.mean([np.mean([
+                np.mean([row["auc"] for cell, row in cells.items() if cell[0] == person])
+                for person in people if participant_domains[person] == domain])
+                for domain in sorted(set(participant_domains.values()))]))
+        curves.append({"source_prior_weight": weight, "participant_macro_auc": score,
+                       "failed_cells": [list(cell) for cell in failed]})
+    valid = [row for row in curves if row["participant_macro_auc"] is not None]
+    best = max((row["participant_macro_auc"] for row in valid), default=None)
+    chosen = None if best is None else min(row["source_prior_weight"] for row in valid
+                                          if row["participant_macro_auc"] >= best - 1e-6)
+    return {"status": "selected" if chosen is not None else "pending", "selected_weight": chosen,
+            "curves": curves, "requested_cells": [list(cell) for cell in sorted(requested)],
+            "score": ("seed_mean_then_domain_participant_equal_auc" if participant_domains is not None
+                      else "seed_mean_then_participant_equal_auc"), "failure_policy": "all_requested_cells_required",
+            "tie_policy": "within_1e-6_choose_smaller_weight", "outer_target_used": False}
 
 
 def source_fixed_dose(
@@ -237,15 +333,41 @@ def select_source_updates(
             "estimand": "actual_positive_K_within_person_then_person_within_library_then_library_equal"}
 
 
+def source_architecture_record(dataset: EpochDataset, architecture: N2P3ArchitectureConfig) -> dict:
+    """Resolve the source model identity without constructing weights or fitting data."""
+    return N2P3Net.default_architecture_record(
+        pooling_mode=DEFAULT_N2P3_POOLING_MODE,
+        tmin_s=dataset.preprocessing.tmin_ms / 1000,
+        sfreq=dataset.preprocessing.sfreq, n_times=dataset.n_times, architecture=architecture)
+
+
 def fit_source_trajectory(
     dataset: EpochDataset, rows: np.ndarray, *, config: DeepConfig,
     source_cache_sha256: str, source_snapshot_sha256: str,
     excluded_source_datasets: Sequence[str], device: torch.device,
     evidence_scope: str = "development",
+    architecture: N2P3ArchitectureConfig = DEFAULT_N2P3_ARCHITECTURE,
+    runtime_preload_budget_bytes: int | None = None,
+    runtime_input_staging_gate=None,
 ) -> tuple[N2P3NetBaseline, dict[int, dict]]:
     """Fit actual rows once and return loadable, source-bound candidate checkpoints."""
+    if config.global_early_stopping is not None:
+        return _fit_source_with_early_stopping(
+            dataset, rows, config=config, source_cache_sha256=source_cache_sha256,
+            source_snapshot_sha256=source_snapshot_sha256,
+            excluded_source_datasets=excluded_source_datasets, device=device, evidence_scope=evidence_scope,
+            architecture=architecture,
+            runtime_preload_budget_bytes=runtime_preload_budget_bytes,
+            runtime_input_staging_gate=runtime_input_staging_gate,
+        )
     if config.fixed_updates is None:
         raise ValueError("source trajectory requires explicit fixed updates")
+    if config.source_budget is not None:
+        epochs = config.source_budget.get("selected_epochs")
+        if (config.source_budget.get("mode") != "reference_selected_exposure"
+                or type(epochs) is not int or epochs < 1
+                or config.fixed_updates != epochs * ceil(len(rows) / config.batch_size)):
+            raise ValueError("source updates differ from the selected reference exposure budget")
     ledger = source_fit_ledger(dataset, rows, excluded_source_datasets=excluded_source_datasets)
     study_membership = dataset_study_membership(dataset)
     domains, people, _ = source_identity_axes(dataset)
@@ -255,8 +377,12 @@ def fit_source_trajectory(
     unique_domains = sorted(set(domains[rows]))
     model = N2P3NetBaseline(dataset.n_channels, dataset.n_times, dataset.preprocessing.sfreq,
                            config=config, device=device, channel_mask=dataset.channel_mask,
+                           architecture=architecture,
                            tmin_s=dataset.preprocessing.tmin_ms / 1000)
-    model.fit(dataset.X[rows], np.asarray(dataset.y)[rows], trial_channel_mask=observed,
+    all_rows = len(rows) == dataset.n_epochs and np.array_equal(rows, np.arange(dataset.n_epochs))
+    model.runtime.configure_resident_memory_budget(runtime_preload_budget_bytes)
+    model.runtime.input_staging_gate = runtime_input_staging_gate
+    model.fit(dataset.X if all_rows else dataset.X[rows], np.asarray(dataset.y)[rows], trial_channel_mask=observed,
               source_domain_ids=domains[rows], risk_unit_ids=people[rows],
               source_domain_mass={domain: 1 / len(unique_domains) for domain in unique_domains})
     snapshots = dict(model.candidate_snapshots_)
@@ -267,6 +393,8 @@ def fit_source_trajectory(
         "optimizer_updates": config.fixed_updates,
         "trial_draws": model.last_history["trial_draws"],
         "batch_sequence_sha256": model.last_history["batch_sequence_sha256"],
+        **({"source_objective": model.last_history["source_objective"]}
+           if "source_objective" in model.last_history else {}),
     })
     payloads = {}
     for updates, snapshot in snapshots.items():
@@ -274,12 +402,15 @@ def fit_source_trajectory(
             source_cache_sha256=source_cache_sha256,
             source_identity_digest=dataset.identity_table.digest(),
             source_snapshot_sha256=source_snapshot_sha256, architecture=model.architecture_record(),
-            preprocessing={"epoch": dataset.preprocessing.record(), "channel_names": list(dataset.channel_names),
+            preprocessing={**preprocessing_execution_binding(dataset.provenance.get("preprocessing_execution"), dataset.preprocessing),
+                           "epoch": dataset.preprocessing.record(), "channel_names": list(dataset.channel_names),
                            "source_reference": dataset.provenance.get("source_reference")},
             optimizer={"name": "torch.optim.Adam", "config": asdict(config), "actual_updates": updates,
                        "trial_draws": snapshot["trial_draws"], "batch_sequence_sha256": snapshot["batch_sequence_sha256"]},
             validation={"strategy": "fixed_source_updates", "fit_ledger": ledger, "evidence_scope": evidence_scope},
             objective={"name": "hierarchical_weighted_CE", "sampling": model.sampling_ledger_,
+                       **({"source_auxiliary": snapshot["source_objective"]}
+                          if "source_objective" in snapshot else {}),
                        "input_statistics": model.source_statistics_, "source_study_membership": study_membership}, seed=config.seed,
             training_participant_keys=tuple(ledger["training_participant_keys"]), holdout_participant_keys=(),
         )
@@ -289,6 +420,7 @@ def fit_source_trajectory(
             "n_times": dataset.n_times, "input_sample_rate_hz": dataset.preprocessing.sfreq,
             "input_tmin_s": dataset.preprocessing.tmin_ms / 1000,
             "input_preprocessing": dataset.preprocessing.record(), "input_channel_names": list(dataset.channel_names),
+            "input_preprocessing_execution": dataset.provenance.get("preprocessing_execution"),
             "input_source_reference": dataset.provenance.get("source_reference"),
             "input_mean": snapshot["input_mean"].reshape(-1).tolist(),
             "input_std": snapshot["input_std"].reshape(-1).tolist(),
@@ -300,9 +432,90 @@ def fit_source_trajectory(
             "training_contract": contract.record(), "training_contract_digest": contract.digest(),
             "source_cache_sha256": source_cache_sha256, "source_snapshot_sha256": source_snapshot_sha256,
             "source_fixed_updates": updates, "source_full_refit": True,
+            **({"source_budget": config.source_budget} if config.source_budget is not None else {}),
             "source_fit_ledger": ledger, "source_statistics": model.source_statistics_,
             "source_sampling": model.sampling_ledger_, "runtime": model.last_runtime,
             "source_study_membership": study_membership,
             "evidence_scope": evidence_scope,
         }
+    return model, payloads
+
+
+def _fit_source_with_early_stopping(
+    dataset, rows, *, config, source_cache_sha256, source_snapshot_sha256,
+    excluded_source_datasets, device, evidence_scope, architecture, runtime_preload_budget_bytes=None,
+    runtime_input_staging_gate=None,
+):
+    """Hold out source participants, select epochs, then independently refit all source rows."""
+    from transfer.checkpoint import checkpoint_training_contract
+
+    policy = config.global_early_stopping
+    started = time.perf_counter()
+    rows = np.asarray(rows, dtype=np.int64)
+    source_fit_ledger(dataset, rows, excluded_source_datasets=excluded_source_datasets)
+    domains, people, _ = source_identity_axes(dataset)
+    split = domain_stratified_group_validation_split(
+        people[rows], domains[rows], fraction=policy.source_validation_fraction,
+        min_groups=config.val_groups_min, max_groups=config.val_groups_max, seed=config.seed,
+    )
+    training, validation = rows[split.train_mask], rows[split.validation_mask]
+    inner_ledger = source_fit_ledger(dataset, training, excluded_source_datasets=excluded_source_datasets,
+        forbidden_participant_keys=people[validation])
+    observed = (np.broadcast_to(dataset.channel_mask, dataset.X.shape[:2])
+                if dataset.trial_channel_mask is None else dataset.trial_channel_mask)
+    check_every = ceil(len(training) / config.batch_size)
+    inner_config = replace(config, global_early_stopping=None, val_group_frac=None,
+                           fixed_updates=policy.source_max_epochs * check_every)
+    inner = N2P3NetBaseline(dataset.n_channels, dataset.n_times, dataset.preprocessing.sfreq,
+        config=inner_config, device=device, channel_mask=dataset.channel_mask,
+        architecture=architecture,
+        tmin_s=dataset.preprocessing.tmin_ms / 1000)
+    domain_mass = {domain: 1 / len(set(domains[rows])) for domain in sorted(set(domains[rows]))}
+    vy = np.asarray(dataset.y)[validation]
+    multipliers, _ = resolve_source_risk_weights(vy, domains[validation], people[validation],
+        domain_mass=domain_mass, within_domain_unit="participant", pos_weight=config.pos_weight)
+    weights = multipliers * np.where(vy == 1, config.pos_weight, 1.0)
+    weights = weights / weights.sum()
+    inner.runtime.configure_resident_memory_budget(runtime_preload_budget_bytes)
+    inner.runtime.input_staging_gate = runtime_input_staging_gate
+    inner.fit(dataset.X[training], np.asarray(dataset.y)[training], trial_channel_mask=observed[training],
+        source_domain_ids=domains[training], risk_unit_ids=people[training], source_domain_mass=domain_mass,
+        early_stopping_validation={"X": dataset.X[validation], "y": vy,
+            "channel_mask": observed[validation], "weights": weights,
+            "check_every_updates": check_every, "policy": policy})
+    history = inner.last_history
+    selection = {**history["early_stopping"], "policy": policy.record(),
+        "monitor": "source_validation_hierarchical_weighted_cross_entropy",
+        "validation_unit": "source_participant_disjoint_within_each_domain",
+        "epoch_unit": "ceil(inner_rows/batch_size)_source_updates",
+        "check_every_updates": check_every,
+        "training_rows": training.tolist(), "validation_rows": validation.tolist(),
+        "inner_fit_ledger": inner_ledger, "inner_history": history, "inner_runtime": inner.last_runtime,
+        "outer_target_used_for_selection": False,
+        "refit_initialization": "fresh_same_seed", "maximum_epochs": policy.source_max_epochs}
+    selection["reached_epoch_limit"] = selection["validation_checks"] >= policy.source_max_epochs
+    del inner
+    refit_updates = selection["selected_epochs"] * ceil(len(rows) / config.batch_size)
+    model, payloads = fit_source_trajectory(dataset, rows,
+        config=replace(config, global_early_stopping=None, val_group_frac=None, fixed_updates=refit_updates),
+        source_cache_sha256=source_cache_sha256, source_snapshot_sha256=source_snapshot_sha256,
+        excluded_source_datasets=excluded_source_datasets, device=device, evidence_scope=evidence_scope,
+        architecture=architecture, runtime_preload_budget_bytes=runtime_preload_budget_bytes,
+        runtime_input_staging_gate=runtime_input_staging_gate)
+    selection.update(refit_updates=refit_updates,
+        total_optimizer_updates=history["optimizer_updates"] + model.last_history["optimizer_updates"],
+        total_trial_draws=history["trial_draws"] + model.last_history["trial_draws"],
+        refit_runtime=dict(model.last_runtime), total_wall_seconds=time.perf_counter() - started)
+    model.last_runtime = {**model.last_runtime, "fit_seconds": selection["total_wall_seconds"],
+                          "includes_inner_and_full_refit": True}
+    for payload in payloads.values():
+        original = checkpoint_training_contract(payload)
+        contract = replace(original, validation={**original.validation,
+            "strategy": "source_internal_early_stopping_then_full_refit", "early_stopping": selection})
+        payload.update(training_contract=contract.record(), training_contract_digest=contract.digest(),
+                       global_early_stopping=policy.record(), source_epoch_selection=selection,
+                       runtime=model.last_runtime)
+    model.last_history = {**model.last_history, "source_epoch_selection": selection,
+                          "optimizer_updates": selection["total_optimizer_updates"],
+                          "trial_draws": selection["total_trial_draws"]}
     return model, payloads

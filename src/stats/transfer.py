@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import json
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from itertools import product
+from numbers import Real
 
 import numpy as np
 
+from research.comparison import ContrastPlan, assert_matched_cells, validate_input_identity
 from stats.hierarchical import paired_interval
 
 ANALYSIS_SEED = 20260907
@@ -16,6 +19,23 @@ INFERENCE_SCOPE = "conditional_on_fitted_sources_and_fixed_development_studies"
 
 
 def standard_training_contrasts(stage: str) -> dict[str, dict[str, float]]:
+    if stage == "P2":
+        return {"full_minus_scratch": {"p2_full_fine": 1, "p2_scratch": -1},
+                "full_minus_lda": {"p2_full_fine": 1, "p2_waveform_lda": -1}}
+    if stage == "P1":
+        contrasts = {
+            "spatial": {"p1_s1t0": .5, "p1_s1t1": .5, "p1_s0t0": -.5, "p1_s0t1": -.5},
+            "temporal": {"p1_s0t1": .5, "p1_s1t1": .5, "p1_s0t0": -.5, "p1_s1t0": -.5},
+            "spatial_x_temporal": {"p1_s1t1": 1, "p1_s0t0": 1, "p1_s1t0": -1, "p1_s0t1": -1},
+            "full_minus_scratch": {"p1_full_fine": 1, "p1_scratch": -1},
+            "full_minus_lda": {"p1_full_fine": 1, "p1_waveform_lda": -1},
+            "affine_minus_frozen_head": {"p1_affine_head": 1, "p1_s0t0": -1},
+            "residual_minus_head": {"p1_residual_head": 1, "p1_s0t0": -1},
+        }
+        for arm in ("p1_s0t0", "p1_s1t0", "p1_s0t1", "p1_s1t1", "p1_affine_head", "p1_residual_head"):
+            contrasts[f"{arm}_minus_full"] = {arm: 1, "p1_full_fine": -1}
+            contrasts[f"{arm}_minus_scratch"] = {arm: 1, "p1_scratch": -1}
+        return contrasts
     if stage == "ES":
         contrasts = {}
         for treatment in ("full", "head", "scratch"):
@@ -95,6 +115,43 @@ def _declared_values(values: Sequence, name: str) -> tuple:
     return result
 
 
+def resolve_seed_pairs(source_seeds, target_seeds, *, seed_pairs=None, mode="crossed") -> tuple:
+    """Resolve the planned replicate relation, never infer it from completed rows."""
+    source = _declared_values(source_seeds, "source_seeds")
+    target = _declared_values(target_seeds, "target_seeds")
+    if any(type(value) is not int for value in (*source, *target)):
+        raise ValueError("seed declarations require integers")
+    if mode not in {"paired", "crossed"}:
+        raise ValueError("seed design must be paired or crossed")
+    if seed_pairs is None:
+        if mode == "paired" and set(source) != set(target):
+            raise ValueError("paired seed design requires matching identities or explicit seed pairs")
+        pairs = tuple((seed, seed) for seed in source) if mode == "paired" else tuple(product(source, target))
+    else:
+        try:
+            if isinstance(seed_pairs, (str, bytes, Mapping)):
+                raise TypeError("seed pairs must be a sequence of pairs")
+            records = tuple(seed_pairs)
+            if any(isinstance(pair, (str, bytes, Mapping)) for pair in records):
+                raise TypeError("each seed pair must be a sequence")
+            pairs = tuple(tuple(pair) for pair in records)
+        except (TypeError, ValueError) as error:
+            raise ValueError("explicit seed pairs require sequences of two integer seeds") from error
+    if (not pairs or any(len(pair) != 2 or any(type(v) is not int for v in pair) for pair in pairs)
+            or len(set(pairs)) != len(pairs)
+            or {pair[0] for pair in pairs} != set(source)
+            or {pair[1] for pair in pairs} != set(target)):
+        raise ValueError("explicit seed pairs must be unique integer pairs covering the declared seeds")
+    return pairs
+
+
+def _valid_auc(row: Mapping | None) -> bool:
+    value = None if row is None else row.get("auc")
+    return bool(row is not None and row.get("status") == "completed"
+                and isinstance(value, Real) and not isinstance(value, (bool, np.bool_))
+                and np.isfinite(value) and 0 <= value <= 1)
+
+
 def _participant_rows(unit_rows: list[dict], seeds: tuple[tuple, ...]) -> list[dict]:
     grouped = defaultdict(list)
     for row in unit_rows:
@@ -119,7 +176,8 @@ def _participant_rows(unit_rows: list[dict], seeds: tuple[tuple, ...]) -> list[d
 
 
 def _summary(rows: list[dict], studies: tuple[str, ...], *, iterations: int, seed: int,
-             with_intervals: bool = True) -> dict:
+             with_intervals: bool = True, contrast_bounds: Mapping[str, float | None] | None = None,
+             contrast_lower_bounds: Mapping[str, float | None] | None = None) -> dict:
     complete = [row for row in rows if row["status"] == "complete_pair"]
     by_study = {}
     samples = {}
@@ -142,6 +200,19 @@ def _summary(rows: list[dict], studies: tuple[str, ...], *, iterations: int, see
             "replacement_decline_gate_passed": bool(values.mean() >= -0.01) if len(values) else None,
             "paired_interval": interval,
         }
+        if contrast_bounds is not None:
+            bound = contrast_bounds.get(study)
+            lower = (contrast_lower_bounds.get(study) if contrast_lower_bounds is not None
+                     else -bound if bound is not None else None)
+            missing = len(requested) - len(values)
+            by_study[study].update(
+                contrast_bound=bound,
+                contrast_lower_bound=lower, contrast_upper_bound=bound,
+                missing_result_bounds=(
+                    [(float(values.sum()) + missing * lower) / len(requested),
+                     (float(values.sum()) + missing * bound) / len(requested)]
+                    if len(requested) and lower is not None and bound is not None else None),
+            )
     overall_interval = None
     if with_intervals and any(len(values) > 1 for values in samples.values()):
         rng = np.random.default_rng(seed)
@@ -153,44 +224,78 @@ def _summary(rows: list[dict], studies: tuple[str, ...], *, iterations: int, see
         draws /= len(samples)
         overall_interval = np.quantile(draws, [0.025, 0.975]).tolist()
     values = np.asarray([row["difference"] for row in complete], dtype=float)
-    return {
+    complete_studies = len(samples) == len(studies)
+    partial_mean = float(np.mean([value.mean() for value in samples.values()])) if samples else None
+    partial_negative = float(np.mean([np.mean(value < 0) for value in samples.values()])) if samples else None
+    partial_decline = float(np.mean([np.mean(value < -0.01) for value in samples.values()])) if samples else None
+    result = {
         "n_requested_participants": len(rows), "n_complete_participants": len(complete),
         "requested_seed_pairs": sum(row["requested_seed_pairs"] for row in rows),
         "failed_or_missing_seed_pairs": sum(row["failed_or_missing_seed_pairs"] for row in rows),
-        "mean_difference": float(np.mean([value.mean() for value in samples.values()])) if samples else None,
+        "mean_difference": partial_mean if complete_studies else None,
         "expected_studies": list(studies), "estimable_studies": list(samples), "n_estimable_studies": len(samples),
-        "negative_fraction_study_equal": float(np.mean([np.mean(value < 0) for value in samples.values()])) if samples else None,
-        "decline_over_0_01_fraction_study_equal": float(np.mean([np.mean(value < -0.01) for value in samples.values()])) if samples else None,
+        "missing_expected_studies": [study for study in studies if study not in samples],
+        "full_study_estimate_available": complete_studies,
+        "negative_fraction_study_equal": partial_negative if complete_studies else None,
+        "decline_over_0_01_fraction_study_equal": partial_decline if complete_studies else None,
+        "partial_observed_studies": {
+            "studies": list(samples), "mean_difference": partial_mean,
+            "negative_fraction_study_equal": partial_negative,
+            "decline_over_0_01_fraction_study_equal": partial_decline,
+            "bootstrap_interval": overall_interval,
+            "estimand": "equal_weight_mean_over_only_studies_with_complete_participants",
+        },
         "pooled_participant_p10": float(np.quantile(values, 0.1)) if len(values) else None,
         "worst_participant_difference": float(values.min()) if len(values) else None,
         "by_study": by_study, "participant_rows": rows,
-        "bootstrap": {"interval": overall_interval, "confidence_level": 0.95, "iterations": iterations,
+        "bootstrap": {"interval": overall_interval if complete_studies else None, "confidence_level": 0.95, "iterations": iterations,
                       "seed": seed, "sampling_unit": "participant_within_fixed_study", "scope": INFERENCE_SCOPE,
                       "limitation": "does_not_cover_new_studies_source_resampling_or_training_procedure_uncertainty"},
         "failure_policy": "complete_pairs_with_all_declared_seeds_only_failures_retained_in_denominator",
     }
+    if contrast_bounds is not None:
+        bounds = [by_study[study]["missing_result_bounds"] for study in studies]
+        result["missing_result_bounds"] = {
+            "interval": np.mean(bounds, axis=0).tolist() if all(bound is not None for bound in bounds) else None,
+            "is_confidence_interval": False,
+            "weighting": "equal_declared_study_weights_after_within_study_requested_participant_bounds",
+            "population": "known_actual_K_requested_and_observed_participants",
+            "assumption": "each_missing_AUC_contrast_lies_between_sum_negative_and_sum_positive_weights",
+        }
+    return result
 
 
 def _contrast_report(
     lookup: dict, weights: Mapping[str, float], *, studies: tuple[str, ...],
     seeds: tuple[tuple, ...], standard_budgets: tuple[int, ...], iterations: int, seed: int,
+    requested_scopes: Sequence[Mapping] = (),
+    comparison_plan: ContrastPlan | None = None,
 ) -> dict:
     study_weights = weights.get("by_study")
 
     def coefficients(study):
         return study_weights.get(study, {}) if study_weights is not None else weights
 
-    relevant = {key[:-1] for key in lookup if key[-1] in coefficients(key[0])}
+    bounds = {study: float(sum(value for value in coefficients(study).values() if value > 0))
+              if coefficients(study) else None for study in studies}
+
+    lower_bounds = {study: float(sum(value for value in coefficients(study).values() if value < 0))
+                    if coefficients(study) else None for study in studies}
+
+    def summarize(rows, **options):
+        return _summary(rows, studies, iterations=iterations, seed=seed, contrast_bounds=bounds,
+                        contrast_lower_bounds=lower_bounds, **options)
+
+    relevant = {key[:-1] for key in lookup if coefficients(key[0])}
+    relevant.update((row["study"], row["participant_key"], row["actual_K"], *pair)
+                    for row in requested_scopes if coefficients(row["study"]) for pair in seeds)
     units = []
     for study, participant, budget, source_seed, target_seed in sorted(relevant):
         current_weights = coefficients(study)
         rows = {arm: lookup.get((study, participant, budget, source_seed, target_seed, arm)) for arm in current_weights}
         present = [row for row in rows.values() if row is not None]
-        signatures = {(row["calibration_rows_sha256"], row["test_rows_sha256"]) for row in present}
-        if len(signatures) != 1:
-            raise ValueError("contrast arms must have matched calibration and final-test row digests")
-        failed = [arm for arm, row in rows.items() if row is None or row["status"] != "completed"
-                  or row.get("auc") is None or not np.isfinite(row["auc"])]
+        assert_matched_cells(present, plan=comparison_plan)
+        failed = [arm for arm, row in rows.items() if not _valid_auc(row)]
         units.append({
             "study": study, "participant_key": participant, "K": budget,
             "source_seed": source_seed, "target_seed": target_seed,
@@ -201,9 +306,9 @@ def _contrast_report(
     actual_budgets = tuple(sorted({row["K"] for row in units}))
     by_budget = {budget: _participant_rows([row for row in units if row["K"] == budget], seeds)
                  for budget in actual_budgets}
-    exact = {str(budget): _summary(by_budget.get(budget, []), studies, iterations=iterations, seed=seed)
+    exact = {str(budget): summarize(by_budget.get(budget, []))
              for budget in standard_budgets}
-    fallback = {str(budget): _summary(by_budget[budget], studies, iterations=iterations, seed=seed)
+    fallback = {str(budget): summarize(by_budget[budget])
                 for budget in actual_budgets if budget not in standard_budgets}
     policy_rows = defaultdict(list)
     for budget, rows in by_budget.items():
@@ -226,7 +331,7 @@ def _contrast_report(
                 [row for row in units if row["K"] == budget], ((source_seed, target_seed),),
             )
             # Seed panels are stability descriptions; their units remain participants.
-            panel = _summary(rows, studies, iterations=iterations, seed=seed, with_intervals=False)
+            panel = summarize(rows, with_intervals=False)
             seed_panels.append({"source_seed": source_seed, "target_seed": target_seed, "K": budget,
                                 "mean_difference": panel["mean_difference"],
                                 "n_requested_participants": panel["n_requested_participants"],
@@ -237,6 +342,35 @@ def _contrast_report(
     common = set.intersection(*sets) if sets else set()
     common_rows = {str(budget): [row for row in by_budget.get(budget, [])
                                 if (row["study"], row["participant_key"]) in common] for budget in standard_budgets}
+    # Secondary validity estimand: freeze one participant cohort that has a
+    # complete declared replicate grid at every standard K.  This prevents a
+    # panel from changing its people when a replicate fails.  The operational
+    # requested-participant estimate above remains primary.
+    valid_support = []
+    for study, participant in sorted({(row["study"], row["participant_key"])
+                                      for budget in standard_budgets
+                                      for row in by_budget.get(budget, [])}):
+        records = []
+        for budget in standard_budgets:
+            row = next((item for item in by_budget.get(budget, [])
+                        if item["study"] == study and item["participant_key"] == participant), None)
+            records.append({"K": budget, "status": None if row is None else row["status"],
+                            "requested_seed_pairs": 0 if row is None else row["requested_seed_pairs"],
+                            "failed_or_missing_seed_pairs": None if row is None else row["failed_or_missing_seed_pairs"]})
+        valid_support.append({"study": study, "participant_key": participant, "by_K": records,
+                              "complete_grid": (study, participant) in common})
+    for budget in standard_budgets:
+        panel = exact[str(budget)]
+        valid_panel = summarize(common_rows[str(budget)])
+        valid_panel.update({
+            "estimand": "fixed_complete_participant_cohort_and_declared_seed_grid",
+            "cohort_Ks": list(standard_budgets),
+            "cohort_excluded_participants": [
+                {"study": row["study"], "participant_key": row["participant_key"]}
+                for row in valid_support if not row["complete_grid"]
+            ],
+        })
+        panel["valid_replicate"] = valid_panel
     persistent = []
     for study, participant in sorted(common):
         differences = {str(budget): next(row["difference"] for row in common_rows[str(budget)]
@@ -255,19 +389,21 @@ def _contrast_report(
             subset = tuple(pair for pair in seeds if pair[index] == value)
             for budget in actual_budgets:
                 rows = _participant_rows([row for row in units if row["K"] == budget], subset)
-                panel = _summary(rows, studies, iterations=iterations, seed=seed, with_intervals=False)
+                panel = summarize(rows, with_intervals=False)
                 marginal_seeds[axis].append({axis: value, "K": budget, "mean_difference": panel["mean_difference"],
                                              "n_complete_participants": panel["n_complete_participants"],
                                              "failed_or_missing_seed_pairs": panel["failed_or_missing_seed_pairs"]})
     return {
+        "input_comparison_plan": (comparison_plan or ContrastPlan()).record(),
         "weights": dict(weights), "exact_K": exact, "fallback_actual_K": fallback,
-        "budget_policy": {**_summary(policy, studies, iterations=iterations, seed=seed),
+        "budget_policy": {**summarize(policy),
                           "estimand": "participant_mean_over_unique_available_actual_positive_K_including_fallback"},
         "per_seed": seed_panels,
         "seed_stability_range_by_K": seed_ranges, "seed_marginals": marginal_seeds,
         "common_standard_K_cohort": {"n_participants": len(common), "participant_rows": persistent,
-                                     "by_K": {budget: _summary(rows, studies, iterations=iterations, seed=seed)
+                                     "by_K": {budget: summarize(rows)
                                               for budget, rows in common_rows.items()}},
+        "valid_replicate_support": valid_support,
         "unit_failures": [row for row in units if row["status"] != "complete_pair"],
     }
 
@@ -279,6 +415,8 @@ def analyze_transfer_contrasts(
     seed: int = ANALYSIS_SEED, arm_field: str = "arm", group_fields: Sequence[str] = (),
     requested_participants: Sequence[Mapping] = (),
     evidence_scope: str = "public_development",
+    seed_pairs: Sequence[Sequence[int]] | None = None,
+    contrast_plans: Mapping[str, Mapping] | None = None,
 ) -> dict:
     """Pair actual K and row digests, average declared seeds, then bootstrap people."""
     if evidence_scope not in {"public_development", "software_correctness"}:
@@ -289,12 +427,16 @@ def analyze_transfer_contrasts(
     budgets = _declared_values(standard_budgets, "standard_budgets")
     if any(isinstance(value, bool) or not isinstance(value, int) for value in (*source_seeds, *target_seeds, seed)):
         raise ValueError("source seeds, target seeds and analysis seed must be explicit integers")
+    seed_pairs = resolve_seed_pairs(source_seeds, target_seeds, seed_pairs=seed_pairs)
     if any(isinstance(value, bool) or not isinstance(value, int) or value < 1 for value in budgets):
         raise ValueError("standard budgets must be positive integer actual-K panels")
     if isinstance(iterations, bool) or not isinstance(iterations, int) or iterations < 1000:
         raise ValueError("bootstrap iterations must be an integer >= 1000")
     if not contrasts:
         raise ValueError("an explicit nonempty contrast declaration is required")
+    if contrast_plans is not None and (not isinstance(contrast_plans, Mapping) or set(contrast_plans)-set(contrasts)):
+        raise ValueError("input ContrastPlans must name declared contrasts")
+    plans = {name: ContrastPlan.from_record(record) for name, record in (contrast_plans or {}).items()}
     for name, weights in contrasts.items():
         rows = weights.get("by_study", {"all": weights})
         if "by_study" in weights and (not rows or set(rows) - set(studies)):
@@ -307,34 +449,55 @@ def analyze_transfer_contrasts(
     for input_row in cells:
         row = dict(input_row)
         required = {"study", "participant_key", "K", "source_seed", "target_seed", "status",
-                    "calibration_rows_sha256", "test_rows_sha256", arm_field, *group_fields}
+                    "calibration_rows_sha256", "test_rows_sha256", "input_sha256",
+                    "test_labels_sha256", "comparison_identity", arm_field, *group_fields}
         if required - row.keys():
             raise ValueError(f"analysis row missing explicit contract fields: {sorted(required - row.keys())}")
         if isinstance(row["K"], bool) or not isinstance(row["K"], int) or row["K"] < 0:
             raise ValueError("actual K must be a nonnegative integer")
         if row["K"] == 0:
             continue
+        if row.get("comparison_identity") is not None:
+            validate_input_identity(row["comparison_identity"])
         if row["study"] not in studies or row["source_seed"] not in source_seeds or row["target_seed"] not in target_seeds:
             raise ValueError("row study or seed is outside the predeclared analysis scope")
+        if (row["source_seed"], row["target_seed"]) not in seed_pairs:
+            raise ValueError("row seed pair is outside the predeclared analysis scope")
         if not isinstance(row["participant_key"], str) or not row["participant_key"].strip():
             raise ValueError("participant_key must be the explicit canonical participant identity")
         previous = participant_studies.setdefault(row["participant_key"], row["study"])
         if previous != row["study"]:
             raise ValueError("the same canonical participant in multiple studies needs a shared-cluster analysis")
-        for field in ("calibration_rows_sha256", "test_rows_sha256"):
+        for field in ("calibration_rows_sha256", "test_rows_sha256", "input_sha256", "test_labels_sha256"):
             if not isinstance(row[field], str) or len(row[field]) != 64:
-                raise ValueError("matched row digests must be explicit SHA256 values")
+                raise ValueError("matched row and scored-input digests must be explicit SHA256 values")
+        if any(row[field] is None for field in group_fields):
+            raise ValueError("analysis group fields must have explicitly known identities")
         grouping = tuple(row[field] for field in group_fields)
         key = tuple(row[field] for field in ("study", "participant_key", "K", "source_seed", "target_seed", arm_field))
         if key in grouped[grouping]:
             raise ValueError("duplicate participant/K/source-seed/target-seed/arm outcome")
         grouped[grouping][key] = row
-    seed_pairs = tuple(product(source_seeds, target_seeds))
-    requests = defaultdict(list)
-    for row in requested_participants:
+    requests, scoped_requests = defaultdict(list), defaultdict(list)
+    unresolved_group_requests = []
+    for original in requested_participants:
+        row = dict(original)
         if row.get("study") not in studies or not isinstance(row.get("participant_key"), str) or not row["participant_key"].strip():
             raise ValueError("requested participant denominators require explicit study and canonical participant_key")
-        requests[(row["study"], row["participant_key"])].append(dict(row))
+        previous = participant_studies.setdefault(row["participant_key"], row["study"])
+        if previous != row["study"]:
+            raise ValueError("the same canonical participant in multiple studies needs a shared-cluster analysis")
+        actual = row.get("actual_K")
+        if actual is not None and (type(actual) is not int or actual < 0):
+            raise ValueError("requested actual_K must be a nonnegative integer or absent")
+        requests[(row["study"], row["participant_key"])].append(row)
+        missing_group = [field for field in group_fields if row.get(field) is None]
+        if missing_group:
+            unresolved_group_requests.append({**row, "missing_group_fields": missing_group})
+        elif actual is not None and actual > 0:
+            grouping = tuple(row[field] for field in group_fields)
+            scoped_requests[grouping].append(row)
+            grouped.setdefault(grouping, {})
     for lookup in grouped.values():
         for study, participant, *_ in lookup:
             requests.setdefault((study, participant), [])
@@ -346,42 +509,69 @@ def analyze_transfer_contrasts(
                              for (study, participant), rows in sorted(requests.items())],
         "source": "explicit_requests_plus_observed_canonical_participants" if requested_participants else "observed_rows_only",
         "actual_K_invented_for_excluded_participants": False,
+        "unresolved_group_requests": unresolved_group_requests,
+        "group_scope_policy": "missing_group_fields_retained_in_outer_denominator_without_panel_assignment",
     }
     if not grouped and requests and not group_fields:
         grouped[()] = {}
     groups = []
     for grouping, lookup in sorted(grouped.items()):
+        group_requests = {key: [row for row in records if all(row.get(field) == value
+                            for field, value in zip(group_fields, grouping, strict=True))]
+                          for key, records in requests.items()}
+        observed_people = {key[:2] for key in lookup}
+        group_requests = {key: records for key, records in group_requests.items() if records or key in observed_people}
         reports = {name: _contrast_report(
                            lookup, weights, studies=studies, seeds=seed_pairs,
                            standard_budgets=budgets, iterations=iterations, seed=seed,
+                           requested_scopes=scoped_requests[grouping],
+                           comparison_plan=plans.get(name),
                        ) for name, weights in contrasts.items()}
         for report in reports.values():
             for budget, panel in report["exact_K"].items():
-                declared = {key for key, rows in requests.items() if any(
-                    int(budget) in row.get("requested_Ks", ()) for row in rows
-                    if row.get("requested_Ks") is not None
+                declared = {key for key, rows in group_requests.items() if any(
+                    row.get("actual_K") == int(budget) or int(budget) in (row.get("requested_Ks") or ()) for row in rows
                 )}
-                unknown = {key for key, rows in requests.items() if not rows or all(row.get("requested_Ks") is None for row in rows)}
-                reachable = {(row["study"], row["participant_key"]) for row in panel["participant_rows"]}
+                unknown = {key for key, rows in group_requests.items() if not rows or all(
+                    row.get("requested_Ks") is None and row.get("actual_K") is None for row in rows)}
+                reachable = {key[:2] for key in lookup if key[2] == int(budget)}
                 panel.update(n_outer_requested_participants=len(requests),
+                             n_group_scoped_requested_participants=len(group_requests),
                              n_declared_requested_at_K=len(declared), n_unknown_requested_K_participants=len(unknown),
                              requested_without_actual_K_result=[{"study": study, "participant_key": participant}
                                                                 for study, participant in sorted(declared - reachable)])
         arm_descriptives = {}
-        for arm in sorted({key[-1] for key in lookup}):
+        declared_arms = {arm for weights in contrasts.values()
+                         for coefficients in weights.get("by_study", {"all": weights}).values()
+                         for arm in coefficients}
+        panel_budgets = sorted({key[2] for key in lookup} | {row["actual_K"] for row in scoped_requests[grouping]})
+        for arm in sorted({key[-1] for key in lookup} | declared_arms):
             panels = {}
-            for budget in sorted({key[2] for key in lookup if key[-1] == arm}):
-                units = [{"study": key[0], "participant_key": key[1], "source_seed": key[3], "target_seed": key[4],
-                          "status": "complete_pair" if row["status"] == "completed" and row.get("auc") is not None else "incomplete_pair",
-                          "difference": row.get("auc"), "failure": row.get("failure")}
-                         for key, row in lookup.items() if key[-1] == arm and key[2] == budget]
+            for budget in panel_budgets:
+                relevant = {key[:-1] for key in lookup if key[2] == budget}
+                relevant.update((row["study"], row["participant_key"], budget, *pair)
+                                for row in scoped_requests[grouping] if row["actual_K"] == budget for pair in seed_pairs)
+                units = []
+                for key in sorted(relevant):
+                    row = lookup.get((*key, arm))
+                    valid = _valid_auc(row)
+                    units.append({"study": key[0], "participant_key": key[1], "source_seed": key[3], "target_seed": key[4],
+                                  "status": "complete_pair" if valid else "incomplete_pair",
+                                  "difference": float(row["auc"]) if valid else None,
+                                  "failure": None if valid else "missing_failed_or_invalid_auc"})
                 summary = _summary(_participant_rows(units, seed_pairs), studies, iterations=iterations,
                                    seed=seed, with_intervals=False)
                 panels[str(budget)] = {"mean_auc": summary["mean_difference"],
                                       "n_requested_participants": summary["n_requested_participants"],
                                       "n_complete_participants": summary["n_complete_participants"],
                                       "failed_or_missing_seed_pairs": summary["failed_or_missing_seed_pairs"],
+                                      "participant_rows": summary["participant_rows"],
+                                      "partial_observed_studies": {
+                                          "studies": summary["partial_observed_studies"]["studies"],
+                                          "mean_auc": summary["partial_observed_studies"]["mean_difference"],
+                                          "estimand": "equal_weight_mean_AUC_over_only_studies_with_complete_participants"},
                                       "by_study": {study: {"mean_auc": item["mean_difference"],
+                                                           "n_requested_participants": item["n_requested_participants"],
                                                            "n_complete_participants": item["n_complete_participants"]}
                                                    for study, item in summary["by_study"].items()}}
             arm_descriptives[arm] = panels
@@ -430,6 +620,7 @@ def analyze_transfer_contrasts(
         "schema": "n2p3_training_chain_analysis/1", "evidence_scope": evidence_scope,
         "inference_scope": INFERENCE_SCOPE, "expected_studies": list(studies),
         "declared_source_seeds": list(source_seeds), "declared_target_seeds": list(target_seeds),
+        "declared_seed_pairs": [list(pair) for pair in seed_pairs],
         "standard_budgets": list(budgets), "arm_field": arm_field, "group_fields": list(group_fields),
         "bootstrap_iterations": iterations, "analysis_seed": seed, "groups": groups,
         "outer_request_denominator": outer_denominator,
@@ -453,3 +644,47 @@ def analyze_transfer_contrasts(
 
         mark_intervals(report)
     return report
+
+
+def analyze_source_objective_contrasts(
+    cells: Sequence[Mapping], *, source_arms: Sequence[str], reference_source_arm="P2_source_ce",
+    group_fields: Sequence[str] = (), **analysis_options,
+) -> dict:
+    """Pair P2 source effects and adaptation interactions, retaining shared controls.
+
+    The JSON pair is an injective encoding of two declared factor levels, not
+    an inferred method name. All statistics reuse the participant-paired engine.
+    """
+    sources = _declared_values(source_arms, "source_arms")
+    if any(not isinstance(arm, str) or not arm.strip() for arm in sources) or reference_source_arm not in sources:
+        raise ValueError("source objective comparisons require an explicit reference source arm")
+    if "source_arm" in group_fields or "arm" in group_fields:
+        raise ValueError("source and target factors cannot also be analysis panel groups")
+
+    def level(source, target):
+        return json.dumps([source, target], separators=(",", ":"))
+
+    rows, levels = [], {}
+    for original in cells:
+        if original.get("source_arm") not in sources:
+            raise ValueError("outcome source arm is outside the declared source design")
+        key = level(original["source_arm"], original["arm"])
+        rows.append({**original, "source_target_arm": key})
+        levels[key] = {"source_arm": original["source_arm"], "target_arm": original["arm"]}
+    contrasts = {}
+    for source in sources:
+        if source == reference_source_arm:
+            continue
+        full = {level(source, "p2_full_fine"): 1., level(reference_source_arm, "p2_full_fine"): -1.}
+        contrasts[f"{source}_minus_{reference_source_arm}"] = full
+        for control in ("p2_scratch", "p2_waveform_lda"):
+            contrasts[f"{source}_minus_{reference_source_arm}_relative_to_{control}"] = {
+                **full, level(source, control): -1., level(reference_source_arm, control): 1.}
+    if not contrasts:
+        return {"declared_source_arms": list(sources), "reference_source_arm": reference_source_arm,
+                "groups": [], "status": "no_declared_source_contrast"}
+    result = analyze_transfer_contrasts(rows, contrasts, arm_field="source_target_arm",
+                                       group_fields=group_fields, **analysis_options)
+    result.update(declared_source_arms=list(sources), reference_source_arm=reference_source_arm,
+                  factor_levels=levels, shared_control_policy="same_physical_fit_is_not_an_independent_replicate")
+    return result

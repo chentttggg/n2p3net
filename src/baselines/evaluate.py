@@ -6,6 +6,7 @@ import copy
 import multiprocessing as mp
 import time
 import warnings
+from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
@@ -31,7 +32,12 @@ from data.artifact_sidecar import (
     save_fold_artifact_sidecar,
 )
 from data.qc_features import EpochQCFeatures
-from models.candidate_evidence import candidate_evidence_scores, decide_by_group
+from models.candidate_evidence import (
+    DEFAULT_EVIDENCE_AGGREGATION,
+    EVIDENCE_AGGREGATIONS,
+    candidate_evidence_scores,
+    decide_by_group,
+)
 from train.runtime import (
     available_cpu_threads,
     configure_spawned_worker_threads,
@@ -142,14 +148,100 @@ class CandidateFoldResult(BinaryFoldResult):
     decision_records: list[tuple[object, object, str]] = field(default_factory=list)
     hit_correct_by_repetition: dict[str, int] | None = None
     hit_total_by_repetition: dict[str, int] | None = None
+    hit_scope: dict[str, object] | None = None
+    raw_all_hit_rate: float = float("nan")
 
 
 @dataclass
 class CandidateSummary(BinarySummary):
     hit_rate_mean: float = float("nan")
-    primary_hit_rate: float = float("nan")
+    primary_hit_rate: float | None = None
+    primary_hit_scope: dict[str, object] | None = None
+    raw_all_hit_rate: float = float("nan")
     subject_records: list[tuple[object, object, str]] = field(default_factory=list)
     hit_at_repetition_macro: dict[str, float] | None = None
+
+
+def _candidate_repetition_predictions(
+    logits, codes, group_ids, repetitions, truth_by_group, candidate_vocab, *,
+    requested_schedule=None, max_repetitions=None, center_logits=False,
+    aggregation=DEFAULT_EVIDENCE_AGGREGATION, curve_repetitions=None,
+):
+    """Score complete physical prefixes against the immutable pre-QC schedule."""
+    logits, codes = np.asarray(logits, dtype=float), np.asarray(codes)
+    groups, repetitions = np.asarray(group_ids).astype(str), np.asarray(repetitions)
+    if any(value.ndim != 1 for value in (logits, codes, groups, repetitions)) or not (
+        len(logits) == len(codes) == len(groups) == len(repetitions)
+    ):
+        raise ValueError("logits, codes, group_ids, and repetitions must align as vectors.")
+    if not np.isfinite(logits).all():
+        raise ValueError("logits contain NaN/inf; cannot aggregate candidate evidence.")
+    if (not np.issubdtype(repetitions.dtype, np.integer)
+            or np.issubdtype(repetitions.dtype, np.bool_) or np.any(repetitions < 0)):
+        raise ValueError("repetitions must be non-negative integers.")
+    vocabulary = np.asarray(candidate_vocab)
+    if vocabulary.ndim != 1 or len(vocabulary) < 2 or len(np.unique(vocabulary)) != len(vocabulary):
+        raise ValueError("candidate_vocab must be a unique vector with at least two codes.")
+    if aggregation not in EVIDENCE_AGGREGATIONS:
+        raise ValueError(f"candidate evaluation requires one of {sorted(EVIDENCE_AGGREGATIONS)}")
+    if not np.isin(codes, vocabulary).all():
+        raise ValueError("candidate codes outside the declared vocabulary fail closed")
+    if max_repetitions is not None and (type(max_repetitions) is not int or max_repetitions < 1):
+        raise ValueError("max_repetitions must be a positive integer.")
+    if requested_schedule is None:
+        requested_schedule = {group: (codes[groups == group], repetitions[groups == group])
+                              for group in np.unique(groups)}
+    if not requested_schedule:
+        raise ValueError("candidate repetition scoring requires a requested schedule")
+    if set(np.unique(groups)) - set(requested_schedule):
+        raise ValueError("surviving evidence contains an unrequested group")
+    normalized = {}
+    terminals = {}
+    for group, (requested_codes, requested_repetitions) in requested_schedule.items():
+        requested_codes, requested_repetitions = np.asarray(requested_codes), np.asarray(requested_repetitions)
+        if (requested_codes.ndim != 1 or requested_codes.shape != requested_repetitions.shape
+                or not len(requested_codes) or not np.isin(requested_codes, vocabulary).all()
+                or not np.issubdtype(requested_repetitions.dtype, np.integer)
+                or np.issubdtype(requested_repetitions.dtype, np.bool_)
+                or np.any(requested_repetitions < 0)):
+            raise ValueError("requested schedule requires aligned candidate codes and integer repetitions")
+        if group not in truth_by_group or truth_by_group[group] not in vocabulary:
+            raise ValueError("every requested group needs truth in the frozen vocabulary")
+        origin = int(requested_repetitions.min())
+        terminal = int(requested_repetitions.max()) - origin + 1
+        terminals[group] = terminal if max_repetitions is None else max_repetitions
+        selected = groups == group
+        requested_counts = Counter(zip(requested_repetitions.tolist(), requested_codes.tolist(), strict=True))
+        observed_counts = Counter(zip(repetitions[selected].tolist(), codes[selected].tolist(), strict=True))
+        if any(count > requested_counts.get(key, 0) for key, count in observed_counts.items()):
+            raise ValueError("surviving evidence exceeds the declared physical repetition schedule")
+        normalized[group] = (selected, requested_codes, requested_repetitions - origin,
+                             repetitions[selected] - origin)
+    limit = max(terminals.values()) if curve_repetitions is None else curve_repetitions
+    predictions = {level: {} for level in range(1, limit + 1)}
+    for group, (group_mask, requested_codes, requested_repetitions, observed_repetitions) in normalized.items():
+        group_codes, group_values = codes[group_mask], logits[group_mask]
+        requested_counts = np.zeros((limit, len(vocabulary)), dtype=np.int64)
+        observed_counts = np.zeros_like(requested_counts)
+        for index, candidate in enumerate(vocabulary):
+            requested = requested_repetitions[(requested_codes == candidate) & (requested_repetitions < limit)]
+            observed = observed_repetitions[(group_codes == candidate) & (observed_repetitions < limit)]
+            requested_counts[:, index] = np.bincount(requested, minlength=limit)
+            observed_counts[:, index] = np.bincount(observed, minlength=limit)
+        complete_prefixes = np.logical_and.accumulate(
+            np.all((requested_counts == 1) & (observed_counts == 1), axis=1)
+        )
+        for level in predictions:
+            predicted = None
+            if complete_prefixes[level - 1]:
+                prefix = observed_repetitions < level
+                values = group_values[prefix]
+                if center_logits:
+                    values = values - values.mean()
+                predicted = candidate_evidence_scores(values, group_codes[prefix], vocabulary,
+                                                       aggregation=aggregation).predicted
+            predictions[level][group] = predicted
+    return predictions, terminals
 
 
 def hit_correct_total_by_repetition(
@@ -162,98 +254,26 @@ def hit_correct_total_by_repetition(
     *,
     max_repetitions: int | None = None,
     center_logits: bool = False,
+    aggregation: str = DEFAULT_EVIDENCE_AGGREGATION,
+    requested_schedule: Mapping[str, tuple[Sequence, Sequence]] | None = None,
 ) -> tuple[dict[str, int], dict[str, int]]:
-    """Return per-repetition-prefix correct/total decision counts (macro units).
+    """Return operational hit@R counts, preserving every requested group.
 
-    Every selection group contributes exactly one vote per repetition prefix,
-    mirroring the causal hit@R estimand: candidate scores accumulate calibrated
-    log-likelihood ratios over the first ``r`` repetitions and the argmax must
-    recover the group's target candidate. Trials without a valid repetition
-    index (negative) are excluded from every prefix. With ``center_logits``,
-    each group's logits are centered on their own mean before summing, so a
-    constant classifier bias cannot become ``c * n_d`` when artifact rejection
-    makes per-candidate trial counts unequal.
+    Every candidate must occur exactly once in each declared repetition through
+    R, in both the original schedule and surviving evidence. Missing repetitions
+    or candidates are misses. The original pre-QC schedule fixes the repetition
+    origin and terminal budget, even when every row of a group is unavailable.
+    Centering and aggregation only consume the currently scored prefix.
     """
-
-    logits = np.asarray(logits, dtype=float)
-    codes = np.asarray(codes)
-    group_ids = np.asarray(group_ids).astype(str)
-    repetitions = np.asarray(repetitions)
-    if not (len(logits) == len(codes) == len(group_ids) == len(repetitions)):
-        raise ValueError("logits, codes, group_ids, and repetitions must align.")
-    if logits.ndim != 1 or codes.ndim != 1 or group_ids.ndim != 1 or repetitions.ndim != 1:
-        raise ValueError("logits, codes, group_ids, and repetitions must be one-dimensional.")
-    if not np.isfinite(logits).all():
-        raise ValueError("logits contain NaN/inf; cannot aggregate candidate evidence.")
-    if not np.issubdtype(repetitions.dtype, np.integer) or np.issubdtype(
-        repetitions.dtype, np.bool_
-    ):
-        raise ValueError("repetitions must use an integer dtype.")
-    vocabulary = np.asarray(candidate_vocab)
-    if vocabulary.ndim != 1 or len(vocabulary) < 2 or len(np.unique(vocabulary)) != len(vocabulary):
-        raise ValueError(
-            "candidate_vocab must be a unique one-dimensional array with at least two codes."
-        )
-    if len(repetitions) == 0:
-        raise ValueError("repetitions cannot be empty.")
-    if np.any(repetitions < 0):
-        raise ValueError("repetitions must be non-negative.")
-    unique_repetitions = np.unique(repetitions)
-    if not np.array_equal(
-        unique_repetitions,
-        np.arange(unique_repetitions[0], unique_repetitions[-1] + 1, dtype=np.int64),
-    ):
-        raise ValueError(
-            "repetitions must be contiguous; missing repetitions cannot be compressed."
-        )
-    repetitions = repetitions.astype(np.int64, copy=False) - int(unique_repetitions[0])
-    if max_repetitions is None:
-        max_repetitions = int(repetitions.max()) + 1
-    if max_repetitions < 1:
-        raise ValueError("max_repetitions must be positive.")
-
-    usable = repetitions < int(max_repetitions)
-    aligned_logits = logits
-    if center_logits:
-        aligned_logits = logits.astype(float, copy=True)
-        for group in np.unique(group_ids[usable]):
-            mask = usable & (group_ids == group)
-            if int(mask.sum()) > 1:
-                aligned_logits[mask] -= aligned_logits[mask].mean()
-
-    correct: dict[str, int] = {}
-    total: dict[str, int] = {}
-    for group in np.unique(group_ids[usable]):
-        truth = truth_by_group.get(group)
-        if truth is None:
-            continue
-        rows = np.flatnonzero(usable & (group_ids == group))
-        if not len(rows):
-            continue
-        group_codes = codes[rows]
-        group_reps = repetitions[rows]
-        for r in range(1, max_repetitions + 1):
-            sel = group_reps < r
-            if not sel.any():
-                continue
-            selected_codes = group_codes[sel]
-            selected_logits = aligned_logits[rows[sel]]
-            # A missing candidate is not evidence against that candidate.  It
-            # is an incomplete decision and therefore a miss, rather than an
-            # opportunity to select from the surviving subset.
-            result = candidate_evidence_scores(
-                selected_logits,
-                selected_codes,
-                vocabulary,
-                aggregation="sum",
-                missing_candidate_policy="abstain",
-            )
-            predicted = result.predicted
-            key = str(r)
-            total[key] = total.get(key, 0) + 1
-            correct[key] = correct.get(key, 0) + int(
-                predicted is not None and predicted == int(truth)
-            )
+    predictions, _ = _candidate_repetition_predictions(
+        logits, codes, group_ids, repetitions, truth_by_group, candidate_vocab,
+        requested_schedule=requested_schedule, max_repetitions=max_repetitions,
+        center_logits=center_logits, aggregation=aggregation,
+    )
+    correct = {str(level): sum(predicted is not None and predicted == truth_by_group[group]
+                              for group, predicted in values.items())
+               for level, values in predictions.items()}
+    total = {str(level): len(values) for level, values in predictions.items()}
     return correct, total
 
 
@@ -412,7 +432,9 @@ def _validate_folds(
         if domains.shape != (n_rows,) or np.any(np.char.strip(domains) == ""):
             raise ValueError("fold domain_ids must contain one non-empty domain per row.")
         selected_test_domains: list[str] = []
+        test_counts = np.zeros(n_rows, dtype=np.int64)
         for index, (train, test) in enumerate(output):
+            test_counts += test.astype(np.int64)
             train_domains = set(np.unique(domains[train]).tolist())
             test_domains = set(np.unique(domains[test]).tolist())
             if not train_domains or not test_domains:
@@ -1377,6 +1399,8 @@ def evaluate_candidate_selection(
     on_fold_end: Callable[[int, CandidateFoldResult], None] | None = None,
     repetition_indices: np.ndarray | None = None,
     center_decision_logits: bool = False,
+    aggregation: str = DEFAULT_EVIDENCE_AGGREGATION,
+    max_repetitions: int | None = None,
     n_jobs: int = 1,
     parallel_backend: str = "auto",
     fold_id_offset: int = 0,
@@ -1399,6 +1423,18 @@ def evaluate_candidate_selection(
             raise ValueError("domain_ids must contain one non-empty domain per epoch.")
     if codes.shape != (len(X),):
         raise ValueError("candidate_codes must align with X.")
+    if aggregation not in EVIDENCE_AGGREGATIONS:
+        raise ValueError(f"candidate evaluation requires one of {sorted(EVIDENCE_AGGREGATIONS)}")
+    if max_repetitions is not None and (type(max_repetitions) is not int or max_repetitions < 1):
+        raise ValueError("max_repetitions must be a positive integer")
+    if max_repetitions is not None and repetition_indices is None:
+        raise ValueError("a repetition budget requires explicit repetition_indices")
+    repetitions = None if repetition_indices is None else np.asarray(repetition_indices)
+    if repetitions is not None and (
+        repetitions.shape != (len(X),) or not np.issubdtype(repetitions.dtype, np.integer)
+        or np.issubdtype(repetitions.dtype, np.bool_) or np.any(repetitions < 0)
+    ):
+        raise ValueError("repetition_indices must align with X rows as non-negative integers.")
     if trial_channel_mask is not None:
         trial_channel_mask = np.asarray(trial_channel_mask, dtype=bool)
         if trial_channel_mask.shape != X.shape[:2] or not trial_channel_mask.any(axis=1).all():
@@ -1409,6 +1445,7 @@ def evaluate_candidate_selection(
         raise ValueError("fold_id_offset must be non-negative.")
     results: list[CandidateFoldResult] = []
     records: list[tuple[object, object, str]] = []
+    raw_records: list[tuple[object, object, str]] = []
     validated_folds = _validate_folds(
         folds,
         len(X),
@@ -1416,6 +1453,24 @@ def evaluate_candidate_selection(
         domain_ids=domain_ids,
         fold_protocol=fold_protocol,
     )
+    requested_groups = [tuple(np.unique(group_ids[test])) for _, test in validated_folds]
+    if any(group not in truth_by_group or truth_by_group[group] not in candidate_vocab
+           for groups in requested_groups for group in groups):
+        raise ValueError("every requested group needs truth in the frozen vocabulary")
+    schedules = ([] if repetitions is None else [
+        {group: (codes[test & (group_ids == group)], repetitions[test & (group_ids == group)])
+         for group in groups}
+        for (_, test), groups in zip(validated_folds, requested_groups, strict=True)
+    ])
+    curve_limit = (None if repetitions is None else max_repetitions or max(
+        int(values.max() - values.min()) + 1 for schedule in schedules for _, values in schedule.values()
+    ))
+    hit_scope = {"kind": "complete_repetition_terminal" if repetitions is not None else "raw_all_complete_vocabulary",
+                 "aggregation": aggregation, "denominator": "requested_pre_qc_decision_groups",
+                 "terminal_policy": ("declared_max_repetitions" if max_repetitions is not None else
+                                     "pre_qc_group_schedule" if repetitions is not None else "no_repetition_claim"),
+                 "max_repetitions": max_repetitions, "curve_repetitions": curve_limit,
+                 "complete_repeat_rule": "one_observation_per_candidate_per_declared_repeat" if repetitions is not None else None}
     (
         fold_results,
         backend,
@@ -1448,32 +1503,29 @@ def evaluate_candidate_selection(
             group_ids[test_effective],
             candidate_vocab,
             center_logits=center_decision_logits,
+            aggregation=aggregation,
         )
-        fold_records = [
-            (predicted, truth_by_group[str(group)], str(group))
-            for predicted, group in zip(decision.predicted, decision.group_ids, strict=True)
-            if str(group) in truth_by_group
-        ]
-        hit_rate = (
-            float(np.mean([predicted == truth for predicted, truth, _ in fold_records]))
-            if fold_records
-            else float("nan")
-        )
+        raw_predictions = dict(zip(decision.group_ids, decision.predicted, strict=True))
+        fold_raw_records = [(raw_predictions.get(group), truth_by_group[group], group)
+                            for group in requested_groups[fold_index]]
+        fold_records = fold_raw_records
         hit_correct: dict[str, int] | None = None
         hit_total: dict[str, int] | None = None
-        if repetition_indices is not None:
-            repetitions = np.asarray(repetition_indices)
-            if repetitions.shape != (len(X),):
-                raise ValueError("repetition_indices must align with X rows.")
-            hit_correct, hit_total = hit_correct_total_by_repetition(
-                llr,
-                codes[test_effective],
-                group_ids[test_effective],
-                truth_by_group,
-                repetitions[test_effective],
-                candidate_vocab,
-                center_logits=center_decision_logits,
+        terminals = None
+        if repetitions is not None:
+            predictions, terminals = _candidate_repetition_predictions(
+                llr, codes[test_effective], group_ids[test_effective], repetitions[test_effective],
+                truth_by_group, candidate_vocab, requested_schedule=schedules[fold_index],
+                max_repetitions=max_repetitions, curve_repetitions=curve_limit,
+                center_logits=center_decision_logits, aggregation=aggregation,
             )
+            hit_correct = {str(level): sum(predicted is not None and predicted == truth_by_group[group]
+                                          for group, predicted in values.items())
+                           for level, values in predictions.items()}
+            hit_total = {str(level): len(values) for level, values in predictions.items()}
+            fold_records = [(predictions[terminals[group]][group], truth_by_group[group], group)
+                            for group in requested_groups[fold_index]]
+        hit_rate = float(np.mean([predicted == truth for predicted, truth, _ in fold_records]))
         result = CandidateFoldResult(
             **binary.__dict__,
             hit_rate=hit_rate,
@@ -1481,11 +1533,14 @@ def evaluate_candidate_selection(
             decision_records=fold_records,
             hit_correct_by_repetition=hit_correct,
             hit_total_by_repetition=hit_total,
+            hit_scope={**hit_scope, "group_terminal_repetitions": terminals},
+            raw_all_hit_rate=float(np.mean([predicted == truth for predicted, truth, _ in fold_raw_records])),
         )
         results.append(result)
         if on_fold_end is not None:
             on_fold_end(fold_index + fold_id_offset, result)
         records.extend(fold_records)
+        raw_records.extend(fold_raw_records)
     bacc = np.asarray([fold.balanced_acc for fold in results], dtype=float)
     auc = np.asarray([fold.auc for fold in results], dtype=float)
     hit = np.asarray([fold.hit_rate for fold in results], dtype=float)
@@ -1514,7 +1569,9 @@ def evaluate_candidate_selection(
         auc_mean=float(np.nanmean(auc)),
         per_fold=results,
         hit_rate_mean=float(np.nanmean(hit)),
-        primary_hit_rate=overall,
+        primary_hit_rate=overall if repetitions is not None else None,
+        primary_hit_scope=hit_scope,
+        raw_all_hit_rate=float(np.mean([predicted == truth for predicted, truth, _ in raw_records])),
         subject_records=records,
         hit_at_repetition_macro=macro_hits,
         execution_backend=backend,

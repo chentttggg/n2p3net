@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from collections.abc import Mapping, Sequence
 from enum import StrEnum
 from pathlib import Path
@@ -50,7 +51,16 @@ def atomic_write_json(path: str | Path, payload: Mapping[str, Any]) -> Path:
             stream.write("\n")
             stream.flush()
             os.fsync(stream.fileno())
-        temporary.replace(target)
+        for attempt in range(7):
+            try:
+                temporary.replace(target)
+                break
+            except PermissionError:
+                # Windows readers/antivirus may briefly hold a handle without
+                # delete sharing. Keep the old record intact and retry <= 0.63 s.
+                if attempt == 6:
+                    raise
+                time.sleep(0.01 * 2**attempt)
     except BaseException:
         try:
             temporary.unlink()

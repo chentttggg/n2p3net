@@ -1,52 +1,13 @@
-"""模块：深度基线（Deep Baselines）。
+"""深度基线：以统一Baseline接口封装EEGNet、EEG-Inception与EEG Conformer。
 
-职责（roadmap Phase 1 + constitution P8）：
-    EEGNet / EEG-Inception(ERP) / EEG Conformer 三个深度基线，统一包装成 Baseline 接口
-    （fit(X,y) / predict_logit(X)→(N,)），与 classic.py / riemann.py 同契约，供 evaluate.py
-    在完全相同的三层协议下公平比较。输出逐试次 target 判别 logit（供 decision 层累加）。
+输入(N,C,T)，二分类CE训练，predict_logit返回logits[:,1]-logits[:,0]。
+模型几何由实际通道、采样率与n_times构造，不把历史参数量当作固定合同。
+逐通道标准化仅拟合训练数据；channel_mask表示物理布局，trial_channel_mask表示逐trial可用性。
+模型选择复用被试隔离验证、patience及最佳权重恢复；设备与混合精度由train/device.py管理。
+并行CUDA dropout仍受进程级RNG影响，不能将固定shuffle误称为任意并发下逐bit复现。
 
-明确「不做」：
-    - 不复用 train/trainer.py（它是 N2P3-Net 专用：吃 N2P3NetOutput + compute_losses 多任务
-      损失）。深度基线是「输入 (N,C,T) → 二分类 logits」的单任务模型，用一个自包含的轻量
-      训练循环更直接、无耦合。
-    - 不做架构超参搜索；epochs 是上限，模型选择与 N2P3-Net 共用被试隔离验证、patience 和
-      最佳权重恢复。优化器仍固定为 Adam + pos_weight。
-
-三思决策记录（供后续会话追溯）：
-    D-deep-ce        用 n_outputs=2 + CrossEntropyLoss(weight=[1, pos_weight])，而非 n_outputs=1 +
-                     BCE。理由：braindecode 三个模型统一支持 n_outputs=2（实测输出 (N,2) logits），
-                     且 CrossEntropyLoss 的 weight 是 pos_weight 的最干净等价（加重 target 类）。
-                     predict_logit 返回 logits[:,1]−logits[:,0]，即 target/non-target 的 log-odds，
-                     与 heads 输出 logit 的语义一致（decision 层对数似然比累积）。
-    D-deep-shape     braindecode 模型输入约定 (N, C, T)（channels-first），与 data 层输出一致，直接
-                     喂无需转置。实测三个模型 n_outputs=2 均输出 (N,2)。
-    D-deep-param     实测参数量：EEGNet 1,490 / EEGInceptionERP 26,622 / EEGConformer 255,106。
-                     EEGConformer 远超 E4 的 80k——但 E4 约束的是 N2P3-Net 本体，深度基线是「对照
-                     坐标系」：复现一个高容量基线恰好验证 D6「容量非瓶颈」的对照意义（若 Conformer
-                     在数千试次上过拟合、反而不如 EEGNet，正是 D6 的实证）。docstring 如实标注。
-    D-deep-amp       AMP 用 bf16，CUDA/XPU 启用、CPU 禁用（DP4），复用 train/device.get_device 与
-                     device-portability §3 的 autocast 写法。CPU 测试时 enabled=False 等价 fp32。
-    D-deep-cpu       Trainer/DeepBaseline 均接受可选 device（默认 get_device()），测试显式传 CPU
-                     保证稳定与速度（device-portability 的 D-device-param 同款约定）。
-    D-deep-seed      fit 起始 torch.manual_seed(seed) + 每 epoch shuffle 用 torch.randperm，保证
-                     可复现。注意：deep fold 线程并行时 CUDA dropout 仍用进程级全局 RNG；
-                      模型初始化与 shuffle 已确定化，但逐 bit 复现建议 --deep-jobs 1（audit P2）。
-    D-deep-sfreq     EEGInceptionERP 的 scales_samples_s 是「秒」单位，需显式传 sfreq=128 与
-                     n_times=128；EEGNet 用 kernel_length(样本)，其物理跨度必须随输入合同审计；
-                     EEGConformer 无需 sfreq。
-    D-deep-standard  训练前用训练集逐通道 mean/std 做 z-score（fit 内完成，predict 复用训练统计量）。
-                     review v6 P1：V 单位输入（~1e-5–1e-4）会让 deep logit 坍缩成窄带
-                     （实测 EEGNet AUC 0.744 但 bacc@0=0.500、命中率≈chance），z-score 后
-                     AUC 0.797、top1 0.900。standardize_input=False 可作消融。
-
-契约（输入 → 输出）：
-    X ∈ R^{N×C×T}（float32，缺失通道须已填 0）+ y ∈ {0,1}^N → fit 后 predict_logit(X) ∈ R^N。
-    ``channel_mask`` describes channels that are physically available in the
-    dataset; ``trial_channel_mask`` can further mark channels missing in an
-    individual trial. Both masks are optional for backwards compatibility.
-
-依赖的决策：roadmap Phase 1、constitution P8/D6、device-portability.md（DP1–DP6）、
-    train/device.py（get_device）、baselines/classic.Baseline。
+科学比较与fit边界见doc/research_program.zh.md；训练配方见doc/roadmap.zh.md；
+设备和验证见doc/engineering.zh.md，模块所有权见doc/technical_structure.zh.md。
 """
 
 from __future__ import annotations
@@ -63,7 +24,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from braindecode.models import EEGConformer, EEGInceptionERP, EEGNet
 from sklearn.metrics import roc_auc_score
 
 from baselines.classic import Baseline
@@ -80,9 +40,15 @@ from models.adapters import (
     source_residual_loss_ledger,
     source_residual_ratio_contract,
 )
+from models.n2p3net import N2P3Net
 from models.splitbn import SPLITBN_SOURCE_DOMAIN_BUFFER
 from research.execution import ExpectedSubjectError, SubjectFailureCode
 from train.device import get_device
+from train.early_stopping import (
+    DEFAULT_EARLY_STOP_PATIENCE,
+    GlobalEarlyStoppingPolicy,
+    PatienceStopper,
+)
 from train.runtime import (
     DEFAULT_COMPILE_MODE,
     DEFAULT_FUSED_ADAM,
@@ -91,7 +57,13 @@ from train.runtime import (
     is_oom_error,
     resolve_optimizer_execution,
 )
-from train.source_sampling import observed_source_statistics, source_sampling_probabilities
+from train.source_sampling import (
+    encode_source_vector,
+    observed_source_statistics,
+    sample_source_rows,
+    source_sampling_cdf,
+    source_sampling_probabilities,
+)
 from transfer.alignment import (
     conditional_domain_rbf_mmd_loss,
     conditional_mean_alignment_loss,
@@ -106,21 +78,15 @@ from transfer.decision_loss import (
     build_decision_batch_plan,
     invalid_decision_ledger,
 )
+from transfer.source_objective import SourceObjective, SourceObjectiveConfig
 
-# 模型名（lowercase）→ 构造类
-_MODEL_FACTORIES = {
-    "eegnet": EEGNet,
-    "inception": EEGInceptionERP,
-    "conformer": EEGConformer,
-}
-DEEP_MODEL_NAMES = tuple(_MODEL_FACTORIES)
+DEEP_MODEL_NAMES = ("eegnet", "inception", "conformer")
 
 # deep fold 线程并行时，torch.manual_seed 与模型初始化必须串行化，否则两个线程
 # 会互相踩全局 RNG，导致初始化不可复现（review v6 性能项）。
 _INIT_LOCK = threading.Lock()
 
 DEFAULT_DEEP_EPOCHS = 32
-DEFAULT_EARLY_STOP_PATIENCE = 6
 
 
 def resolve_source_risk_weights(
@@ -277,6 +243,7 @@ class DeepConfig:
     batch_size: int = 256
     lr: float = 1e-3
     weight_decay: float = 1e-4
+    source_budget: dict | None = None
     pos_weight: float = 8.0
     seed: int = 0
     standardize_input: bool = True
@@ -297,8 +264,28 @@ class DeepConfig:
     snapshot_updates: tuple[int, ...] = ()
     input_statistics: str = "observed_rows"
     sampling: str = "epoch_permutation"
+    source_objective: SourceObjectiveConfig | dict | None = None
+    global_early_stopping: GlobalEarlyStoppingPolicy | dict | None = None
 
     def __post_init__(self) -> None:
+        if isinstance(self.global_early_stopping, dict):
+            self.global_early_stopping = GlobalEarlyStoppingPolicy(**self.global_early_stopping)
+        if self.global_early_stopping is not None:
+            if not isinstance(self.global_early_stopping, GlobalEarlyStoppingPolicy):
+                raise ValueError("global_early_stopping must be a GlobalEarlyStoppingPolicy")
+            if self.fixed_updates is not None or self.snapshot_updates:
+                raise ValueError("global source stopping cannot also request fixed updates or snapshots")
+            self.epochs = self.global_early_stopping.source_max_epochs
+            self.early_stop_patience = self.global_early_stopping.patience
+            self.early_stop_min_delta = self.global_early_stopping.min_delta
+            self.val_group_frac = self.global_early_stopping.source_validation_fraction
+        if isinstance(self.source_objective, dict):
+            self.source_objective = SourceObjectiveConfig(**self.source_objective)
+        if self.source_objective is not None:
+            if not isinstance(self.source_objective, SourceObjectiveConfig):
+                raise ValueError("source_objective must be a SourceObjectiveConfig")
+            if self.fixed_updates is None and self.global_early_stopping is None:
+                raise ValueError("source_objective requires a fixed-update source trajectory")
         if self.fixed_updates is not None and (
             isinstance(self.fixed_updates, bool) or not isinstance(self.fixed_updates, int)
             or self.fixed_updates < 1
@@ -308,7 +295,7 @@ class DeepConfig:
             raise ValueError("unknown source input_statistics")
         if self.sampling not in {"epoch_permutation", "uniform_rows", "domain_participant"}:
             raise ValueError("unknown source sampling")
-        if self.fixed_updates is None and (
+        if self.fixed_updates is None and self.global_early_stopping is None and (
             self.snapshot_updates or self.sampling != "epoch_permutation"
             or self.input_statistics != "observed_rows"
         ):
@@ -401,8 +388,8 @@ class DeepBaseline(Baseline):
         strict_load: bool = False,
     ):
         key = model_name.lower()
-        if key not in _MODEL_FACTORIES:
-            raise ValueError(f"未知 model_name={model_name!r}，可选 {list(_MODEL_FACTORIES)}。")
+        if key not in DEEP_MODEL_NAMES:
+            raise ValueError(f"未知 model_name={model_name!r}，可选 {list(DEEP_MODEL_NAMES)}。")
         if n_chans < 1 or n_times < 1 or not np.isfinite(sfreq) or sfreq <= 0.0:
             raise ValueError("n_chans/n_times/sfreq must define a positive physical input.")
         self.model_name = key
@@ -478,6 +465,8 @@ class DeepBaseline(Baseline):
 
     def _make_model(self) -> nn.Module:
         """按 model_name 构造 braindecode 模型（n_outputs=2，D-deep-ce）。"""
+        from braindecode.models import EEGConformer, EEGInceptionERP, EEGNet
+
         common = dict(n_chans=self.n_chans, n_outputs=2, n_times=self.n_times)
         if self.model_name == "eegnet":
             return EEGNet(**common, final_conv_length="auto")
@@ -705,6 +694,18 @@ class DeepBaseline(Baseline):
                 self.model_ = self._make_model().to(self.device)
             self._apply_pretrained_state_dict()
             self._freeze_layers()
+            core = self.model_.core if isinstance(self.model_, FeatureDomainTransfer) else self.model_
+            if getattr(core, "observed_channel_norm", False):
+                self.optimizer_execution = self.optimizer_execution.without_cuda_graphs(
+                    reason="observed_channel_norm_dynamic_measured_rows"
+                )
+
+    def _forward_model(self, inputs, *, channel_mask, with_features=False, **kwargs):
+        """Pass physical masks to the model owner without changing other baselines."""
+        if isinstance(self.model_, (N2P3Net, FeatureDomainTransfer)):
+            kwargs["channel_mask"] = channel_mask
+        method = self.model_.forward_with_features if with_features else self.model_
+        return method(inputs, **kwargs)
 
     def _validation_pass(
         self,
@@ -716,11 +717,11 @@ class DeepBaseline(Baseline):
 
         score_parts: list[torch.Tensor] = []
         label_parts: list[torch.Tensor] = []
-        total_loss: torch.Tensor | None = None
-        n_rows = 0
+        total_numerator: torch.Tensor | None = None
+        total_denominator: torch.Tensor | None = None
         self.model_.eval()
         with torch.inference_mode():
-            for xb, yb, row_weights, domain_batch in source.iter_batches(batch_size):
+            for xb, yb, row_weights, domain_batch, channel_mask in source.iter_batches(batch_size):
                 assert yb is not None
                 with self._autocast_ctx():
                     if getattr(self, "splitbn_config", None) is not None:
@@ -728,23 +729,25 @@ class DeepBaseline(Baseline):
                             raise RuntimeError(
                                 "SplitBN source validation lacks per-row domain indices."
                             )
-                        logits = self.model_(
+                        logits = self._forward_model(
                             xb,
+                            channel_mask=channel_mask,
                             domain_indices=domain_batch,
                             eval_buffer_source=SPLITBN_SOURCE_DOMAIN_BUFFER,
                         )
                     else:
-                        logits = self.model_(xb)
-                    loss = None if loss_fn is None else loss_fn(logits, yb, row_weights)
+                        logits = self._forward_model(xb, channel_mask=channel_mask)
+                    components = None if loss_fn is None else loss_fn.components(logits, yb, row_weights)
                 score_parts.append((logits[:, 1] - logits[:, 0]).float())
                 label_parts.append(yb)
-                if loss is not None:
-                    weighted_loss = loss.detach().float() * len(xb)
-                    total_loss = weighted_loss if total_loss is None else total_loss + weighted_loss
-                n_rows += len(xb)
+                if components is not None:
+                    numerator, denominator = (value.detach().to(torch.float64) for value in components)
+                    total_numerator = numerator if total_numerator is None else total_numerator + numerator
+                    total_denominator = denominator if total_denominator is None else total_denominator + denominator
         scores = torch.cat(score_parts).cpu().numpy().astype(np.float64)
         labels = torch.cat(label_parts).cpu().numpy().astype(np.int64)
-        mean_loss = None if total_loss is None else float(total_loss.cpu()) / max(n_rows, 1)
+        mean_loss = (None if total_numerator is None else
+                     float((total_numerator / total_denominator).cpu()))
         return (
             mean_loss,
             scores,
@@ -795,7 +798,7 @@ class DeepBaseline(Baseline):
         )
         self.model_.eval()
         with torch.inference_mode():
-            for decision_batch, (xb, yb, row_weights, domain_batch) in zip(
+            for decision_batch, (xb, yb, row_weights, domain_batch, channel_mask) in zip(
                 batches,
                 source.iter_index_batches(index_batches),
                 strict=True,
@@ -807,13 +810,14 @@ class DeepBaseline(Baseline):
                             raise RuntimeError(
                                 "SplitBN source validation lacks per-row domain indices."
                             )
-                        logits = self.model_(
+                        logits = self._forward_model(
                             xb,
+                            channel_mask=channel_mask,
                             domain_indices=domain_batch,
                             eval_buffer_source=SPLITBN_SOURCE_DOMAIN_BUFFER,
                         )
                     else:
-                        logits = self.model_(xb)
+                        logits = self._forward_model(xb, channel_mask=channel_mask)
                     numerator, denominator = loss_fn.components(logits, yb, row_weights)
                     targets = self.runtime.to_device(
                         torch.from_numpy(
@@ -909,9 +913,12 @@ class DeepBaseline(Baseline):
         feature_orthogonality_weight: float = 0.0,
         decision_metadata: DirectDecisionMetadata | None = None,
         decision_loss_config: DecisionLossConfig | None = None,
+        early_stopping_validation: dict | None = None,
     ) -> DeepBaseline:
         """Fit with a bounded OOM retry that never accumulates gradients."""
 
+        if self.cfg.global_early_stopping is not None:
+            raise ValueError("global source stopping must enter through fit_source_trajectory")
         if self.cfg.fixed_updates is not None:
             if any((feature_alignment_weight, feature_private_domain_weight,
                     feature_orthogonality_weight)) or decision_loss_config is not None or decision_metadata is not None:
@@ -923,7 +930,10 @@ class DeepBaseline(Baseline):
                 input_stats_row_mask=input_stats_row_mask,
                 source_domain_ids=source_domain_ids, source_domain_mass=source_domain_mass,
                 risk_unit_ids=risk_unit_ids, risk_within_domain_unit=risk_within_domain_unit,
+                early_stopping_validation=early_stopping_validation,
             )
+        if early_stopping_validation is not None:
+            raise ValueError("explicit source validation requires the source trajectory path")
 
         if not np.isfinite(feature_alignment_weight) or feature_alignment_weight < 0.0:
             raise ValueError("feature_alignment_weight must be finite and non-negative.")
@@ -1159,8 +1169,9 @@ class DeepBaseline(Baseline):
     def _fit_fixed_updates(
         self, X, y, *, trial_channel_mask, input_stats_row_mask,
         source_domain_ids, source_domain_mass, risk_unit_ids, risk_within_domain_unit,
+        early_stopping_validation=None,
     ) -> DeepBaseline:
-        """Fit one immutable source trajectory without validation or batch fallback."""
+        """Fit a bounded source trajectory with optional independently scoped validation."""
         X = np.asarray(X)
         y = np.asarray(y)
         if X.ndim != 3 or X.shape[1:] != (self.n_chans, self.n_times):
@@ -1171,6 +1182,15 @@ class DeepBaseline(Baseline):
             raise ValueError("source labels must be an aligned integer vector")
         if set(np.unique(y).tolist()) != {0, 1}:
             raise ValueError("source fit requires both binary classes")
+        auxiliary_config = self.cfg.source_objective
+        auxiliary = (SourceObjective(auxiliary_config, labels=y, domains=source_domain_ids,
+                     participants=risk_unit_ids, device=self.device)
+                     if auxiliary_config is not None and auxiliary_config.enabled else None)
+        if auxiliary is not None and not getattr(self, "supports_feature_alignment", False):
+            raise ValueError("source auxiliary objectives require structured N2P3 features")
+        if auxiliary is not None and self.optimizer_execution.uses_cuda_graphs:
+            self.optimizer_execution = self.optimizer_execution.without_cuda_graphs(
+                reason="source_auxiliary_dynamic_pair_masks")
         if getattr(self, "splitbn_config", None) is not None or getattr(self, "feature_transfer", None):
             raise ValueError("fixed-update source experiments require the plain architecture")
         observed = self._effective_trial_channel_mask(X, trial_channel_mask)
@@ -1185,6 +1205,8 @@ class DeepBaseline(Baseline):
         probability = source_sampling_probabilities(
             domains, people, sampling="uniform_rows" if self.cfg.sampling == "epoch_permutation" else self.cfg.sampling,
         )
+        cumulative_probability = (None if self.cfg.sampling == "epoch_permutation"
+                                  else source_sampling_cdf(probability))
         if source_domain_mass is not None:
             multipliers, self.last_source_risk = resolve_source_risk_weights(
                 y, domains, people, domain_mass=source_domain_mass,
@@ -1197,8 +1219,10 @@ class DeepBaseline(Baseline):
         target_mass = np.asarray(multipliers, np.float64) * class_mass / class_mass.sum()
         importance = target_mass / probability
         active = np.flatnonzero(self.channel_mask)
+        complete_statistics = stats_rows.all() and len(active) == self.n_chans
         mean, std, ledger = observed_source_statistics(
-            X[stats_rows][:, active], observed[stats_rows][:, active],
+            X if complete_statistics else X[stats_rows][:, active],
+            observed if complete_statistics else observed[stats_rows][:, active],
             domain_ids=domains[stats_rows], participant_keys=people[stats_rows],
             weighting=self.cfg.input_statistics,
         )
@@ -1209,12 +1233,13 @@ class DeepBaseline(Baseline):
         self._set_input_statistics(input_mean, input_std)
         for channel in ledger["channels"]:
             channel["channel_index"] = int(active[channel["channel_index"]])
-        ledger["fit_row_indices"] = np.flatnonzero(stats_rows).tolist()
+        ledger["fit_row_indices"] = encode_source_vector(np.flatnonzero(stats_rows))
         self.source_statistics_ = ledger
         self.sampling_ledger_ = {
             "sampling": self.cfg.sampling, "replacement": self.cfg.sampling != "epoch_permutation",
-            "row_probability": probability.tolist(), "target_risk_mass": target_mass.tolist(),
-            "importance_weight": importance.tolist(), "risk_mass_sum": float(target_mass.sum()),
+            "row_probability": encode_source_vector(probability), "target_risk_mass": encode_source_vector(target_mass),
+            "importance_weight": encode_source_vector(importance), "risk_mass_sum": float(target_mass.sum()),
+            "vector_encoding": "n2p3_source_vector/1",
             "loss": "mean((r_i/p_i)*unweighted_CE_i)",
             "bn_context": "batch_dependent_importance_correction_does_not_equalize_bn_context",
         }
@@ -1227,37 +1252,75 @@ class DeepBaseline(Baseline):
         batch_sizes = []
         losses = []
         updates = int(self.cfg.fixed_updates)
+        validation = early_stopping_validation
+        stopper = None if validation is None else PatienceStopper(
+            validation["policy"].patience, validation["policy"].min_delta
+        )
+        if self.cfg.global_early_stopping is not None:
+            raise ValueError("global source stopping must enter through fit_source_trajectory")
+        validation_curve = []
+        selected_snapshot = None
         rng_devices = ([self.device.index if self.device.index is not None else torch.cuda.current_device()]
                        if self.device.type == "cuda" else [])
         with torch.random.fork_rng(devices=rng_devices), self.runtime.lease():
             try:
                 torch.manual_seed(self._model_seed())
                 self._initialize_model(self._model_seed())
-                source = MatrixBatchSource(
-                    torch.from_numpy(self._prepare_input(X, observed)),
-                    torch.from_numpy(y.astype(np.int64)), self.runtime,
-                    preload=self.runtime.can_preload(X.nbytes + y.nbytes + importance.nbytes),
-                    row_weights=torch.from_numpy(importance.astype(np.float32)),
-                )
-                adam_kwargs = {"lr": self.cfg.lr, "weight_decay": self.cfg.weight_decay}
-                if self.optimizer_execution.fused_adam:
-                    adam_kwargs["fused"] = True
-                if self.optimizer_execution.uses_cuda_graphs:
-                    adam_kwargs["capturable"] = True
-                optimizer = torch.optim.Adam(self.model_.parameters(), **adam_kwargs)
+                feature_location = ("post_residual" if getattr(self.model_, "feature_residual_config", None) is not None
+                                    else "post_mst")
+                if auxiliary is not None and auxiliary_config.feature_location != feature_location:
+                    raise ValueError("source objective feature location differs from the model architecture")
+                with self.runtime.stage_inputs():
+                    source = MatrixBatchSource(
+                        torch.from_numpy(self._prepare_input(X, observed)),
+                        torch.from_numpy(y.astype(np.int64)), self.runtime,
+                        preload=self.runtime.can_preload(X.nbytes + y.nbytes + importance.nbytes + observed.nbytes),
+                        release_cpu_after_preload=True,
+                        row_weights=torch.from_numpy(importance.astype(np.float32)),
+                        row_channel_mask=torch.from_numpy(np.ascontiguousarray(observed)),
+                    )
+                    adam_kwargs = {"lr": self.cfg.lr, "weight_decay": self.cfg.weight_decay}
+                    if self.optimizer_execution.fused_adam:
+                        adam_kwargs["fused"] = True
+                    if self.optimizer_execution.uses_cuda_graphs:
+                        adam_kwargs["capturable"] = True
+                    optimizer = torch.optim.Adam(self.model_.parameters(), **adam_kwargs)
+                    validation_source = None
+                    if validation is not None:
+                        vx, vy = np.asarray(validation["X"]), np.asarray(validation["y"])
+                        vm = self._effective_trial_channel_mask(vx, validation["channel_mask"])
+                        vw = np.asarray(validation["weights"], dtype=np.float32)
+                        if (vy.shape != (len(vx),) or set(np.unique(vy)) != {0, 1}
+                                or vw.shape != vy.shape or not np.isfinite(vw).all() or np.any(vw < 0)
+                                or not np.isclose(vw.sum(), 1.0)):
+                            raise ValueError("source validation requires both classes and normalized risk weights")
+                        validation_source = MatrixBatchSource(
+                            torch.from_numpy(self._prepare_input(vx, vm)), torch.from_numpy(vy.astype(np.int64)),
+                            self.runtime, preload=self.runtime.can_preload(vx.nbytes + vy.nbytes + vm.nbytes),
+                            release_cpu_after_preload=True,
+                            row_weights=torch.from_numpy(vw),
+                            row_channel_mask=torch.from_numpy(np.ascontiguousarray(vm)),
+                        )
 
-                def train_step(xb, yb, weights):
+                def train_step(xb, yb, weights, rows, channel_mask):
                     optimizer.zero_grad(set_to_none=True)
                     with self._autocast_ctx():
-                        logits = self.model_(xb)
+                        if auxiliary is None:
+                            logits = self._forward_model(xb, channel_mask=channel_mask)
+                            diagnostics = {}
+                        else:
+                            logits, features = self._forward_model(xb, channel_mask=channel_mask, with_features=True)
+                            auxiliary_loss, diagnostics = auxiliary.loss(features, rows, feature_location=feature_location)
                         loss = (F.cross_entropy(logits, yb, reduction="none") * weights).mean()
+                        if auxiliary is not None:
+                            loss = loss + auxiliary_loss
                     loss.backward()
                     finite = torch.isfinite(loss.detach())
                     for parameter in self.model_.parameters():
                         if parameter.grad is not None:
                             finite = finite & torch.isfinite(parameter.grad).all()
                     optimizer.step()
-                    return loss.detach(), finite
+                    return loss.detach(), finite, diagnostics
 
                 if self.optimizer_execution.compile_mode is not None:
                     train_step = torch.compile(train_step, mode=self.optimizer_execution.compile_mode, fullgraph=False)
@@ -1266,6 +1329,7 @@ class DeepBaseline(Baseline):
                 self.model_.train()
                 loss_sum = torch.zeros((), device=self.device)
                 finite_updates = torch.ones((), device=self.device, dtype=torch.bool)
+                auxiliary_totals: dict[str, torch.Tensor] = {}
                 for update in range(1, updates + 1):
                     if self.cfg.sampling == "epoch_permutation":
                         if cursor >= len(permutation):
@@ -1273,20 +1337,26 @@ class DeepBaseline(Baseline):
                         rows = permutation[cursor:cursor + self.cfg.batch_size]
                         cursor += len(rows)
                     else:
-                        rows = rng.choice(len(X), size=self.cfg.batch_size, replace=True, p=probability)
+                        rows = sample_source_rows(rng, probability, self.cfg.batch_size,
+                                                  cumulative=cumulative_probability)
                     rows = np.ascontiguousarray(rows, dtype=np.int64)
                     order_digest.update(rows.tobytes())
                     batch_sizes.append(len(rows))
-                    xb, yb, weights, _ = next(source.iter_index_batches(
+                    xb, yb, weights, _, channel_mask = next(source.iter_index_batches(
                         (torch.from_numpy(rows),), require_full_coverage=False,
                         allow_repeated_rows=self.cfg.sampling != "epoch_permutation",
                     ))
-                    loss, finite = train_step(xb, yb, weights)
+                    batch_rows = (torch.as_tensor(rows, device=self.device) if auxiliary is not None else None)
+                    loss, finite, diagnostics = train_step(xb, yb, weights, batch_rows, channel_mask)
+                    for name, value in diagnostics.items():
+                        value = value.detach().clone()
+                        auxiliary_totals[name] = auxiliary_totals.get(name, 0) + value
                     loss_sum += loss.clone().float()
                     finite_updates.logical_and_(finite)
                     del loss, finite
                     draws += len(rows)
-                    report_due = update % 100 == 0 or update == updates
+                    report_due = (update % 100 == 0 or update == updates or
+                                  (validation is not None and update % validation["check_every_updates"] == 0))
                     if report_due or update in self.cfg.snapshot_updates:
                         state_finite = torch.stack([
                             torch.isfinite(value).all() for value in self.model_.state_dict().values()
@@ -1302,15 +1372,46 @@ class DeepBaseline(Baseline):
                             "input_mean": self._input_mean.copy(), "input_std": self._input_std.copy(),
                             "optimizer_updates": update, "trial_draws": draws,
                             "batch_sequence_sha256": order_digest.hexdigest(),
+                            **({"source_objective": auxiliary.record(auxiliary_totals, update)}
+                               if auxiliary is not None else {}),
                         }
                     if report_due:
                         losses.append({"update": update, "mean_loss": float(loss_sum.cpu()) / update})
+                    if validation_source is not None and update % validation["check_every_updates"] == 0:
+                        self.model_.eval()
+                        validation_loss = torch.zeros((), device=self.device)
+                        with torch.inference_mode(), self._autocast_ctx():
+                            indices = torch.arange(len(vy))
+                            for vx_b, vy_b, vw_b, _, vm_b in validation_source.iter_index_batches(
+                                indices.split(self.cfg.batch_size)
+                            ):
+                                vl = self._forward_model(vx_b, channel_mask=vm_b)
+                                validation_loss += (F.cross_entropy(vl, vy_b, reduction="none") * vw_b).sum()
+                        value = float(validation_loss.cpu())
+                        improved = stopper.observe(value)
+                        validation_curve.append({"epoch": stopper.checks, "updates": update,
+                                                 "validation_loss": value})
+                        if improved:
+                            selected_snapshot = {
+                                "model_state_dict": {k: v.detach().cpu().clone() for k, v in self.model_.state_dict().items()},
+                                "input_mean": self._input_mean.copy(), "input_std": self._input_std.copy(),
+                                "optimizer_updates": update, "trial_draws": draws,
+                                "batch_sequence_sha256": order_digest.hexdigest(),
+                            }
+                        self.model_.train()
+                        if stopper.exhausted:
+                            break
+                updates = update
+                if selected_snapshot is not None:
+                    self.model_.load_state_dict(selected_snapshot["model_state_dict"])
                 self.model_.eval()
                 self.last_runtime = {
                     "device": str(self.device), "precision": self.runtime.precision.name,
                     "batch_size": self.cfg.batch_size, "requested_batch_size": self.cfg.batch_size,
                     "oom_retries": 0, "batch_fallback": "forbidden", "fit_seconds": time.perf_counter() - started,
                     "preloaded": source.preloaded, "transfer_fallback": source.transfer_fallback,
+                    "resident_memory_budget_bytes": self.runtime.resident_memory_budget_bytes,
+                    "normalized_host_matrix_retained": source.cpu_X is not None,
                     "memory": self.runtime.memory_record(), **self.optimizer_execution.record(),
                 }
             except BaseException:
@@ -1324,6 +1425,12 @@ class DeepBaseline(Baseline):
             "batch_sequence_sha256": order_digest.hexdigest(), "update_losses": losses,
             "best_epoch": None, "selection": "fixed_updates_no_validation",
             "source_statistics": self.source_statistics_, "source_sampling": self.sampling_ledger_,
+            **({"source_objective": auxiliary.record(auxiliary_totals, updates)}
+               if auxiliary is not None else {}),
+            **({"early_stopping": {**stopper.record(), "validation_curve": validation_curve,
+                                   "selected_epochs": stopper.best_check,
+                                   "selected_updates": selected_snapshot["optimizer_updates"]}}
+               if stopper is not None and selected_snapshot is not None else {}),
         }
         self._fitted = True
         return self
@@ -1819,7 +1926,8 @@ class DeepBaseline(Baseline):
                 temperature=decision_loss_config.temperature,
             )
         self._active_batch_size = batch_size
-        total_matrix_bytes = X_train.nbytes + y_train.nbytes + X_val.nbytes + y_val.nbytes
+        total_matrix_bytes = (X_train.nbytes + y_train.nbytes + X_val.nbytes + y_val.nbytes
+                              + train_channel_mask.nbytes + val_channel_mask.nbytes)
         if train_row_weights is not None:
             total_matrix_bytes += train_row_weights.nbytes
         if val_row_weights is not None:
@@ -1836,6 +1944,7 @@ class DeepBaseline(Baseline):
                 else torch.from_numpy(np.ascontiguousarray(train_row_weights))
             ),
             row_domains=train_domain_tensor,
+            row_channel_mask=torch.from_numpy(np.ascontiguousarray(train_channel_mask)),
         )
         val_source = (
             MatrixBatchSource(
@@ -1849,6 +1958,7 @@ class DeepBaseline(Baseline):
                     else torch.from_numpy(np.ascontiguousarray(val_row_weights))
                 ),
                 row_domains=val_domain_tensor,
+                row_channel_mask=torch.from_numpy(np.ascontiguousarray(val_channel_mask)),
             )
             if len(X_val)
             else None
@@ -1985,6 +2095,7 @@ class DeepBaseline(Baseline):
             yb: torch.Tensor,
             row_weights: torch.Tensor | None,
             domain_batch: torch.Tensor | None,
+            channel_mask: torch.Tensor | None,
             decision_targets: torch.Tensor | None,
             source_residual_mask: torch.Tensor | None,
         ) -> tuple[
@@ -2000,8 +2111,10 @@ class DeepBaseline(Baseline):
             with self._autocast_ctx():
                 if feature_objective_active:
                     assert domain_batch is not None
-                    forwarded = self.model_.forward_with_features(
+                    forwarded = self._forward_model(
                         xb,
+                        channel_mask=channel_mask,
+                        with_features=True,
                         use_source_residual=source_residual_active,
                         source_residual_mask=source_residual_mask,
                         domain_indices=(
@@ -2095,9 +2208,9 @@ class DeepBaseline(Baseline):
                         alignment_diagnostics["source_residual"] = source_ledger
                 else:
                     logits = (
-                        self.model_(xb, domain_indices=domain_batch)
+                        self._forward_model(xb, channel_mask=channel_mask, domain_indices=domain_batch)
                         if splitbn_active
-                        else self.model_(xb)
+                        else self._forward_model(xb, channel_mask=channel_mask)
                     )
                     trial_numerator, trial_denominator = loss_fn.components(logits, yb, row_weights)
                     trial_loss = trial_numerator / trial_denominator
@@ -2149,7 +2262,7 @@ class DeepBaseline(Baseline):
             epoch: int,
         ):
             if train_decision_plan is None:
-                for xb, yb, row_weights, domain_batch in train_source.iter_batches(
+                for xb, yb, row_weights, domain_batch, channel_mask in train_source.iter_batches(
                     batch_size, generator=perm_gen
                 ):
                     source_mask = None
@@ -2174,14 +2287,14 @@ class DeepBaseline(Baseline):
                             reference,
                             generator=source_residual_generator,
                         ).to(device=xb.device, dtype=xb.dtype)
-                    yield xb, yb, row_weights, domain_batch, None, 0, source_mask
+                    yield xb, yb, row_weights, domain_batch, channel_mask, None, 0, source_mask
                 return
             decision_batches = train_decision_plan.batches(seed=seed + epoch)
             index_batches = tuple(
                 torch.from_numpy(np.array(batch.row_indices, dtype=np.int64, copy=True))
                 for batch in decision_batches
             )
-            for decision_batch, (xb, yb, row_weights, domain_batch) in zip(
+            for decision_batch, (xb, yb, row_weights, domain_batch, channel_mask) in zip(
                 decision_batches,
                 train_source.iter_index_batches(index_batches),
                 strict=True,
@@ -2222,6 +2335,7 @@ class DeepBaseline(Baseline):
                     yb,
                     row_weights,
                     domain_batch,
+                    channel_mask,
                     targets,
                     len(decision_batch.decision_ids),
                     source_mask,
@@ -2251,6 +2365,7 @@ class DeepBaseline(Baseline):
                 yb,
                 row_weights,
                 domain_batch,
+                channel_mask,
                 decision_targets,
                 batch_decision_count,
                 source_residual_mask,
@@ -2269,6 +2384,7 @@ class DeepBaseline(Baseline):
                         yb,
                         row_weights,
                         domain_batch,
+                        channel_mask,
                         decision_targets,
                         source_residual_mask,
                     )
@@ -2677,7 +2793,8 @@ class DeepBaseline(Baseline):
                 torch.from_numpy(np.ascontiguousarray(X)),
                 None,
                 self.runtime,
-                preload=self.runtime.can_preload(X.nbytes),
+                preload=self.runtime.can_preload(X.nbytes + mask.nbytes),
+                row_channel_mask=torch.from_numpy(np.ascontiguousarray(mask)),
             )
             chunk_size = self.runtime.choose_batch_size(
                 max(self.cfg.batch_size * 4, 256),
@@ -2687,14 +2804,15 @@ class DeepBaseline(Baseline):
             self.model_.eval()
             out_chunks: list[torch.Tensor] = []
             with torch.inference_mode():
-                for xb, _ in source.batches(chunk_size):
+                for xb, _, _, _, channel_mask in source.iter_batches(chunk_size):
                     with self._autocast_ctx():
                         splitbn_config = getattr(self, "splitbn_config", None)
                         if splitbn_config is None:
-                            logits = self.model_(xb)
+                            logits = self._forward_model(xb, channel_mask=channel_mask)
                         else:
-                            logits = self.model_(
+                            logits = self._forward_model(
                                 xb,
+                                channel_mask=channel_mask,
                                 eval_buffer_source=splitbn_config.target_buffer_source,
                             )
                     out_chunks.append((logits[:, 1] - logits[:, 0]).float())

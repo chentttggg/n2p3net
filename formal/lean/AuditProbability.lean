@@ -1,0 +1,57 @@
+import N2P3.GaussianMeasure
+import N2P3.RetainedBasis
+import N2P3.MatrixNormalCoordinates
+
+#print axioms N2P3.GaussianMeasure.scalar_normalizer_positive
+#print axioms N2P3.GaussianMeasure.scalarPDF_nonnegative
+#print axioms N2P3.GaussianMeasure.scalarPDF_continuous
+#print axioms N2P3.GaussianMeasure.scalarPDF_integrable
+#print axioms N2P3.GaussianMeasure.scalarPDF_integral_one
+#print axioms N2P3.GaussianMeasure.productPDF_nonnegative
+#print axioms N2P3.GaussianMeasure.productPDF_continuous
+#print axioms N2P3.GaussianMeasure.productPDF_integrable
+#print axioms N2P3.GaussianMeasure.productPDF_integral_one
+#print axioms N2P3.GaussianMeasure.productPDF_as_quadratic_kernel
+#print axioms N2P3.GaussianMeasure.matrix_map_volume
+#print axioms N2P3.GaussianMeasure.integral_comp_matrix
+#print axioms N2P3.GaussianMeasure.integrable_comp_matrix
+#print axioms N2P3.GaussianMeasure.affinePDF_nonnegative
+#print axioms N2P3.GaussianMeasure.affinePDF_integrable
+#print axioms N2P3.GaussianMeasure.affinePDF_integral_one
+#print axioms N2P3.GaussianMeasure.affinePDF_as_quadratic_kernel
+#print axioms N2P3.GaussianMeasure.affineGaussianMeasure_isProbabilityMeasure
+#print axioms N2P3.GaussianMeasure.omitted_affine_jacobian_mass
+#print axioms N2P3.GaussianMeasure.scale_two_without_jacobian_has_half_mass
+#print axioms N2P3.RetainedBasis.thin_qr_columns_orthonormal
+#print axioms N2P3.RetainedBasis.thin_qr_dimension_le
+#print axioms N2P3.RetainedBasis.basisMatrix_columns_gram
+#print axioms N2P3.RetainedBasis.basisMatrix_rows_complete
+#print axioms N2P3.RetainedBasis.exists_orthonormal_extension
+#print axioms N2P3.RetainedBasis.exists_retained_basis
+#print axioms N2P3.RetainedBasis.retained_dimension
+#print axioms N2P3.RetainedBasis.exists_rank_two_retained_basis
+#print axioms N2P3.RetainedBasis.exists_actual_retained_score_coordinates
+#print axioms N2P3.MatrixNormalCoordinates.vectorize_sub
+#print axioms N2P3.MatrixNormalCoordinates.rowMajorIndex_value
+#print axioms N2P3.MatrixNormalCoordinates.rowMajorVector_at
+#print axioms N2P3.MatrixNormalCoordinates.kronecker_vectorize
+#print axioms N2P3.MatrixNormalCoordinates.vectorize_energy_trace
+#print axioms N2P3.MatrixNormalCoordinates.vectorize_squares_trace
+#print axioms N2P3.MatrixNormalCoordinates.whitening_coordinates
+#print axioms N2P3.MatrixNormalCoordinates.whitening_trace
+#print axioms N2P3.MatrixNormalCoordinates.whitening_squares
+#print axioms N2P3.MatrixNormalCoordinates.whiteningMatrix_det
+#print axioms N2P3.MatrixNormalCoordinates.whiteningMatrix_abs_det
+#print axioms N2P3.MatrixNormalCoordinates.whiteningMatrix_det_ne_zero
+#print axioms N2P3.MatrixNormalCoordinates.source_whiteningMatrix_det_ne_zero
+#print axioms N2P3.MatrixNormalCoordinates.source_centered_whitening_squares
+#print axioms N2P3.MatrixNormalCoordinates.whitening_gram
+#print axioms N2P3.MatrixNormalCoordinates.whitening_gram_inverse
+#print axioms N2P3.MatrixNormalCoordinates.source_whitening_gram_inverse
+#print axioms N2P3.MatrixNormalCoordinates.matrixPDF_as_trace_kernel
+#print axioms N2P3.MatrixNormalCoordinates.matrixPDF_nonnegative
+#print axioms N2P3.MatrixNormalCoordinates.matrixPDF_integrable
+#print axioms N2P3.MatrixNormalCoordinates.matrixPDF_integral_one
+#print axioms N2P3.MatrixNormalCoordinates.matrixKernelMeasure_probability
+#print axioms N2P3.MatrixNormalCoordinates.source_matrixPDF_as_centeredKernel
+#print axioms N2P3.MatrixNormalCoordinates.source_matrixKernelMeasure_probability

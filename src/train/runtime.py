@@ -421,6 +421,8 @@ class MatrixBatchSource:
         preload: bool,
         row_weights: torch.Tensor | None = None,
         row_domains: torch.Tensor | None = None,
+        row_channel_mask: torch.Tensor | None = None,
+        release_cpu_after_preload: bool = False,
     ) -> None:
         if X.device.type != "cpu" or X.ndim < 2:
             raise ValueError("MatrixBatchSource requires a CPU tensor with a row axis.")
@@ -442,15 +444,26 @@ class MatrixBatchSource:
             or row_domains.shape != (len(X),)
         ):
             raise ValueError("Row domains must be an integer CPU vector aligned with X.")
+        if row_channel_mask is not None and (
+            row_channel_mask.device.type != "cpu"
+            or row_channel_mask.dtype != torch.bool
+            or row_channel_mask.shape != X.shape[:2]
+            or not bool(row_channel_mask.any(dim=1).all())
+        ):
+            raise ValueError("Row channel masks must be boolean CPU (N,C), retaining an observed channel per row.")
         self.runtime = runtime
         self.cpu_X = X.contiguous()
+        self._n_rows = int(X.shape[0])
+        self._matrix_nbytes = X.numel() * X.element_size()
         self.cpu_y = None if y is None else y.contiguous()
         self.cpu_row_weights = None if row_weights is None else row_weights.contiguous()
         self.cpu_row_domains = None if row_domains is None else row_domains.contiguous()
+        self.cpu_row_channel_mask = None if row_channel_mask is None else row_channel_mask.contiguous()
         self.device_X: torch.Tensor | None = None
         self.device_y: torch.Tensor | None = None
         self.device_row_weights: torch.Tensor | None = None
         self.device_row_domains: torch.Tensor | None = None
+        self.device_row_channel_mask: torch.Tensor | None = None
         self.preloaded = False
         self.transfer_fallback = False
         self.materialize_shuffled_epoch = False
@@ -473,6 +486,9 @@ class MatrixBatchSource:
                     if self.cpu_row_domains is None
                     else runtime.to_device(self.cpu_row_domains)
                 )
+                self.device_row_channel_mask = (
+                    None if self.cpu_row_channel_mask is None else runtime.to_device(self.cpu_row_channel_mask)
+                )
                 self.preloaded = True
             except RuntimeError as error:
                 if not is_oom_error(error):
@@ -481,9 +497,14 @@ class MatrixBatchSource:
                 self.device_y = None
                 self.device_row_weights = None
                 self.device_row_domains = None
+                self.device_row_channel_mask = None
                 self.transfer_fallback = True
                 runtime.release_temporary_memory()
 
+        if self.preloaded and release_cpu_after_preload and is_accelerator(runtime.device):
+            # Device storage owns the complete matrix; streaming fallback is
+            # already resolved, so the normalized host duplicate can be freed.
+            self.cpu_X = None
         if not self.preloaded and is_accelerator(runtime.device):
             self.cpu_X = runtime.pin_memory(self.cpu_X)
             if self.cpu_y is not None:
@@ -492,10 +513,12 @@ class MatrixBatchSource:
                 self.cpu_row_weights = runtime.pin_memory(self.cpu_row_weights)
             if self.cpu_row_domains is not None:
                 self.cpu_row_domains = runtime.pin_memory(self.cpu_row_domains)
+            if self.cpu_row_channel_mask is not None:
+                self.cpu_row_channel_mask = runtime.pin_memory(self.cpu_row_channel_mask)
 
     @property
     def n_rows(self) -> int:
-        return int(self.cpu_X.shape[0])
+        return self._n_rows
 
     @property
     def nbytes(self) -> int:
@@ -511,11 +534,22 @@ class MatrixBatchSource:
             else self.cpu_row_domains.numel() * self.cpu_row_domains.element_size()
         )
         return (
-            self.cpu_X.numel() * self.cpu_X.element_size()
+            self._matrix_nbytes
             + label_bytes
             + weight_bytes
             + domain_bytes
+            + (0 if self.cpu_row_channel_mask is None else self.cpu_row_channel_mask.numel())
         )
+
+    def _channel_mask_batch(self, rows: slice | torch.Tensor) -> torch.Tensor | None:
+        """Select the same small physical channel axis in every batching mode."""
+        if self.cpu_row_channel_mask is None:
+            return None
+        masks = self.device_row_channel_mask if self.preloaded else self.cpu_row_channel_mask
+        assert masks is not None
+        selected = (masks[rows] if isinstance(rows, slice)
+                    else masks.index_select(0, rows.to(device=masks.device)))
+        return selected if self.preloaded else self.runtime.to_device(selected)
 
     @property
     def has_row_weights(self) -> bool:
@@ -744,9 +778,10 @@ class MatrixBatchSource:
             torch.Tensor | None,
             torch.Tensor | None,
             torch.Tensor | None,
+            torch.Tensor | None,
         ]
     ]:
-        """Yield normalized ``(x, y, weights, domains)`` batches.
+        """Yield normalized ``(x, y, weights, domains, channel_mask)`` batches.
 
         ``weights`` and ``domains`` are ``None`` when the source carries no
         such axis, so training loops that route rows through per-domain
@@ -819,6 +854,7 @@ class MatrixBatchSource:
                         None if shuffled_y is None else shuffled_y[start:stop],
                         None if shuffled_w is None else shuffled_w[start:stop],
                         None if shuffled_d is None else shuffled_d[start:stop],
+                        self._channel_mask_batch(permutation[start:stop]),
                     )
                 return
 
@@ -883,7 +919,9 @@ class MatrixBatchSource:
                 yb = None if selected_y is None else self.runtime.to_device(selected_y)
                 wb = None if selected_w is None else self.runtime.to_device(selected_w)
                 db = None if selected_d is None else self.runtime.to_device(selected_d)
-            yield xb, yb, wb, db
+            yield xb, yb, wb, db, self._channel_mask_batch(
+                slice(start, stop) if permutation is None else permutation[start:stop]
+            )
 
     def gather_indices(
         self,
@@ -892,6 +930,7 @@ class MatrixBatchSource:
         allow_repeated_rows: bool = False,
     ) -> tuple[
         torch.Tensor,
+        torch.Tensor | None,
         torch.Tensor | None,
         torch.Tensor | None,
         torch.Tensor | None,
@@ -926,7 +965,7 @@ class MatrixBatchSource:
                 if self.device_row_domains is None
                 else self.device_row_domains.index_select(0, device_indices)
             )
-            return xb, yb, wb, db
+            return xb, yb, wb, db, self._channel_mask_batch(device_indices)
 
         selected_x = self.cpu_X.index_select(0, indices)
         selected_y = None if self.cpu_y is None else self.cpu_y.index_select(0, indices)
@@ -941,6 +980,7 @@ class MatrixBatchSource:
             None if selected_y is None else self.runtime.to_device(selected_y),
             None if selected_w is None else self.runtime.to_device(selected_w),
             None if selected_d is None else self.runtime.to_device(selected_d),
+            self._channel_mask_batch(indices),
         )
 
     def iter_index_batches(
@@ -952,6 +992,7 @@ class MatrixBatchSource:
     ) -> Iterator[
         tuple[
             torch.Tensor,
+            torch.Tensor | None,
             torch.Tensor | None,
             torch.Tensor | None,
             torch.Tensor | None,
@@ -1008,6 +1049,8 @@ class GpuPerformanceScheduler:
         self.batch_memory_fraction = float(batch_memory_fraction)
         self.preload_memory_fraction = float(preload_memory_fraction)
         self.shared_worker_count = 1
+        self.resident_memory_budget_bytes: int | None = None
+        self.input_staging_gate = None
         self.last_memory: MemorySnapshot | None = None
 
     @property
@@ -1093,6 +1136,21 @@ class GpuPerformanceScheduler:
             raise ValueError("worker_count must be positive.")
         self.shared_worker_count = int(worker_count)
 
+    def configure_resident_memory_budget(self, nbytes: int | None) -> None:
+        """Apply a parent-admitted total resident allocation for this process."""
+        if nbytes is not None and (type(nbytes) is not int or nbytes < 1):
+            raise ValueError("resident memory budget must be positive bytes")
+        self.resident_memory_budget_bytes = nbytes
+
+    @contextmanager
+    def stage_inputs(self):
+        """Bound host staging peaks while other workers continue GPU fitting."""
+        if self.input_staging_gate is None:
+            yield
+        else:
+            with self.input_staging_gate:
+                yield
+
     def recommended_concurrent_workers(self, requested: int, *, cap: int = 4) -> int:
         """Return a hardware-aware default for one physical accelerator.
 
@@ -1119,6 +1177,10 @@ class GpuPerformanceScheduler:
         if not is_accelerator(self.device):
             return False
         free_bytes, _ = _memory_info(self.device)
+        if self.resident_memory_budget_bytes is not None and self.device.type == "cuda":
+            allocated = torch.cuda.memory_allocated(self.device)
+            headroom = self.resident_memory_budget_bytes - allocated
+            return free_bytes is not None and nbytes <= min(headroom, max(0, free_bytes - 512 * 2**20))
         per_worker_fraction = self.preload_memory_fraction / self.shared_worker_count
         return free_bytes is not None and nbytes <= int(free_bytes * per_worker_fraction)
 

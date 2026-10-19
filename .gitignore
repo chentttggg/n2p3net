@@ -32,4 +32,6 @@ cloud_inputs/
 /frozen/**/*.bundle
 # Materialized source snapshots and per-event figure data remain local.
 /frozen/**/checkout/
+# Local junction used only to run frozen backend tests against the acquisition app.
+/frozen/bidirectional_qc_20260909_acceptance/BrainSync_Tool_newest/
 /doc/assets/**/*.npz

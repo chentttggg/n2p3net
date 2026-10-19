@@ -12,10 +12,7 @@ import tempfile
 from collections.abc import Mapping, Sequence
 from functools import lru_cache
 from pathlib import Path
-
-import numpy as np
-import torch
-from sklearn.metrics import roc_auc_score
+from typing import TYPE_CHECKING
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
@@ -23,29 +20,7 @@ for search_path in (ROOT, SRC):
     if str(search_path) not in sys.path:
         sys.path.insert(0, str(search_path))
 
-from baselines.calibration import (  # noqa: E402
-    calibration_data_from_model,
-    fit_weighted_logit_temperature,
-)
-from data.artifact import FoldLocalArtifactPolicy, apply_fold_local_artifact_policy  # noqa: E402
-from data.candidate_task import (  # noqa: E402
-    CandidateTaskContract,
-    candidate_task_contract_from_provenance,
-    validate_candidate_membership_metadata,
-)
-from data.contract import assert_causal_p300_input_contract  # noqa: E402
-from data.domain import source_domain_ids, source_domain_vocabulary  # noqa: E402
-from data.epochs import (  # noqa: E402
-    epoch_row_identity_digest,
-    load_epoch_dataset,
-    loaded_epoch_cache_attestation,
-)
-from data.identity import IdentityExclusionPolicy  # noqa: E402
-from data.qc_features import compute_epoch_qc_features  # noqa: E402
 from experiments.result_batch_contract import ZERO_SHOT_FEATURE_CACHE_SCHEMA  # noqa: E402
-from models.adapters import source_domain_axis_from_record  # noqa: E402
-from models.n2p3net import N2P3Net  # noqa: E402
-from models.splitbn import splitbn_config_from_record  # noqa: E402
 from research.contracts import (  # noqa: E402
     MIN_PROMOTION_HIT_AT_R,
     DecisionPlanContract,
@@ -54,53 +29,19 @@ from research.contracts import (  # noqa: E402
     assert_promotion_evidence_gate,
     semantic_sha256,
 )
-from research.evaluation import (  # noqa: E402
-    build_evaluation_run_contract,
-    checkpoint_model_origin,
-    scratch_model_origin,
-    verified_source_snapshot,
-)
 from research.execution import (  # noqa: E402
     ExpectedSubjectError,
     SubjectFailureCode,
     atomic_write_json,
 )
-from train.device import get_device  # noqa: E402
-from train.runtime import is_oom_error  # noqa: E402
-from train.source_sampling import (  # noqa: E402
-    load_pds_selection_record,
-    pds_selection_from_record,
-)
-from transfer.candidate_decision import (  # noqa: E402
-    decision_outcomes_at_repetition,
-    expected_candidate_counts,
-    row_column_target,
-)
-from transfer.candidate_within_subject import (  # noqa: E402
-    candidate_calibration_decision_split,
-)
-from transfer.checkpoint import (  # noqa: E402
-    assert_checkpoint_target_identity_excluded,
-    checkpoint_architecture_record,
-    checkpoint_classifier_is_trained,
-    checkpoint_input_stats,
-    checkpoint_scores_to_llr,
-    checkpoint_training_contract,
-    load_checkpoint_payload,
-    load_n2p3_trunk_checkpoint,
-    predict_n2p3_checkpoint_with_features,
-)
-from transfer.cohort import read_subject_manifest, resolve_subject_scope  # noqa: E402
-from transfer.decision_loss import DirectDecisionContractError  # noqa: E402
-from transfer.outcomes import (  # noqa: E402
-    CandidateCoverage,
-    DecisionKey,
-    DecisionOutcome,
-    DecisionStatus,
-    build_decision_outcome_accounting,
-)
-from transfer.subject_adapter import SubjectAdapter, SubjectAdapterConfig  # noqa: E402
-from transfer.within_subject import chronological_time_validation_split  # noqa: E402
+
+if TYPE_CHECKING:
+    import numpy as np
+
+    from data.candidate_task import CandidateTaskContract
+    from data.identity import IdentityExclusionPolicy
+    from models.n2p3net import N2P3Net
+    from transfer.outcomes import DecisionOutcome
 
 
 def _load_trunk(
@@ -110,6 +51,8 @@ def _load_trunk(
     target_subject: str,
     identity_exclusion_policy: IdentityExclusionPolicy,
 ) -> N2P3Net:
+    from transfer.checkpoint import load_n2p3_trunk_checkpoint
+
     trunk, _ = load_n2p3_trunk_checkpoint(
         path,
         dataset,
@@ -128,6 +71,8 @@ def _sha256_file(path: str | Path) -> str:
 
 
 def _cached_attested_dataset(cache_path: str) -> object:
+    from data.epochs import load_epoch_dataset
+
     return load_epoch_dataset(cache_path, require_labels=True, validation="attested")
 
 
@@ -148,6 +93,9 @@ def _load_source_selection(
     AS-MMD source-stream path verifies the exact same cache identity and row
     identity fields before applying selected indices.
     """
+
+    from train.source_sampling import load_pds_selection_record, pds_selection_from_record
+
 
     _, record = load_pds_selection_record(path)
     selection = pds_selection_from_record(
@@ -175,6 +123,8 @@ def _cached_candidate_split(
     selection_repetition_floor: int,
     max_test_selections: int | None,
 ) -> object:
+    from transfer.candidate_within_subject import candidate_calibration_decision_split
+
     return candidate_calibration_decision_split(
         _cached_attested_dataset_memo(dataset_cache_path),
         calibration_selections=calibration_selections,
@@ -191,11 +141,15 @@ def _cached_attested_dataset_memo(cache_path: str) -> object:
 
 @lru_cache(maxsize=8)
 def _cached_checkpoint_payload(checkpoint_path: str) -> dict[str, object]:
+    from transfer.checkpoint import load_checkpoint_payload
+
     return load_checkpoint_payload(Path(checkpoint_path))
 
 
 @lru_cache(maxsize=8)
 def _cached_verified_source_snapshot(manifest_path: str) -> dict[str, object]:
+    from research.evaluation import verified_source_snapshot
+
     return verified_source_snapshot(Path(manifest_path))
 
 
@@ -208,6 +162,8 @@ def _zero_shot_cache_header(
     epoch_rows: np.ndarray,
     test_reps: int,
 ) -> dict[str, object]:
+    import numpy as np
+
     return {
         "schema": ZERO_SHOT_FEATURE_CACHE_SCHEMA,
         "checkpoint_sha256": checkpoint_sha256,
@@ -223,6 +179,8 @@ def _read_zero_shot_feature_cache(
     cache_path: str | Path | None,
     header: dict[str, object],
 ) -> dict[str, np.ndarray] | None:
+    import numpy as np
+
     if cache_path is None:
         return None
     path = Path(cache_path)
@@ -254,6 +212,8 @@ def _write_zero_shot_feature_cache(
     features: np.ndarray,
     scores: np.ndarray,
 ) -> None:
+    import numpy as np
+
     path = Path(cache_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, raw_temp = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
@@ -293,6 +253,9 @@ def _lockfile_digests() -> dict[str, str]:
 
 
 def _environment_record(device: object) -> dict[str, object]:
+    import numpy as np
+    import torch
+
     record: dict[str, object] = {
         "python": sys.version,
         "numpy": np.__version__,
@@ -314,6 +277,9 @@ def _environment_record(device: object) -> dict[str, object]:
 
 def _bn_buffer_digest(payload: dict[str, object] | None) -> str | None:
     """Semantic digest over every BatchNorm buffer in the checkpoint trunk."""
+
+    import torch
+
 
     if not isinstance(payload, dict) or not isinstance(payload.get("trunk_state_dict"), dict):
         return None
@@ -352,6 +318,9 @@ def _failed_decision_outcomes(
     test_repetitions: int,
     candidate_task: CandidateTaskContract,
 ) -> tuple[DecisionOutcome, ...]:
+    from transfer.candidate_decision import expected_candidate_counts
+    from transfer.outcomes import CandidateCoverage, DecisionKey, DecisionOutcome, DecisionStatus
+
     outcomes: list[DecisionOutcome] = []
     for decision in requested_decisions:
         if decision not in failure_reasons:
@@ -381,6 +350,9 @@ def _fit_failure_decision_outcomes(
     target_by_decision: dict[str, str],
     candidate_task: CandidateTaskContract,
 ) -> tuple[DecisionOutcome, ...]:
+    from transfer.candidate_decision import expected_candidate_counts
+    from transfer.outcomes import CandidateCoverage, DecisionKey, DecisionOutcome, DecisionStatus
+
     return tuple(
         DecisionOutcome(
             key=DecisionKey(subject, decision),
@@ -405,6 +377,8 @@ def _accounting_record(
     eligible_decisions: tuple[str, ...],
     test_repetitions: int,
 ) -> dict[str, object]:
+    from transfer.outcomes import DecisionKey, DecisionStatus, build_decision_outcome_accounting
+
     accounting = build_decision_outcome_accounting(
         outcomes,
         requested_decisions=[DecisionKey(subject, decision) for decision in requested_decisions],
@@ -435,6 +409,10 @@ def _build_decision_plan(
     participant_failure_reasons: dict[str, str],
     target_cache_sha256: str,
 ) -> tuple[DecisionPlanContract, dict[str, dict[str, str]]]:
+    import numpy as np
+
+    from transfer.candidate_decision import row_column_target
+
     if dataset.metadata is None or dataset.identity_table is None:
         raise ValueError("Candidate decision plan requires metadata and participant identity.")
     selection_ids = dataset.metadata["selection_id"].astype(str).to_numpy()
@@ -500,6 +478,13 @@ def _build_decision_plan(
 
 
 def _validate_cached_candidate_labels(dataset) -> CandidateTaskContract:
+    import numpy as np
+
+    from data.candidate_task import (
+        candidate_task_contract_from_provenance,
+        validate_candidate_membership_metadata,
+    )
+
     if dataset.metadata is None or dataset.y is None:
         raise ValueError("Candidate cache requires metadata and binary labels.")
     contract = candidate_task_contract_from_provenance(dataset.provenance)
@@ -565,8 +550,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument(
         "--candidate-loss-weight",
         type=float,
-        default=0.0,
-        help="Weight of the differentiable row/column candidate ranking loss.",
+        default=None,
+        help="Sum-membership decision weight; explicit 0 keeps the same decision workset control.",
     )
     parser.add_argument(
         "--candidate-loss-temperature",
@@ -639,6 +624,49 @@ def main(argv: Sequence[str] | None = None) -> None:
             "use --no-fold-local-qc or --epoch-selection fixed_budget until "
             "QC fitting and refit support separate inner-training scopes"
         )
+
+    import numpy as np
+    import torch
+    from sklearn.metrics import roc_auc_score
+
+    from baselines.calibration import calibration_data_from_model, fit_weighted_logit_temperature
+    from data.artifact import FoldLocalArtifactPolicy, apply_fold_local_artifact_policy
+    from data.contract import assert_causal_p300_input_contract
+    from data.domain import source_domain_ids, source_domain_vocabulary
+    from data.epochs import epoch_row_identity_digest, loaded_epoch_cache_attestation
+    from data.qc_features import compute_epoch_qc_features
+    from models.adapters import source_domain_axis_from_record
+    from models.candidate_evidence import MEMBERSHIP_SCORE_METHOD
+    from models.n2p3net import N2P3Net
+    from models.splitbn import splitbn_config_from_record
+    from research.evaluation import (
+        build_evaluation_run_contract,
+        checkpoint_model_origin,
+        scratch_model_origin,
+    )
+    from train.device import get_device
+    from train.runtime import is_oom_error
+    from transfer.calibration_candidates import calibration_decision_groups, remap_decision_groups
+    from transfer.candidate_decision import decision_outcomes_at_repetition
+    from transfer.checkpoint import (
+        assert_checkpoint_target_identity_excluded,
+        checkpoint_architecture_record,
+        checkpoint_classifier_is_trained,
+        checkpoint_input_stats,
+        checkpoint_scores_to_llr,
+        checkpoint_training_contract,
+        predict_n2p3_checkpoint_with_features,
+    )
+    from transfer.cohort import read_subject_manifest, resolve_subject_scope
+    from transfer.decision_loss import DirectDecisionContractError
+    from transfer.outcomes import (
+        DecisionKey,
+        DecisionStatus,
+        build_decision_outcome_accounting,
+    )
+    from transfer.subject_adapter import SubjectAdapter, SubjectAdapterConfig
+    from transfer.within_subject import chronological_time_validation_split
+
     if args.cpu_threads is not None:
         if args.cpu_threads < 1:
             parser.error("--cpu-threads must be at least one")
@@ -646,7 +674,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         os.environ["MKL_NUM_THREADS"] = str(args.cpu_threads)
         os.environ["OPENBLAS_NUM_THREADS"] = str(args.cpu_threads)
         torch.set_num_threads(args.cpu_threads)
-    if args.candidate_loss_weight < 0.0:
+    if args.candidate_loss_weight is not None and (not np.isfinite(args.candidate_loss_weight) or args.candidate_loss_weight < 0.0):
         parser.error("--candidate-loss-weight must be non-negative")
     if args.candidate_loss_temperature <= 0.0:
         parser.error("--candidate-loss-temperature must be positive")
@@ -962,6 +990,13 @@ def main(argv: Sequence[str] | None = None) -> None:
         local_y = np.asarray(dataset.y[local_rows], dtype=np.int64)
         local_mask = trial_mask[local_rows]
         local_qc = None if qc_features is None else qc_features.subset(local_rows)
+        decision_scope = None
+        if args.candidate_loss_weight is not None:
+            authorized = np.zeros(dataset.n_epochs, dtype=bool)
+            authorized[pre_rows] = True
+            decision_scope = calibration_decision_groups(dataset, authorized)
+            if not decision_scope[0]:
+                raise ValueError(f"candidate loss requires authorized physical decisions: {decision_scope[3]['reason']}")
         artifact_audit = {"enabled": False, "scope": "known_calibration_decisions"}
         if args.fold_local_qc:
             local_X, local_mask, effective_train, artifact_audit = apply_fold_local_artifact_policy(
@@ -1058,7 +1093,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                     freeze_batchnorm_stats=not args.adapt_batchnorm,
                     input_statistics=normalization,
                     target_stat_weight=args.target_stat_weight,
-                    candidate_loss_weight=args.candidate_loss_weight,
+                    candidate_loss_weight=0. if args.candidate_loss_weight is None else args.candidate_loss_weight,
                     candidate_loss_temperature=args.candidate_loss_temperature,
                     as_mmd_lambda0=args.as_mmd_lambda0,
                     as_mmd_warmup_epochs=args.as_mmd_warmup_epochs,
@@ -1071,23 +1106,14 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
             calibration_rows = local_rows[effective_train]
             candidate_fit_kwargs: dict[str, object] = {}
-            if args.candidate_loss_weight > 0.0:
+            if decision_scope is not None:
+                groups, targets, weights, decision_ledger = decision_scope
                 candidate_fit_kwargs = {
-                    "candidate_ids": local_meta["candidate_id"].to_numpy(dtype=np.int64)[
-                        effective_train
-                    ],
-                    "selection_ids": local_meta["selection_id"]
-                    .astype(str)
-                    .to_numpy()[effective_train],
-                    "target_rows": local_meta["target_row"].to_numpy(dtype=np.int64)[
-                        effective_train
-                    ],
-                    "target_columns": local_meta["target_col"].to_numpy(dtype=np.int64)[
-                        effective_train
-                    ],
-                    "candidate_loss_num_rows": candidate_task.n_rows,
-                    "candidate_loss_num_columns": candidate_task.n_columns,
+                    "decision_groups": remap_decision_groups(groups, calibration_rows),
+                    "decision_targets": targets,
+                    "decision_weights": weights,
                 }
+                artifact_audit["decision_scope"] = decision_ledger
 
             as_mmd_fit_kwargs: dict[str, object] = {}
             if as_mmd_input_mode == "frozen_logits":
@@ -1495,6 +1521,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 "normalization": normalization,
                 "target_stat_weight": args.target_stat_weight,
                 "candidate_loss_weight": args.candidate_loss_weight,
+                "candidate_loss_score_kind": MEMBERSHIP_SCORE_METHOD if args.candidate_loss_weight is not None else None,
                 "candidate_loss_temperature": args.candidate_loss_temperature,
                 "as_mmd_lambda0": args.as_mmd_lambda0,
                 "as_mmd_warmup_epochs": args.as_mmd_warmup_epochs,
@@ -1610,6 +1637,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "normalization": normalization,
         "target_stat_weight": args.target_stat_weight,
         "candidate_loss_weight": args.candidate_loss_weight,
+        "candidate_loss_score_kind": MEMBERSHIP_SCORE_METHOD if args.candidate_loss_weight is not None else None,
         "candidate_loss_temperature": args.candidate_loss_temperature,
         "seed": args.seed,
         "environment": environment_record,

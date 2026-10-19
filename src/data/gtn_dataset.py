@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -15,27 +15,18 @@ from data.contract import (
     PAPER_GTN_DATA_CONTRACT,
     SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
 )
-from data.epochs import EpochDataset, PreprocessingSpec
+from data.epochs import EpochDataset, PreprocessingSpec, preprocessing_spec_from_contract
 from data.events import (
     ScheduledEventTimeline,
     candidate_repetition_indices,
     concatenate_event_timelines,
 )
 from data.gtn import GTNData, read_gtn_experiment
-from data.preprocess import PreprocessResult, preprocess
+from data.preprocess import PreprocessResult, execute_preprocessing
+from research.contracts import semantic_sha256
 
 GTN_CHANNELS = ("Fz", "Cz", "Pz")
-GTN_LMBC_PREPROCESSING = PreprocessingSpec(
-    name=DEFAULT_P300_DATA_CONTRACT.name,
-    sfreq=DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
-    l_freq=DEFAULT_P300_DATA_CONTRACT.l_freq,
-    h_freq=DEFAULT_P300_DATA_CONTRACT.h_freq,
-    tmin_ms=DEFAULT_P300_DATA_CONTRACT.tmin_ms,
-    tmax_ms=DEFAULT_P300_DATA_CONTRACT.tmax_ms,
-    n_times=DEFAULT_P300_DATA_CONTRACT.n_times,
-    baseline_mode=DEFAULT_P300_DATA_CONTRACT.baseline_mode,
-    reject_threshold_v=None,
-)
+GTN_LMBC_PREPROCESSING = preprocessing_spec_from_contract(DEFAULT_P300_DATA_CONTRACT)
 
 GTN_COHORT_CONTRACTS = {
     "offline": DEFAULT_P300_DATA_CONTRACT,
@@ -60,20 +51,7 @@ def gtn_preprocessing_for_cohort(cohort: str = "offline") -> PreprocessingSpec:
         raise ValueError(
             f"Unknown GTN cohort {cohort!r}; expected one of {sorted(GTN_COHORT_CONTRACTS)}."
         ) from None
-    return replace(
-        GTN_LMBC_PREPROCESSING,
-        name=contract.name,
-        sfreq=contract.sample_rate_hz,
-        l_freq=contract.l_freq,
-        h_freq=contract.h_freq,
-        tmin_ms=contract.tmin_ms,
-        tmax_ms=contract.tmax_ms,
-        n_times=contract.n_times,
-        baseline_mode=contract.baseline_mode,
-        signal_unit=contract.signal_unit,
-        filter_phase=contract.filter_phase,
-        causal_iir_initial_state=contract.causal_iir_initial_state,
-    )
+    return preprocessing_spec_from_contract(contract)
 
 
 @dataclass(frozen=True)
@@ -91,6 +69,7 @@ class PreparedGTNExperiment:
     channel_mask: np.ndarray
     source_sample_rate_hz: float
     source_reference: str
+    execution_receipt: dict | None = None
 
 
 def gtn_experiment_dirs(root: str | Path) -> tuple[Path, ...]:
@@ -143,15 +122,7 @@ def _prepare_gtn_experiment(
         selection_ids=np.repeat(selection_id, event_count),
         complete=True,
         online_causal=bool(result.online_causal),
-        timing_source=(
-            "gtn_nix_source_event_samples;epoched_resample;"
-            "epoch_right_edge;"
-            + (
-                "causal_forward_steady_state_preprocessing"
-                if result.online_causal
-                else "acausal_zero_phase_preprocessing"
-            )
-        ),
+        timing_source="gtn_nix_source_event_samples;" + result.timing_source,
         candidate_ids=candidates,
         target_candidate_ids=np.repeat(str(int(gtn.thought_number)), event_count),
         repetition_indices=repetitions,
@@ -181,6 +152,7 @@ def _prepare_gtn_experiment(
         channel_mask=np.asarray(result.channel_mask, dtype=bool),
         source_sample_rate_hz=float(gtn.metadata["sfreq"]),
         source_reference=str(gtn.metadata["source_reference"]),
+        execution_receipt=result.execution_receipt,
     )
 
 
@@ -190,31 +162,10 @@ def _preprocess_gtn_experiment(
     preprocessing: PreprocessingSpec,
 ) -> PreparedGTNExperiment:
     gtn = read_gtn_experiment(experiment_dir)
-    result = preprocess(
+    result = execute_preprocessing(
         gtn.raw,
         gtn.events,
-        sfreq=preprocessing.sfreq,
-        l_freq=preprocessing.l_freq,
-        h_freq=preprocessing.h_freq,
-        tmin=preprocessing.tmin_ms / 1000.0,
-        tmax=preprocessing.tmax_ms / 1000.0,
-        n_times=preprocessing.n_times,
-        reject_threshold=preprocessing.reject_threshold_v,
-        baseline_mode=preprocessing.baseline_mode,
-        trial_reference_window_ms=preprocessing.trial_reference_window_ms,
-        trial_reference_center=preprocessing.trial_reference_center,
-        trial_reference_scale=preprocessing.trial_reference_scale,
-        filter_method=preprocessing.filter_method,
-        filter_order=preprocessing.filter_order,
-        notch_freqs_hz=preprocessing.notch_freqs_hz,
-        notch_quality_factor=preprocessing.notch_quality_factor,
-        filter_phase=preprocessing.filter_phase,
-        causal_iir_initial_state=preprocessing.causal_iir_initial_state,
-        resample_domain=preprocessing.resample_domain,
-        resample_method=preprocessing.resample_method,
-        resample_npad=preprocessing.resample_npad,
-        resample_window=preprocessing.resample_window,
-        resample_pad=preprocessing.resample_pad,
+        preprocessing,
         channels=GTN_CHANNELS,
     )
     return _prepare_gtn_experiment(experiment_dir, gtn, result)
@@ -286,6 +237,14 @@ def build_gtn_epoch_dataset(
         metadata=pd.concat([item.metadata for item in prepared], ignore_index=True),
         provenance={
             "source": "gtn_nix",
+            **({"preprocessing_execution": {
+                "schema": "n2p3_preprocessing_execution_bundle/1",
+                "recordings": list({
+                    semantic_sha256(item.execution_receipt): item.execution_receipt
+                    for item in prepared if item.execution_receipt is not None
+                }.values()),
+                "unverified_inputs": sum(item.execution_receipt is None for item in prepared),
+            }} if any(item.execution_receipt is not None for item in prepared) else {}),
             "source_root": str(Path(root)),
             "source_experiments_requested": [str(path) for path in source_dirs],
             "source_experiments_used": [item.experiment_name for item in prepared],

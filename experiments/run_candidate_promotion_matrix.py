@@ -101,7 +101,6 @@ _IDENTITY_POLICIES = frozenset({"source", "source_or_global", "global"})
 _INFERENCE_SCOPES = frozenset({"conditional_frozen_models", "training_procedure"})
 _EUCLIDEAN_ALIGNMENT_MODES = frozenset({"none", "source", "target_calibration"})
 _EUCLIDEAN_REFERENCE_MODES = frozenset({"native_preserve", "common_average"})
-_EUCLIDEAN_ALIGNMENT_FIT_SCHEMA = "n2p3_euclidean_alignment_fit/1"
 _SOURCE_SAMPLER_KINDS = frozenset({"uniform", "target_similarity_diverse", "dense_pds"})
 _SAFE_COMPONENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -1932,7 +1931,7 @@ def build_dag(
 
 
 def _portable_path(path: Path, dag: PromotionDag) -> str:
-    resolved = path.resolve()
+    """Render the canonical paths supplied by plan loading and DAG construction."""
     roots = (
         ("$OUTPUT_ROOT", dag.plan.output_root),
         ("$PLAN_ROOT", dag.plan.resolution_root),
@@ -1940,11 +1939,11 @@ def _portable_path(path: Path, dag: PromotionDag) -> str:
     )
     for label, root in roots:
         try:
-            relative = resolved.relative_to(root.resolve()).as_posix()
+            relative = path.relative_to(root).as_posix()
         except ValueError:
             continue
         return label if not relative else f"{label}/{relative}"
-    return f"$EXTERNAL/{resolved.name}"
+    return f"$EXTERNAL/{path.name}"
 
 
 def _journal_argv(
@@ -2404,20 +2403,13 @@ def _load_attested_cache_input(
         else ()
     )
     raw_data_alignment = dataset.provenance.get("data_alignment")
-    if raw_data_alignment is None:
-        data_alignment = None
-        ea_reference_mode = None
-    elif not isinstance(raw_data_alignment, Mapping):
-        raise ValueError(f"{name} data_alignment provenance must be a JSON mapping.")
-    else:
-        data_alignment = dict(raw_data_alignment)
-        raw_reference_mode = data_alignment.get("reference_mode")
-        if raw_reference_mode is None:
-            ea_reference_mode = None
-        elif not isinstance(raw_reference_mode, str):
-            raise ValueError(f"{name} data_alignment.reference_mode must be a string.")
-        else:
-            ea_reference_mode = raw_reference_mode
+    if raw_data_alignment is not None:
+        raise ValueError(
+            f"{name} is a legacy physical EpochDataset carrying data_alignment provenance; "
+            "active promotion requires a separately typed EAFeatureArtifact route."
+        )
+    data_alignment = None
+    ea_reference_mode = None
     resolved_record = {
         "path": _portable_path(cache_path, dag),
         "cache_sha256": cache_sha256,
@@ -2485,39 +2477,11 @@ def _assert_euclidean_alignment_attestation(
                 "data_alignment provenance; a raw cache is required."
             )
         return
-    if source.data_alignment is None:
-        raise ValueError(
-            f"{field} declares mode={alignment.mode!r} but cache {arm_name!r} has no "
-            "data_alignment provenance."
-        )
-    schema = source.data_alignment.get("schema")
-    if schema != _EUCLIDEAN_ALIGNMENT_FIT_SCHEMA:
-        raise ValueError(
-            f"{field} requires cache {arm_name!r} data_alignment schema "
-            f"{_EUCLIDEAN_ALIGNMENT_FIT_SCHEMA!r}, got {schema!r}."
-        )
-    scope = source.data_alignment.get("scope")
-    if alignment.mode == "source":
-        if scope not in {"source_rows", "per_domain"}:
-            raise ValueError(
-                f"{field} mode='source' requires cache {arm_name!r} "
-                f"data_alignment.scope in ['source_rows', 'per_domain'], got {scope!r}."
-            )
-    else:
-        if scope != "target_calibration":
-            raise ValueError(
-                f"{field} mode='target_calibration' requires cache {arm_name!r} "
-                f"data_alignment.scope='target_calibration', got {scope!r}."
-            )
-    if (
-        alignment.reference_mode is not None
-        and source.ea_reference_mode != alignment.reference_mode
-    ):
-        raise ValueError(
-            f"{field} reference_mode={alignment.reference_mode!r} disagrees with "
-            f"cache {arm_name!r} data_alignment.reference_mode="
-            f"{source.ea_reference_mode!r}."
-        )
+    raise ValueError(
+        f"{field} declares mode={alignment.mode!r}, but the active promotion ingress "
+        "does not yet consume EAFeatureArtifact. Connect the typed artifact and its "
+        "parent replay attestation before admitting this arm."
+    )
 
 
 def _verify_inputs(dag: PromotionDag) -> dict[str, Any]:
@@ -2672,7 +2636,9 @@ def _dag_digest(dag: PromotionDag, resolved_inputs: Mapping[str, Any]) -> str:
     return semantic_sha256(record)
 
 
-def _initial_state(dag: PromotionDag, resolved_inputs: Mapping[str, Any]) -> dict[str, Any]:
+def _initial_state(
+    dag: PromotionDag, resolved_inputs: Mapping[str, Any], dag_digest: str,
+) -> dict[str, Any]:
     timestamp = _now()
     return {
         "schema": JOURNAL_SCHEMA,
@@ -2681,7 +2647,7 @@ def _initial_state(dag: PromotionDag, resolved_inputs: Mapping[str, Any]) -> dic
             "sha256": dag.plan.digest,
             "stage": "development",
         },
-        "dag_digest": _dag_digest(dag, resolved_inputs),
+        "dag_digest": dag_digest,
         "resolved_inputs": dict(resolved_inputs),
         "status": "running",
         "created_at": timestamp,
@@ -2710,6 +2676,7 @@ def _load_or_create_state(
     *,
     resume: bool,
     resolved_inputs: Mapping[str, Any],
+    dag_digest: str,
 ) -> dict[str, Any]:
     journal = _journal_path(dag)
     known_outputs = [task.output for task in dag.tasks]
@@ -2733,7 +2700,7 @@ def _load_or_create_state(
                 "promotion journal inputs changed; use a new output root rather than "
                 "resuming artifacts from different inputs."
             )
-        if state.get("dag_digest") != _dag_digest(dag, resolved_inputs):
+        if state.get("dag_digest") != dag_digest:
             raise ValueError("promotion journal belongs to a different resolved DAG.")
         state_tasks = _mapping(state.get("tasks"), "promotion journal tasks")
         if set(state_tasks) != {task.task_id for task in dag.tasks}:
@@ -2780,7 +2747,7 @@ def _load_or_create_state(
     if resume:
         # Starting a clean plan with --resume is harmless, but never adopts orphan files.
         pass
-    state = _initial_state(dag, resolved_inputs)
+    state = _initial_state(dag, resolved_inputs, dag_digest)
     _atomic_write_json(journal, state)
     return state
 
@@ -3267,6 +3234,7 @@ def execute_dag(
             dag,
             resume=resume,
             resolved_inputs=resolved_inputs,
+            dag_digest=resolved_dag_digest,
         )
         state["execution"] = {
             "max_workers": checkpoint_workers,

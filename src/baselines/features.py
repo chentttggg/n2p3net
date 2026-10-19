@@ -1,27 +1,13 @@
-"""模块：基线特征提取（Baseline Features）。
+"""经典基线共享特征：降采样、时间窗均值与target均值模板。
 
-职责（roadmap Phase 1）：
-    为经典/地板基线提供统一的特征提取：downsample、手工时间窗特征、grand-average 模板。
-    这是 SWLDA / 手工窗逻辑回归 / 模板匹配三个基线共享的地基（纯 numpy/scipy，无 torch）。
+输入(N,C,T)及显式sfreq、tmin；tmin用秒，window_ms用毫秒。
+时间索引按round转换；FFT降采样是整epoch算子，截取输出不缩短原始信号支持。
+模板只能用fit范围的target试次构建，预测阶段不得重新拟合。
+缺导由subset_channels选择实测通道，不将零占位当成真实特征。
+本模块不拟合分类器或xDAWN空间滤波。
 
-明确「不做」：
-    - 不涉及任何分类器（分类在 classic.py / riemann.py / deep.py）。
-    - 不做 xDAWN 空间滤波（那是 riemann.py 的职责，pyriemann 实现）。
-
-三思决策记录（供后续会话追溯）：
-    D-time-index    时间 ms → 采样点索引：idx = (ms/1000 − tmin)·sfreq（四舍五入）。tmin 统一为秒
-                     （与 data/preprocess.py 一致，默认 −0.2 s = −200 ms）。
-    D-downsample    downsample 用 scipy.signal.resample（FFT 重采样，沿时间轴）：支持非整数
-                     decimation factor（256→20Hz 的 12.8），抗混叠优于朴素平均池化。SWLDA 经典实现
-                     即 downsample 到 ~20Hz 降维。
-    D-window-mean   手工窗地板用「窗内均值」作特征（比峰值稳、抗噪声），对应 P8 的免费地板定位。
-    D-template      grand-average 模板 = target 试次的逐通道均值（epoch 对齐后直接平均），
-                     是模板匹配地板（P8）的核心；用 Pearson 相关度量（见 classic.TemplateMatching）。
-
-契约（输入 → 输出）：
-    均以单试次 X ∈ R^{N×C×T}（float32，采样率 sfreq、起点 tmin）为输入，输出 numpy 特征/模板。
-
-依赖的决策：roadmap Phase 1（基线复现）、constitution P8（免费地板）。
+物理输入见doc/input_contract_math.zh.md；拟合与评估边界见doc/research_program.zh.md；
+基线职责和执行配方见doc/technical_structure.zh.md及doc/roadmap.zh.md。
 """
 
 from __future__ import annotations
@@ -40,13 +26,18 @@ def time_to_index(ms: float, sfreq: float, tmin: float) -> int:
     return int(round((ms / 1000.0 - tmin) * sfreq))
 
 
+def downsampled_time_points(n_times: int, sfreq: float, target_hz: float = 20.0) -> int:
+    """Output length of the frozen FFT downsampling map, including no upsampling."""
+    return min(n_times, int(round(n_times * target_hz / sfreq)))
+
+
 def downsample_epochs(X: np.ndarray, sfreq: float, target_hz: float = 20.0) -> np.ndarray:
     """downsample 单试次 (N,C,T) → (N,C,T_down)，目标 target_hz（D-downsample）。"""
     X = np.asarray(X, dtype=float)
     if X.ndim != 3:
         raise ValueError(f"X 须为 (N,C,T)，得到 {X.shape}。")
     T = X.shape[2]
-    T_down = int(round(T * target_hz / sfreq))
+    T_down = downsampled_time_points(T, sfreq, target_hz)
     if T_down >= T:
         return X.astype(np.float32, copy=False)
     return resample(X, T_down, axis=2).astype(np.float32)

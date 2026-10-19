@@ -1044,29 +1044,7 @@ def _causal_run_dataset(
             "selection_id": f"{session_id}:{run_id}",
             "reference": task.source_reference,
         },
-        sfreq=task.preprocessing.sfreq,
-        l_freq=task.preprocessing.l_freq,
-        h_freq=task.preprocessing.h_freq,
-        tmin=task.preprocessing.tmin_ms / 1000.0,
-        tmax=task.preprocessing.tmax_ms / 1000.0,
-        n_times=task.preprocessing.n_times,
-        reject_threshold=task.preprocessing.reject_threshold_v,
-        baseline=None,
-        baseline_mode=task.preprocessing.baseline_mode,
-        trial_reference_window_ms=task.preprocessing.trial_reference_window_ms,
-        trial_reference_center=task.preprocessing.trial_reference_center,
-        trial_reference_scale=task.preprocessing.trial_reference_scale,
-        filter_method=task.preprocessing.filter_method,
-        filter_order=task.preprocessing.filter_order,
-        notch_freqs_hz=task.preprocessing.notch_freqs_hz,
-        notch_quality_factor=task.preprocessing.notch_quality_factor,
-        filter_phase=task.preprocessing.filter_phase,
-        causal_iir_initial_state=task.preprocessing.causal_iir_initial_state,
-        resample_domain=task.preprocessing.resample_domain,
-        resample_method=task.preprocessing.resample_method,
-        resample_npad=task.preprocessing.resample_npad,
-        resample_window=task.preprocessing.resample_window,
-        resample_pad=task.preprocessing.resample_pad,
+        preprocessing=task.preprocessing,
         channels=None if task.channels is None else list(task.channels),
         montage=task.montage,
     )
@@ -1092,6 +1070,8 @@ def _causal_run_dataset(
             "source": "moabb_raw_causal_p300",
             "dataset_class": task.dataset_class,
             **dict(provenance),
+            **({"preprocessing_execution": record.metadata["preprocessing_execution"]}
+               if "preprocessing_execution" in record.metadata else {}),
             "source_reference": task.source_reference,
             "source_sample_rate_hz": float(raw.info["sfreq"]),
             "model_input_sample_rate_hz": task.preprocessing.sfreq,
@@ -1740,6 +1720,8 @@ def prepare_moabb_p300(
     from moabb.paradigms import P300
 
     preprocessing.validate()
+    if preprocessing.zero_phase_edge_policy != "legacy":
+        raise ValueError("MOABB high-level ingress cannot execute zero_phase_edge_policy; use raw ingress")
     if preprocessing.notch_freqs_hz and preprocessing.filter_phase != "forward":
         raise ValueError("MOABB notch filtering requires the native causal raw ingress; the offline P300 paradigm cannot execute this declaration")
     if not isinstance(raw_artifact_attestation, RawArtifactAttestation):
