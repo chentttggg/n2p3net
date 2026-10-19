@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_at_user_request",
-  "recorded_at": "2026-10-20T00:08:07.049166+08:00",
+  "recorded_at": "2026-10-20T00:21:48.909468+08:00",
   "user_request": "resume_research_then_resolve_repository_audit_before_autonomous_continuation",
   "research_worktree": "D:\\BCI\\n2p3-net",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -506,7 +506,7 @@
       },
       "candidate_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
       "execution": {
-        "state": "complete13people13folds_exit0_independent_runtime_origin_checker_revision_under_review",
+        "state": "complete13people13folds_exit0_named_checker_accepted_unique_final_issue_waiter_live",
         "source_product_kind": "same_fit_full_response_data_factor_v2",
         "launch": {
           "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\ROOT_LAUNCH.json",
@@ -580,43 +580,7 @@
         },
         "scientific_checkpoint_present": true,
         "scientific_acceptance_issued": false,
-        "last_observation": {
-          "time": 1792421914.4523954,
-          "action": "pause_external_gpu_pressure",
-          "host_cpu_percent": 27.1,
-          "host_memory_percent": 48.7,
-          "owned_cpu_percent_of_host": 0.0,
-          "gpu_observation": {
-            "observed_time": 1792421912.1642966,
-            "status": "observed",
-            "devices": [
-              {
-                "index": 0,
-                "utilization_percent": 79.0,
-                "memory_total_mib": 8151.0,
-                "memory_used_mib": 6911.0,
-                "memory_percent": 84.78714268187953
-              }
-            ]
-          },
-          "verified_live_identities": [
-            {
-              "role": "scientific_process",
-              "pid": 2016,
-              "created": 1792416854.9401252,
-              "status": "stopped",
-              "cpu_seconds": 20.109375
-            },
-            {
-              "role": "supervisor",
-              "pid": 35752,
-              "created": 1792416783.4605472,
-              "status": "running",
-              "cpu_seconds": 1874.015625
-            }
-          ]
-        },
-        "next_action": "Accept named generic runtime-origin checker revision and issue complete original frozen9a source acceptance; preserve scientific outputs and old seals.",
+        "next_action": "Keep the same verified waiter70204/birth1792426820.930288; it launches the final cold issuer once all actual resource gates pass. Read terminal/acceptance before target dispatch; do not restart the waiter or retrain.",
         "person_states": {
           "complete": 13
         },
@@ -666,6 +630,37 @@
           "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_CHECKER_RUNTIME_ORIGINS_SEAL.json",
           "bytes": 9671,
           "sha256": "4aca4e348faf9cf482d9239be2c5d51fde5abaea6c1cf7d08e15f9bd781fe570"
+        },
+        "runtime_origin_revision_acceptance": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\runtime-origins-revision\\independent-review\\ACCEPTANCE.json",
+          "bytes": 11482,
+          "sha256": "8175f21a23c4b5b0260c3f8b7ff34976e4217af9ccc9cb15fc9a18f0eb18ef79"
+        },
+        "final_issue_waiter": {
+          "owner": {
+            "pid": 70204,
+            "created": 1792426820.930288
+          },
+          "tool_session": 30877,
+          "launch": {
+            "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\final-source-issue-waiter\\launch.json",
+            "bytes": 3536,
+            "sha256": "537f6a29550e5537dca83542f29f4cdc5eb284da583c71b8cc30c859e7c0dd26"
+          },
+          "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\final-source-issue-waiter\\progress.json",
+          "terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\final-source-issue-waiter\\terminal.json",
+          "resource_ledger": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\final-source-issue-waiter\\resources.jsonl",
+          "last_root_observation": {
+            "verified_live": true,
+            "status": "waiting_resources",
+            "checker_launch_count": 0,
+            "updated_utc": "2026-10-19T16:21:22.955024+00:00",
+            "CPU_percent": 9.4,
+            "RAM_percent": 47.7,
+            "GPU_percent": 86.0,
+            "VRAM_percent": 43.84738068948595
+          },
+          "before_checker_start_stop_request": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\final-source-issue-waiter\\stop-request.json"
         }
       },
       "code_preparation": {
@@ -1184,7 +1179,7 @@
       }
     },
     "adult_joint_history": {
-      "state": "complete_actual_caller_review_and_functional_joint_seam_implementation_in_progress",
+      "state": "bounded_actual_functional_C_D_implementation_and_full_vertical_validation_in_progress",
       "owner": "/root/audit_disposition_refresh",
       "candidate_root": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/adult-programme-input/adult-joint-history/candidate",
       "handoff": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\ADULT_JOINT_HISTORY_HANDOFF.zh.md",
@@ -1192,9 +1187,10 @@
       "next_exit": "preserve original joint QR/score/noise/local kernel and all actual multi-C/held/session-q/clock/drift contracts; complete save/cold/parent-readmission and typed nine-choice publishing",
       "candidate_isolation": "C core files moved by SHA from shared B namespace; B uses its own explicit production whitelist",
       "confirmed_preintegration_issues": [
-        "Legacy physical numeric replay needs controlled original reader; actual bound2d code-only closure prepared.",
-        "Zero-observation P full flat-axis measure and all-candidate segment coverage fixed and independently verified.",
-        "Original point01 halted for confirmed unbounded cache/redundant branch work; incomplete receipt retained; bounded lifecycle and exact equivalence under implementation."
+        "Legacy cold reader control has bitexact old closure replay; final reader integration review remains.",
+        "P flat axes and all-candidate segment coverage fixed and independently verified.",
+        "Bounded point02 completed with finite objective and full35dim score; responsibility normalization exposed common-log cancellation, universal relative-log fix in progress.",
+        "Actual256row profile identifies repeated physical-drift Fraction rounding and exact-zero-column residual work; bounded cache and equivalent-state numeric workspace preserve original9 states."
       ]
     },
     "future_target_checker": {
@@ -1287,10 +1283,38 @@
       "requested_held_cells": 4914,
       "new_target_fits_started": 0,
       "readiness": "newfixedtargetchecker component accepted; bind complete source grant/resources/command/supervision_inputs2/launch, then actual execution seal and fullrun"
+    },
+    "adult_joint_personal": {
+      "state": "independent_E_vertical_implementation_dispatched",
+      "owner": "/root/history_slice_integration_review",
+      "candidate_root": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/adult-programme-input/adult-joint-personal",
+      "production_file_scope": "src/research/adult_joint_personal.py; isolated from six C/D owner files",
+      "upstream": "integrated readonly personal source relation@ece7586 and actual C/D interfaces",
+      "scope": "actual fresh A source exclusion, original C operand equivalence despite changed held scope SHA, fit-freeze-time and new held permissions, original source plus one C history and typed nine-choice save/cold/replay",
+      "new_source_or_C_fit_authority": false
+    },
+    "target_memory_lifecycle": {
+      "state": "full_actor_static_live_array_budget_and_independent_lifecycle_review_in_progress",
+      "owners": [
+        "/root/workstation_failures",
+        "/root/audit_repository_convergence"
+      ],
+      "runtime": "fixed2d target-runtime/checkout; no in-place mutations",
+      "source_shared_factor_rank": 992,
+      "budget_role": "conservative static estimate, not RSS measurement; same fit/cold/live and current/replay tables must be separated by actual lifetime",
+      "next_exit": "review exact shapes and simultaneity, then accept full actor reservation or named semantics-preserving lifecycle improvement; never lower declared reservation to force admission"
+    },
+    "source_latent_marginalization_design": {
+      "state": "independent_math_and_actual_caller_investigation",
+      "owner": "/root/adult_population_transport_independent",
+      "scope": "fixed full source496coefficients/992Gaussian columns; test exact nuisance-prior null marginalization without dropping weak directions or family semantics, including actual downstream eta effects and floating-point law/error correspondence",
+      "implementation_authorized": false,
+      "original_source_and_target_artefacts_unchanged": true,
+      "current_matrix_launch_dependency": false
     }
   },
   "next_actions": [
-    "Finish independent generic runtime-origin checker review and actual complete source acceptance; scientific13people/13folds already complete, no retraining.",
+    "Follow the unique verified-live final source issue waiter to its actual terminal and accepted complete grant;13people/13folds already complete, no retraining.",
     "Bind accepted source grant to fixed2d target runtime and exact original819panel, resolve actual resources and seal new v2 execution, then execute all78Cfits/4914held cells.",
     "Complete bounded C query caches and exact equivalent-state reuse, original-reader legacy exit, C save/cold/actual parent readmission, D full history and E typed new-session inference.",
     "Integrate readonly fixed-source exclusion relation for new personal queries after source/store review; preserve original producers."
@@ -1304,7 +1328,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T16:08:07.049166+00:00",
+  "last_updated_utc": "2026-10-19T16:21:48.909468+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
