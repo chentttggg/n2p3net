@@ -526,7 +526,8 @@
       "exit_code": 0,
       "source_changed_during_run": [],
       "path": "D:/BCI/artifacts/research-deliveries/repository-validation/postintegration-root/focused-composition-02/execution.json"
-    }
+    },
+    "main_materialization": "Prepared plan only; main source/index/ref unchanged. Refresh target after current policy/checkpoint change."
   },
   "active_scientific_work": {
     "population_source": {
@@ -548,7 +549,20 @@
       "actual_source_fits": 0,
       "actual_population_complete_hyperfits": 0,
       "latest_helper_and_eleventh_test": "unexecuted_WIP",
-      "candidate_integration": "accepted_final_source_closure159_and_six_source_files; actual execution not yet launched"
+      "candidate_integration": "accepted_final_source_closure159_and_six_source_files; actual execution not yet launched",
+      "execution": {
+        "state": "stopped_by_user_local_training_not_authorized",
+        "stop_receipt": "D:/BCI/artifacts/research-deliveries/source-response-states/audited-execution-source/USER_STOP.json",
+        "original_programme_checkpoint": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/actual-source-programme/checkpoint.json",
+        "tool_session": 94293,
+        "verified_programme_pid": 16484,
+        "verified_processes_stopped": 2,
+        "verified_processes_remaining": 0,
+        "all_requested_people": 13,
+        "all_requested_folds": 13,
+        "resume_on_local": false,
+        "completed_artifacts_and_failure_evidence": "retained in original attempt; not promoted to complete source execution"
+      }
     },
     "joint_response_noise": {
       "checkpoint": {
@@ -620,10 +634,10 @@
     }
   },
   "next_actions": [
-    "Commit accepted audit/scientific composition and freeze actual code-only source.",
-    "Launch complete13 person fits and13 source-only folds from the fresh source manifest with measured local CPU/memory admission.",
-    "Materialize reviewed source in main with protected original bytes/index and CAS ref; preserve raw/frozen/recovery payloads.",
-    "Obtain actual joint optimization/codec/first-held typed replay, then run all4914 new cells and retain9828 baseline diagnostics with original producers."
+    "Continue code integration, source/caller review and lightweight checks only.",
+    "Before any further training or large numerical computation, request cloud resources and wait for user authorization.",
+    "Preserve original interrupted local source attempt, investigate its reported PARCOR failure by code review, and prepare cloud execution with actual source/resource identity.",
+    "Refresh the main materialization plan after this new local-computation policy commit; the earlier accepted-main plan is now stale."
   ],
   "active_local_checks": [],
   "folder_cleanup_review": {
@@ -634,6 +648,11 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T05:43:55Z",
-  "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json"
+  "last_updated_utc": "2026-10-19T05:50:48Z",
+  "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
+  "local_computation_policy": {
+    "user_instruction": "Training and large research computations require asking for cloud resources first. Local work is code review and lightweight verification only.",
+    "local_training_allowed": false,
+    "cloud_training_launch_requires_user_resource_authorization": true
+  }
 }
