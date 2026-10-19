@@ -281,10 +281,15 @@
       "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
     }
   },
-  "active_agents": {},
+  "active_agents": {
+    "source_slice_integration_review": "Code-only explicit source input-location projection; external candidate, no EEG or fitting.",
+    "joint_slice_integration_review": "Code-only named warm-start/first-held caller readiness; external candidate, no numerical execution.",
+    "execution_failures": "Code-only final execution source closure and reviewed freeze builder; external candidate, no numerical execution."
+  },
   "cloud": {
-    "state": "not_used_no_SSH",
-    "ownership": "separate_cloud_chat"
+    "state": "user_will_provide_later_code_work_only",
+    "ownership": "separate_cloud_chat",
+    "SSH_attempted_after_user_resource_boundary": false
   },
   "erp_runtime_repairs": {
     "path": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\erp_runtime_repairs.json",
@@ -292,7 +297,7 @@
     "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
     "commit": "a6f5750"
   },
-  "integration_head": "7ac2add12a89c731f79a8e8f3e8ffbf12e492540",
+  "integration_head": "7fc0846",
   "concurrency_authorization": "later user allowed more threads after the temporary six-agent limit; seven actual parallel roles used for independent scientific slices",
   "execution_priority": "resolve_current_repository_audit_then_resume_full_population_and_joint_history_matrix",
   "accepted_native_input_source_commit": "811fb18dcbde94b9903ee8cce0df4bee16466e4a",
@@ -389,8 +394,16 @@
   },
   "pending_root_integrations": {
     "cloud_input_projection": {
-      "state": "code work may continue; no cloud provision or training authorization yet",
-      "requirement": "Preserve physical source bytes/identities and complete13person13fold4914cell scope while projecting explicit D-drive metadata paths to actual cloud storage."
+      "state": "external code candidate in progress",
+      "requirement": "Preserve input bytes/identities, complete13person13fold4914cell scope and explicit local-to-cloud locations."
+    },
+    "joint_cloud_code_readiness": {
+      "state": "source/caller review in progress",
+      "requirement": "Reuse saved numeric initial point and current fit/save/load/first-held chain without local execution."
+    },
+    "combined_source_closure": {
+      "state": "static source audit in progress",
+      "requirement": "Final science plus cloud execution closure needs fresh exact review and future code-only freeze."
     }
   },
   "confirmed_Lean_error_handoff": {
@@ -438,7 +451,7 @@
     "new_requested_score_cells": 4914,
     "completed_external_four_method_anchor_cells": 9828,
     "total_six_method_cells": 14742,
-    "new_source_programme": "13 person likelihood fits once,13 folds each other12; actual fits not started",
+    "new_source_programme": "13 person likelihood fits once,13 folds each other12; stopped local attempt has zero completed source models; fresh cloud execution pending.",
     "H2_C68_scope": "small development connection only"
   },
   "repository_audit": {
@@ -448,7 +461,7 @@
     "bundle": "D:/BCI/artifacts/research-deliveries/repository-preservation/BUNDLE_RECEIPT.json",
     "code_snapshot": "D:/BCI/artifacts/research-deliveries/repository-preservation/CODE_SNAPSHOT_MANIFEST.json",
     "fixture": "nine_focused_cases_passed; actual_20Hz_dimension_and_explicit_fixed_selection_metadata",
-    "training_launch": "deferred_until_execution_and_input_audit_slices_accepted",
+    "training_launch": "Await user-provided cloud, explicit input projection and refreshed execution source freeze.",
     "accepted_canonical_commits": {
       "fixture_and_recovery": "6aebbaa",
       "lossless_trace": "602383c",
@@ -466,15 +479,7 @@
     "Git_compaction": "D:/BCI/artifacts/research-deliveries/repository-preservation/GIT_COMPACTION_RECEIPT.json",
     "formal_recovered_protected_inputs": 329,
     "formal_current_source_status": "source_changed_not_revalidated; original proof bytes intact; current-target compile mode available",
-    "whole_audit_suite": "not_run_yet; final_broad_validation_after_remaining_interfaces_are_integrated",
-    "main_checkout_reconciliation": "not_applied; executable main source and index preserved; cleanup review CSV/Markdown exported under ignored tmp/audit",
     "finding_disposition_draft": "D:/BCI/artifacts/research-deliveries/repository-audit-resolution-final/DELIVERY_MANIFEST.json",
-    "remaining_original_scope": [
-      "03 selection-label relation and actual decision-forward budget / right-censor adjudication",
-      "05 source resume immutable identity/refit selection and startup wrapper / finite fold summary",
-      "G1 P2 exact current-contract classification with narrow confirmed fixes",
-      "one final combined validation, source pin/commit/main convergence and owned obsolete-build cleanup"
-    ],
     "latest_combined_validation": {
       "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-validation\\canonical-final-01\\TERMINAL.json",
       "status": "interrupted",
@@ -490,7 +495,8 @@
       "path": "D:/BCI/artifacts/research-deliveries/repository-validation/postintegration-root/focused-composition-02/execution.json"
     },
     "main_materialization": "doc/assets/research_resume_20261012/main_materialization_integration.json",
-    "main_materialization_previous_plan_status": "superseded_by_accepted_main_working_bytes"
+    "main_materialization_previous_plan_status": "superseded_by_accepted_main_working_bytes",
+    "resolution_binding": "doc/assets/research_resume_20261012/repository_audit_resolution.json"
   },
   "active_scientific_work": {
     "population_source": {
@@ -509,10 +515,8 @@
         "bytes": 4503,
         "sha256": "c3a1f7dfcf58a04aaf3a68053719b4be330e074bdfcd2622c8a0310238c4950c"
       },
-      "actual_source_fits": 0,
       "actual_population_complete_hyperfits": 0,
-      "latest_helper_and_eleventh_test": "unexecuted_WIP",
-      "candidate_integration": "accepted_final_source_closure159_and_six_source_files; actual execution not yet launched",
+      "candidate_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
       "execution": {
         "state": "stopped_by_user_local_training_not_authorized",
         "stop_receipt": "D:/BCI/artifacts/research-deliveries/source-response-states/audited-execution-source/USER_STOP.json",
@@ -533,7 +537,8 @@
         "local_training_allowed": false,
         "completed_source_models_in_stopped_attempt": 0,
         "user_cloud_response": "Code work first; cloud later."
-      }
+      },
+      "completed_source_models": 0
     },
     "joint_response_noise": {
       "checkpoint": {
@@ -566,8 +571,7 @@
       },
       "old_v2_parameters": "not_saved_unknown",
       "G1_and_held": "not_executed",
-      "latest_narrow_exception_revision": "unverified_WIP",
-      "code_integration": "accepted_direct_innovation_and_same_image_codec; no new optimizer execution"
+      "code_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json"
     },
     "history": {
       "handoff": {
@@ -586,8 +590,8 @@
         "sha256": "bd2d921b3e2a5078c40599687a5fc083f987e86bf33577640ebb312b249b6a17"
       },
       "genuine_fit_to_held": "not_executed",
-      "latest_recipe": "not_independently_accepted",
-      "remaining": "compact native statistics, transition trace integration, batch throughput and actual byte envelope"
+      "remaining": "Cloud genuine fit to first held and typed replay; actual batch throughput and byte envelope.",
+      "code_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json"
     },
     "transition_trace": {
       "checkpoint": {
@@ -600,7 +604,7 @@
         "bytes": 4198,
         "sha256": "d3c9a52b18d20a37d72654c43e3154110b230b78eb725c6be1adf43608ddb3ae"
       },
-      "candidate_integration": "not_accepted",
+      "candidate_integration": "doc/assets/research_resume_20261012/transition_trace_integration.json",
       "complete_original_science_arrays": "preserved in existing golden and fresh-process evidence"
     }
   },
@@ -619,12 +623,12 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T06:47:51Z",
+  "last_updated_utc": "2026-10-19T06:59:53.536030+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "Training and large research computations require asking for cloud resources first. Local work is code review and lightweight verification only.",
     "local_training_allowed": false,
     "cloud_training_launch_requires_user_resource_authorization": true
   },
-  "integration_head_role": "Accepted byte-restoration base; current follow-up code is pinned in the conditioning/cloud integration bindings."
+  "integration_head_role": "Last committed code/retirement base before this metadata refresh; exact follow-up code is pinned in the integration bindings."
 }

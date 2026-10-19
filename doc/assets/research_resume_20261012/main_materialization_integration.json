@@ -42,5 +42,10 @@
   ],
   "original_raw_inputs_results_and_paused_checkpoints": "preserved",
   "training_performed_by_materialization": 0,
-  "old_research_worktree_retirement": "doc/assets/research_resume_20261012/research_worktree_retirement.json"
+  "old_research_worktree_retirement": "doc/assets/research_resume_20261012/research_worktree_retirement.json",
+  "temporary_bare_candidate_retirement": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\main-eol-reconciliation\\ROOT_BARE_RETIREMENT.json",
+    "bytes": 1284,
+    "sha256": "bef96d4b79f992fa861d42e2a2627337658f72a99847c784148fced2dafa690d"
+  }
 }
