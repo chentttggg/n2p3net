@@ -281,7 +281,10 @@
       "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
     }
   },
-  "active_agents": {},
+  "active_agents": {
+    "history_slice_integration_review": "Investigating measured source JSON streaming bottleneck with original exact-byte protocols; current frozen programme continues.",
+    "audit_repository_convergence": "Prepare independent actual13person/13fold source execution acceptance; issue only after genuine complete outputs and owner retirement."
+  },
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
     "ownership": "separate_cloud_chat",
@@ -293,7 +296,7 @@
     "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
     "commit": "a6f5750"
   },
-  "integration_head": "7fc0846",
+  "integration_head": "03974fb",
   "concurrency_authorization": "later user allowed more threads after the temporary six-agent limit; seven actual parallel roles used for independent scientific slices",
   "execution_priority": "resolve_current_repository_audit_then_resume_full_population_and_joint_history_matrix",
   "accepted_native_input_source_commit": "811fb18dcbde94b9903ee8cce0df4bee16466e4a",
@@ -388,14 +391,7 @@
     "process_state": "parent and workers exited normally; original handle33930 exit0",
     "extra_legacy_NN_tuning_planned": false
   },
-  "pending_root_integrations": {
-    "population_target_matrix_driver": {
-      "state": "R2 independently accepted; root source review/integration pending",
-      "directory": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/population-matrix-preparation",
-      "requirement": "78 genuine C fits, original63 held each, complete4914 denominator and independent complete source acceptance.",
-      "review": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/independent-population-matrix-preparation/REVIEW_RECEIPT.json"
-    }
-  },
+  "pending_root_integrations": {},
   "confirmed_Lean_error_handoff": {
     "input": {
       "path": "D:\\BCI\\n2p3-net\\doc\\assets\\lean_gaussian_20261016\\research_error_handoff_01.json",
@@ -528,8 +524,8 @@
         "supervision_progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\progress.json",
         "supervision_terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\terminal.json",
         "supervisor": {
-          "pid": 64940,
-          "created": 1792402344.285771
+          "pid": 11260,
+          "created": 1792402344.3164961
         },
         "requested_people": 13,
         "requested_folds": 13,
@@ -540,7 +536,28 @@
         "completed_source_models": 0,
         "completed_folds": 0,
         "scientific_acceptance_issued": false,
-        "next_action": "Monitor real saved source/fold progress and utilization, then independently accept complete execution before target dispatch."
+        "next_action": "Monitor real saved source/fold progress and utilization, then independently accept complete execution before target dispatch.",
+        "outer_python_launcher": {
+          "pid": 64940,
+          "created": 1792402344.285771
+        },
+        "owned_launch": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\launch.json",
+          "bytes": 2879,
+          "sha256": "4d1633da44e814ef00fd17e92099a4d998ad2de3979335c1d413f4d7f306e0b7"
+        },
+        "last_observation": {
+          "time": 1792402735.0495615,
+          "action": "running",
+          "host_cpu_percent": 19.3,
+          "host_memory_percent": 58.4,
+          "owned_cpu_percent_of_host": 3.125887693938113
+        },
+        "profile_evidence": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\SOURCE_PROFILE.raw",
+          "bytes": 93840,
+          "sha256": "e1bac9ea9f2016295b0784458603acc4d1c314198a429c3558050c2502357ac8"
+        }
       },
       "code_preparation": {
         "conditioning": "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
@@ -679,8 +696,28 @@
         "sha256": "bd2d921b3e2a5078c40599687a5fc083f987e86bf33577640ebb312b249b6a17"
       },
       "genuine_fit_to_held": "not_executed",
-      "remaining": "Cloud genuine fit to first held and typed replay; actual batch throughput and byte envelope.",
-      "code_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json"
+      "remaining": "Complete source independent acceptance, genuine full target joint fitting and typed replay under measured local resources.",
+      "code_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
+      "matrix_driver": "doc/assets/research_resume_20261012/population_joint_matrix_integration.json",
+      "requested_panel_preparation": {
+        "state": "completed_original819panel_exit0_owned_tree_retired",
+        "acceptance": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\REQUESTED_PANEL_ACCEPTANCE.json",
+          "bytes": 3586,
+          "sha256": "9078dcb64af0142012cb88e574563b9fe6798ac63c8ee0dc152b1421df2f55f5"
+        },
+        "panel": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\requested-panel\\REQUESTED_PANEL.json",
+          "bytes": 1614765,
+          "sha256": "6732e296cce03f21f8167a09ef08879361003ae85349029691960c00e23b9766"
+        },
+        "source_snapshot": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\source\\source.manifest.json",
+          "bytes": 93459,
+          "sha256": "844083da6b472f0855cc90985ebc2ee70c0b4e25f399bb3200508cf39922343a"
+        },
+        "fit_calls": 0
+      }
     },
     "transition_trace": {
       "checkpoint": {
@@ -698,10 +735,10 @@
     }
   },
   "next_actions": [
-    "Monitor new complete13person/13fold local source programme below80percent whole-host resources; preserve real failures and completed artifacts.",
-    "Root review and integrate independently accepted R2 full target driver; prepare original819requested panel.",
-    "Independently accept complete source execution, then genuine joint fit/first-held/typed replay and complete4914new cells; original9828baseline remains diagnostic.",
-    "Cloud input-location code accepted; bind actual roots and newly projected recipe only when cloud resources are supplied."
+    "Monitor complete13person/13fold source below80percent whole-host usage; original819requested panel preparation is complete.",
+    "Review measured serialization throughput candidate when available; preserve running programme and original protocols.",
+    "Independently accept complete source execution, then execute genuine full78fit/4914cell target matrix with its accepted driver and frozen source.",
+    "Cloud input projection waits for actual authorized roots; existing9828baseline diagnostics retain original producers."
   ],
   "active_local_checks": [],
   "folder_cleanup_review": {
@@ -712,7 +749,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T09:33:36.226288+00:00",
+  "last_updated_utc": "2026-10-19T09:40:49.220841+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
