@@ -237,14 +237,18 @@ def create_recording_quality_report(session_dir, output_dir, *, loader=load_brai
               "request": request or {}, "notes": [], "sections": [], "plots": [],
               "software": {name: importlib.metadata.version(name) for name in ("numpy", "scipy", "mne", "matplotlib")},
               "generator_sha256": file_sha256(Path(__file__))}
+    validated = None
     try:
+        if callable(epoch_quality):
+            raise ValueError("quality reports accept frozen QC state, not a fitting callback")
         notify(5, "检查录制文件与采集合同")
         validated = validate_brainsync_bids_recording(root)
         device = validated.manifest.get("device")
         device = device if isinstance(device, dict) else {}
         report.update(session_id=validated.session_id, subject_id=validated.subject_id,
                       simulation_status="declared_mock" if device.get("transport") == "mock" else "not_declared")
-        report["input_sha256"] = {"raw": file_sha256(validated.bids.raw_path), "events": file_sha256(validated.bids.events_path)}
+        binding = validated.bids.content_record()["files"]
+        report["input_sha256"] = {"raw": binding["recording"]["sha256"], "events": binding["events_tsv"]["sha256"]}
         notify(20, "生成原始信号和频谱图")
         raw_summary, plots = _raw_diagnostics(validated, directory)
         report.update(raw=raw_summary, plots=plots)
@@ -263,7 +267,7 @@ def create_recording_quality_report(session_dir, output_dir, *, loader=load_brai
             raise ValueError("quality reports require the target-free recording loader")
         if input_validator is not None:
             input_validator(dataset)
-        fitted = epoch_quality() if callable(epoch_quality) else epoch_quality
+        fitted = epoch_quality.get("epoch") if isinstance(epoch_quality, dict) else epoch_quality
         counts, qc_record, channels, blocks, plots = _epoch_diagnostics(
             dataset, fitted, directory, [marker.block_id for marker in validated.bids.stimuli])
         report.update(counts=counts, epoch_quality=qc_record, epoch_channels=channels, blocks=blocks,
@@ -304,8 +308,7 @@ def create_recording_quality_report(session_dir, output_dir, *, loader=load_brai
             report["notes"].append("未配置冻结epoch QC模型；本报告仅计算共享质量特征和恒值诊断，不根据本次数据拟合或调整门限。")
         elif qc_record["method"] == "fold_local_ptp_cv":
             report["notes"].append("本次按历史相对幅度QC模型重放；其分布超界不等于伪迹已得到独立证实。")
-        if report["input_sha256"] != {"raw": file_sha256(validated.bids.raw_path), "events": file_sha256(validated.bids.events_path)}:
-            raise ValueError("录制输入在报告生成期间发生变化，请重新生成报告")
+        validated.bids.assert_content_unchanged()
     except BrainSyncNoUsableEvidenceError as error:
         report["continuous_quality"] = error.ledger
         report["counts"] = {"scheduled_trials": error.scheduled_trials, "preprocessed_epochs": 0,
@@ -318,6 +321,9 @@ def create_recording_quality_report(session_dir, output_dir, *, loader=load_brai
         report.update(status="not_evaluable", headline="记录未能完成质量评估")
         report["error"] = {"type": type(error).__name__, "message": str(error)}
         report["notes"].append("未完成的处理阶段：" + str(error))
+    finally:
+        if validated is not None:
+            validated.bids.close()
     report["notes"].append("报告不读取目标标签、不训练分类器；幅度分布和信号覆盖不是九选一准确率或成人效能证明。")
     if report.get("simulation_status") == "declared_mock":
         report["notes"].insert(0, "模拟采集数据，仅用于软件流程验证。")

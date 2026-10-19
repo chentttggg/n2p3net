@@ -28,6 +28,7 @@ from data.contract import (
     brainsync_reference_record,
 )
 from data.dataset import read_raw
+from data.file_read_lease import OriginalFileReadLease
 from research.frozen_metadata import freeze_metadata, plain_metadata
 from transfer.noise_model import array_digest, frozen_array, metadata_digest
 
@@ -197,11 +198,12 @@ def allowed_candidates(raw_capabilities, label_capability):
 
 
 class _RecordingIssuer:
-    def __init__(self, validated, scope, role, source_receipt, raw, *, key):
+    def __init__(self, validated, scope, role, source_receipt, raw, *, read_lease, key):
         if key is not _ISSUER_KEY:
             raise TypeError("open original BrainSync paths through the data authority")
         self._validated, self._scope, self._role = validated, scope, role
         self._source_receipt, self._raw = source_receipt, raw
+        self._read_lease, self._closed = read_lease, False
         self._clock = validated.manifest["recording"]["clock"]
         self._segments = tuple(self._clock["segments"])
         self._scope_sha = metadata_digest(scope.record())
@@ -213,6 +215,9 @@ class _RecordingIssuer:
         self._exposures = self._read_original_exposures()
 
     def _check_original_files(self):
+        if self._closed:
+            raise ValueError("the original recording issuer is closed")
+        self._read_lease.assert_live()
         for name, receipt in self._source_receipt.items():
             if _signature(Path(name)) != receipt["file_identity"]:
                 raise ValueError("original admitted source files changed before authorized raw/label access")
@@ -399,7 +404,12 @@ class _RecordingIssuer:
         return cap
 
     def close(self):
-        self._raw.close()
+        if not self._closed:
+            self._closed = True
+            try:
+                self._raw.close()
+            finally:
+                self._read_lease.close()
 
 
 def _open(path, scope, role):
@@ -407,57 +417,53 @@ def _open(path, scope, role):
         raise TypeError("the original independent calibration/evaluation scope is required")
     root = Path(path).expanduser().resolve()
     session_path = root/"session.json"
-    session_bytes = session_path.read_bytes()
-    manifest = json.loads(session_bytes)
-    # The public original session identity decides whether supervised validation
-    # is authorized. Do not inspect a held record's target fields before this.
-    public_session_id = manifest.get("session_id")
-    scope.validate_application(public_session_id)
-    permitted = scope.calibration_session_ids if role == "calibration" else scope.evaluation_session_ids
-    if public_session_id not in permitted:
-        raise ValueError("original session is outside its declared calibration/inference role")
-    paths = {session_path}
-    for value in manifest["recording"]["bids"].values():
-        candidate = (root/value).resolve()
-        if not candidate.is_relative_to(root):
-            raise ValueError("BIDS source must remain inside its original session directory")
-        paths.add(candidate)
-    for key in ("metadata_path", "journal_path"):
-        value = (manifest["recording"].get("clock") or {}).get(key)
-        if value is not None:
+    lease = OriginalFileReadLease((session_path,))
+    raw = None
+    try:
+        session_bytes = lease.read_bytes(session_path)
+        manifest = json.loads(session_bytes)
+        # Authorize the original public session before target-label validation.
+        public_session_id = manifest.get("session_id")
+        scope.validate_application(public_session_id)
+        permitted = scope.calibration_session_ids if role == "calibration" else scope.evaluation_session_ids
+        if public_session_id not in permitted:
+            raise ValueError("original session is outside its declared calibration/inference role")
+        paths = {session_path}
+        for value in manifest["recording"]["bids"].values():
             candidate = (root/value).resolve()
             if not candidate.is_relative_to(root):
-                raise ValueError("clock source must remain inside its original session directory")
+                raise ValueError("BIDS source must remain inside its original session directory")
             paths.add(candidate)
-    receipts = {}
-    for source in sorted(paths):
-        before = _signature(source)
-        digest = _file_sha(source)
-        if _signature(source) != before:
-            raise ValueError("original source changed during byte admission")
-        receipts[str(source)] = {"sha256": digest, "file_identity": before}
-    validator = validate_brainsync_bids_session if role == "calibration" else validate_brainsync_bids_recording
-    validated = validator(root)
-    scope.validate_application(validated.session_id)
-    permitted = scope.calibration_session_ids if role == "calibration" else scope.evaluation_session_ids
-    if validated.session_id not in permitted:
-        raise ValueError("original session is outside its declared calibration/inference role")
-    experiment, bids = validated.manifest["experiment"], validated.bids
-    if (bids.sample_rate_hz != 250. or bids.source_reference != BRAIN_SYNC_ACQUISITION_REFERENCE
-            or dict(bids.source_reference_details) != brainsync_reference_record()
-            or experiment["digits_per_block"] != 45 or experiment["repetitions_per_digit"] != 5
-            or validated.manifest["schema"] != BRAIN_SYNC_SESSION_SCHEMA):
-        raise ValueError("current BrainSync input requires native250Hz/left-earlobe/sevenEEG/complete45 protocol")
-    clock = validated.manifest["recording"].get("clock")
-    if clock is None:
-        raise ValueError("current continuous inference requires the original finalized sample clock")
-    if session_path.read_bytes() != session_bytes:
-        raise ValueError("original manifest changed during admission")
-    for name, receipt in receipts.items():
-        if _signature(Path(name)) != receipt["file_identity"]:
-            raise ValueError("original metadata/EEG changed during admission")
-    raw = read_raw(bids.raw_path, preload=False)
-    try:
+        for name in ("metadata_path", "journal_path"):
+            value = (manifest["recording"].get("clock") or {}).get(name)
+            if value is not None:
+                candidate = (root/value).resolve()
+                if not candidate.is_relative_to(root):
+                    raise ValueError("clock source must remain inside its original session directory")
+                paths.add(candidate)
+        for source in sorted(paths):
+            lease.add(source)
+        receipts = {str(source): {"sha256": lease.binding(source)["sha256"],
+            "file_identity": lease.binding(source)["file_identity"][:4]} for source in paths}
+        validator = validate_brainsync_bids_session if role == "calibration" else validate_brainsync_bids_recording
+        # Reuse the same actual handles/hash through metadata and lazy raw reads.
+        validated = validator(root, _read_lease=lease)
+        scope.validate_application(validated.session_id)
+        if validated.session_id not in permitted:
+            raise ValueError("original session is outside its declared calibration/inference role")
+        experiment, bids = validated.manifest["experiment"], validated.bids
+        if (bids.sample_rate_hz != 250. or bids.source_reference != BRAIN_SYNC_ACQUISITION_REFERENCE
+                or dict(bids.source_reference_details) != brainsync_reference_record()
+                or experiment["digits_per_block"] != 45 or experiment["repetitions_per_digit"] != 5
+                or validated.manifest["schema"] != BRAIN_SYNC_SESSION_SCHEMA):
+            raise ValueError("current BrainSync input requires native250Hz/left-earlobe/sevenEEG/complete45 protocol")
+        clock = validated.manifest["recording"].get("clock")
+        if clock is None:
+            raise ValueError("current continuous inference requires the original finalized sample clock")
+        if lease.read_bytes(session_path) != session_bytes:
+            raise ValueError("original manifest changed during admission")
+        lease.assert_live()
+        raw = read_raw(bids.raw_path, preload=False)
         if (float(raw.info["sfreq"]) != bids.sample_rate_hz or raw.n_times != clock["edf_samples"]
                 or tuple(map(canonical_channel_name, raw.ch_names)) != tuple(map(canonical_channel_name, bids.channel_names))):
             raise ValueError("actual EEG reader and admitted BIDS rate/channel/native sample extent disagree")
@@ -469,13 +475,17 @@ def _open(path, scope, role):
             if not source.is_relative_to(root):
                 raise ValueError("actual EEG reader opened a companion outside the original recording")
             if str(source) not in receipts:
-                before = _signature(source)
-                receipts[str(source)] = {"sha256": _file_sha(source), "file_identity": before}
-                if _signature(source) != before:
-                    raise ValueError("actual EEG companion changed during admission")
-        return _RecordingIssuer(validated, scope, role, receipts, raw, key=_ISSUER_KEY)
+                lease.add(source)
+                binding = lease.binding(source)
+                receipts[str(source)] = {"sha256": binding["sha256"], "file_identity": binding["file_identity"][:4]}
+        lease.assert_live()
+        return _RecordingIssuer(validated, scope, role, receipts, raw, read_lease=lease, key=_ISSUER_KEY)
     except BaseException:
-        raw.close()
+        try:
+            if raw is not None:
+                raw.close()
+        finally:
+            lease.close()
         raise
 
 

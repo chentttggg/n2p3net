@@ -29,8 +29,8 @@ import moabb
 import numpy as np
 import pandas as pd
 
-from data.channel import DEFAULT_MONTAGE, build_channel_identity
-from data.dataset import annotation_events_and_labels, build_subject
+from data.channel import DEFAULT_MONTAGE
+from data.dataset import build_subject
 from data.epochs import (
     P300_PERFORMANCE_PREPROCESSING,
     EpochDataset,
@@ -39,10 +39,19 @@ from data.epochs import (
     load_epoch_dataset,
     save_epoch_dataset,
 )
-from data.events import observed_only_timeline, selection_group_id
 from data.exclusions import select_allowed_subjects
-from data.preprocess import apply_trial_baseline
 from data.raw_artifacts import MoabbLoaderMaterialization, RawArtifactAttestation
+
+_LOADED_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+
+
+def _raw_preprocessing_program():
+    return {"schema": "moabb_attested_raw_preprocessing_program/1",
+        "adapter_source_sha256": _LOADED_SOURCE_SHA256,
+        "program": "original_raw_get_data_then_canonical_execute_preprocessing",
+        "event_types": "original_dataset_event_id",
+        "candidate_metadata": "original_raw_annotation_extras_only",
+        "offline_highlevel_epoch_program_used": False}
 
 ATTESTED_MOABB_RESOLVER_SCHEMA = "n2p3_attested_moabb_resolver/1"
 ATTESTED_MOABB_OFFLINE_GUARD_SCHEMA = "python_socket_offline_guard/1"
@@ -971,6 +980,8 @@ def _optional_metadata_column(
     if not present:
         return None
     reference = metadata[present[0]].to_numpy()
+    if pd.isna(reference).any():
+        raise ValueError(f"Metadata column {present[0]!r} contains missing event identities.")
     for name in present[1:]:
         if not np.array_equal(reference.astype(str), metadata[name].to_numpy().astype(str)):
             raise ValueError(f"Conflicting metadata aliases {present}.")
@@ -1029,9 +1040,19 @@ def _causal_run_dataset(
     session_id: object,
     run_id: object,
     label_map: Mapping[str, int],
+    event_codes: Mapping[str, int],
     provenance: Mapping[str, Any],
 ) -> EpochDataset:
-    events, labels = annotation_events_and_labels(raw, label_map)
+    events, _ = mne.events_from_annotations(raw, event_id=dict(event_codes), verbose=False)
+    by_code = {int(event_codes[name]): label for name, label in label_map.items()}
+    if len(by_code) != len(label_map):
+        raise ValueError("MOABB event types must retain distinct original annotation codes")
+    labels = np.asarray([by_code[int(code)] for code in events[:, 2]], dtype=np.int64)
+    extras = [dict(extra) for description, extra in zip(raw.annotations.description, raw.annotations.extras, strict=True)
+        if description in event_codes]
+    if len(extras) != len(events):
+        raise ValueError("original raw annotation metadata differs from its emitted event rows")
+    metadata = pd.DataFrame(extras)
     record = build_subject(
         raw,
         events,
@@ -1045,6 +1066,10 @@ def _causal_run_dataset(
             "reference": task.source_reference,
         },
         preprocessing=task.preprocessing,
+        candidate_ids=_optional_metadata_column(metadata, CANDIDATE_METADATA_ALIASES),
+        target_candidate_ids=_optional_metadata_column(metadata, TARGET_CANDIDATE_METADATA_ALIASES),
+        repetition_indices=_optional_metadata_column(metadata, REPETITION_METADATA_ALIASES, integer=True),
+        selection_ids=_optional_metadata_column(metadata, ("selection_id",)),
         channels=None if task.channels is None else list(task.channels),
         montage=task.montage,
     )
@@ -1067,7 +1092,8 @@ def _causal_run_dataset(
             }
         ),
         provenance={
-            "source": "moabb_raw_causal_p300",
+            "source": "moabb_raw_causal_p300" if task.preprocessing.filter_phase == "forward" else "moabb_raw_offline_p300",
+            "raw_preprocessing_program": _raw_preprocessing_program(),
             "dataset_class": task.dataset_class,
             **dict(provenance),
             **({"preprocessing_execution": record.metadata["preprocessing_execution"]}
@@ -1076,7 +1102,7 @@ def _causal_run_dataset(
             "source_sample_rate_hz": float(raw.info["sfreq"]),
             "model_input_sample_rate_hz": task.preprocessing.sfreq,
             "signal_unit": task.preprocessing.signal_unit,
-            "filter_phase": "forward",
+            "filter_phase": task.preprocessing.filter_phase,
         },
     )
 
@@ -1177,6 +1203,7 @@ def _process_causal_subject_task(task: _CausalSubjectTask) -> _CausalSubjectResu
                 session_id=session_id,
                 run_id=run_id,
                 label_map=label_map,
+                event_codes=event_id,
                 provenance=subject_provenance,
             )
             for session_id, run_id, raw in ordered_runs
@@ -1185,7 +1212,8 @@ def _process_causal_subject_task(task: _CausalSubjectTask) -> _CausalSubjectResu
             datasets,
             name=task.dataset_class,
             provenance={
-                "source": "moabb_raw_causal_p300",
+                "source": "moabb_raw_causal_p300" if task.preprocessing.filter_phase == "forward" else "moabb_raw_offline_p300",
+                "raw_preprocessing_program": _raw_preprocessing_program(),
                 "dataset_class": task.dataset_class,
                 **subject_provenance,
                 "subjects": [task.subject],
@@ -1578,7 +1606,8 @@ def _prepare_causal_subjects(
             subject_datasets,
             name=dataset_class,
             provenance={
-                "source": "moabb_raw_causal_p300",
+                "source": "moabb_raw_causal_p300" if preprocessing.filter_phase == "forward" else "moabb_raw_offline_p300",
+                "raw_preprocessing_program": _raw_preprocessing_program(),
                 "dataset_class": dataset_class,
                 **raw_provenance,
                 "raw_artifact_loader_path_resolutions": loader_resolutions,
@@ -1717,13 +1746,10 @@ def prepare_moabb_p300(
 ) -> EpochDataset:
     """Process an attested MOABB P300 dataset without dataset-specific branches."""
 
-    from moabb.paradigms import P300
-
+    # Both new offline and causal caches execute the original raw owner. The
+    # historical P300 epoch shortcut did not observe its executed filter and
+    # remains represented only by its own saved, unverified historical caches.
     preprocessing.validate()
-    if preprocessing.zero_phase_edge_policy != "legacy":
-        raise ValueError("MOABB high-level ingress cannot execute zero_phase_edge_policy; use raw ingress")
-    if preprocessing.notch_freqs_hz and preprocessing.filter_phase != "forward":
-        raise ValueError("MOABB notch filtering requires the native causal raw ingress; the offline P300 paradigm cannot execute this declaration")
     if not isinstance(raw_artifact_attestation, RawArtifactAttestation):
         raise TypeError("raw_artifact_attestation must be a verified RawArtifactAttestation.")
     raw_artifact_attestation.assert_dataset_class(dataset_class)
@@ -1767,252 +1793,15 @@ def prepare_moabb_p300(
     loader_path_resolutions = _reported_moabb_loader_paths(dataset, selected_subjects)
     reported_loader_paths = tuple(item.resolved_loader_path for item in loader_path_resolutions)
     materialization.verify_loader_paths(reported_loader_paths)
-    if preprocessing.filter_phase == "forward":
-        return _prepare_causal_subjects(
-            dataset_class=dataset_class,
-            materialization=materialization,
-            selected_subjects=selected_subjects,
-            channels=channels,
-            montage=montage,
-            preprocessing=preprocessing,
-            target_label=target_label,
-            source_reference=source_reference,
-            source_sample_rate_hz=float(source_sample_rate),
-            requested_workers=subject_workers,
-        )
-    paradigm = P300(
-        fmin=preprocessing.l_freq,
-        fmax=preprocessing.h_freq,
-        tmin=preprocessing.tmin_ms / 1000.0,
-        tmax=preprocessing.tmax_ms / 1000.0,
-        baseline=None,
-        resample=None,
-        channels=None if channels is None else list(channels),
-    )
-    parser_workspace = (
-        Path(materialization.attestation.cache_workspace_root)
-        / "parser-snapshots"
-        / f"run-{uuid4().hex}"
-    )
-    parser_workspace.mkdir(parents=True)
-    parser_snapshot_root = parser_workspace / "snapshot"
-    subject_contracts = {
-        subject: _loader_contracts_for_subject(materialization, subject)
-        for subject in selected_subjects
-    }
-    combined_contracts = tuple(
-        contract for subject in selected_subjects for contract in subject_contracts[subject]
-    )
-    try:
-        (
-            parser_paths,
-            parser_contracts,
-            parser_mne_root,
-            parser_snapshot_record,
-        ) = _private_parser_loader_snapshots(
-            combined_contracts,
-            parser_snapshot_root=parser_snapshot_root,
-            shard_workspace=parser_workspace,
-        )
-        offset = 0
-        parser_paths_by_subject: dict[int, tuple[Path, ...]] = {}
-        for subject in selected_subjects:
-            count = len(subject_contracts[subject])
-            parser_paths_by_subject[subject] = parser_paths[offset : offset + count]
-            offset += count
-        parser_binding = _install_attested_data_path(dataset, parser_paths_by_subject)
-        parser_resolutions = _reported_moabb_loader_paths(dataset, selected_subjects)
-        parser_reported_paths = tuple(item.resolved_loader_path for item in parser_resolutions)
-        _verify_materialized_loader_contracts(
-            parser_contracts,
-            expected_mne_data_root=parser_mne_root,
-            paths=parser_reported_paths,
-        )
-        with _scoped_attested_moabb_io(
-            dataset,
-            selected_subjects,
-            parser_binding,
-        ) as runtime_resolver:
-            with _scoped_attested_loader_read_only():
-                epochs, raw_labels, metadata = paradigm.get_data(
-                    dataset=dataset,
-                    subjects=selected_subjects,
-                    return_epochs=True,
-                )
-                if runtime_resolver.strict_base_dataset_contract:
-                    if not isinstance(epochs, mne.BaseEpochs):
-                        raise TypeError("MOABB paradigm must return an MNE Epochs instance.")
-                    epochs.load_data()
-                    if not epochs.preload:
-                        raise RuntimeError("MOABB Epochs remained lazy after load_data().")
-        parser_loader_paths = parser_reported_paths + _available_mne_source_paths([epochs])
-        _verify_materialized_loader_contracts(
-            parser_contracts,
-            expected_mne_data_root=parser_mne_root,
-            paths=parser_loader_paths,
-        )
-        parser_loader_records = [item.record(parser_mne_root) for item in parser_resolutions]
-    except BaseException as error:
-        try:
-            _remove_private_parser_snapshot(parser_workspace)
-        except BaseException as cleanup_error:
-            error.add_note(
-                "Private parser workspace cleanup also failed: "
-                f"{type(cleanup_error).__name__}: {cleanup_error}"
-            )
-        raise
-    _remove_private_parser_snapshot(parser_workspace)
-    parser_snapshot_record["subjects"] = {
-        str(subject): [contract.relative_path for contract in subject_contracts[subject]]
-        for subject in selected_subjects
-    }
-    parser_snapshot_record["removed_after_preload"] = True
-    raw_artifact_provenance = materialization.attestation.provenance_record()
-    raw_artifact_provenance["raw_artifact_loader_path_resolutions"] = parser_loader_records
-    raw_artifact_provenance["parser_loader_snapshot"] = parser_snapshot_record
-    raw_artifact_provenance["moabb_attested_resolver"] = runtime_resolver.record()
-    expected_tmin = preprocessing.tmin_ms / 1000.0
-    if not np.isclose(float(epochs.times[0]), expected_tmin, atol=0.5 / preprocessing.sfreq):
-        raise ValueError(
-            "MOABB epoch origin does not match the declared stimulus-relative time contract: "
-            f"{float(epochs.times[0]):g}s vs {expected_tmin:g}s."
-        )
-    source_epoch_sfreq = float(epochs.info["sfreq"])
-    source_epoch_events = np.asarray(epochs.events, dtype=np.int64).copy()
-    if not np.isclose(source_epoch_sfreq, preprocessing.sfreq):
-        epochs.resample(preprocessing.sfreq, verbose=False)
-    X = epochs.get_data()
-    raw_labels = np.asarray(raw_labels)
-    if len(X) != len(raw_labels) or len(metadata) != len(X):
-        raise ValueError("MOABB epochs, labels, and metadata are not row-aligned.")
-    if "subject" not in metadata:
-        raise ValueError("MOABB metadata does not contain a subject column required for LOSO.")
-    requested_subject_keys = {str(subject) for subject in selected_subjects}
-    returned_subject_keys = set(metadata["subject"].astype(str))
-    missing_before_rejection = requested_subject_keys - returned_subject_keys
-    if missing_before_rejection:
-        raise ValueError(
-            f"MOABB returned no epochs for selected subjects {sorted(missing_before_rejection)}."
-        )
-    if X.shape[2] < preprocessing.n_times:
-        raise ValueError(
-            f"MOABB returned {X.shape[2]} time samples; {preprocessing.n_times} are required."
-        )
-    X = X[:, :, : preprocessing.n_times].astype(np.float32, copy=False)
-    X = apply_trial_baseline(
-        X,
-        sfreq=preprocessing.sfreq,
-        tmin=preprocessing.tmin_ms / 1000.0,
-        baseline_mode=preprocessing.baseline_mode,
-        trial_reference_window_ms=preprocessing.trial_reference_window_ms,
-        trial_reference_center=preprocessing.trial_reference_center,
-        trial_reference_scale=preprocessing.trial_reference_scale,
-    )
-    keep = np.ones(len(X), dtype=bool)
-    metadata = metadata.reset_index(drop=True).copy()
-    channel_names = tuple(str(name) for name in epochs.ch_names)
-    identity = build_channel_identity(
-        channel_names,
-        channel_mask=np.ones(len(channel_names), dtype=bool),
+    return _prepare_causal_subjects(
+        dataset_class=dataset_class,
+        materialization=materialization,
+        selected_subjects=selected_subjects,
+        channels=channels,
         montage=montage,
-        allow_missing_positions=False,
-    )
-    metadata["acquisition_time_s"] = source_epoch_events[keep, 0].astype(float) / source_epoch_sfreq
-    subjects_array = metadata["subject"].astype(str).to_numpy()
-    sessions = (
-        metadata["session"].astype(str).to_numpy()
-        if "session" in metadata
-        else [""] * len(metadata)
-    )
-    runs = metadata["run"].astype(str).to_numpy() if "run" in metadata else [""] * len(metadata)
-    selections = (
-        metadata["selection_id"].astype(str).to_numpy()
-        if "selection_id" in metadata
-        else subjects_array
-    )
-    groups = np.asarray(
-        [
-            selection_group_id(dataset_class, subject, session, run, selection)
-            for subject, session, run, selection in zip(
-                subjects_array, sessions, runs, selections, strict=True
-            )
-        ]
-    )
-    timeline = observed_only_timeline(
-        dataset_id=dataset_class,
-        subject_ids=subjects_array,
-        stimulus_ids=source_epoch_events[keep, 2],
-        onset_times_s=metadata["acquisition_time_s"].to_numpy(dtype=float),
-        group_ids=groups,
-        selection_ids=np.asarray(selections, dtype=str),
-        session_ids=np.asarray(sessions, dtype=str),
-        run_ids=np.asarray(runs, dtype=str),
-        candidate_ids=_optional_metadata_column(metadata, CANDIDATE_METADATA_ALIASES),
-        target_candidate_ids=_optional_metadata_column(metadata, TARGET_CANDIDATE_METADATA_ALIASES),
-        repetition_indices=_optional_metadata_column(
-            metadata, REPETITION_METADATA_ALIASES, integer=True
-        ),
-        online_causal=False,
-        timing_source=(
-            "moabb_post_resample_epoch_events;observed_epochs_only;preprocessing_not_online_causal"
-        ),
-    )
-    result = EpochDataset(
-        name=dataset_class,
-        X=X,
-        y=encode_binary_labels(raw_labels, target_label=target_label),
-        subject_ids=subjects_array,
-        channel_names=identity.names,
-        channel_positions_m=identity.coords,
-        channel_mask=identity.mask,
         preprocessing=preprocessing,
-        event_timeline=timeline,
-        metadata=metadata,
-        provenance={
-            "source": "moabb_p300",
-            "dataset_class": dataset_class,
-            **raw_artifact_provenance,
-            "subjects": selected_subjects,
-            "moabb_version": moabb.__version__,
-            "mne_version": mne.__version__,
-            "source_sample_rate_hz": source_sample_rate,
-            "model_input_sample_rate_hz": preprocessing.sfreq,
-            "source_reference": source_reference,
-            "source_ground": getattr(acquisition, "ground", None),
-            "event_time_basis": "post_resample_epoch_event_samples",
-            "grouping_fidelity": "subject_session_run_only; source blocks are not exposed",
-            "signal_unit": preprocessing.signal_unit,
-            "filter": {
-                "method": preprocessing.filter_method,
-                "order": preprocessing.filter_order,
-                "phase": preprocessing.filter_phase,
-            },
-            "resample_domain": preprocessing.resample_domain,
-            "resample": {
-                "method": preprocessing.resample_method,
-                "npad": preprocessing.resample_npad,
-                "window": preprocessing.resample_window,
-                "pad": preprocessing.resample_pad,
-            },
-            "montage": montage,
-            "coordinate_registration": identity.registration.record(),
-            "right_endpoint": "exclusive_crop",
-            "epoch_baseline": {
-                "mode": preprocessing.baseline_mode,
-                "window_ms": (
-                    list(preprocessing.trial_reference_window_ms)
-                    if preprocessing.trial_reference_window_ms is not None
-                    else [preprocessing.tmin_ms, 0.0]
-                ),
-                "center": preprocessing.trial_reference_center,
-                "scale": (
-                    "std"
-                    if preprocessing.baseline_mode == "trial"
-                    else preprocessing.trial_reference_scale
-                ),
-            },
-            "artifact_rejection": {"method": "fold_local_ptp_cv", "n_before": int(len(keep))},
-        },
+        target_label=target_label,
+        source_reference=source_reference,
+        source_sample_rate_hz=float(source_sample_rate),
+        requested_workers=subject_workers,
     )
-    result.validate(require_labels=True)
-    return result

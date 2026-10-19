@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import mne
 import numpy as np
 import pytest
+from experiments.report_brainsync_quality import main
 
 from data.artifact import FoldLocalArtifactPolicy
 from data.brainsync import (
@@ -16,7 +17,6 @@ from data.brainsync import (
 from data.brainsync_contract import validate_brainsync_bids_recording
 from data.domain import adapt_observed_montage
 from data.personal_quality import PersonalEpochQualityPolicy
-from experiments.report_brainsync_quality import main
 from research.recording_quality import (
     REPORT_SCHEMA,
     _block_counts,
@@ -193,17 +193,27 @@ def test_continuous_qc_empty_evidence_has_visible_counts(recording, tmp_path):
 
 
 def test_input_change_during_generation_invalidates_the_report(recording, tmp_path):
-    validated = validate_brainsync_bids_recording(recording)
+    import os
 
+    validated = validate_brainsync_bids_recording(recording)
+    original = validated.bids.events_path.read_bytes()
     def changed_input(root):
         dataset = load_brainsync_inference_session(root)
         with validated.bids.events_path.open("a", encoding="utf-8") as stream:
             stream.write("\n")
         return dataset
 
-    report = create_recording_quality_report(recording, tmp_path / "changed-report", loader=changed_input)
-    assert report["status"] == "not_evaluable"
-    assert "发生变化" in report["error"]["message"]
+    try:
+        report = create_recording_quality_report(recording, tmp_path / "changed-report", loader=changed_input)
+        assert report["status"] == "not_evaluable"
+        if os.name == "nt":
+            assert report["error"]["type"] == "PermissionError"
+            assert validated.bids.events_path.read_bytes() == original
+        else:
+            assert validated.bids.events_path.read_bytes() != original
+            assert "changed" in report["error"]["message"] or "发生变化" in report["error"]["message"]
+    finally:
+        validated.bids.close()
 
 
 def test_applied_epoch_qc_model_is_bound_by_digest(tmp_path, monkeypatch):

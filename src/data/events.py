@@ -581,8 +581,21 @@ def observed_only_timeline(
     selections = _strings_or_default(selection_ids, groups.copy())
     sessions = _strings_or_default(session_ids, np.repeat("", n_events))
     runs = _strings_or_default(run_ids, np.repeat("", n_events))
+    if group_ids is None:
+        groups = np.asarray([selection_group_id(dataset_id, subject, session, run, selection)
+            for subject, session, run, selection in zip(subjects, sessions, runs, selections, strict=True)])
+    occurrence: dict[tuple[str, ...], int] = {}
+    event_ids = []
+    for subject, session, run, selection, time, stimulus in zip(
+            subjects, sessions, runs, selections, onset, raw_stimulus, strict=True):
+        key = (str(dataset_id), subject, session, run, selection, float(time).hex(), str(int(stimulus)))
+        ordinal = occurrence.get(key, 0)
+        occurrence[key] = ordinal+1
+        # JSON is unambiguous even when source identifiers contain separators.
+        identity = json.dumps((*key, ordinal), ensure_ascii=False, separators=(",", ":"))
+        event_ids.append("observed-event/2:"+hashlib.sha256(identity.encode("utf8")).hexdigest())
     timeline = ScheduledEventTimeline(
-        event_ids=np.asarray([f"{dataset_id}:{index}" for index in range(n_events)]),
+        event_ids=np.asarray(event_ids),
         group_ids=groups,
         subject_ids=subjects,
         stimulus_ids=raw_stimulus.astype(np.int64, copy=False),

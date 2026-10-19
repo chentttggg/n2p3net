@@ -1120,11 +1120,23 @@ def test_moabb_adapter_executes_declared_mean_baseline(monkeypatch, tmp_path: Pa
         loader_path=Path(attestation.expected_mne_data_root) / "source.bin"
     )
     monkeypatch.setattr(adapter_module, "resolve_moabb_dataset", lambda name: fake_dataset)
-    _install_epoch_paradigm(
-        monkeypatch, data, events, pd.DataFrame({"subject": [1, 1, 2, 2]}), tmin=-0.2
-    )
+    fake_dataset.event_id = {"NonTarget": 1, "Target": 2}
+    def get_data(subjects):
+        output = {}
+        for subject in subjects:
+            values = np.zeros((2, 600))
+            rows = (subject-1)*2+np.arange(2)
+            for index in rows:
+                onset = int(events[index, 0])
+                values[:, onset-20:onset+10] = data[index]
+            raw = mne.io.RawArray(values, mne.create_info(["Fz", "Cz"], 100., "eeg"), verbose=False)
+            raw.set_montage("standard_1005")
+            raw.set_annotations(mne.Annotations(events[rows, 0]/100, [0.]*2, ["NonTarget", "Target"]))
+            output[subject] = {"session": {"run": raw}}
+        return output
+    fake_dataset.get_data = get_data
     profile = _moabb_profile(
-        name="mock_executed_baseline", tmin_ms=-200.0, n_times=30, baseline_mode="mean_only"
+        name="mock_executed_baseline", l_freq=None, h_freq=None, tmin_ms=-200.0, n_times=30, baseline_mode="mean_only"
     )
 
     dataset = prepare_moabb_p300(
@@ -1135,7 +1147,7 @@ def test_moabb_adapter_executes_declared_mean_baseline(monkeypatch, tmp_path: Pa
 
     np.testing.assert_allclose(dataset.X[:, :, :20].mean(axis=2), 0.0, atol=1e-12)
     np.testing.assert_allclose(dataset.X[:, :, 20:], 2.0, atol=1e-12)
-    assert dataset.provenance["epoch_baseline"]["mode"] == "mean_only"
+    assert all(row["declaration"]["baseline_mode"] == "mean_only" for row in dataset.provenance["preprocessing_execution"]["recordings"])
 
 
 def test_moabb_adapter_uses_explicit_candidates_not_binary_event_codes(
@@ -1145,7 +1157,6 @@ def test_moabb_adapter_uses_explicit_candidates_not_binary_event_codes(
 
     _allow_narrow_moabb_test_double(monkeypatch)
 
-    data = np.zeros((4, 2, 10), dtype=np.float64)
     events = np.column_stack(
         [np.arange(100, 500, 100), np.zeros(4, dtype=int), np.array([7, 8, 7, 8])]
     )
@@ -1156,21 +1167,14 @@ def test_moabb_adapter_uses_explicit_candidates_not_binary_event_codes(
         (1,), loader_path=Path(attestation.expected_mne_data_root) / "source.bin"
     )
     monkeypatch.setattr(adapter_module, "resolve_moabb_dataset", lambda name: fake_dataset)
-    _install_epoch_paradigm(
-        monkeypatch,
-        data,
-        events,
-        pd.DataFrame(
-            {
-                "subject": [1] * 4,
-                "selection_id": ["choice-1"] * 4,
-                "candidate_id": ["left", "right", "left", "right"],
-                "target_candidate_id": ["right"] * 4,
-                "repetition_index": np.array([0, 0, 1, 1], dtype=np.int64),
-            }
-        ),
-        tmin=0.0,
-    )
+    fake_dataset.event_id = {"NonTarget": 7, "Target": 8}
+    raw = mne.io.RawArray(np.zeros((2, 600)), mne.create_info(["Fz", "Cz"], 100., "eeg"), verbose=False)
+    raw.set_montage("standard_1005")
+    extras = [{"selection_id": "choice-1", "candidate_id": candidate,
+        "target_candidate_id": "right", "repetition_index": repeat}
+        for candidate, repeat in zip(["left", "right", "left", "right"], [0, 0, 1, 1], strict=True)]
+    raw.set_annotations(mne.Annotations(events[:, 0]/100, [0.]*4, ["NonTarget", "Target"]*2, extras=extras))
+    fake_dataset.get_data = lambda subjects: {1: {"session": {"run": raw}}}
     profile = _moabb_profile(name="mock_candidates")
 
     dataset = prepare_moabb_p300(
@@ -1183,7 +1187,11 @@ def test_moabb_adapter_uses_explicit_candidates_not_binary_event_codes(
     assert timeline.stimulus_ids.tolist() == [7, 8, 7, 8]
     assert timeline.candidate_ids.tolist() == ["left", "right", "left", "right"]
     assert timeline.has_repetition_structure is True
-    assert timeline.supports_full_candidate_chain is False
+    assert timeline.complete is True
+    assert timeline.supports_full_candidate_chain is True
+    assert timeline.session_ids.tolist() == ["session"] * 4
+    assert timeline.run_ids.tolist() == ["run"] * 4
+    assert timeline.subject_ids.tolist() == ["1"] * 4
 
 
 def test_moabb_adapter_rejects_transient_loader_replacement_and_restore(
@@ -1196,30 +1204,22 @@ def test_moabb_adapter_rejects_transient_loader_replacement_and_restore(
     forged = tmp_path / "forged-loader.bin"
     forged.write_bytes(b"forged-parser-input")
 
-    class MutatingP300:
-        def __init__(self, **kwargs):
-            del kwargs
-
-        def get_data(self, *, dataset, subjects, **kwargs):
-            del kwargs
-            loader = Path(dataset.data_path(subjects[0])[0])
-            backup = loader.with_name(f".{loader.name}.canonical")
-            try:
-                loader.replace(backup)
-                forged.replace(loader)
-                loader.read_bytes()
-            finally:
-                if backup.exists():
-                    loader.unlink(missing_ok=True)
-                    backup.replace(loader)
-
     attestation = _verified_artifact_attestation(tmp_path, "MutatingP300")
-    monkeypatch.setattr(
-        adapter_module,
-        "resolve_moabb_dataset",
-        lambda name: _fake_dataset((1,)),
-    )
-    monkeypatch.setattr("moabb.paradigms.P300", MutatingP300)
+    fake = _fake_dataset((1,))
+    fake.event_id = {"NonTarget": 1, "Target": 2}
+    def get_data(subjects):
+        loader = Path(fake.data_path(subjects[0])[0])
+        backup = loader.with_name(f".{loader.name}.canonical")
+        try:
+            loader.replace(backup)
+            forged.replace(loader)
+            loader.read_bytes()
+        finally:
+            if backup.exists():
+                loader.unlink(missing_ok=True)
+                backup.replace(loader)
+    fake.get_data = get_data
+    monkeypatch.setattr(adapter_module, "resolve_moabb_dataset", lambda name: fake)
     profile = _moabb_profile(name="mutating_parser")
 
     with pytest.raises(RuntimeError, match="Filesystem mutation 'os.rename' is forbidden"):

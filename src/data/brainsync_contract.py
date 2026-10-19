@@ -24,6 +24,7 @@ from data.contract import (
     BRAIN_SYNC_ACQUISITION_TYPES,
     brainsync_reference_record,
 )
+from data.file_read_lease import OriginalFileReadLease
 
 BRAIN_SYNC_SESSION_SCHEMA = "brainsync-gtn-session/4"
 BRAIN_SYNC_CHANNEL_COUNT = len(BRAIN_SYNC_ACQUISITION_CHANNELS)
@@ -300,22 +301,42 @@ def _validate_balanced_schedule(
                 )
 
 
-def validate_brainsync_bids_session(session_dir: str | Path) -> ValidatedBrainSyncSession:
+def validate_brainsync_bids_session(session_dir: str | Path, *, bind_content: bool = True, _read_lease=None) -> ValidatedBrainSyncSession:
     """Validate session and BIDS metadata before an EEG binary reader is invoked."""
 
-    session = _validate_brainsync_recording(session_dir, require_target=True)
+    session = _validate_with_content_lease(session_dir, require_target=True, bind_content=bind_content, read_lease=_read_lease)
     assert isinstance(session, ValidatedBrainSyncSession)
     return session
 
 
-def validate_brainsync_bids_recording(session_dir: str | Path) -> ValidatedBrainSyncRecording:
+def validate_brainsync_bids_recording(session_dir: str | Path, *, bind_content: bool = True, _read_lease=None) -> ValidatedBrainSyncRecording:
     """Validate finalized raw for inference without reading any target-label fields."""
 
-    return _validate_brainsync_recording(session_dir, require_target=False)
+    return _validate_with_content_lease(session_dir, require_target=False, bind_content=bind_content, read_lease=_read_lease)
+
+
+def _validate_with_content_lease(session_dir, *, require_target, bind_content, read_lease):
+    root = Path(session_dir).expanduser().resolve()
+    if (root / ".target-confirmation.pending.json").exists():
+        raise ValueError("BrainSync target confirmation is pending recovery; session is not committed.")
+    lease = read_lease
+    owned = lease is None and bind_content
+    if owned:
+        try:
+            lease = OriginalFileReadLease((root/"session.json",))
+        except OSError as error:
+            raise ValueError("BrainSync session.json cannot be admitted for original reading") from error
+    try:
+        return _validate_brainsync_recording(root, require_target=require_target,
+            bind_content=bind_content, _read_lease=lease)
+    except BaseException:
+        if owned:
+            lease.close()
+        raise
 
 
 def _validate_brainsync_recording(
-    session_dir: str | Path, *, require_target: bool
+    session_dir: str | Path, *, require_target: bool, bind_content: bool = True, _read_lease=None
 ) -> ValidatedBrainSyncRecording:
 
     root = Path(session_dir).expanduser().resolve()
@@ -388,7 +409,13 @@ def _validate_brainsync_recording(
         if started_timestamp_s > target_confirmed_timestamp_s:
             raise ValueError("BrainSync timestamps require start <= confirmation.")
 
-    bids = validate_bids_eeg_recording(root, bids_files, contract=BRAIN_SYNC_BIDS_CONTRACT)
+    bids = validate_bids_eeg_recording(root, bids_files, contract=BRAIN_SYNC_BIDS_CONTRACT,
+        bind_content=bind_content or "bids_content" in recording, _read_lease=_read_lease)
+    if "bids_content" in recording:
+        capture = recording["bids_content"]
+        if (not isinstance(capture, dict) or capture.get("schema") != "bids_acquisition_content/1"
+                or capture.get("files") != bids.content_record()["files"]):
+            raise ValueError("BrainSync BIDS content differs from its declared acquisition-time file binding")
     _validate_reference_metadata(manifest, bids)
     _validate_balanced_schedule(experiment, bids)
     recording_path = recording.get("path")
@@ -410,6 +437,14 @@ def _validate_brainsync_recording(
         recording.get("source_sample_rate_hz"), "recording.source_sample_rate_hz"
     )
     from data.recording_clock import validate_recording_clock
+    if _read_lease is not None:
+        for name in ("metadata_path", "journal_path"):
+            value = (recording.get("clock") or {}).get(name)
+            if value is not None:
+                original = (root/value).resolve()
+                if not original.is_relative_to(root):
+                    raise ValueError("original sample-clock inputs must remain inside the session")
+                _read_lease.add(original)
     clock = validate_recording_clock(root, recording, sample_rate_hz=bids.sample_rate_hz,
                                      duration_seconds=bids.duration_seconds)
     timeline_rate = _finite_nonnegative(
@@ -471,6 +506,7 @@ def _validate_brainsync_recording(
     if bids.duration_seconds > ended_timestamp_s - started_timestamp_s:
         raise ValueError("BrainSync BIDS recording duration exceeds the session lifetime.")
 
+    bids.assert_content_unchanged()
     common = dict(
         root=root,
         session_path=session_path,

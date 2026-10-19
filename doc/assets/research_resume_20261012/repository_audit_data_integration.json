@@ -1,0 +1,189 @@
+{
+  "schema": "n2p3_repository_audit_data_integration/1",
+  "author_R2": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\DELIVERY_MANIFEST.v2.json",
+    "sha256": "b2396218e1a3240ef30f4aac18686d1d8e22f891957b1c8dfadf97334114f619",
+    "bytes": 16209
+  },
+  "independent_R2": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\independent-review\\INDEPENDENT_ACCEPTANCE.json",
+    "sha256": "f43051f4fe7eea02dcccca4702b11b35c575bb764e475254f34047e28511474e",
+    "bytes": 8124
+  },
+  "R4_publication": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\R4-cache-exclusive\\DELIVERY_MANIFEST.json",
+    "sha256": "94c74183392ed0314bdf08ee692d96b3a66e5de4e5bdd1954f9a821b94cd3c09",
+    "bytes": 4813
+  },
+  "canonical_R2_files": [
+    {
+      "path": "src/data/bids_eeg.py",
+      "sha256": "ab107d51a35ea4586a6b3eb7fbf122613aa793dbfc318d42db129cff59e7ccbf"
+    },
+    {
+      "path": "src/data/brainsync.py",
+      "sha256": "e728f1e3d4f68140aa671da0abbf2ba8738449a74091564c1d8511b456bb5c5b"
+    },
+    {
+      "path": "src/data/brainsync_contract.py",
+      "sha256": "613b831fc49e00fbc50611cbe175df43ec9ac5f1e58bfb9b8ba6236037fda0fa"
+    },
+    {
+      "path": "src/data/brainsync_raw_authority.py",
+      "sha256": "ce3dcaf37b1bbcb809e3cd6bb24a74a2161deb16d8ead6ba57fb0490c25960bb"
+    },
+    {
+      "path": "src/data/channel.py",
+      "sha256": "e915ba36fa55d9bd125959511c122bf4e7a3ef6d500e3e1683117084920dc83d"
+    },
+    {
+      "path": "src/data/epochs.py",
+      "sha256": "a6c3e2f6c3999f135e9a0bb5aedf6e3e55aff4360548268ff7ae3b5881113c03"
+    },
+    {
+      "path": "src/data/events.py",
+      "sha256": "1dddbad58132750ed50a1a52f9a3ae72eea503ab3e52a6548a93055500c274f3"
+    },
+    {
+      "path": "src/data/file_read_lease.py",
+      "sha256": "f68772ff505160928d17951f19739413f743b2dd555854f8f95351df1ed331c7"
+    },
+    {
+      "path": "src/data/identity.py",
+      "sha256": "3b0568eb3ba25321dab62768dbb40d83330d3dbb6cee06b3ff5dcb7482f6791c"
+    },
+    {
+      "path": "src/data/manifest.py",
+      "sha256": "3b2e94c3a01e4d45a956b834d3b9ba93b20566bf67454ca166c1fdebdf306b84"
+    },
+    {
+      "path": "src/data/metadata.py",
+      "sha256": "e0f5f28e94cd1800810fe8c7f01487305c106ae1ca73ddd321ced424151acd17"
+    },
+    {
+      "path": "src/data/moabb.py",
+      "sha256": "d4da66ac3fa2625afefdc747de4b80a259950ce5a31d9cc90f800b803c3aeb8b"
+    },
+    {
+      "path": "src/data/preprocess.py",
+      "sha256": "5fe5290d39ea9540a87069aa3f1c31c27ed81fbc43669e419777168ff4bc1e37"
+    },
+    {
+      "path": "tests/brainsync/test_brainsync.py",
+      "sha256": "ee1266511be3408e8897a9a9ce2379f9fa0b93effc107bcc3a7c48fd506d4eb7"
+    },
+    {
+      "path": "tests/data/test_epochs.py",
+      "sha256": "9026d3f80fe43ea94b9e0e0e3a4138bcd552fea7e95ee0c3d656cc96371b6e83"
+    },
+    {
+      "path": "tests/data/test_moabb_adapter.py",
+      "sha256": "1060565141fd765549c995593f3e5238db0b3fec873c07f5276d5279a749521f"
+    },
+    {
+      "path": "tests/test_data_audit.py",
+      "sha256": "919e8706a56b49abd307dcd883afe2686b986f94aa8f6557771f4a27ea3d7d4a"
+    }
+  ],
+  "root_additional_delta": {
+    "src/data/epochs.py": "f7f4c3e6749d039f9efc6c98add0e3257f2230c6c1659a239eb7c21533ae077e"
+  },
+  "root_review": {
+    "actual_file_identity": "Read complete OriginalFileReadLease, BIDS/session validator and raw issuer ownership, closed-state and exception release chains; Windows deny-write/delete holds admitted bytes through actual read",
+    "G1": "String/duplicate channel ingress, recording/event identifiers, symmetric global evidence, composite sensor registration and original age encoding disclosure",
+    "D1": "Same-open-descriptor NPZ attestation/decode; optional immutable copy remains explicit",
+    "D2_D4_D5": "New MOABB offline raw reader uses existing build_subject/execute_preprocessing and actual execution/grid receipt; original operators unchanged, old caches not re-signed",
+    "root_found_and_author_fixed": "R2 exclusive writer could replace a foreign publication created during staging. R4 uses filesystem no-replace links; failure removes only own inode/bytes. Parent R2 source preserved."
+  },
+  "validation": "Focused author and independent Windows lifecycle evidence reused; final composed cache+CLI/reader checks follow caller integration",
+  "scope": "No new participant fit/EEG, no claims for Linux execution or full real-data throughput",
+  "R3_report_read_scope": {
+    "delivery": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\R3-recording-quality\\DELIVERY_MANIFEST.json",
+    "delivery_sha256": "fff6738a88d3223e0f9be210aa4e4f4bc5be4eb3511e334028058828edd43e53",
+    "source_sha256": "fa37650b3870d6ab1d61b635f0eb458cf54cb9590881f599e7c25f3420bd28e6",
+    "transfer_parent_AST_matched": true,
+    "root_review": "Full report lifecycle retains transferred frozen-QC gate, uses admitted original content hashes and closes lease in finally, including callback/loader failures"
+  },
+  "independent_R3_R4": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\independent-review\\SUPPLEMENTAL_R3_R4_ACCEPTANCE.json",
+    "sha256": "c627f512f9d73c424ca112abffa442dfdc5013f794e661512e86e480c07b1f7d"
+  },
+  "read_lifecycle_fixture": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-data\\R3-recording-quality\\FIXTURE_DELIVERY_MANIFEST.json",
+    "sha256": "6ca8dd61b9f3d8b9c591fff83d75fcf94a7f9982e9e610f0b6ec8ce76cdb3a2e"
+  },
+  "canonical_final_sources": [
+    {
+      "path": "src/data/bids_eeg.py",
+      "sha256": "ab107d51a35ea4586a6b3eb7fbf122613aa793dbfc318d42db129cff59e7ccbf"
+    },
+    {
+      "path": "src/data/brainsync.py",
+      "sha256": "e728f1e3d4f68140aa671da0abbf2ba8738449a74091564c1d8511b456bb5c5b"
+    },
+    {
+      "path": "src/data/brainsync_contract.py",
+      "sha256": "613b831fc49e00fbc50611cbe175df43ec9ac5f1e58bfb9b8ba6236037fda0fa"
+    },
+    {
+      "path": "src/data/brainsync_raw_authority.py",
+      "sha256": "ce3dcaf37b1bbcb809e3cd6bb24a74a2161deb16d8ead6ba57fb0490c25960bb"
+    },
+    {
+      "path": "src/data/channel.py",
+      "sha256": "e915ba36fa55d9bd125959511c122bf4e7a3ef6d500e3e1683117084920dc83d"
+    },
+    {
+      "path": "src/data/epochs.py",
+      "sha256": "f7f4c3e6749d039f9efc6c98add0e3257f2230c6c1659a239eb7c21533ae077e"
+    },
+    {
+      "path": "src/data/events.py",
+      "sha256": "1dddbad58132750ed50a1a52f9a3ae72eea503ab3e52a6548a93055500c274f3"
+    },
+    {
+      "path": "src/data/file_read_lease.py",
+      "sha256": "f68772ff505160928d17951f19739413f743b2dd555854f8f95351df1ed331c7"
+    },
+    {
+      "path": "src/data/identity.py",
+      "sha256": "3b0568eb3ba25321dab62768dbb40d83330d3dbb6cee06b3ff5dcb7482f6791c"
+    },
+    {
+      "path": "src/data/manifest.py",
+      "sha256": "3b2e94c3a01e4d45a956b834d3b9ba93b20566bf67454ca166c1fdebdf306b84"
+    },
+    {
+      "path": "src/data/metadata.py",
+      "sha256": "e0f5f28e94cd1800810fe8c7f01487305c106ae1ca73ddd321ced424151acd17"
+    },
+    {
+      "path": "src/data/moabb.py",
+      "sha256": "d4da66ac3fa2625afefdc747de4b80a259950ce5a31d9cc90f800b803c3aeb8b"
+    },
+    {
+      "path": "src/data/preprocess.py",
+      "sha256": "5fe5290d39ea9540a87069aa3f1c31c27ed81fbc43669e419777168ff4bc1e37"
+    },
+    {
+      "path": "tests/brainsync/test_brainsync.py",
+      "sha256": "9f7365e796e2d928ee0d8c94c77cbd41cd91bbf7d4f27adb8c510d6fa12c18a5"
+    },
+    {
+      "path": "tests/data/test_epochs.py",
+      "sha256": "9026d3f80fe43ea94b9e0e0e3a4138bcd552fea7e95ee0c3d656cc96371b6e83"
+    },
+    {
+      "path": "tests/data/test_moabb_adapter.py",
+      "sha256": "1060565141fd765549c995593f3e5238db0b3fec873c07f5276d5279a749521f"
+    },
+    {
+      "path": "tests/test_data_audit.py",
+      "sha256": "919e8706a56b49abd307dcd883afe2686b986f94aa8f6557771f4a27ea3d7d4a"
+    },
+    {
+      "path": "src/research/recording_quality.py",
+      "sha256": "fa37650b3870d6ab1d61b635f0eb458cf54cb9590881f599e7c25f3420bd28e6"
+    }
+  ]
+}

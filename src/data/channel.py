@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
@@ -64,6 +65,29 @@ class CoordinateRegistrationSpec:
 
     def record(self) -> dict[str, Any]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class CompositeCoordinateRegistrationSpec:
+    """Distinct sensor subsets retain their actual independent transforms."""
+
+    components: tuple[tuple[tuple[str, ...], CoordinateRegistrationSpec], ...]
+
+    @property
+    def source(self):
+        return "+".join(spec.source for _, spec in self.components)
+
+    @property
+    def spherical_fallback(self):
+        return any(spec.spherical_fallback for _, spec in self.components)
+
+    def record(self):
+        return {"schema": "per_channel_coordinate_registration/1", "source": self.source,
+            "input_frame": "mixed", "output_frame": "head", "units": "m",
+            "method": "independent_sensor_subset_registrations", "transform_to_head": None,
+            "spherical_fallback": self.spherical_fallback,
+            "component_registrations": [{"channels": list(channels),
+                "registration": json.loads(json.dumps(spec.record()))} for channels, spec in self.components]}
 
 
 def _identity_transform() -> np.ndarray:
@@ -354,7 +378,7 @@ class ChannelLayout:
     positions_m: np.ndarray
     position_mask: np.ndarray
     source: str
-    registration: CoordinateRegistrationSpec
+    registration: CoordinateRegistrationSpec | CompositeCoordinateRegistrationSpec
 
     def __post_init__(self) -> None:
         if self.positions_m.shape != (len(self.names), 3):
@@ -405,10 +429,11 @@ def resolve_channel_layout(
     resolved = np.zeros((len(names), 3), dtype=np.float64)
     mask = np.zeros(len(names), dtype=bool)
     sources: list[str] = []
-    registration: CoordinateRegistrationSpec | None = None
+    registration: CoordinateRegistrationSpec | CompositeCoordinateRegistrationSpec | None = None
 
     if positions_m is not None:
         if isinstance(positions_m, Mapping):
+            _canonical_unique(tuple(positions_m), aliases)
             by_name = {
                 canonical_channel_name(name, aliases=aliases): np.asarray(value, dtype=np.float64)
                 for name, value in positions_m.items()
@@ -478,15 +503,9 @@ def resolve_channel_layout(
             if registration is None:
                 registration = montage_registration
             else:
-                registration = CoordinateRegistrationSpec(
-                    source=f"{registration.source}+{montage_registration.source}",
-                    input_frame="mixed",
-                    method=f"{registration.method}+{montage_registration.method}",
-                    transform_to_head=_transform_tuple(_identity_transform()),
-                    spherical_fallback=(
-                        registration.spherical_fallback or montage_registration.spherical_fallback
-                    ),
-                )
+                explicit_names = tuple(name for index, name in enumerate(names) if index not in available_indices and mask[index])
+                registration = CompositeCoordinateRegistrationSpec(((explicit_names, registration),
+                    (tuple(available_names), montage_registration)))
         sources.append(str(montage))
 
     if not allow_missing and not mask.all():
@@ -519,7 +538,7 @@ class ChannelIdentity:
     mask: np.ndarray
     names: tuple[str, ...]
     layout_source: str
-    registration: CoordinateRegistrationSpec
+    registration: CoordinateRegistrationSpec | CompositeCoordinateRegistrationSpec
 
     @property
     def n_channels(self) -> int:

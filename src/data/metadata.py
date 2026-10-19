@@ -7,12 +7,12 @@
     - 可学习元数据投影到隐藏维 D（与 channel 的「学习」分支同理，归 models 层）
     - 年龄对 P300 潜伏期的可学习调制（models 层 Stage 0 的职责）
 
-三思决策记录（供后续会话追溯）：
-    D-age-sin    年龄是连续标量，用与通道坐标一致的「正弦编码」映射到 2*n_freqs 维（确定性、无学习）；
-                 复用 channel.sinusoidal_encode_1d，保证两类嵌入的编码风格一致。
-    D-freq-cap   频率封顶（P0②，见 channel.D-freq-cap）：避免高频段在 float32 下退化为数值噪声，
-                 导致相邻年龄编码近似正交、「年龄平滑调制 P300 潜伏期」归纳偏置丧失。
-    D-age-norm   年龄归一化到 [0,1]（除以 MAX_AGE=100），与固定头尺度归一化后的坐标编码同量级。
+编码口径（保存已有数值程序，不声明年龄与坐标共用频基）：
+    D-age-sin    年龄使用 π·2^k，k=0..n_freqs−1，作用于 age/100。
+                 默认8频段的周期为200、100、50、25、12.5、6.25、3.125、1.5625岁；
+                 高频年龄差可迅速去相关，不据此保证年龄平滑调制潜伏期。
+                 channel.sinusoidal_embedding 的频基为 π·geomspace(0.5,8)，与年龄不同。
+    D-age-norm   年龄除以 MAX_AGE=100；超过100岁仍按同一显式周期计算。
     D-sex-onehot 性别是类别，用 3 维 one-hot（男/女/未知）；未知性别显式编码，不丢信息。
     D-missing    年龄缺失（None）→ 年龄编码全 0；性别缺失 → unknown one-hot [0,0,1]。缺失被显式保留，
                  models 层可据此学习「缺失」语义。
@@ -116,7 +116,7 @@ def build_subject_embedding(
 ) -> SubjectEmbedding:
     """年龄 + 性别 → E_sub ∈ R^{2*n_freqs+3}（确定性、无学习）。
 
-    n_freqs 控制年龄正弦编码的频段数（封顶，见 D-freq-cap）；末 3 维固定给性别 one-hot。
+    n_freqs 控制 π·2^k 年龄编码的频段数；末 3 维固定给性别 one-hot。
     """
     e_age = encode_age(age, n_freqs)
     e_sex = encode_sex(sex)

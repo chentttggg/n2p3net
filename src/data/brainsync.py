@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+from contextlib import ExitStack
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from pathlib import Path
@@ -182,6 +183,24 @@ def _build_validated_brainsync_session(
     continuous_qc_model: FittedContinuousQC | None = None,
     recording_scope: IndependentRecordingScope | None = None,
 ) -> EpochDataset:
+    with ExitStack() as original_reads:
+        original_reads.callback(validated.bids.close)
+        return _build_content_bound_brainsync_session(validated, preprocessing=preprocessing,
+            channels=channels, ocular_model=ocular_model, continuous_qc_model=continuous_qc_model,
+            recording_scope=recording_scope, _original_reads=original_reads)
+
+
+
+def _build_content_bound_brainsync_session(
+    validated: ValidatedBrainSyncRecording,
+    *,
+    preprocessing: PreprocessingSpec,
+    channels: Sequence[str] | None,
+    ocular_model: FittedEOGRegression | None = None,
+    continuous_qc_model: FittedContinuousQC | None = None,
+    recording_scope: IndependentRecordingScope | None = None,
+    _original_reads: ExitStack,
+) -> EpochDataset:
     if recording_scope is not None:
         recording_scope.validate_application(validated.session_id)
     labelled = isinstance(validated, ValidatedBrainSyncSession)
@@ -190,6 +209,9 @@ def _build_validated_brainsync_session(
     simulation_status = "declared_mock" if transport == "mock" else "not_declared"
     root = validated.root
     bids = validated.bids
+    if not bids.content_receipts:
+        raise ValueError("BrainSync epoch production requires its actual BIDS byte-content admission")
+    bids.assert_content_unchanged()
     raw_path = bids.raw_path
     events_path = bids.events_path
     subject_id = validated.subject_id
@@ -239,6 +261,7 @@ def _build_validated_brainsync_session(
     decision_ids = np.repeat(session_id, len(markers)).astype(str)
 
     raw = read_raw(raw_path, preload=False)
+    _original_reads.callback(raw.close)
     source_rate = float(raw.info["sfreq"])
     clock = validated.manifest["recording"].get("clock")
     acquired_samples = int(raw.n_times) if clock is None else clock["acquired_samples"]
@@ -529,6 +552,7 @@ def _build_validated_brainsync_session(
         metadata=metadata,
         provenance={
             "source": "brainsync_session",
+            "bids_content": bids.content_record(),
             **({"preprocessing_execution": subject.metadata["preprocessing_execution"]}
                if "preprocessing_execution" in subject.metadata else {}),
             "session_schema": BRAIN_SYNC_SESSION_SCHEMA,
@@ -621,6 +645,7 @@ def _build_validated_brainsync_session(
         qc_features=compute_epoch_qc_features(values, channel_mask=output_active, trial_channel_mask=effective_mask)
         if local_qc else None,
     )
+    bids.assert_content_unchanged()
     dataset.validate(require_labels=labelled)
     if recording_scope is not None:
         dataset.provenance["raw_calibration_scope"] = recording_scope.record()
@@ -655,16 +680,20 @@ def load_brainsync_inference_session(
     """Read target-free evidence; apply caller admission before signal processing/QC."""
     preprocessing.validate()
     validated = validate_brainsync_bids_recording(session_dir)
-    if recording_validator is not None:
-        recording_validator(validated)
-    return _build_validated_brainsync_session(
-        validated,
-        preprocessing=preprocessing,
-        channels=channels,
-        ocular_model=ocular_model,
-        continuous_qc_model=continuous_qc_model,
-        recording_scope=recording_scope,
-    )
+    try:
+        if recording_validator is not None:
+            recording_validator(validated)
+        return _build_validated_brainsync_session(
+            validated,
+            preprocessing=preprocessing,
+            channels=channels,
+            ocular_model=ocular_model,
+            continuous_qc_model=continuous_qc_model,
+            recording_scope=recording_scope,
+        )
+    finally:
+        validated.bids.close()
+
 
 
 def load_brainsync_sessions(
@@ -682,25 +711,30 @@ def load_brainsync_sessions(
     if not roots or len(set(roots)) != len(roots):
         raise ValueError("session_dirs must contain unique BrainSync session directories.")
     preprocessing.validate()
-    validated_sessions = [validate_brainsync_bids_session(root) for root in roots]
-    validated_sessions, roots = _order_brainsync_sessions(validated_sessions, roots)
-    datasets = [
-        _build_validated_brainsync_session(
-            session,
+    with ExitStack() as original_reads:
+        validated_sessions = []
+        for root in roots:
+            session = validate_brainsync_bids_session(root)
+            original_reads.callback(session.bids.close)
+            validated_sessions.append(session)
+        validated_sessions, roots = _order_brainsync_sessions(validated_sessions, roots)
+        datasets = [
+            _build_validated_brainsync_session(
+                session,
+                preprocessing=preprocessing,
+                channels=channels,
+                ocular_model=ocular_model,
+                continuous_qc_model=continuous_qc_model,
+                recording_scope=recording_scope,
+            )
+            for session in validated_sessions
+        ]
+        return _merge_brainsync_sessions(
+            validated_sessions,
+            roots,
+            datasets,
             preprocessing=preprocessing,
-            channels=channels,
-            ocular_model=ocular_model,
-            continuous_qc_model=continuous_qc_model,
-            recording_scope=recording_scope,
         )
-        for session in validated_sessions
-    ]
-    return _merge_brainsync_sessions(
-        validated_sessions,
-        roots,
-        datasets,
-        preprocessing=preprocessing,
-    )
 
 
 def _order_brainsync_sessions(

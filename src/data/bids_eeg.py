@@ -11,6 +11,8 @@ from dataclasses import field as dataclass_field
 from pathlib import Path
 from typing import Any
 
+from data.file_read_lease import OriginalFileReadLease
+
 
 @dataclass(frozen=True)
 class BidsEEGInputContract:
@@ -91,6 +93,31 @@ class ValidatedBidsEEGRecording:
     excluded_intervals: tuple[BidsRestInterval, ...] = ()
     eog_derivation: Mapping[str, Any] = dataclass_field(default_factory=dict)
     source_reference_details: Mapping[str, Any] = dataclass_field(default_factory=dict)
+    content_receipts: tuple[tuple[str, str, int, str, tuple[int, ...]], ...] = ()
+    _content_lease: OriginalFileReadLease | None = dataclass_field(default=None, repr=False, compare=False)
+
+    def content_record(self):
+        return {"schema": "bids_current_ingress_content/1",
+            "origin": "current_ingress_not_acquisition_time_attestation" if self.content_receipts else "metadata_only_unbound",
+            "files": {key: {"path": relative, "byte_size": size, "sha256": digest}
+                for key, relative, size, digest, _ in self.content_receipts}}
+
+    def assert_content_unchanged(self):
+        if self.content_receipts:
+            if self._content_lease is None:
+                raise ValueError("BIDS byte binding requires its original live read lease")
+            self._content_lease.assert_live()
+
+    def close(self):
+        if self._content_lease is not None:
+            self._content_lease.close()
+
+    def __enter__(self):
+        self.assert_content_unchanged()
+        return self
+
+    def __exit__(self, *_):
+        self.close()
 
 
 _REQUIRED_PATH_FIELDS = (
@@ -102,6 +129,19 @@ _REQUIRED_PATH_FIELDS = (
     "electrodes_tsv",
     "coordsystem_json",
 )
+
+
+def _content_receipts(root, paths, lease=None):
+    if lease is None:
+        with OriginalFileReadLease(paths.values()) as local:
+            return _content_receipts(root, paths, local)
+    receipts = []
+    for key, path in sorted(paths.items()):
+        lease.add(path)
+        binding = lease.binding(path)
+        receipts.append((key, path.relative_to(root).as_posix(), binding["byte_size"],
+            binding["sha256"], binding["file_identity"]))
+    return tuple(receipts)
 
 
 def _read_json_object(path: Path, label: str) -> dict[str, Any]:
@@ -225,16 +265,35 @@ def epoch_rest_overlap_mask(
     return tuple(output)
 
 
-def validate_bids_eeg_recording(
+def validate_bids_eeg_recording(dataset_root, files, *, contract, bind_content=True, _read_lease=None):
+    root = Path(dataset_root).expanduser().resolve()
+    paths = _contained_files(root, files)
+    lease = _read_lease
+    owned = lease is None and bind_content
+    if owned:
+        lease = OriginalFileReadLease(paths.values())
+    try:
+        return _validate_bids_eeg_recording(dataset_root, files, contract=contract,
+            bind_content=bind_content, _read_lease=lease)
+    except BaseException:
+        if owned:
+            lease.close()
+        raise
+
+
+def _validate_bids_eeg_recording(
     dataset_root: str | Path,
     files: Mapping[str, Any],
     *,
     contract: BidsEEGInputContract,
+    bind_content: bool = True,
+    _read_lease: OriginalFileReadLease | None = None,
 ) -> ValidatedBidsEEGRecording:
     """Validate BIDS metadata and tables before invoking an EEG binary reader."""
 
     root = Path(dataset_root).expanduser().resolve()
     paths = _contained_files(root, files)
+    content_receipts = _content_receipts(root, paths, _read_lease) if bind_content else ()
     if paths["recording"].suffix.casefold() not in contract.raw_extensions:
         raise ValueError(
             f"Unsupported BIDS EEG recording extension: {paths['recording'].suffix!r}."
@@ -436,7 +495,7 @@ def validate_bids_eeg_recording(
         ):
             raise ValueError("BIDS stimulus onset cannot occur inside a rest interval.")
 
-    return ValidatedBidsEEGRecording(
+    validated = ValidatedBidsEEGRecording(
         root=root,
         raw_path=paths["recording"],
         eeg_json_path=paths["eeg_json"],
@@ -457,4 +516,8 @@ def validate_bids_eeg_recording(
         rest_intervals=ordered_rests,
         acquisition_boundaries=tuple(boundaries),
         excluded_intervals=tuple(excluded),
+        content_receipts=content_receipts,
+        _content_lease=_read_lease,
     )
+    validated.assert_content_unchanged()
+    return validated

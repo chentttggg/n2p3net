@@ -71,10 +71,13 @@ class DatasetManifest:
         if self.layout_policy not in {"intersection", "union", "strict"}:
             raise ValueError("layout_policy must be intersection, union, or strict.")
         if self.channels is not None:
-            if not self.channels or any(
+            if not isinstance(self.channels, (tuple, list)) or not self.channels or any(
                 not isinstance(channel, str) or not channel.strip() for channel in self.channels
             ):
-                raise ValueError("Manifest channels must be non-empty strings.")
+                raise ValueError("Manifest channels must be a non-empty array of strings.")
+            canonical = tuple(canonical_channel_name(name, aliases=self.channel_aliases) for name in self.channels)
+            if len(set(canonical)) != len(canonical):
+                raise ValueError("Manifest channels are duplicated after canonical normalization.")
         if self.channel_positions_m is not None and not isinstance(
             self.channel_positions_m, (Mapping, list, tuple)
         ):
@@ -168,6 +171,9 @@ def load_manifest(path: str | Path) -> DatasetManifest:
             )
         )
     montage: str | Path | None = payload.get("montage", DEFAULT_MONTAGE)
+    channels = payload.get("channels")
+    if channels is not None and not isinstance(channels, list):
+        raise ValueError("Manifest channels must be a JSON array.")
     if isinstance(montage, str):
         possible_path = base / montage
         if possible_path.exists():
@@ -176,7 +182,7 @@ def load_manifest(path: str | Path) -> DatasetManifest:
         name=str(payload.get("name", "")),
         records=tuple(records),
         preprocessing=preprocessing,
-        channels=(tuple(payload["channels"]) if payload.get("channels") else None),
+        channels=tuple(channels) if channels is not None else None,
         channel_positions_m=payload.get("channel_positions_m"),
         montage=montage,
         channel_aliases=payload.get("channel_aliases"),

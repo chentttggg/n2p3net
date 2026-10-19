@@ -84,6 +84,7 @@ def test_continuous_qc_preserves_scheduled_events_and_binds_cache(tmp_path):
         fit_provenance={"participant_key": participant, "source_reference": session.bids.source_reference,
                         "calibration_session_ids": [session.session_id],
                         "calibration_end_timestamp_s": session.ended_timestamp_s})
+    session.bids.close()  # End the old admission before deliberately changing the synthetic source.
     raw._data[3, 2000:] += .0142
     raw.export(session.bids.raw_path, overwrite=True, physical_range="auto", verbose=False)
     dataset = load_brainsync_session(root, preprocessing=preprocessing, continuous_qc_model=fitted)

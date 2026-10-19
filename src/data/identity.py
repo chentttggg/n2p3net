@@ -388,7 +388,8 @@ def assert_target_identity_excluded(
         training_globals = {
             key for record in training.records for key in record.global_person_keys
         }
-        if policy == "global" and (
+        global_evidence_requested = policy == "global" or bool(target_globals or training_globals)
+        if global_evidence_requested and (
             not target_globals
             or any(not record.global_person_keys for record in training.records)
         ):

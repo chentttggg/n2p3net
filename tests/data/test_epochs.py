@@ -161,13 +161,13 @@ def test_attested_load_rejects_malformed_embedded_decoded_sha(tmp_path) -> None:
 def test_attested_load_rejects_a_substituted_physical_object(tmp_path: Path, monkeypatch) -> None:
     canonical, malicious = _substituted_cache_pair(tmp_path)
 
-    real_open = epochs_module.os.open
+    real_open = epochs_module._stable_cache_descriptor
 
-    def substitute_open(path, flags, *args):
+    def substitute_open(path):
         selected = malicious if Path(path) == canonical else path
-        return real_open(selected, flags, *args)
+        return real_open(selected)
 
-    monkeypatch.setattr(epochs_module.os, "open", substitute_open)
+    monkeypatch.setattr(epochs_module, "_stable_cache_descriptor", substitute_open)
 
     with pytest.raises(ValueError, match="SHA-256"):
         load_epoch_dataset(canonical, validation="attested")
@@ -189,7 +189,7 @@ def test_attested_load_decodes_private_snapshot_when_path_is_swapped_after_hash(
         return original_load(snapshot, *args, **kwargs)
 
     monkeypatch.setattr(epochs_module.np, "load", swap_path_then_decode)
-    loaded = load_epoch_dataset(canonical, validation="attested")
+    loaded = load_epoch_dataset(canonical, validation="attested", snapshot_directory=tmp_path)
 
     assert attack_executed is True
     assert loaded.X[0, 0, 0] == epoch_dataset().X[0, 0, 0]
@@ -207,7 +207,7 @@ def test_attested_load_fails_closed_when_snapshot_disk_space_is_insufficient(
     monkeypatch.setattr(epochs_module.shutil, "disk_usage", lambda _path: NoFreeSpace())
 
     with pytest.raises(ValueError, match="insufficient free space"):
-        load_epoch_dataset(canonical, validation="attested")
+        load_epoch_dataset(canonical, validation="attested", snapshot_directory=tmp_path)
 
 
 def test_named_contract_binding_preserves_content_and_binds_attestation(

@@ -590,6 +590,17 @@ def validate_preprocessing_execution(record, preprocessing: PreprocessingSpec) -
                      "actual_source_tmin_s": start / rate, "resampled": do_resample}
     if grid != expected_grid or resampled < preprocessing.n_times:
         raise ValueError("preprocessing execution epoch grid disagrees with its declaration")
+    if "actual_epoch_grid" in record:
+        actual_grid = {"schema": "source_epoch_origin_and_nominal_model_grid/1",
+            "source_grid_origin_s": start/rate, "model_nominal_spacing_s": 1/preprocessing.sfreq,
+            "model_nominal_last_sample_s": start/rate+(preprocessing.n_times-1)/preprocessing.sfreq,
+            "model_nominal_end_exclusive_s": start/rate+preprocessing.n_times/preprocessing.sfreq,
+            "baseline_index_origin_s": preprocessing.tmin_ms/1000,
+            "source_origin_rounding": "nearest_source_sample_MNE_closed_epoch",
+            "resampling_grid": "original_FFT_resample_and_first_T_crop_unchanged",
+            "resampled_times_are_nominal_model_coordinates": True}
+        if record["actual_epoch_grid"] != actual_grid:
+            raise ValueError("actual preprocessing grid origin differs from its source sample support")
     names, shape = output.get("channel_names"), output.get("shape")
     if (not isinstance(names, list) or not names or len(set(names)) != len(names)
             or not isinstance(shape, list) or len(shape) != 3
@@ -1050,20 +1061,104 @@ def save_epoch_dataset(
         ),
         "decoded_dataset_sha256": np.asarray(_decoded_dataset_sha256(dataset)),
     }
-    writer = np.savez_compressed if compressed else np.savez
-    temporary = path.with_suffix(path.suffix + ".tmp.npz")
+    _publish_epoch_cache(path, dataset, payload, compressed=compressed, exclusive=exclusive)
+    return path
+
+
+@contextmanager
+def _cache_publication_lock(path):
+    from research.source_execution import process_file_lock
+
+    # The inode stays in place: unlinking a held lock permits a second writer
+    # to lock a new inode with the same name.
+    with process_file_lock(Path(path).with_suffix(".epoch.lock")):
+        yield
+
+
+def _temporary_path(path, suffix):
+    descriptor, temporary = tempfile.mkstemp(prefix="."+path.name+"-", suffix=suffix, dir=path.parent)
+    os.close(descriptor)
+    return Path(temporary)
+
+
+def _fsync_file(path):
+    with path.open("r+b") as stream:
+        os.fsync(stream.fileno())
+
+
+def _publish_epoch_cache(path, dataset, payload, *, compressed, exclusive):
     from research.source_execution import current_input_admission
 
     admission = current_input_admission()
-    # NPY headers/ZIP records plus the deflate worst-case growth; the same
-    # payload arrays are serialized, without another copy or scientific change.
-    estimate = sum(value.nbytes for value in payload.values()) * 1001 // 1000 + len(payload) * 65536 + 2**20
-    with (admission.artifact_writer(path, estimate, temporary_paths=(temporary,))
-          if admission is not None else nullcontext()):
-        writer(temporary, **payload)
-        temporary.replace(path)
-    write_epoch_dataset_record(path, dataset)
-    return path
+    estimate = sum(value.nbytes for value in payload.values())*1001//1000+len(payload)*65536+2**20
+    with _cache_publication_lock(path):
+        record_path = _cache_record_path(path)
+        if exclusive and any(candidate.exists() for candidate in (path, record_path)):
+            raise FileExistsError(f"refusing to replace an existing epoch cache: {path}")
+        temporary = _temporary_path(path, ".npz")
+        record_temporary = None
+        backups = {}
+        installed = []
+        installed_objects = {}
+        try:
+            record_temporary = _temporary_path(record_path, ".json")
+            with (admission.artifact_writer(path, estimate, temporary_paths=(temporary,))
+                  if admission is not None else nullcontext()):
+                (np.savez_compressed if compressed else np.savez)(temporary, **payload)
+                _fsync_file(temporary)
+                record = dataset.record(validate=False)
+                record["cache_attestation"] = {"schema": _CACHE_ATTESTATION_SCHEMA,
+                    "full_contract_validated": True, "sha256": _sha256_file(temporary),
+                    "byte_size": temporary.stat().st_size}
+                record_temporary.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf8")
+                _fsync_file(record_temporary)
+                if exclusive:
+                    # No-replace is enforced by the filesystem at each final
+                    # publication, including writers that do not share our lock.
+                    for staged, member in ((temporary, path), (record_temporary, record_path)):
+                        published_sha = record["cache_attestation"]["sha256"] if member == path else _sha256_file(staged)
+                        identity = _file_identity(staged.stat())[:2]
+                        os.link(staged, member)
+                        installed.append((member, published_sha))
+                        installed_objects[member] = identity
+                        staged.unlink()
+                else:
+                    # Keep both old members available for rollback. A hard process
+                    # crash leaves named .rollback files, never destroys old data.
+                    for member in (path, record_path):
+                        if member.exists():
+                            backup = _temporary_path(member, ".rollback")
+                            backup.unlink()
+                            member.replace(backup)
+                            backups[member] = backup
+                    for staged, member in ((temporary, path), (record_temporary, record_path)):
+                        published_sha = record["cache_attestation"]["sha256"] if member == path else _sha256_file(staged)
+                        staged.replace(member)
+                        installed.append((member, published_sha))
+        except BaseException as error:
+            for member, published_sha in reversed(installed):
+                try:
+                    if (member.exists() and (not exclusive or _file_identity(member.stat())[:2] == installed_objects[member])
+                            and _sha256_file(member) == published_sha):
+                        member.unlink()
+                except OSError as cleanup_error:
+                    error.add_note(f"cache rollback retained an unreadable publication: {cleanup_error}")
+            for member, backup in backups.items():
+                if member.exists():
+                    error.add_note(f"cache rollback preserved a competing publication; original retained at {backup}")
+                else:
+                    try:
+                        backup.replace(member)
+                    except OSError as cleanup_error:
+                        error.add_note(f"cache rollback original retained at {backup}: {cleanup_error}")
+            raise
+        else:
+            for backup in backups.values():
+                backup.unlink()
+        finally:
+            temporary.unlink(missing_ok=True)
+            if record_temporary is not None:
+                record_temporary.unlink(missing_ok=True)
 
 
 _CACHE_ATTESTATION_SCHEMA = "n2p3net_epoch_cache_attestation/1"
@@ -1286,6 +1381,12 @@ def _file_identity(value: os.stat_result) -> tuple[int, int, int, int]:
     return (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns)
 
 
+def _stable_cache_descriptor(path):
+    from data.file_read_lease import open_read_descriptor
+
+    return open_read_descriptor(path, allow_replace=True)
+
+
 @contextmanager
 def _epoch_cache_archive_source(
     path: Path,
@@ -1303,6 +1404,24 @@ def _epoch_cache_archive_source(
         yield path, None, None
         return
 
+    if snapshot_directory is None and not os.environ.get(_VERIFIED_CACHE_SNAPSHOT_DIR_ENV):
+        with _cache_publication_lock(path):
+            record, attestation = _read_epoch_cache_record(path)
+            with os.fdopen(_stable_cache_descriptor(path), "rb") as stream:
+                before = os.fstat(stream.fileno())
+                if not stat.S_ISREG(before.st_mode) or before.st_size != attestation["byte_size"]:
+                    raise ValueError(f"{path} is not the attested regular cache object")
+                digest = hashlib.sha256()
+                for block in iter(lambda: stream.read(1024*1024), b""):
+                    digest.update(block)
+                if digest.hexdigest() != attestation["sha256"]:
+                    raise ValueError(f"{path} SHA-256 no longer matches its cache attestation.")
+                stream.seek(0)
+                yield stream, record, attestation
+                after = os.fstat(stream.fileno())
+                if (_file_identity(before), before.st_ctime_ns) != (_file_identity(after), after.st_ctime_ns):
+                    raise ValueError(f"{path} changed during attested decoding")
+        return
     record, attestation = _read_epoch_cache_record(path)
     snapshot_directory = _verified_cache_snapshot_directory(
         path,
@@ -1370,25 +1489,27 @@ def write_epoch_dataset_record(
     cache_path = Path(path)
     if not already_validated:
         dataset.validate()
-    record = dataset.record(validate=False)
-    record["cache_attestation"] = {
-        "schema": _CACHE_ATTESTATION_SCHEMA,
-        "full_contract_validated": True,
-        "sha256": _sha256_file(cache_path),
-        "byte_size": cache_path.stat().st_size,
-    }
-    record_path = _cache_record_path(cache_path)
-    text = json.dumps(record, ensure_ascii=False, indent=2)
     from research.source_execution import current_input_admission
 
     admission = current_input_admission()
-    encoded_size = len(text.encode("utf-8")) + text.count("\n") * (len(os.linesep) - 1)
-    temporary = record_path.with_name(f".{record_path.name}.tmp")
-    with (admission.artifact_writer(record_path, encoded_size, temporary_paths=(temporary,))
-          if admission is not None else nullcontext()):
-        temporary.write_text(text, encoding="utf-8")
-        temporary.replace(record_path)
+    record_path = _cache_record_path(cache_path)
+    with _cache_publication_lock(cache_path):
+        record = dataset.record(validate=False)
+        record["cache_attestation"] = {"schema": _CACHE_ATTESTATION_SCHEMA,
+            "full_contract_validated": True, "sha256": _sha256_file(cache_path),
+            "byte_size": cache_path.stat().st_size}
+        text = json.dumps(record, ensure_ascii=False, indent=2)
+        temporary = _temporary_path(record_path, ".json")
+        try:
+            with (admission.artifact_writer(record_path, len(text.encode("utf8")), temporary_paths=(temporary,))
+                  if admission is not None else nullcontext()):
+                temporary.write_text(text, encoding="utf8", newline="\n")
+                _fsync_file(temporary)
+                temporary.replace(record_path)
+        finally:
+            temporary.unlink(missing_ok=True)
     return record_path
+
 
 
 def _validate_attested_cache(
@@ -1631,6 +1752,9 @@ def _load_epoch_dataset(
             dataset,
             record_path=_cache_record_path(path),
         )
+        decoded_identity = _decoded_dataset_sha256(dataset)
+        if stored_decoded_dataset_sha256 is not None and decoded_identity != stored_decoded_dataset_sha256:
+            raise ValueError(f"{path} decoded dataset changed from its saved content identity")
         dataset.verified_cache_attestation = MappingProxyType(
             {
                 "schema": _VERIFIED_CACHE_LOAD_SCHEMA,
