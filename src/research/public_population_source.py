@@ -40,6 +40,7 @@ from transfer.spatial_serialization import same_record_owners
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _PERSONS, _NATIVES, _ADMISSIONS = WeakKeyDictionary(), WeakKeyDictionary(), WeakKeyDictionary()
 _EXECUTIONS = WeakKeyDictionary()
+_EXECUTION_PARENTS = WeakKeyDictionary()
 _PERSON_PUBLICATIONS, _FOLD_PUBLICATIONS = {}, {}
 
 
@@ -542,6 +543,25 @@ def load_source_population_execution(execution_reference, *, trusted_acceptance_
     value = SourcePopulationExecution(record, freeze_metadata(execution_reference),
         freeze_metadata(trusted_acceptance_reference), freeze_metadata(expected_matrix_reference))
     _EXECUTIONS[value] = record
+    _EXECUTION_PARENTS[value] = (value.execution_reference, value.acceptance_reference, value.matrix_reference)
+    return value
+
+
+def require_complete_source_population_execution(value):
+    """Return the original accepted execution for a new complete-person consumer.
+
+    A numeric fold, a copied dataclass or a saved execution record cannot mint
+    this handle. Consumers may reuse its original person A/r/c publications to
+    fit a new source-only population programme, without opening source EEG.
+    """
+    parents = _EXECUTION_PARENTS.get(value) if type(value) is SourcePopulationExecution else None
+    if (parents is None or _EXECUTIONS.get(value) is not value.record
+            or any(a is not b for a, b in zip(parents,
+                (value.execution_reference, value.acceptance_reference, value.matrix_reference), strict=True))):
+        raise TypeError("the independently accepted complete original-source execution is required")
+    if (metadata_digest(json.loads(_bytes(value.execution_reference))) != metadata_digest(value.record)
+            or metadata_digest(value.matrix_reference) != metadata_digest(value.record["source_matrix"])):
+        raise ValueError("the accepted complete execution or its original matrix reference changed")
     return value
 
 

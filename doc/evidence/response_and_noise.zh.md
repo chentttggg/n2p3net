@@ -376,7 +376,9 @@ proper表示概率归一化，允许Dirac等退化law。本次迁移另要求希
 
 原population、chart、精确图、affine consumer和codec能力按各自职责复用。当前p=16时完整源参数496维，between/mean合计992因子列；source_map为identity的现有exact marginal先保完整496维源边缘及48维条件创新。进一步压缩应针对所有实际target查询与Gs的精确零空间，保各因子族的共享关系。旧软件fixture的3µV尺度保其数学造数身份，新reference政策另列来源。29组作者控制与8组独立Fraction/解析反例支持以上关系，科学设计和接口接受见[迁移数学绑定](../assets/research_resume_20261012/adult_population_transport_science_integration.json)。
 
-成人完整多C/held输入和原parent恢复接口见[输入整合](../assets/research_resume_20261012/adult_programme_input_integration.json)。全链依次连接全部13份已接受数据likelihood建立的新成人forecast、上述迁移、250Hz实际时钟、joint保存后原C重新准入、完整history及typed个人入口；12人LOSO折保自身角色。完整切片定义见[成人接入交接](D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/ADULT_BRIDGE_HANDOFF.zh.md)，实施和运行状态由当前checkpoint维护。
+成人完整多C/held输入和原parent恢复接口见[输入整合](../assets/research_resume_20261012/adult_programme_input_integration.json)。B已将完整execution的全部13个人数据likelihood、原source-only noise/reference/scale/seed、新成人排除、显式完整条件政策、actual W、保存/冷读及原parent重新准入连接到同一工厂。具名软件13人源为2导128Hz合成产物；它与实际七导250Hz的原EDF/BIDS输入完成9项控制，真实31导1000Hz的几何与完整源关系沿已接受数学和实际源码审阅核清。此处复用原控制及fixture的AST对应，主树另核六个模块实际导入，新增科研fit为0；新old-graph补充断言与三组独审数值脚本如实保未运行，接受依据及清理范围见[成人源迁移整合](../assets/research_resume_20261012/adult_population_source_integration.json)。
+
+后续全链连接一次完整C联合校准、保存后原C重新准入、完整history及typed个人入口；12人LOSO折保自身角色。完整切片定义见[成人接入交接](D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/ADULT_BRIDGE_HANDOFF.zh.md)，实施和运行状态由当前checkpoint维护。
 
 ### 源数据因子的充分状态与产物职责
 

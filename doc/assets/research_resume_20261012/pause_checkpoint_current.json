@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_at_user_request",
-  "recorded_at": "2026-10-19T23:14:14.413362+08:00",
+  "recorded_at": "2026-10-19T23:29:53.292884+08:00",
   "user_request": "resume_research_then_resolve_repository_audit_before_autonomous_continuation",
   "research_worktree": "D:\\BCI\\n2p3-net",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -282,9 +282,8 @@
     }
   },
   "active_agents": {
-    "/root/history_slice_integration_review": "Implement complete adult source forecast and transport factory/codec.",
+    "/root/history_slice_integration_review": "Implement readonly fixed-source exclusion relation for new personal query sessions.",
     "/root/audit_disposition_refresh": "Implement actual-functional adult C/history seam and complete downstream contract.",
-    "/root/adult_population_transport_independent": "Independently review B complete adult source forecast and transport factory/codec.",
     "/root/execution_failures": "Prepare future complete target-matrix v2 telemetry checker; preserve current source checker/seals.",
     "/root/audit_repository_convergence": "Independently review future complete target-matrix checker and accepted telemetry closure."
   },
@@ -1073,11 +1072,18 @@
       "production_code_accepted": false
     },
     "adult_population_transport": {
-      "state": "production_source_controls_passed_independent_review_and_shared_fixture_convergence_in_progress",
-      "owner": "/root/history_slice_integration_review",
-      "candidate_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\candidate",
-      "upstream_science_binding": "doc/assets/research_resume_20261012/adult_population_transport_science_integration.json",
-      "next_exit": "complete person execution handle, new all13 source-only forecast, actual geometry plus explicit conditional policy, factory/save/cold/original-parent readmission"
+      "state": "integrated_fixed_Gaussian_code_contracts_accepted_author_cleanup_incomplete",
+      "integration_binding": "doc/assets/research_resume_20261012/adult_population_source_integration.json",
+      "independent_acceptance": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\independent-review\\ACCEPTANCE.json",
+        "bytes": 14878,
+        "sha256": "b9908450057fabdb70697b7381b6bb001efb995cadb31f1506734ac2dda2d393"
+      },
+      "accepted_code_owner": "src/research/adult_population_source.py",
+      "source_sha256": "5464d36d7062b8bfaceb6186a5259367e84fb5fe24fc77d30a412ecfecd33104",
+      "source_only_real_person_EEG_refits": 0,
+      "author_cleanup_remaining_files": 125,
+      "author_cleanup_remaining_bytes": 8869024
     },
     "zero_latent_response_graph": {
       "state": "integrated_code_and_numeric_codec_contracts_accepted_author_cleanup_incomplete",
@@ -1188,6 +1194,13 @@
       "new_EDF_or_model_files": 0,
       "new_fits": 0,
       "cleanup_status": "not_applicable"
+    },
+    "adult_personal_query_source": {
+      "state": "public_readonly_exclusion_relation_implementation_in_progress",
+      "owner": "/root/history_slice_integration_review",
+      "candidate_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\personal-query-exclusion\\candidate",
+      "scope": "new actual A session and original fixed source; same-person and full source exclusion validated without source refit or rewriting original producer",
+      "new_source_or_C_fit_authority": false
     }
   },
   "next_actions": [
@@ -1206,7 +1219,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T15:14:14.413416+00:00",
+  "last_updated_utc": "2026-10-19T15:29:53.282164+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
