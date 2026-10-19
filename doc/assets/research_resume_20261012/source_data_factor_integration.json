@@ -29,7 +29,7 @@
     "sha256": "7b8a3f624f4ccd31f01fde3e57313feb7114e3054d3fe2a674e7762a38d82186"
   },
   "source_artifact_plan": {
-    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\SOURCE_ARTIFACT_PLAN.zh.md",
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\preimages\\SOURCE_ARTIFACT_PLAN.zh.md",
     "bytes": 18608,
     "sha256": "58a6615bc2153bb6c20accf465634942b0135fdc4cd48e2ae6b375a19827ee92"
   },
@@ -220,5 +220,6 @@
     },
     "worktrees_created": 0
   },
-  "current_execution_and_next_steps_owner": "pause_checkpoint_current.json"
+  "current_execution_and_next_steps_owner": "pause_checkpoint_current.json",
+  "maintained_source_artifact_plan": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\SOURCE_ARTIFACT_PLAN.zh.md"
 }

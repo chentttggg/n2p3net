@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_at_user_request",
-  "recorded_at": "2026-10-19T10:36:19.039441+08:00",
+  "recorded_at": "2026-10-19T20:57:33.147096+08:00",
   "user_request": "resume_research_then_resolve_repository_audit_before_autonomous_continuation",
   "research_worktree": "D:\\BCI\\n2p3-net",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -281,7 +281,10 @@
       "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
     }
   },
-  "active_agents": {},
+  "active_agents": {
+    "/root/history_slice_integration_review": "Missing-person recovery owner implementation and focused vertical controls.",
+    "/root/execution_failures": "Independent original12product partial acceptance and complete recovered execution checker."
+  },
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
     "ownership": "separate_cloud_chat",
@@ -293,7 +296,7 @@
     "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
     "commit": "a6f5750"
   },
-  "integration_head": "3e8e81695b2f746174533293235bc7be042dbbf5",
+  "integration_head": "094d44292d8155b96977ca1f26810eda23f77477",
   "concurrency_authorization": "later user allowed more threads after the temporary six-agent limit; seven actual parallel roles used for independent scientific slices",
   "execution_priority": "resolve_current_repository_audit_then_resume_full_population_and_joint_history_matrix",
   "accepted_native_input_source_commit": "811fb18dcbde94b9903ee8cce0df4bee16466e4a",
@@ -434,7 +437,7 @@
     "new_requested_score_cells": 4914,
     "completed_external_four_method_anchor_cells": 9828,
     "total_six_method_cells": 14742,
-    "new_source_programme": "13 person likelihood fits once,13 folds each other12; stopped local attempt has zero completed source models; fresh cloud execution pending.",
+    "new_source_programme": "Current source progression and remaining work are owned by active_scientific_work.population_source.execution and recovery.",
     "H2_C68_scope": "small development connection only"
   },
   "repository_audit": {
@@ -501,7 +504,7 @@
       "actual_population_complete_hyperfits": 0,
       "candidate_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
       "execution": {
-        "state": "running_complete_compact_source_programme",
+        "state": "incomplete_native_wait_retired_missing_person_recovery_under_review",
         "source_product_kind": "same_fit_full_response_data_factor_v2",
         "launch": {
           "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\ROOT_LAUNCH.json",
@@ -523,18 +526,6 @@
           "bytes": 4005,
           "sha256": "9ba8df49a5d3e25a9c50c9b7638c199ee557a080c9b125450b64e2d0ab67afdb"
         },
-        "supervisor": {
-          "pid": 24532,
-          "created": 1792412145.9954093
-        },
-        "scientific_process": {
-          "pid": 68724,
-          "created": 1792412155.9751024
-        },
-        "outer_python_launcher": {
-          "pid": 25744,
-          "created": 1792412145.9585328
-        },
         "owned_launch": {
           "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\supervision\\launch.json",
           "bytes": 2890,
@@ -549,7 +540,7 @@
         "fold_workers": 2,
         "native_threads_per_worker": 10,
         "cpu_threads_total": 21,
-        "completed_source_products": 5,
+        "completed_source_products": 12,
         "completed_folds": 0,
         "scientific_acceptance_issued": false,
         "actual_frozen_inspect": {
@@ -563,40 +554,53 @@
           "sha256": "7c377fde20bd09a45dff4de25505089012b9a4e0d4f60396f11a8392cf66c34e"
         },
         "last_observation": {
-          "time": 1792412521.9862897,
-          "action": "running",
-          "host_cpu_percent": 20.9,
-          "host_memory_percent": 55.6,
-          "owned_cpu_percent_of_host": 7.261010530493067,
-          "gpu_observation": {
-            "observed_time": 1792412520.1630843,
-            "status": "observed",
-            "devices": [
-              {
-                "index": 0,
-                "utilization_percent": 8.0,
-                "memory_total_mib": 8151.0,
-                "memory_used_mib": 4092.0,
-                "memory_percent": 50.20242914979757
-              }
-            ]
-          },
-          "scientific_process_status": "running",
+          "checked_utc": "2026-10-19T12:57:33.102984+00:00",
+          "action": "stop_requested",
+          "original_owned_births_checked_absent": 7,
+          "remaining": [],
           "person_states": {
-            "complete": 5,
-            "pending": 6,
-            "running": 2
+            "complete": 12,
+            "not_issued": 1
           },
           "fold_states": {
             "pending": 13
+          },
+          "original_checkpoint_snapshot": {
+            "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\ROOT_INCOMPLETE_CHECKPOINT_SNAPSHOT.json",
+            "bytes": 17906,
+            "sha256": "1a45a79431d5fbeea15600aebc188f37b3c78b772adedddc945811c33be89027"
           }
         },
-        "next_action": "Continue full13-person/13-fold managed compact programme and observe actual issued products/utilization. After actual complete output, exit0 and tree retirement, run the sealed independent v2 execution checker; then execute the full target matrix."
+        "next_action": "Accept only the12unchanged original person products; review recovery/3; freeze new attempt with one Python numerical caller and20native threads; fit only missing person1then complete all13folds.",
+        "retired_process_identities": {
+          "supervisor": {
+            "pid": 24532,
+            "created": 1792412145.9954093
+          },
+          "scientific_process": {
+            "pid": 68724,
+            "created": 1792412155.9751024
+          },
+          "outer_python_launcher": {
+            "pid": 25744,
+            "created": 1792412145.9585328
+          }
+        },
+        "retirement": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\INCOMPLETE_RETIREMENT.json",
+          "bytes": 5235,
+          "sha256": "d647e0deb5c2d8bcfec20b7401cc7e0dcfc4b1dc187a1092adb4d1de8ef4cc9e"
+        },
+        "diagnosis": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\THREAD_DIAGNOSIS_MANIFEST.json",
+          "bytes": 3142,
+          "sha256": "361b9a924756c0178dbb9b92fab6e6f58e93fe0cbca85fb70de26d4d39969722"
+        }
       },
       "code_preparation": {
         "conditioning": "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
         "cloud_execution": "doc/assets/research_resume_20261012/source_cloud_execution_preparation.json",
-        "state": "complete_source_with_accepted_bounded_fast_codec_frozen_and_running",
+        "state": "recovery_candidate_under_review_original12person_products_preserved",
         "local_training_allowed": true,
         "completed_source_models_in_stopped_attempt": 0,
         "user_cloud_response": "User subsequently authorized local computation first with whole-machine CPU/RAM/GPU each below80percent.",
@@ -605,7 +609,6 @@
         "memory_lifecycle": "doc/assets/research_resume_20261012/source_memory_lifecycle_integration.json",
         "serialization": "doc/assets/research_resume_20261012/source_serialization_integration.json"
       },
-      "completed_source_models": 0,
       "previous_stopped_local_execution": {
         "state": "stopped_by_user_local_training_not_authorized",
         "stop_receipt": "D:/BCI/artifacts/research-deliveries/source-response-states/audited-execution-source/USER_STOP.json",
@@ -772,7 +775,20 @@
         "preserved_large_source_models": 2,
         "original_terminal_role": "Explicit code supersession/stop_requested; original evidence and producer remain. This was not a user pause or a scientific failure."
       },
-      "completed_source_products": 5
+      "completed_source_products": 12,
+      "recovery": {
+        "state": "candidate_and_independent_partial_acceptance_in_progress",
+        "implementation": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/compact-source-recovery",
+        "implementation_owner": "/root/history_slice_integration_review",
+        "independent_acceptance_owner": "/root/execution_failures",
+        "next_attempt_source_workers": 1,
+        "next_attempt_fold_workers": 1,
+        "next_attempt_native_threads": 20,
+        "new_attempt_launched": false,
+        "new_source_fits_required": 1,
+        "fold_fits_required": 13,
+        "target_continuation_handoff": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/population-matrix-execution/TARGET_CONTINUATION_HANDOFF.zh.md"
+      }
     },
     "joint_response_noise": {
       "checkpoint": {
@@ -873,10 +889,11 @@
     }
   },
   "next_actions": [
-    "Monitor the actual full13-person/13-fold compact source programme and whole-host resources; old streamed tree retirement is verified.",
-    "After actual complete compact source, exit0 and owned-tree retirement, run the separately sealed independent v2 execution acceptance checker with the new launch/manifest/recipe pins.",
-    "Freeze final target runtime and execute complete78Cfit/4914held matrix with accepted source and original819panel.",
-    "Use public execution and accepted adult bridge dependency study to implement the complete native7/nine-choice vertical chain."
+    "Verify retired original tree and independently accept exact12original person products for reuse only.",
+    "Review recovery owner/CLI/loaders, integrate and freeze recipe/3+execution/3; launch missing person1and all13folds under whole-host80percent ceiling.",
+    "After complete13person/13fold recovered execution, exit0 and owned-tree retirement, obtain independent complete acceptance.",
+    "Bind recovered source recipe to original819panel; freeze complete target runtime and execute full78Cfits/4914held cells.",
+    "Continue native7/adult nine-choice integration from the accepted adult-bridge dependency study."
   ],
   "active_local_checks": [],
   "folder_cleanup_review": {
@@ -887,7 +904,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T12:22:02.419263+00:00",
+  "last_updated_utc": "2026-10-19T12:57:33.102984+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
@@ -915,5 +932,10 @@
       "github": "not_applicable: no remote publication requested"
     },
     "handoff": "science_to_engineering: SOURCE_ARTIFACT_PLAN@58a6615b; preserve complete raw identity, noise programme, all columns, weak directions, flat measure and requested denominator."
+  },
+  "previous_live_checkpoint": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\ROOT_CHECKPOINT_BEFORE_NATIVE_WAIT_RETIREMENT.json",
+    "bytes": 50019,
+    "sha256": "20dcbf7e3f5e58b9cf338bcef478b302313d2630a9262635ab5b2750f8d81dbe"
   }
 }
