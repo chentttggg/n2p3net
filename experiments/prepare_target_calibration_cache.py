@@ -20,6 +20,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from data.cache_output import EPOCH_CACHE_OUTPUT_HELP, new_epoch_cache_path  # noqa: E402
 from data.epochs import (  # noqa: E402
     TARGET_CALIBRATION_SCOPE_SCHEMA,
     DataLineage,
@@ -38,7 +39,7 @@ from transfer.candidate_within_subject import (  # noqa: E402
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-cache", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--output", type=new_epoch_cache_path, required=True, help=EPOCH_CACHE_OUTPUT_HELP)
     parser.add_argument("--calibration-selections", type=int, required=True)
     parser.add_argument("--test-repetitions", type=int, required=True)
     parser.add_argument("--max-test-selections", type=int, default=None)
@@ -125,7 +126,7 @@ def main(argv: list[str] | None = None) -> None:
         ),
     )
     adapted.validate(require_labels=True)
-    saved = save_epoch_dataset(output, adapted, compressed=not args.uncompressed)
+    saved = save_epoch_dataset(output, adapted, compressed=not args.uncompressed, exclusive=True)
     print(
         json.dumps(
             {

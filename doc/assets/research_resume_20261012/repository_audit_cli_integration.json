@@ -1,0 +1,101 @@
+{
+  "schema": "n2p3_repository_audit_cli_integration/1",
+  "delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-cli\\DELIVERY_MANIFEST.json",
+    "sha256": "ceaa449ea92b309b1779860c7bb16b6d0efe931943bf4dc0f0a8229d31942c37",
+    "bytes": 3519
+  },
+  "review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-cli\\SPEC_AND_REVIEW.zh.md",
+    "sha256": "fbc5ab2847ae60e52ffc5e92730271ba3998c93405ddbb395ea5f5824ae97cc2",
+    "bytes": 6244
+  },
+  "canonical_sources": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\adapt_eeg_domain.py",
+      "bytes": 5435,
+      "sha256": "ed9c39562ff96b43ca41930a40a0d359647c26897dc47c03c51d844da0bf41da"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\prepare_bi2014a_candidate.py",
+      "bytes": 13869,
+      "sha256": "5367b9a307bb6ac43447ce9759ac5519f5c515441387749a02b36fb153f81c9a"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\prepare_bnci2014_008_candidate.py",
+      "bytes": 8060,
+      "sha256": "dc6bf06395240cd85f0dc14e2657cc25fb6914b99e41c33746420acd7150eab3"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\prepare_eeg_dataset.py",
+      "bytes": 10083,
+      "sha256": "b4483eafb7111c887d6367ea6957fa82c2efc709f23c7e66bd87c3eb322b0337"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\prepare_gtn_dataset.py",
+      "bytes": 3896,
+      "sha256": "f74cba0872e06a3bdce14570005e5e2a5d06151481cb79f8b03d42e5a5029c6d"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\prepare_reference_cache.py",
+      "bytes": 2440,
+      "sha256": "b2c93ed624978eb9e0485ab28bb436fe3254df503b58939891c68172a7581192"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\prepare_target_calibration_cache.py",
+      "bytes": 5987,
+      "sha256": "f9df4f8f5ba3989b6d89d095e95045e4680f701054b4e5c739de8d6c56018016"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\data\\cache_output.py",
+      "bytes": 1075,
+      "sha256": "6e175e392a6f1fffa2f22da269a9ddddc61c4f8b9c7faf30d396c2748ed76f07"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\data\\calibration.py",
+      "bytes": 15703,
+      "sha256": "425bd363d4f48d3164210beb0dc421c7ea49161520b6352125e852d1003a7e40"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\data\\gtn.py",
+      "bytes": 9596,
+      "sha256": "7e5229faf2310a669079a195b1125508db9503cf5f39e0a6e583b90607869076"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\data\\gtn_dataset.py",
+      "bytes": 11632,
+      "sha256": "971e90f0b20999426eae447ef30b5d4bfabdf701467c201590bd6f89e9539ee7"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\data\\source_records.py",
+      "bytes": 61004,
+      "sha256": "51dcd4763c394d1f807f25af901475a6eda30cdce445b2a769f9b245c6ea8686"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\binary.py",
+      "bytes": 11853,
+      "sha256": "f08b0bd22f8dd729b2f77b86171ebdec3009e0c1d6a9eea2623ed1699c5771ae"
+    }
+  ],
+  "root_review": {
+    "active_cache_CLI_preflight_and_real_exclusive_writer_read": true,
+    "pure_contract_owner_and_historical_aliases_read": true,
+    "GTN_real_ingress_and_skip_caller_read": true,
+    "root_found_and_author_fixed": "whole read_gtn KeyError wrapper could swallow helper defects; only actual HDF5/text ingress now classifies known source defects",
+    "source_records_combination": "Preserved engineering method3+CLI entrypoint contract; changed seven deferred budget imports only. Other pure data owner imports preserved.",
+    "new_checkout_EOL": "LF; frozen original/candidate pins retained",
+    "import_classification": "Only I001 sorted in actual canonical package after extraction; definitions retained"
+  },
+  "validation": {
+    "author": "10 behavior groups plus 8 original pure binary time contracts",
+    "canonical_composed": {
+      "source_cache_method3_and_data_budget_imports_and_GTN_callers": "pytest exit0; 4 missing-local-data skips retained",
+      "ruff": "I001 only import order corrected",
+      "git_diff_check": 0
+    }
+  },
+  "cleanup": {
+    "status": "not_applicable",
+    "retired_old_tools": "Kept retired; optional safety rewrite explicitly excluded; old main bytes retained in baseline"
+  }
+}

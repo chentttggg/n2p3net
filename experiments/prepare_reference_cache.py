@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from data.cache_output import EPOCH_CACHE_OUTPUT_HELP, new_epoch_cache_path  # noqa: E402
 from data.domain import (
     ensure_common_channel_average_reference,
     ensure_native_reference_selection,
@@ -28,7 +29,7 @@ def main() -> None:
         required=True,
     )
     parser.add_argument("--name", default=None)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--output", type=new_epoch_cache_path, required=True, help=EPOCH_CACHE_OUTPUT_HELP)
     parser.add_argument("--uncompressed", action="store_true")
     args = parser.parse_args()
 
@@ -46,7 +47,7 @@ def main() -> None:
         derived = ensure_native_reference_selection(dataset, channels, name=args.name)
     else:
         derived = ensure_common_channel_average_reference(dataset, channels, name=args.name)
-    saved = save_epoch_dataset(output, derived, compressed=not args.uncompressed)
+    saved = save_epoch_dataset(output, derived, compressed=not args.uncompressed, exclusive=True)
     print(
         f"[reference-cache] {saved} X={derived.X.shape} "
         f"reference={derived.provenance.get('source_reference')} "

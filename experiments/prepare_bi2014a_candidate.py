@@ -20,6 +20,7 @@ from data.bi2014a_candidate import (  # noqa: E402
     build_bi2014a_prepared_participant,
     build_bi2014a_subject_dataset,
 )
+from data.cache_output import new_epoch_cache_path  # noqa: E402
 from data.contract import SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT  # noqa: E402
 from data.epochs import (  # noqa: E402
     PreprocessingSpec,
@@ -76,8 +77,8 @@ def prepare_episode_subject(arguments):
         reference_channel=arguments['reference_channel'], maximum_horizon=arguments['maximum_horizon'])
     prepared.calibration.provenance['source_profile_checkpoint'] = arguments['source_profile_checkpoint']
     prepared.future.provenance['source_profile_checkpoint'] = arguments['source_profile_checkpoint']
-    c = save_epoch_dataset(output / 'calibration.npz', prepared.calibration, compressed=False)
-    f = save_epoch_dataset(output / 'future.npz', prepared.future, compressed=False)
+    c = save_epoch_dataset(output / 'calibration.npz', prepared.calibration, compressed=False, exclusive=True)
+    f = save_epoch_dataset(output / 'future.npz', prepared.future, compressed=False, exclusive=True)
     ledger = {**prepared.ledger, 'source_profile_checkpoint': arguments['source_profile_checkpoint'],
         'calibration_cache': _file_receipt(c), 'future_cache': _file_receipt(f),
         'preparation_module_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
@@ -157,7 +158,7 @@ def _episode_programme(args, directories, spec, channels, reference, profile_rec
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, default=ROOT / 'mne_data/MNE-braininvaders2014a-data/zenodo/3266223')
-    parser.add_argument('--output', required=True)
+    parser.add_argument('--output', type=Path, required=True, help='New .npz cache file; with --calibration-episodes, a new participant-output directory. Existing outputs are refused.')
     parser.add_argument('--subjects', default='')
     parser.add_argument('--max-subjects', type=int)
     parser.add_argument('--uncompressed', action='store_true')
@@ -175,6 +176,11 @@ def main():
     args = parser.parse_args()
     if Path(args.output).exists():
         raise FileExistsError(f'refusing to replace an existing candidate cache or episode directory: {args.output}')
+    if args.calibration_episodes is None:
+        try:
+            args.output = new_epoch_cache_path(args.output)
+        except ValueError as error:
+            parser.error(str(error))
     directories = sorted((p for p in args.root.glob('subject_*') if p.is_dir()), key=lambda p: int(p.name.split('_')[-1]))
     if args.subjects:
         chosen = []

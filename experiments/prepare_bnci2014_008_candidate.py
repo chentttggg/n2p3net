@@ -32,6 +32,7 @@ from data.bnci2014_008_candidate import (  # noqa: E402
     discover_bnci2014_008_files,
     load_bnci2014_008_candidate_record,
 )
+from data.cache_output import EPOCH_CACHE_OUTPUT_HELP, new_epoch_cache_path  # noqa: E402
 from data.candidate_task import validate_candidate_membership_metadata  # noqa: E402
 from data.contract import (  # noqa: E402
     SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
@@ -73,7 +74,7 @@ def main() -> None:
     parser.add_argument("--raw-artifact-manifest", type=Path, required=True)
     parser.add_argument("--raw-artifact-root", type=Path, required=True)
     parser.add_argument("--raw-artifact-snapshot-root", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--output", type=new_epoch_cache_path, required=True, help=EPOCH_CACHE_OUTPUT_HELP)
     parser.add_argument(
         "--subjects",
         default="",
@@ -82,6 +83,9 @@ def main() -> None:
     parser.add_argument("--uncompressed", action="store_true")
     args = parser.parse_args()
 
+    audit_path = args.output.with_suffix('.candidate_audit.json')
+    if audit_path.exists() or audit_path.is_symlink():
+        parser.error(f'candidate audit output already exists: {audit_path}')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     raw_artifact_attestation = verify_raw_artifact_manifest(
         args.raw_artifact_manifest,
@@ -168,6 +172,7 @@ def main() -> None:
         args.output,
         combined,
         compressed=not args.uncompressed,
+        exclusive=True,
     )
     audit_path = output.with_suffix(".candidate_audit.json")
     audit_path.write_text(

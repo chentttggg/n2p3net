@@ -21,7 +21,7 @@ from data.events import (
     candidate_repetition_indices,
     concatenate_event_timelines,
 )
-from data.gtn import GTNData, read_gtn_experiment
+from data.gtn import GTNData, GTNSourceError, read_gtn_experiment
 from data.preprocess import PreprocessResult, execute_preprocessing
 from research.contracts import semantic_sha256
 
@@ -93,11 +93,11 @@ def _prepare_gtn_experiment(
 
     scheduled_digits = np.asarray(gtn.events[:, 2], dtype=np.int64)
     if scheduled_digits.ndim != 1 or len(scheduled_digits) != len(gtn.events):
-        raise ValueError(f"{experiment_dir.name} has an invalid GTN stimulus sequence.")
+        raise GTNSourceError(f"{experiment_dir.name} has an invalid GTN stimulus sequence.")
     if set(np.unique(scheduled_digits).tolist()) != set(range(1, 10)):
-        raise ValueError(f"{experiment_dir.name} does not contain the complete 1-9 candidate vocabulary.")
+        raise GTNSourceError(f"{experiment_dir.name} does not contain the complete 1-9 candidate vocabulary.")
     if int(gtn.thought_number) not in set(scheduled_digits.tolist()):
-        raise ValueError(f"{experiment_dir.name} thought number is absent from scheduled candidates.")
+        raise GTNSourceError(f"{experiment_dir.name} thought number is absent from scheduled candidates.")
 
     selection_id = f"gtn:{experiment_dir.name}"
     subject_id = str(gtn.subject_id)
@@ -201,12 +201,12 @@ def build_gtn_epoch_dataset(
             item = _preprocess_gtn_experiment(experiment_dir, preprocessing=preprocessing)
             previous = seen_subjects.get(item.subject_id)
             if previous is not None:
-                raise ValueError(
+                raise GTNSourceError(
                     f"duplicate GTN subject identity {item.subject_id!r}; first seen in {previous}."
                 )
             seen_subjects[item.subject_id] = item.experiment_name
             prepared.append(item)
-        except Exception as exc:  # noqa: BLE001 - source defects become explicit cohort records.
+        except (OSError, GTNSourceError) as exc:
             message = f"{experiment_dir.name}: {type(exc).__name__}: {exc}"
             if not allow_skipped:
                 raise ValueError(f"GTN source preparation failed: {message}") from exc

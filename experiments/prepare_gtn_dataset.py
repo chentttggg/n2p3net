@@ -12,6 +12,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from data.cache_output import EPOCH_CACHE_OUTPUT_HELP, new_epoch_cache_path  # noqa: E402
 from data.contract import CAUSAL_IIR_INITIAL_STATE, epoch_sample_count  # noqa: E402
 from data.epochs import save_epoch_dataset  # noqa: E402
 from data.gtn_dataset import (  # noqa: E402
@@ -24,7 +25,7 @@ from data.gtn_dataset import (  # noqa: E402
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", required=True, help="Directory containing Experiment_*_P3_Numbers.")
-    parser.add_argument("--output", required=True)
+    parser.add_argument("--output", type=new_epoch_cache_path, required=True, help=EPOCH_CACHE_OUTPUT_HELP)
     parser.add_argument(
         "--cohort",
         choices=tuple(GTN_COHORT_CONTRACTS),
@@ -81,7 +82,7 @@ def main() -> None:
         preprocessing=preprocessing,
         allow_skipped=args.allow_skipped,
     )
-    output = save_epoch_dataset(args.output, dataset)
+    output = save_epoch_dataset(args.output, dataset, exclusive=True)
     record_path = output.with_suffix(".record.json")
     print(
         f"[prepared] {output} cohort={args.cohort} contract={preprocessing.name} "

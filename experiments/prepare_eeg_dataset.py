@@ -13,6 +13,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from data.brainsync import load_brainsync_sessions  # noqa: E402
+from data.cache_output import EPOCH_CACHE_OUTPUT_HELP, new_epoch_cache_path  # noqa: E402
 from data.contract import CAUSAL_IIR_INITIAL_STATE, epoch_sample_count  # noqa: E402
 from data.epochs import P300_PERFORMANCE_PREPROCESSING, save_epoch_dataset  # noqa: E402
 from data.manifest import build_manifest_dataset, load_manifest  # noqa: E402
@@ -141,14 +142,14 @@ def main() -> None:
         choices=("none",),
         default=None,
     )
-    moabb_parser.add_argument("--output", required=True)
+    moabb_parser.add_argument("--output", type=new_epoch_cache_path, required=True, help=EPOCH_CACHE_OUTPUT_HELP)
     moabb_parser.add_argument("--uncompressed", action="store_true")
 
     manifest_parser = subparsers.add_parser(
         "manifest", help="Prepare arbitrary MNE-supported raw recordings"
     )
     manifest_parser.add_argument("--manifest", required=True)
-    manifest_parser.add_argument("--output", required=True)
+    manifest_parser.add_argument("--output", type=new_epoch_cache_path, required=True, help=EPOCH_CACHE_OUTPUT_HELP)
     manifest_parser.add_argument("--uncompressed", action="store_true")
 
     brainsync_parser = subparsers.add_parser(
@@ -160,7 +161,7 @@ def main() -> None:
         required=True,
         help="Repeat for each session/decision to include in the target cache.",
     )
-    brainsync_parser.add_argument("--output", required=True)
+    brainsync_parser.add_argument("--output", type=new_epoch_cache_path, required=True, help=EPOCH_CACHE_OUTPUT_HELP)
     brainsync_parser.add_argument("--uncompressed", action="store_true")
 
     args = parser.parse_args()
@@ -236,7 +237,7 @@ def main() -> None:
     else:
         dataset = load_brainsync_sessions(args.session_dir)
 
-    output = save_epoch_dataset(args.output, dataset, compressed=not args.uncompressed)
+    output = save_epoch_dataset(args.output, dataset, compressed=not args.uncompressed, exclusive=True)
     record_path = output.with_suffix(".record.json")
     print(
         f"[prepared] {output} X={dataset.X.shape} subjects={len(set(dataset.subject_ids))} "

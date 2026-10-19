@@ -12,6 +12,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from data.cache_output import EPOCH_CACHE_OUTPUT_HELP, new_epoch_cache_path  # noqa: E402
 from data.domain import (  # noqa: E402
     adapt_common_channel_average_reference,
     adapt_observed_montage,
@@ -87,7 +88,7 @@ def main() -> None:
         default="preserve",
         help="Use binary_evidence for source ERP learning without candidate-task assumptions.",
     )
-    parser.add_argument("--output", required=True)
+    parser.add_argument("--output", type=new_epoch_cache_path, required=True, help=EPOCH_CACHE_OUTPUT_HELP)
     parser.add_argument("--uncompressed", action="store_true")
     args = parser.parse_args()
     if args.missing_channel_policy == "mask" and args.reference_mode == "common_average":

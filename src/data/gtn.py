@@ -25,6 +25,10 @@ import numpy as np
 _EEG_CHANNELS = ("Fz", "Cz", "Pz")
 
 
+class GTNSourceError(ValueError):
+    """A known GTN source-schema or source-metadata defect."""
+
+
 @dataclass
 class GTNData:
     """GTN 单个被试的数据。"""
@@ -39,7 +43,11 @@ class GTNData:
 def _parse_txt(txt_path: Path) -> dict:
     """解析 GTN 元数据 .txt → dict（key: value，按冒号切分）。"""
     md: dict = {}
-    for line in txt_path.read_text(encoding="utf-8").splitlines():
+    try:
+        content = txt_path.read_text(encoding='utf-8')
+    except UnicodeDecodeError as error:
+        raise GTNSourceError(f'GTN metadata is not valid UTF-8: {txt_path}') from error
+    for line in content.splitlines():
         if ":" in line:
             k, v = line.split(":", 1)
             md[k.strip()] = v.strip()
@@ -68,7 +76,20 @@ def _extract_digit(label: str) -> int | None:
 
 def _to_str(x) -> str:
     """h5py 的 bytes/object 元素 → 干净字符串（b'Fz' → 'Fz'）。"""
-    return x.decode() if isinstance(x, bytes) else str(x)
+    if not isinstance(x, bytes):
+        return str(x)
+    try:
+        return x.decode()
+    except UnicodeDecodeError as error:
+        raise GTNSourceError('GTN HDF5 text value is not valid UTF-8') from error
+
+
+def _h5_source_values(handle, path, selection=slice(None)):
+    """Classify a missing declared HDF5 input at the actual read operation."""
+    try:
+        return handle[path][selection]
+    except KeyError as error:
+        raise GTNSourceError(f'GTN source is missing its HDF5 dataset: {path}') from error
 
 
 def read_gtn(nix_path: str | Path, txt_path: str | Path) -> GTNData:
@@ -87,22 +108,21 @@ def read_gtn(nix_path: str | Path, txt_path: str | Path) -> GTNData:
 
         # 采样率（D-gtn-sfreq）
         sfreq = float(
-            f[
-                f"{eeg_base}/metadata/sections/HardwareSettings/sections/Amplifier/properties/SampleRate"
-            ][0]
+            _h5_source_values(f,
+                f"{eeg_base}/metadata/sections/HardwareSettings/sections/Amplifier/properties/SampleRate", 0)
         )
 
         # 通道名（D-gtn-channels）：按名过滤出 Fz/Cz/Pz，丢弃 EOG
-        all_ch = [_to_str(c) for c in f[f"{eeg_base}/dimensions/1/labels"][:]]
-        data = f[f"{eeg_base}/data"][:]  # (4, N) float64
+        all_ch = [_to_str(c) for c in _h5_source_values(f, f"{eeg_base}/dimensions/1/labels")]
+        data = _h5_source_values(f, f"{eeg_base}/data")  # (4, N) float64
         picks = [i for i, c in enumerate(all_ch) if c in _EEG_CHANNELS]
         picked_ch = [all_ch[i] for i in picks]
         eeg = data[picks, :]  # (3, N)
 
         # 刺激事件（D-gtn-events）
-        stim_pos = f[f"{stim_base}_positions/data"][:]  # (n_events, 2)
+        stim_pos = _h5_source_values(f, f"{stim_base}_positions/data")  # (n_events, 2)
         stim_labels = [
-            _to_str(label) for label in f[f"{stim_base}_positions/dimensions/1/labels"][:]
+            _to_str(label) for label in _h5_source_values(f, f"{stim_base}_positions/dimensions/1/labels")
         ]
         times_sec = stim_pos[:, 1]  # 第二列是时间（秒）
         samples = np.rint(times_sec * sfreq).astype(np.int64)
@@ -120,7 +140,7 @@ def read_gtn(nix_path: str | Path, txt_path: str | Path) -> GTNData:
         try:
             rec_date = _to_str(f[f"{eeg_base}/metadata/sections/Recording/properties/StartDate"][0])
             rec_time = _to_str(f[f"{eeg_base}/metadata/sections/Recording/properties/StartTime"][0])
-        except Exception:  # noqa: BLE001
+        except (KeyError, IndexError):
             rec_date, rec_time = "", ""
 
     # 构造 MNE Raw（Fz/Cz/Pz 3 导）
@@ -129,7 +149,12 @@ def read_gtn(nix_path: str | Path, txt_path: str | Path) -> GTNData:
 
     # 元数据（.txt + .nix）
     md = _parse_txt(txt_path)
-    thought_number = int(md["the number thought"])
+    try:
+        thought_number = int(md["the number thought"])
+    except (KeyError, ValueError) as error:
+        raise GTNSourceError('GTN thought-number metadata must contain an integer') from error
+    if not 1 <= thought_number <= 9:
+        raise GTNSourceError('GTN thought number must be a digit from 1 through 9')
     metadata = {
         "sex": md.get("sex", ""),
         "age": _parse_age(md.get("age", "")),
@@ -162,7 +187,10 @@ def _nix_subject_ids(nix_path: Path) -> list[str]:
     """
     with h5py.File(nix_path, "r") as f:
         arr = "data/EEG Data/data_arrays"
-        return [k for k in f[arr].keys() if k.startswith("P3Numbers")]
+        try:
+            return [k for k in f[arr].keys() if k.startswith("P3Numbers")]
+        except KeyError as error:
+            raise GTNSourceError(f'GTN source is missing its NIX data-array group: {nix_path}') from error
 
 
 def read_gtn_experiment(exp_dir: str | Path) -> GTNData:

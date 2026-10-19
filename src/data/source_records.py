@@ -43,7 +43,7 @@ TARGET_PREFIX_SCHEMA = "n2p3_target_raw_prefixes/2"
 
 
 def _test_protocol(protocol, minimum_test_trials, test_size_policy):
-    from transfer.binary import TEST_SIZE_POLICIES
+    from data.calibration import TEST_SIZE_POLICIES
 
     resolved = {**protocol, "minimum_test_trials": protocol.get("minimum_test_trials", minimum_test_trials),
                 "test_size_policy": protocol.get("test_size_policy", test_size_policy)}
@@ -53,7 +53,7 @@ def _test_protocol(protocol, minimum_test_trials, test_size_policy):
 
 
 def _validate_prefix_test_budget(record, actual_test_trials):
-    from transfer.binary import TestBudget
+    from data.calibration import TestBudget
 
     budget = TestBudget.from_record(record.get("test_budget"), actual_test_trials=actual_test_trials)
     protocol = record["protocol"]
@@ -341,7 +341,7 @@ def prepare_source_record_prefixes(item, *, root, output, budgets, minimum_test_
     resolver owns limited-data fallback; eligibility never uses class scores.
     Each numeric view starts from the same unfiltered reader result.
     """
-    from transfer.binary import BinaryTimeSplit, resolve_calibration_splits
+    from data.calibration import BinaryTimeSplit, resolve_calibration_splits
 
     item = dict(item)
     if "raw_scope" in item:
@@ -549,7 +549,7 @@ def prepare_source_subject_prefixes(items, *, root, output, budgets, protocol,
     views. Complete earlier records are consumed whole; a partial record ends
     at the last authorized epoch's exact source support.
     """
-    from transfer.binary import BinaryTimeSplit, resolve_calibration_splits
+    from data.calibration import BinaryTimeSplit, resolve_calibration_splits
 
     items = [dict(item) for item in items]
     early, tests = _ordered_target_records(items, protocol)
@@ -651,7 +651,7 @@ def prepare_source_subject_prefixes(items, *, root, output, budgets, protocol,
 
 def _load_subject_prefixes(entry, path, spec, method, *, load_inner=True):
     """Validate ordered multi-record allocations, then join independently processed views."""
-    from transfer.binary import validate_calibration_budgets
+    from data.calibration import validate_calibration_budgets
 
     early, tests = _ordered_target_records(entry["records"], entry["protocol"])
     subject = str(early[0]["subject"])
@@ -797,7 +797,7 @@ def target_raw_view_identity(dataset):
 
 def prepared_calibration_requests(entry):
     """Consume a prefix producer's recorded cap without parsing its reason text."""
-    from transfer.binary import calibration_budget_requests
+    from data.calibration import calibration_budget_requests
 
     return calibration_budget_requests(entry["requested_budgets"], entry["effective_budgets"],
         {int(key): reason for key, reason in entry["adjustments"].items()})
@@ -810,7 +810,7 @@ def load_target_prefixes(path, *, subjects=None, load_inner=True):
     Subject filtering validates the collection structure first and loads only
     requested cache views, so parallel workers do not decompress a whole study.
     """
-    from transfer.binary import validate_calibration_budgets
+    from data.calibration import validate_calibration_budgets
 
     path = Path(path)
     manifest = json.loads(path.read_text(encoding="utf-8"))
