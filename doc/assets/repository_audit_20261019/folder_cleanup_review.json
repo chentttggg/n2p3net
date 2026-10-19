@@ -275,5 +275,12 @@
     "editable_install_source": "D:/BCI/n2p3-net/src",
     "cpu_venv": "D:/BCI/n2p3-net/.venv",
     "gpu_venv": "D:/BCI/n2p3-net/.venv-gpu"
+  },
+  "execution": {
+    "path": "doc/assets/repository_audit_20261019/folder_cleanup_execution.json",
+    "status": "completed",
+    "deleted_files": 8968,
+    "deleted_logical_bytes": 30572037269,
+    "original_review_preserved_as_historical_read_only_scope": true
   }
 }

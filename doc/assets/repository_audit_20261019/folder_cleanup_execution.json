@@ -1,0 +1,74 @@
+{
+  "schema": "folder_cleanup_execution_binding/1",
+  "status": "completed",
+  "scope": "Exact reviewed redundant downloads, bytecode and transport copies in the original eighteen-row cleanup review. Scientific payloads and active worktrees retained.",
+  "started_utc": "2026-10-19T05:14:16Z",
+  "finished_utc": "2026-10-19T05:17:13Z",
+  "deleted_files": 8968,
+  "deleted_logical_bytes": 30572037269,
+  "observed_volume_free_delta": 30553808896,
+  "physical_space_note": "Volume free-space delta includes concurrent activity; deleted logical bytes are recorded separately.",
+  "groups": {
+    "T2b": {
+      "deleted_files": 8940,
+      "deleted_logical_bytes": 2341134811
+    },
+    "T2c": {
+      "deleted_files": 8,
+      "deleted_logical_bytes": 1324904448
+    },
+    "T4": {
+      "deleted_files": 1,
+      "deleted_logical_bytes": 38933
+    },
+    "T1": {
+      "deleted_files": 9,
+      "deleted_logical_bytes": 22334021797
+    },
+    "T3a": {
+      "deleted_files": 10,
+      "deleted_logical_bytes": 4571937280
+    }
+  },
+  "postverification": {
+    "utc": "2026-10-19T05:17:39Z",
+    "all_deleted_paths_rechecked_absent": 8968,
+    "retained_BI2014b_ZIPs": 19,
+    "retained_T1_original_physical_files": 3255,
+    "retained_T3_npz": 1697,
+    "retained_T3_sidecars": 1697,
+    "payload_rehashed_again": false,
+    "basis": "Originals and unpacked payloads were content-hashed against original manifests while read leases were held through deletion; final check confirms path preservation."
+  },
+  "receipt": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\cleanup.json",
+    "sha256": "68754a6bf42ab7fb35e9fe61cb8043b6f159d7369360d9077e8a940d26a09530",
+    "bytes": 2144442
+  },
+  "events": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\cleanup.events.jsonl",
+    "sha256": "e257544a942ea687003171d652969a3418f575e4cc73a8dedf83126e1d4e8eee",
+    "bytes": 15060249
+  },
+  "script": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\execute_reviewed_cleanup.py",
+    "sha256": "cc8a426aaeb890ae1f56a6ca03089bb5d7edae90770ae5babff23abf7d903231",
+    "bytes": 11596
+  },
+  "initial_failed_attempt": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\cleanup.attempt1.json",
+    "sha256": "d68810413ac90f07798595e8e5afaf8044a6292a24acb3023dbbdce924fbc3da",
+    "bytes": 339023
+  },
+  "new_scientific_fits": 0,
+  "new_builds": 0,
+  "deleted_directories": 0,
+  "retained_classes": [
+    "original raw data and complete ZIPs",
+    "NPZ, sidecars, preparation and delivery ledgers",
+    "scientific evidence, frozen results and producer snapshots",
+    "pause/recovery checkpoints and required worktree payloads",
+    "Git recovery exports and local_history",
+    "Lean dependencies and current environments"
+  ]
+}

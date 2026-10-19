@@ -336,6 +336,6 @@ checkpoint读取安全整合（`codex/claude-improvements-20261012`，基于`ed2
 
 ## 文件夹清理复核
 
-独立清理清单的18项已按实际内容和恢复引用逐项复核，见[文件级裁决与来源](../assets/repository_audit_20261019/folder_cleanup_review.json)。十九个BI2014b完整ZIP的当前摘要匹配旧记录，8,940个下载分片拼接摘要也全部匹配原ZIP；仅这些重复分片、八个已排除的LLP坏下载及一个可再生pyc列入当前可清范围，共3.4143 GiB逻辑字节。九个原始运输包与十个prepared运输tar另有25.0581 GiB候选，删除前分别核对所保留raw或NPZ的当前内容摘要；解包数据、sidecar和账本保留。本轮新增删除与移动均为零。
+独立清理清单的18项已按实际内容和恢复引用逐项复核，见[文件级裁决与来源](../assets/repository_audit_20261019/folder_cleanup_review.json)。随后完成保留内容核验并用cmd精确路径删除：8,940个BI2014b重复下载分片、八个LLP坏下载、一个可再生pyc、九个原始运输包与十个prepared运输tar，共8,968个文件、28.4724 GiB逻辑字节；期间D盘空闲增加28.4555 GiB，卷增量包含并发活动。删除后逐路径确认目标均不存在，命令、退出码及首次引号错误尝试见[实际清理收据](../assets/repository_audit_20261019/folder_cleanup_execution.json)。
 
-E1与T5a是同一目录；六个导出对象在当前Git中均缺失，两份历史bundle的引用闭包均未覆盖，索引不能代替载荷。历史cache、六份结果/来源恢复包、活动BrainForm原件、Lee续传状态、工作树科研载荷、当前Lean依赖和固定setup/调度证据、local_history及两套环境继续保留。移动到同一D盘的另一目录不释放卷容量；后续实际回收以逐文件删除记录与磁盘空闲增量计量。
+十九个BI2014b完整ZIP、3,255个运输包对应原始实体文件、1,697个NPZ及1,697个sidecar继续保留；运输包删除时，保留内容摘要与原manifest一致，读取句柄保持到删除完成。E1与T5a是同一目录；六个导出对象在当前Git中均缺失，两份历史bundle的引用闭包均未覆盖，索引不能代替载荷。历史cache、六份结果/来源恢复包、活动BrainForm原件、Lee续传状态、工作树科研载荷、当前Lean依赖和固定setup/调度证据、local_history及两套环境继续保留。本轮无原始数据、冻结结果或暂停checkpoint删除，无训练或新构建。
