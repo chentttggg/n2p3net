@@ -101,7 +101,12 @@ def calibration_inner_split(
         training_ids, validation_ids = order[:-count], order[-count:]
         train[:] = allowed & np.isin(recordings, training_ids)
         validation[:] = allowed & np.isin(recordings, validation_ids)
-        if label_available_times is not None and recording_start_times is not None:
+        if recording_start_times is not None or label_available_times is not None:
+            if (recording_start_times is None or label_available_times is None
+                    or any(item not in recording_start_times or item not in label_available_times for item in order)):
+                return result("recording clocks require complete calibration label-availability times")
+            if not np.isfinite([label_available_times[item] for item in order]).all():
+                return result("calibration label-availability times must be finite")
             if max(label_available_times[item] for item in training_ids) > min(
                 recording_start_times[item] for item in validation_ids
             ):
@@ -179,7 +184,7 @@ def dataset_calibration_inner_split(
         dataset.y, onset, available, recordings, tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
         calibration_mask=allowed, recording_order=recording_order,
         recording_start_times=starts or None,
-        label_available_times=labels_ready if len(labels_ready) == len(starts) else None,
+        label_available_times=labels_ready or None,
     )
 
 

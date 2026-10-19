@@ -20,6 +20,25 @@ from transfer.result_reuse import (
 )
 
 
+def selector_fit_budget(recipes, *, calibration_rows, inner_rows, inner_legal):
+    """Count requested candidate fits plus one full-scope refit, before reuse."""
+    from transfer.recipes import TargetRecipe, target_batch_budget
+
+    candidates = tuple(TargetRecipe(**item) for item in recipes)
+    def cost(recipe, rows):
+        return (target_batch_budget(rows, recipe.batch_size, epochs=recipe.epochs,
+                                   max_updates=recipe.max_updates)
+                if recipe.weights != "none" else {"updates": 0, "draws": 0})
+    inner = [cost(recipe, inner_rows) for recipe in candidates] if inner_legal else []
+    refits = [cost(recipe, calibration_rows) for recipe in candidates]
+    return {"fit_calls_upper_bound": len(inner) + 1,
+            "inner_fit_calls_upper_bound": len(inner), "refit_fit_calls_upper_bound": 1,
+            "optimizer_updates_upper_bound": sum(item["updates"] for item in inner)
+                + max(item["updates"] for item in refits),
+            "trial_draws_upper_bound": sum(item["draws"] for item in inner)
+                + max(item["draws"] for item in refits)}
+
+
 def user_fixed_target_batch_rule(*, batch_size: int = 512) -> dict:
     """Record an explicit prescribed cap without claiming validation selection."""
     if type(batch_size) is not int or batch_size < 1:
@@ -228,7 +247,10 @@ def build_target_tasks(
                     tasks.append({**common, "arm": mode, "selector_mode": mode,
                                   "recipes": [recipe.record() for recipe in candidates],
                                   "training_rows": n_fit,
-                                  "validation_rows": int(inner.validation_mask.sum())})
+                                  "validation_rows": int(inner.validation_mask.sum()),
+                                  "selection_budget": selector_fit_budget(
+                                      [recipe.record() for recipe in candidates], calibration_rows=n_fit,
+                                      inner_rows=int(inner.training_mask.sum()), inner_legal=inner.legal)})
                 continue
             for recipe in recipes:
                 selecting = stopping is not None and recipe.weights != "none"
@@ -390,7 +412,7 @@ def apply_correctness_budget(manifest: dict, *, epochs: int) -> None:
                 continue
             record["epochs"] = min(record["epochs"], epochs)
             if record["max_updates"] is not None:
-                record["max_updates"] = epochs * ceil(task["training_rows"] / 128)
+                record["max_updates"] = min(record["max_updates"], epochs * ceil(task["training_rows"] / 128))
             recipe = TargetRecipe(**record)
             if "recipe" in task:
                 task["budget"] = (target_batch_budget(task["training_rows"], recipe.batch_size,
@@ -406,6 +428,13 @@ def apply_correctness_budget(manifest: dict, *, epochs: int) -> None:
                     task["selection_budget"] = epoch_selection_budget(recipe, EpochSelectionPolicy(**task["epoch_selection"]),
                         calibration_rows=task["training_rows"], inner_rows=len(scope["inner_training_rows"]),
                         inner_legal=scope["inner_split"]["legal"])
+        if "recipes" in task:
+            scope = manifest["scopes"][task["scope_id"]]
+            task["selection_budget"] = selector_fit_budget(task["recipes"],
+                calibration_rows=task["training_rows"], inner_rows=len(scope["inner_training_rows"]),
+                inner_legal=scope["inner_split"]["legal"])
+    manifest["fit_calls"] = sum(task.get("selection_budget", {}).get(
+        "fit_calls_upper_bound", task["arm"] != "zero_shot") for task in manifest["tasks"])
     manifest.update(evidence_scope="software_correctness", correctness_target_epochs=epochs)
 
 
@@ -558,7 +587,9 @@ def execute_target_tasks(
                        "inner_split": scope.get("inner_split") if "epoch_selection" in task else None},
             batch_size=recipe.batch_size if recipe is not None else None,
             source_state=({"weights": _tensor_state_digest(dict(base.state_dict())),
-                           "statistics": [np.asarray(value).tolist() for value in stats]}
+                           "statistics": [np.asarray(value).tolist() for value in stats],
+                           "training_contract_digest": payload["training_contract_digest"],
+                           "checkpoint_sha256": context["checkpoint_sha256"]}
                           if recipe is None or recipe.initialization.startswith("source") else None),
             snapshot_sha256=context["evaluation_snapshot"]["archive_sha256"], device=device)
         cell["execution_identity"] = execution_identity

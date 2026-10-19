@@ -11,12 +11,12 @@ from data.epochs import EpochDataset, materialize_dataset_identity
 from data.identity import DatasetIdentityTable, ParticipantIdentityRecord, origin_subject_key
 from models.n2p3net import N2P3Net
 from research.contracts import TrainingRunContract, semantic_sha256
-from transfer.checkpoint import CHECKPOINT_SCHEMA
+from transfer.checkpoint import LEGACY_CHECKPOINT_SCHEMA
 
 
 def _checkpoint_fields(dataset, table, contract):
     return {
-        "schema": CHECKPOINT_SCHEMA,
+        "schema": LEGACY_CHECKPOINT_SCHEMA,
         "source_cache_sha256": contract.source_cache_sha256,
         "architecture": dict(contract.architecture),
         "input_preprocessing": asdict(dataset.preprocessing),

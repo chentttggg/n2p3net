@@ -109,6 +109,8 @@ class SubjectAdapterConfig:
             raise ValueError(
                 "head_kind must be linear, mlp16, classifier_fine, full_fine, or adapter."
             )
+        if not np.isfinite(self.weight_decay) or self.weight_decay < 0:
+            raise ValueError("weight_decay must be finite and nonnegative")
         if self.epochs < 1 or self.batch_size < 1 or self.lr <= 0.0:
             raise ValueError("invalid optimization settings.")
         for name, values in {

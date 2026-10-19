@@ -6,9 +6,10 @@ import numpy as np
 import pytest
 
 from data.artifact import FoldLocalArtifactPolicy
-from data.brainsync import load_brainsync_inference_session, load_brainsync_sessions
+from data.brainsync import load_brainsync_sessions
 from experiments.brainsync_model_task import inference_record, main
 from tests.support.brainsync import write_bids_session
+from tests.support.quality import fit_raw_quality
 from train.early_stopping import UnifiedTrainingBudget
 from transfer.calibrated import (
     fit_calibrated_predictor,
@@ -25,7 +26,8 @@ def test_unified_full_calibration_reloads_identical_masked_scores_and_membership
         started_utc="2026-09-14T10:00:00+08:00", blocks=(tuple(range(1, 10)) * 5,))
     testing = write_bids_session(tmp_path / "test", session_id="test", target=0,
         started_utc="2026-09-16T10:00:00+08:00", blocks=(tuple(range(1, 10)) * 5,))
-    data = load_brainsync_sessions((calibration,))
+    data = load_brainsync_sessions((calibration,),
+        continuous_qc_model=fit_raw_quality(calibration) if quality else None)
     stopping = UnifiedTrainingBudget(target_epochs=2).record()
     recipe = TargetRecipe("unified_scratch", initialization="scratch", batch_size=16,
         bn_buffers="calibration", bn_affine="trainable", dropout="off", epochs=2,
@@ -45,7 +47,7 @@ def test_unified_full_calibration_reloads_identical_masked_scores_and_membership
         assert "inner_history" not in selection
         assert selection["refit_history"]["epoch_quality"]["requested_training_rows"] == 45
         assert json.loads(json.dumps(predictor.epoch_quality.record())) == predictor.metadata["epoch_quality"]["model"]
-    later = load_brainsync_inference_session(testing)
+    later = predictor.load_inference_session(testing)
     before = predictor.predict_logit(later)
     restored = load_calibrated_predictor(save_calibrated_predictor(tmp_path / "unified.pt", predictor))
     np.testing.assert_array_equal(before, restored.predict_logit(later))

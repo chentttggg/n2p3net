@@ -70,7 +70,7 @@ from transfer.calibration_candidates import (  # noqa: F401
 )
 from transfer.calibration_split import dataset_calibration_inner_split
 from transfer.checkpoint import (
-    CHECKPOINT_SCHEMA,
+    SUPPORTED_CHECKPOINT_SCHEMAS,
     checkpoint_classifier_is_trained,
     checkpoint_input_stats,
     checkpoint_training_contract,
@@ -176,7 +176,7 @@ def load_calibration_source_checkpoint(dataset: EpochDataset, source_checkpoint:
         source_bytes = source_path.read_bytes()
         source_hash = hashlib.sha256(source_bytes).hexdigest()
         payload = _load_calibration_checkpoint(io.BytesIO(source_bytes))
-        if not isinstance(payload, dict) or payload.get("schema") != CHECKPOINT_SCHEMA:
+        if not isinstance(payload, dict) or payload.get("schema") not in SUPPORTED_CHECKPOINT_SCHEMAS:
             raise ValueError("source checkpoint must use the current audited transfer schema")
         if not checkpoint_classifier_is_trained(payload):
             raise ValueError("source checkpoint needs a supervised source classifier")
@@ -215,8 +215,10 @@ def _resolve_calibration_batch_rule(selector_mode, batch_size, batch_rule):
 def _calibration_source_failure(gate, selector_mode):
     if gate["status"] == "unreadable":
         return f"source checkpoint cannot be read: {gate['message']}"
-    if selector_mode in {"legacy_product", "unified"} and gate["status"] == "incompatible":
+    if selector_mode in {"legacy_product", "unified", "transfer_only"} and gate["status"] == "incompatible":
         return f"source checkpoint is incompatible: {gate['message']}"
+    if selector_mode == "transfer_only" and gate["status"] != "compatible":
+        return "transfer_only requires a compatible source checkpoint"
     return None
 
 
@@ -366,7 +368,7 @@ def preflight_calibrated_predictor(
     source_failure = _calibration_source_failure(gate, selector_mode)
     if source_failure is not None:
         data_failures.append(source_failure)
-    if selector_mode == "legacy_product" and source_checkpoint is not None and not inner["legal"]:
+    if selector_mode in {"legacy_product", "transfer_only"} and source_checkpoint is not None and not inner["legal"]:
         data_failures.append(inner["reason"])
     eligible = []
     for recipe in candidates:
@@ -392,7 +394,9 @@ def preflight_calibrated_predictor(
                          "training_rows": int(train.sum()), "validation_rows": int(split.validation_mask.sum()) if selection_planned else 0,
                          **{key: value for key, value in fit_gate.items() if key not in {"legal", "reason"}},
                          "reason": None if legal else (fit_gate.get("reason") or "source_gate_or_no_legal_inner_training_scope")})
-    fallback_planned = not any(row["fit_eligible"] for row in eligible) and not (fixed_fit or unified)
+    fallback_allowed = any(recipe.initialization == "waveform_lda" for recipe in candidates)
+    fallback_planned = (fallback_allowed and not any(row["fit_eligible"] for row in eligible)
+                        and not (fixed_fit or unified))
     if selector_mode == "fixed_erp" and not any(row["fit_eligible"] for row in eligible):
         data_failures.append(eligible[0]["reason"])
     if (fallback_planned or fixed_lda) and not lda_legal:
@@ -427,7 +431,7 @@ def preflight_calibrated_predictor(
         "source_checkpoint_supplied": source_checkpoint is not None, "source_checkpoint_gate": gate,
         "scoring_gate": scoring_gate, "execution_ready": not data_failures,
         "execution_blockers": data_failures, "fallback_planned": fallback_planned,
-        "fallback": None if unified or selector_mode == "fixed_erp" else "full_calibration_waveform_lda_without_selection_evidence",
+        "fallback": ("full_calibration_waveform_lda_without_selection_evidence" if fallback_allowed else None),
         **({"unified_training_budget": stopping.record()} if unified else {}),
         "calibration_sessions": [record["session_id"] for record in sessions],
         "calibration_data_sha256": _calibration_data_digest(dataset), "input_contract": _input_contract(dataset),
@@ -666,6 +670,17 @@ class CalibratedPredictor:
         if any(not bool(torch.isfinite(value).all()) for value in self.state.values()):
             raise ValueError("calibrated predictor contains nonfinite state")
 
+    def validate_personal_workflow_metadata(self) -> None:
+        """Require the recorded acquisition request only when running its workflow."""
+        required = {"input_request", "selection", "subject_id", "calibration_trials",
+                    "calibration_positives", "calibration_sessions",
+                    "calibration_available_timestamp_s", "source_pretraining_used"}
+        missing = sorted(required - self.metadata.keys())
+        if missing:
+            raise ValueError("personal workflow metadata is missing: " + ", ".join(missing))
+        if not isinstance(self.metadata["input_request"], dict) or "channel_names" not in self.metadata["input_request"]:
+            raise ValueError("personal workflow requires its saved acquisition channel request")
+
     def load_inference_session(self, session_dir: str | Path) -> EpochDataset:
         """Replay this model's frozen raw input without fitting or predicting.
 
@@ -673,6 +688,7 @@ class CalibratedPredictor:
         including when QC leaves no usable epochs. The returned target-free
         dataset has the saved final montage and passed the model input gates.
         """
+        self.validate_personal_workflow_metadata()
         request = self.metadata["input_request"]
         contract = self.metadata["input_contract"]
         channels = tuple(request["channel_names"])

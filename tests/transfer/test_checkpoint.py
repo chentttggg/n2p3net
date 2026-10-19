@@ -372,13 +372,16 @@ def test_checkpoint_loading_rejects_pickled_code_without_running_it(tmp_path) ->
 def test_checkpoint_path_and_verified_bytes_decode_identically(tmp_path) -> None:
     payload = {
         "schema": CHECKPOINT_SCHEMA,
-        "weights": torch.arange(4, dtype=torch.float32).reshape(2, 2),
+        "trunk_state_dict": {"weight": torch.arange(4, dtype=torch.float32).reshape(2, 2)},
         "channels": [np.str_("Cz"), np.str_("Pz")],
         "roles": {np.str_("Cz"): "eeg"},
     }
+    from transfer.checkpoint import checkpoint_state_digest
+
+    payload["trunk_state_dict_sha256"] = checkpoint_state_digest(payload["trunk_state_dict"])
     path = tmp_path / "source.pt"
     torch.save(payload, path)
     for loaded in (load_checkpoint_payload(path), load_checkpoint_payload(io.BytesIO(path.read_bytes()))):
-        assert torch.equal(loaded["weights"], payload["weights"])
+        assert torch.equal(loaded["trunk_state_dict"]["weight"], payload["trunk_state_dict"]["weight"])
         assert loaded["channels"] == payload["channels"]
         assert all(type(name) is np.str_ for name in [*loaded["channels"], *loaded["roles"]])

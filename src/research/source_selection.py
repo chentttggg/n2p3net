@@ -32,7 +32,7 @@ from models.n2p3net import (
 )
 from research.contracts import TrainingRunContract, semantic_sha256
 from research.domain_folds import domain_lodo_folds
-from transfer.checkpoint import CHECKPOINT_SCHEMA
+from transfer.checkpoint import CHECKPOINT_SCHEMA, checkpoint_state_digest
 
 SOURCE_UPDATE_CANDIDATES = (500, 1000, 2000, 4000, 8000)
 SOURCE_CHAIN_LAYOUTS = {"six": ("Fz", "P3", "Pz", "P4", "PO8", "Oz"),
@@ -698,6 +698,7 @@ def fit_source_trajectory(
         )
         payloads[updates] = {
             "schema": CHECKPOINT_SCHEMA, "trunk_state_dict": snapshot["model_state_dict"],
+            "trunk_state_dict_sha256": checkpoint_state_digest(snapshot["model_state_dict"]),
             "architecture": model.architecture_record(), "n_channels": dataset.n_channels,
             "n_times": dataset.n_times, "input_sample_rate_hz": dataset.preprocessing.sfreq,
             "input_tmin_s": dataset.preprocessing.tmin_ms / 1000,

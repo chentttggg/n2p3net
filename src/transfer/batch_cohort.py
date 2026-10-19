@@ -42,7 +42,7 @@ def declare_batch_cohort(preflights: Sequence[Mapping], design: Mapping[str, Seq
             observed.add((study, scope["participant_key"]))
         for item in manifest.get("protocol_exclusions", []):
             observed.add((study, item["participant_key"]))
-            excluded.append({"study": study, **item})
+            excluded.append({**item, "study": study})
         for case in _cases(manifest, study):
             key = (study, case["participant_key"], case["K"])
             if key in cases:

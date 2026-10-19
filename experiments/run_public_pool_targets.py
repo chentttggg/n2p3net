@@ -27,7 +27,10 @@ from research.source_matrix import MATRIX_SEEDS, source_matrix_tasks  # noqa: E4
 from train.runtime import cpu_thread_budget  # noqa: E402
 from transfer.binary import dataset_calibration_splits  # noqa: E402
 from transfer.calibration_candidates import waveform_lda_recipe  # noqa: E402
-from transfer.checkpoint import load_checkpoint_payload  # noqa: E402
+from transfer.checkpoint import (  # noqa: E402
+    assert_checkpoint_library_exclusion,
+    load_checkpoint_payload,
+)
 from transfer.recipes import TargetRecipe  # noqa: E402
 from transfer.result_reuse import admit_completed_result  # noqa: E402
 from transfer.target_experiments import execute_target_tasks  # noqa: E402
@@ -91,6 +94,12 @@ def build_manifest(data, task, subjects, *, policy=None):
 
 def target_context(job, data, payload):
     """The same complete execution declaration is used when fitting and resuming."""
+    assert_checkpoint_library_exclusion(
+        payload, data.identity_table,
+        excluded_source_datasets=tuple(job["task"]["excluded"]),
+        source_membership=payload["source_study_membership"],
+        target_membership=dataset_study_membership(data),
+    )
     return dict(target_study=job["task"]["target"], target_protocol=protocol_for(job["task"]["target"], job.get("policy", {}).get("protocols")),
         target_cache_sha256=job["cache_sha256"], checkpoint_sha256=job["checkpoint_sha256"],
         source_seed=job["task"]["seed"], evidence_scope="development", evaluation_snapshot=job["snapshot"],

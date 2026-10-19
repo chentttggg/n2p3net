@@ -52,6 +52,7 @@ from train.early_stopping import (
 from train.runtime import (
     DEFAULT_COMPILE_MODE,
     DEFAULT_FUSED_ADAM,
+    MATRIX_ROW_ORDER_PROGRAM,
     GpuPerformanceScheduler,
     MatrixBatchSource,
     is_oom_error,
@@ -260,6 +261,7 @@ class DeepConfig:
     compile_mode: str | None = DEFAULT_COMPILE_MODE
     materialize_shuffled_epoch: bool = False
     max_update_batch_size: int | None = 512
+    optimizer_batch_policy: str = "adaptive"
     batch_memory_fraction: float = 0.55
     preload_memory_fraction: float = 0.30
     fixed_updates: int | None = None
@@ -270,6 +272,8 @@ class DeepConfig:
     global_early_stopping: GlobalEarlyStoppingPolicy | dict | None = None
 
     def __post_init__(self) -> None:
+        if self.optimizer_batch_policy not in {"fixed", "adaptive"}:
+            raise ValueError("optimizer_batch_policy must be fixed or adaptive")
         if isinstance(self.global_early_stopping, dict):
             self.global_early_stopping = GlobalEarlyStoppingPolicy(**self.global_early_stopping)
         if self.global_early_stopping is not None:
@@ -1110,6 +1114,8 @@ class DeepBaseline(Baseline):
                     **self.optimizer_execution.record(),
                     "host_sync_policy": "epoch_boundary",
                     "oom_retries": retries,
+                    "optimizer_batch_policy": self.cfg.optimizer_batch_policy,
+                    "batch_fallback": "explicit_adaptive" if self.cfg.optimizer_batch_policy == "adaptive" else "forbidden",
                     "decision_grouped_batches": self._decision_context_active,
                     "decision_batch_contract": (
                         None
@@ -1140,6 +1146,12 @@ class DeepBaseline(Baseline):
                     self.last_decision_loss = ledger.record()
                     self._clear_failed_fit(release_memory=False)
                     raise DirectDecisionContractError(ledger) from error
+                if self.cfg.optimizer_batch_policy == "fixed":
+                    self._clear_failed_fit(release_memory=False)
+                    raise RuntimeError(
+                        "The declared optimizer batch could not fit in device memory; "
+                        "change data residency or the declared resource plan before a new run."
+                    ) from error
                 attempted_batch_size = getattr(self, "_active_batch_size", requested_batch_size)
                 if attempted_batch_size <= 1:
                     self._clear_failed_fit(release_memory=False)
@@ -1919,6 +1931,7 @@ class DeepBaseline(Baseline):
             X_train.shape[1:],
             model=self.model_,
             max_update_batch_size=self.cfg.max_update_batch_size,
+            adaptive=self.cfg.optimizer_batch_policy == "adaptive",
         )
         decision_module: DecisionLevelLoss | None = None
         train_decision_plan: DecisionBatchPlan | None = None
@@ -2009,6 +2022,7 @@ class DeepBaseline(Baseline):
                 max(self.cfg.batch_size * 4, 256),
                 X_train.shape[1:],
                 model=self.model_,
+                adaptive=True,
             )
         if decision_context_active and val_source is not None:
             assert decision_loss_config is not None
@@ -2065,6 +2079,11 @@ class DeepBaseline(Baseline):
             adam_kwargs["capturable"] = True
         opt = torch.optim.Adam(trainable_params, **adam_kwargs)
         loss_fn = _CrossEntropyObjective(self.cfg.pos_weight, self.device)
+        row_order_digest = hashlib.sha256()
+        batch_sizes = []
+        def observe_row_order(permutation):
+            row_order_digest.update(permutation.numpy().astype(np.int64, copy=False).tobytes())
+        train_source.row_order_observer = observe_row_order
         perm_gen = train_source.make_generator(seed)
         source_residual_mask_seed = seed + 1_000_003
         source_residual_generator = (
@@ -2310,6 +2329,8 @@ class DeepBaseline(Baseline):
                     yield xb, yb, row_weights, domain_batch, channel_mask, None, 0, source_mask
                 return
             decision_batches = train_decision_plan.batches(seed=seed + epoch)
+            for decision_batch in decision_batches:
+                row_order_digest.update(np.asarray(decision_batch.row_indices, dtype=np.int64).tobytes())
             index_batches = tuple(
                 torch.from_numpy(np.array(batch.row_indices, dtype=np.int64, copy=True))
                 for batch in decision_batches
@@ -2436,6 +2457,7 @@ class DeepBaseline(Baseline):
                         }
                     )
                     raise
+                batch_sizes.append(len(xb))
                 weighted_loss = loss.float() * len(xb)
                 epoch_loss = weighted_loss if epoch_loss is None else epoch_loss + weighted_loss
                 n_seen += len(xb)
@@ -2760,6 +2782,11 @@ class DeepBaseline(Baseline):
                 }
             )
         self.last_history = {
+            "optimizer_batch_policy": self.cfg.optimizer_batch_policy,
+            "optimizer_updates": len(batch_sizes), "trial_draws": sum(batch_sizes),
+            "batch_sizes": batch_sizes,
+            "batch_sequence_sha256": row_order_digest.hexdigest(),
+            "row_order_program": "complete_decision_batches" if decision_context_active else MATRIX_ROW_ORDER_PROGRAM,
             "train_losses": train_losses,
             "val_losses": val_losses,
             "val_objective_losses": val_objective_losses,
@@ -2820,6 +2847,7 @@ class DeepBaseline(Baseline):
                 max(self.cfg.batch_size * 4, 256),
                 X.shape[1:],
                 model=self.model_,
+                adaptive=True,
             )
             self.model_.eval()
             out_chunks: list[torch.Tensor] = []

@@ -1,0 +1,140 @@
+{
+  "schema": "n2p3_repository_audit_transfer_integration/1",
+  "author": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-transfer\\TERMINAL_BINDING.json",
+    "sha256": "67ad71f7319369ad9d45ad6d24cb7302483442a8b1f645ddd0e82bed6dbd9c2f",
+    "bytes": 5476
+  },
+  "independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-transfer\\independent-review\\REVIEW_RECEIPT.json",
+    "sha256": "3f6e8246f2fc981250f994c67ed8820e9dd6188a8789a7291d6afb83d42b1205",
+    "bytes": 10013
+  },
+  "R2_correctness_cap": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-transfer\\revision2\\HANDOFF.zh.md",
+    "sha256": "baca22d677fe816d10c691c6a5612762a06f32571f1d47b607d353ed7a07453c",
+    "bytes": 900
+  },
+  "canonical_files": [
+    {
+      "path": "experiments/run_public_pool_targets.py",
+      "sha256": "72ea0810ff21ec0f180aef2f5ba1f0d2378ee349e2c8059e4362f07251333cc3"
+    },
+    {
+      "path": "src/baselines/deep.py",
+      "sha256": "00ab0151b76f39ead800b20fbace0ec6ce13f21947e625542844114a7b7c2d2d"
+    },
+    {
+      "path": "src/research/recording_quality.py",
+      "sha256": "33cd453abec359d89d4ec29c0ba0d8ebb9a55aea323272a7bc4cd465341a56a2"
+    },
+    {
+      "path": "src/research/source_selection.py",
+      "sha256": "90cb63cad1bb791b8818052b278172486e8fd19931f3c6d268b05a2104bc07a8"
+    },
+    {
+      "path": "src/train/runtime.py",
+      "sha256": "5870b11d0e68fd2a1e4acf82e811441d150b4b6ac8eec199e06bc0675b2867dc"
+    },
+    {
+      "path": "src/transfer/batch_cohort.py",
+      "sha256": "788ce241a7210ec31d5f519fe9a880da08656fa1081f85a4501bb34ffff2cd5b"
+    },
+    {
+      "path": "src/transfer/calibrated.py",
+      "sha256": "e94ccac94cf0d9a0a2ca45a3c091ff67422b137d289b5d9fbf96e6955e371a0e"
+    },
+    {
+      "path": "src/transfer/calibration_candidates.py",
+      "sha256": "f95fd2632d7f4c3571ee073a21801eef29ac07671e55f5653c2e2db90a3066c9"
+    },
+    {
+      "path": "src/transfer/calibration_split.py",
+      "sha256": "55a010e00d7e22747d088448faef235f64d18679fedb22c82eef38d5063cc5ba"
+    },
+    {
+      "path": "src/transfer/checkpoint.py",
+      "sha256": "5ba5cacfa2efefbdb069991514b6eb98871aa89e38ec841c28a0f4e57a8b1f1b"
+    },
+    {
+      "path": "src/transfer/cohort.py",
+      "sha256": "9528800cde97152a99f0c75eac0372721831e8b6b92162a7766d66071f853009"
+    },
+    {
+      "path": "src/transfer/losses.py",
+      "sha256": "950b71b98be0c390adaa9240ed93ef4d41d6f4b09c1593482a1208ceeac032da"
+    },
+    {
+      "path": "src/transfer/pretraining.py",
+      "sha256": "b522ae968b865cce8d6c91f19e0c36862d0b80fcbe4bd6f42ddb0de78843c7b3"
+    },
+    {
+      "path": "src/transfer/quality.py",
+      "sha256": "f04470091d347cd43d5ea39142cd1271876b9278396173cc7b5fd315f3b2311d"
+    },
+    {
+      "path": "src/transfer/recipes.py",
+      "sha256": "d20ca43e908cfeabd5901723f597f1e4d8577cdb5e7647e0e7842ca4f2c2c72e"
+    },
+    {
+      "path": "src/transfer/subject_adapter.py",
+      "sha256": "8f862fab622875bf2c056cc5f741208229df43448fe9235be8f1b522f1f11b44"
+    },
+    {
+      "path": "src/transfer/target_experiments.py",
+      "sha256": "2a74b53c7b955cc59befad6a3b82d208def07422b81689150c374bfc19a15ffb"
+    },
+    {
+      "path": "tests/brainsync/test_calibrated_predictor.py",
+      "sha256": "15964271446e9d454ae9964fb820e6a22d388a01dc89a622c170012f744e6f09"
+    },
+    {
+      "path": "tests/brainsync/test_recording_quality_report.py",
+      "sha256": "b5960409913b79342d402a25b2f65ba340fec36f2b3b2998680c0e8c95d9eae2"
+    },
+    {
+      "path": "tests/brainsync/test_unified_predictor.py",
+      "sha256": "3aa7c7640d78620a81ba102630a9d42c0e56ed6c30b9b18889dfc7d3cfe9890d"
+    },
+    {
+      "path": "tests/support/checkpoints.py",
+      "sha256": "e24cf0e9ccee579e905ec4311a9ec3c2e69824512638c37fda34f7a2a64da347"
+    },
+    {
+      "path": "tests/support/quality.py",
+      "sha256": "499e6ab5aa0f19d37fe3524d6d5bca612befc8dfedb06d449c5ea81b3400bc73"
+    },
+    {
+      "path": "tests/transfer/test_calibration_candidates.py",
+      "sha256": "38509df02ff6e280f2ef6295a17521385d7d0a3a349d16719603cd66aa7cbd12"
+    },
+    {
+      "path": "tests/transfer/test_checkpoint.py",
+      "sha256": "a18c5e282ff510f1771ebbb7562d80c10be5b4161cebcf87524e6a8f20e6f728"
+    },
+    {
+      "path": "tests/transfer/test_repository_audit_contracts.py",
+      "sha256": "a723ac875402df69bdbb00d242a6898e2820cd3adaa3176a111657edac5a7635"
+    }
+  ],
+  "deferred_to_other_reviewed_owners": [
+    "experiments/report_brainsync_quality.py",
+    "experiments/run_pretrain.py",
+    "experiments/run_pretrain_supervised.py"
+  ],
+  "root_review": {
+    "T1": "actual compatible source-only mode and roster-constrained fallback",
+    "T2": "public target whole-library checkpoint exclusion owner called before fitting and resume",
+    "T3": "new schema3 state digest and actual producer/load/reuse operands; legacy2 exact source retained",
+    "T4": "candidate/refit upper-bound and monotone correctness cap",
+    "T5": "raw quality stage tied to BrainSync input independently of epoch QC algorithm; no extra numeric-loader workflow requirements",
+    "T6": "explicit fixed/adaptive optimizer batch policy; original CPU draws observed once and actual updates/batch sizes retained",
+    "additional": "fitted band weights persistent; arbitrary QC callable removed; label-availability/cache keys reflect actual calibration scope"
+  },
+  "validation": "independent source review plus original focused cases reused; final composed checks after G8/workstation/data/runtime overlays",
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-transfer\\CLEANUP_RESULT.json",
+    "sha256": "90d0827fddec6f1db04fe9e06a216f5922b184f47432af47bf41689b433adbbd",
+    "bytes": 576
+  }
+}

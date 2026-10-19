@@ -50,7 +50,7 @@ class PretrainingTask(nn.Module):
             output_channels=trunk.n_channels,
             st_pool_size=trunk.st_pool_size,
         )
-        self._band_weights: torch.Tensor | None = None
+        self.register_buffer("_band_weights", torch.ones(len(config.loss.bands_hz)) / len(config.loss.bands_hz))
         self.probe: SubjectProbeHead | None = None
         if config.subject_probe_subjects > 1:
             self.probe = SubjectProbeHead(

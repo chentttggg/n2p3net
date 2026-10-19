@@ -26,6 +26,7 @@ from research.recording_quality import (
 )
 from tests.support.brainsync import write_bids_session
 from tests.support.io import read_json, write_json
+from tests.support.quality import fit_raw_quality
 from transfer.calibrated import (
     CalibratedPredictor,
     fit_calibrated_predictor,
@@ -109,11 +110,12 @@ def test_exact_constant_diagnostics_do_not_claim_fitted_qc(recording, tmp_path):
 
 
 def test_frozen_qc_total_rejection_keeps_all_requested_events(recording, tmp_path):
-    calibration = load_brainsync_session(recording)
+    raw_quality = fit_raw_quality(recording)
+    calibration = load_brainsync_session(recording, continuous_qc_model=raw_quality)
     frozen = fit_epoch_quality(calibration, np.ones(calibration.n_epochs, dtype=bool),
                                FoldLocalArtifactPolicy(min_clean_epochs=2))
-    testing = load_brainsync_inference_session(recording)
-    testing = replace(testing, X=testing.X * 1e6)
+    testing = load_brainsync_inference_session(recording, continuous_qc_model=raw_quality)
+    testing = replace(testing, X=testing.X * 1e6, qc_features=None)
     report = create_recording_quality_report(recording, tmp_path / "report", loader=lambda _root: testing,
                                              epoch_quality=frozen)
     assert report["status"] == "attention"

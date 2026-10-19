@@ -216,12 +216,12 @@ def test_personal_epoch_quality_is_frozen_and_reload_preserves_abstention(tmp_pa
     from data.artifact import FoldLocalArtifactPolicy
 
     roots, testing = sessions
-    dataset = load_brainsync_sessions(roots)
+    dataset = load_brainsync_sessions(roots, continuous_qc_model=fit_raw_quality(roots[0]))
     predictor = fit_calibrated_predictor(dataset, selector_mode="no_transfer",
         recipes=(CalibrationRecipe("qc_scratch", 1, 1e-3, initialization="scratch"),),
         epoch_quality_policy=FoldLocalArtifactPolicy(min_clean_epochs=2))
     assert predictor.metadata["epoch_quality"]["retained_training_rows"] <= dataset.n_epochs
-    later = load_brainsync_inference_session(testing)
+    later = predictor.load_inference_session(testing)
     later.X[:] *= 1000
     before = predictor.predict_logit(later)
     assert np.isnan(before).all()
@@ -478,26 +478,20 @@ def test_operational_r5_scores_sessions_equally_and_treats_ties_as_misses(tmp_pa
     assert record["blocks"][-1]["prediction"] is None
 
 
-def test_incompatible_source_new_selector_records_gate_and_legal_fallback(tmp_path, sessions):
-    roots, testing = sessions
+def test_incompatible_source_transfer_only_rejects_before_a_target_fallback(tmp_path, sessions):
+    roots, _ = sessions
     dataset = load_brainsync_sessions(roots)
     projected = adapt_observed_montage(
         dataset, tuple(name for name in dataset.channel_names if name != "CZ"), reference_channel="Cz",
     )
     source = write_checkpoint(tmp_path / "source.pt", projected, source_snapshot_sha256="f" * 64)
-    predictor = fit_calibrated_predictor(
-        dataset, source_checkpoint=source, selector_mode="transfer_only", selection_protocol="binary_auc",
-        recipes=(CalibrationRecipe("source_probe", 1, 1e-3),),
-    )
-    selection = predictor.metadata["selection"]
-    assert selection["source_checkpoint_gate"]["status"] == "incompatible"
-    assert selection["source_checkpoint_gate"]["message"]
-    assert selection["recipes"][0]["status"] == "failed"
-    assert not selection["selection_evidence"]
-    assert not predictor.metadata["source_pretraining_used"]
-    artifact = save_calibrated_predictor(tmp_path / "fallback.pt", predictor)
-    target = load_brainsync_inference_session(testing)
-    np.testing.assert_array_equal(load_calibrated_predictor(artifact).predict_logit(target), predictor.predict_logit(target))
+    plan = preflight_calibrated_predictor(dataset, source_checkpoint=source,
+        selector_mode="transfer_only", selection_protocol="binary_auc")
+    assert not plan["execution_ready"] and not plan["fallback_planned"]
+    assert plan["source_checkpoint_gate"]["status"] == "incompatible"
+    with pytest.raises(ValueError, match="source checkpoint is incompatible"):
+        fit_calibrated_predictor(dataset, source_checkpoint=source, selector_mode="transfer_only",
+            selection_protocol="binary_auc", recipes=(CalibrationRecipe("source_probe", 1, 1e-3),))
 
 
 def test_new_selector_dry_run_from_outside_repository_never_fits_or_writes_model(tmp_path, sessions):
@@ -635,7 +629,6 @@ def test_legacy_real_cli_checks_raw_quality_scope_before_training(
 ):
     import mne
 
-    import transfer.calibrated as calibrated
     from data.brainsync_contract import validate_brainsync_bids_session
     from data.continuous_qc import ContinuousQCSpec, fit_continuous_qc, save_continuous_qc
     from data.contract import BRAIN_SYNC_CAUSAL_DATA_CONTRACT
@@ -672,7 +665,9 @@ def test_legacy_real_cli_checks_raw_quality_scope_before_training(
         attempts.append(kwargs["config"])
         raise RuntimeError("accepted_scope_stop_before_training")
 
-    monkeypatch.setattr(calibrated, "SubjectAdapter", stop_before_training)
+    import transfer.calibration_candidates as candidates
+
+    monkeypatch.setattr(candidates, "SubjectAdapter", stop_before_training)
     profile = save_continuous_qc(tmp_path / "global-quality.json", quality)
     from dataclasses import asdict
 
@@ -710,11 +705,10 @@ def test_legacy_recipe_configuration_is_independent_of_epoch_quality_route(
 ):
     from dataclasses import asdict
 
-    import transfer.calibrated as calibrated
     import transfer.calibration_candidates as candidates
 
     roots, _ = sessions
-    dataset = load_brainsync_sessions(roots)
+    dataset = load_brainsync_sessions(roots, continuous_qc_model=fit_raw_quality(roots[0]))
     source = write_checkpoint(tmp_path / "route-source.pt", dataset, source_snapshot_sha256="f" * 64)
     recipe = (TargetRecipe("probe", input_statistics="source", bn_buffers="source",
                            batch_size=64, seed=20260906, epochs=1, weight_decay=.031)
@@ -728,7 +722,6 @@ def test_legacy_recipe_configuration_is_independent_of_epoch_quality_route(
         configurations.append(config)
         raise RuntimeError("configuration_captured")
 
-    monkeypatch.setattr(calibrated, "SubjectAdapter", stop_before_training)
     monkeypatch.setattr(candidates, "SubjectAdapter", stop_before_training)
     for quality in (None, FoldLocalArtifactPolicy(min_clean_epochs=2)):
         with pytest.raises(RuntimeError, match="configuration_captured"):
@@ -745,11 +738,10 @@ def test_legacy_recipe_configuration_is_independent_of_epoch_quality_route(
 def test_legacy_conflicting_recipe_is_rejected_before_either_fit_route(
     tmp_path, sessions, monkeypatch, quality, conflict
 ):
-    import transfer.calibrated as calibrated
     import transfer.calibration_candidates as candidates
 
     roots, _ = sessions
-    dataset = load_brainsync_sessions(roots)
+    dataset = load_brainsync_sessions(roots, continuous_qc_model=fit_raw_quality(roots[0]))
     source = write_checkpoint(tmp_path / "conflict-source.pt", dataset, source_snapshot_sha256="f" * 64)
     recipe = CalibrationRecipe("probe", 1, 1e-4)
     extra = {}
@@ -766,7 +758,6 @@ def test_legacy_conflicting_recipe_is_rejected_before_either_fit_route(
     def forbidden(*args, **kwargs):
         raise AssertionError("conflicting legacy policy reached fitting")
 
-    monkeypatch.setattr(calibrated, "SubjectAdapter", forbidden)
     monkeypatch.setattr(candidates, "SubjectAdapter", forbidden)
     with pytest.raises(ValueError, match="legacy"):
         fit_calibrated_predictor(
@@ -778,7 +769,7 @@ def test_legacy_conflicting_recipe_is_rejected_before_either_fit_route(
 
 def test_legacy_noop_frozen_quality_preserves_fit_state_recipe_and_reload(tmp_path, sessions):
     roots, testing = sessions
-    dataset = load_brainsync_sessions(roots)
+    dataset = load_brainsync_sessions(roots, continuous_qc_model=fit_raw_quality(roots[0]))
     source = write_checkpoint(tmp_path / "noop-source.pt", dataset, source_snapshot_sha256="f" * 64)
     training = dataset.metadata["session"].isin(("cal-0", "cal-1")).to_numpy()
     quality = fit_epoch_quality(dataset, training, FoldLocalArtifactPolicy(min_clean_epochs=2))
@@ -843,7 +834,7 @@ def test_fixed_inner_training_is_invariant_to_validation_with_quality_policy(ses
     from transfer.calibration_candidates import fit_calibration_candidate
 
     roots, _ = sessions
-    dataset = load_brainsync_sessions(roots)
+    dataset = load_brainsync_sessions(roots, continuous_qc_model=fit_raw_quality(roots[0]))
     training = dataset.metadata["session"].isin(("cal-0", "cal-1")).to_numpy()
     values, labels = dataset.X.copy(), dataset.y.copy()
     values[~training] *= 1.2
@@ -1057,7 +1048,7 @@ def test_requested_repetition_shortage_abstains_without_shrinking_candidates(ses
 @pytest.fixture
 def incompatible_source(tmp_path, sessions):
     roots, _ = sessions
-    dataset = load_brainsync_sessions(roots)
+    dataset = load_brainsync_sessions(roots, continuous_qc_model=fit_raw_quality(roots[0]))
     source = _write_cz_checkpoint(tmp_path / "source.pt", dataset)
     return roots, dataset, source
 

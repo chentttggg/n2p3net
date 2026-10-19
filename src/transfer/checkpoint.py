@@ -50,7 +50,31 @@ from models.splitbn import SplitBNConfig, splitbn_config_from_record
 from research.contracts import TrainingRunContract, semantic_sha256
 from transfer.decision_loss import DecisionLossConfig
 
-CHECKPOINT_SCHEMA = "n2p3_transfer_checkpoint/2"
+LEGACY_CHECKPOINT_SCHEMA = "n2p3_transfer_checkpoint/2"
+CHECKPOINT_SCHEMA = "n2p3_transfer_checkpoint/3"
+SUPPORTED_CHECKPOINT_SCHEMAS = (LEGACY_CHECKPOINT_SCHEMA, CHECKPOINT_SCHEMA)
+
+
+def checkpoint_state_digest(state: Mapping[str, torch.Tensor]) -> str:
+    """Bind named, typed and shaped weight bytes independently of serialization."""
+    from transfer.result_reuse import _tensor_state_digest
+
+    if not isinstance(state, Mapping) or not state or any(
+        not isinstance(name, str) or not isinstance(value, torch.Tensor)
+        for name, value in state.items()
+    ):
+        raise ValueError("checkpoint requires a nonempty named tensor state")
+    return _tensor_state_digest(dict(state))
+
+
+def validate_checkpoint_state(payload: Mapping[str, object]) -> None:
+    """Historical /2 keeps its format; every /3 producer emits its state digest."""
+    if payload.get("schema") not in SUPPORTED_CHECKPOINT_SCHEMAS:
+        raise ValueError("checkpoint schema is unsupported; regenerate the checkpoint.")
+    expected = payload.get("trunk_state_dict_sha256")
+    if payload.get("schema") == CHECKPOINT_SCHEMA or expected is not None:
+        if expected != checkpoint_state_digest(payload.get("trunk_state_dict")):
+            raise ValueError("checkpoint trunk_state_dict_sha256 disagrees with weight bytes")
 
 
 def _numpy_safe_globals() -> list[object]:
@@ -80,8 +104,7 @@ def load_checkpoint_payload(path: str | Path) -> dict[str, object]:
     payload = load_weights_only(path)
     if not isinstance(payload, dict):
         raise ValueError(f"{path} is not a mapping checkpoint payload.")
-    if payload.get("schema") != CHECKPOINT_SCHEMA:
-        raise ValueError("checkpoint schema is unsupported; regenerate the checkpoint.")
+    validate_checkpoint_state(payload)
     ledger = payload.get("training_identity_ledger")
     if isinstance(ledger, Mapping):
         assert_identity_participants_allowed(DatasetIdentityTable.from_payload(ledger))
@@ -392,8 +415,7 @@ class _SourceMetadataAdmission:
 
 def _validate_source_metadata(payload):
     """Verify source-owned contracts independently of any target or fold."""
-    if payload.get("schema") != CHECKPOINT_SCHEMA:
-        raise ValueError("checkpoint schema is unsupported; regenerate the checkpoint.")
+    validate_checkpoint_state(payload)
     state = payload.get("trunk_state_dict")
     if not isinstance(state, Mapping) or not state:
         raise ValueError("checkpoint lacks a non-empty trunk_state_dict mapping.")
@@ -1228,6 +1250,9 @@ def checkpoint_architecture_record(payload: Mapping[str, object]) -> dict[str, o
 
 __all__ = [
     "CHECKPOINT_SCHEMA",
+    "LEGACY_CHECKPOINT_SCHEMA",
+    "SUPPORTED_CHECKPOINT_SCHEMAS",
+    "checkpoint_state_digest",
     "PreparedTransferCheckpoint",
     "ScopedSourceCheckpointPreparation",
     "assert_checkpoint_target_identity_excluded",

@@ -409,6 +409,11 @@ def _fit_rows_digest(dataset: EpochDataset, mask: np.ndarray) -> str:
         )},
         "X": _array_digest(dataset.X[rows]), "y": _array_digest(dataset.y[rows]),
         "observed": _array_digest(_observed(dataset)[rows]),
+        "fit_metadata": {
+            name: dataset.metadata.iloc[rows][name].tolist()
+            for name in ("block_id", "selection_repetitions", "calibration_available_timestamp_s")
+            if name in dataset.metadata
+        },
         "qc_features": None if dataset.qc_features is None else {
             "schema": dataset.qc_features.schema,
             **{name: _array_digest(np.asarray(getattr(dataset.qc_features, name))[rows])
@@ -999,6 +1004,8 @@ def select_calibration_candidate(
     candidates = tuple(recipes)
     if not candidates or len({recipe.name for recipe in candidates}) != len(candidates):
         raise ValueError("candidate recipes must have unique names and be nonempty")
+    if selector_mode == "transfer_only" and any(recipe.initialization != "source" for recipe in candidates):
+        raise ValueError("transfer_only requires source-initialized candidates")
     if any(recipe.refit_full_prefix for recipe in candidates):
         raise ValueError("selector candidates cannot request refit_full_prefix; use the chronological refit owner")
     split = dataset_calibration_inner_split(dataset, allowed, recording_order=recording_order)
@@ -1076,9 +1083,11 @@ def select_calibration_candidate(
         record.update(selected=selected, validation_auc=selected["validation_auc"],
                       selection_measure=selected["selection_measure"], requested_pair_auc=selected["requested_pair_auc"])
     else:
-        if selector_mode == "legacy_product":
+        if selector_mode == "legacy_product" or not any(
+            item.initialization == "waveform_lda" for item in candidates
+        ):
             failures = "; ".join(item["failure"]["message"] for item in record["recipes"] if item["status"] == "failed")
-            raise ValueError(f"legacy source calibration failed: {record['reason'] or failures or 'no complete requested candidate'}")
+            raise ValueError(f"{selector_mode} source calibration failed: {record['reason'] or failures or 'no complete requested candidate'}")
         recipe = waveform_lda_recipe(seed=candidates[0].seed, batch_size=candidates[0].batch_size)
         record.update(selection_evidence=False, selected=None, validation_auc=None,
                       fallback="full_calibration_waveform_lda",

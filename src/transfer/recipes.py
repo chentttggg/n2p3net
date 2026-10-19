@@ -52,7 +52,7 @@ class TargetRecipe:
         elif adapter is not None:
             raise ValueError("target_adapter_config requires adapter weights")
         object.__setattr__(self, "target_adapter_config", adapter)
-        for name in ("candidate_loss_weight", "candidate_loss_temperature", "source_prior_weight"):
+        for name in ("candidate_loss_weight", "candidate_loss_temperature", "source_prior_weight", "weight_decay"):
             value = getattr(self, name)
             if name == "candidate_loss_weight" and value is None:
                 continue

@@ -14,6 +14,7 @@ from models.n2p3net import N2P3Net
 from tests.support.brainsync import write_bids_session
 from tests.support.candidate import candidate_dataset
 from tests.support.datasets import binary_dataset
+from tests.support.quality import fit_raw_quality
 from transfer.calibration_candidates import calibration_decision_groups, fit_calibration_candidate
 from transfer.recipes import unified_target_recipes
 
@@ -222,7 +223,7 @@ def test_epoch_selection_validation_changes_cache_key_and_failed_fits_remain_att
 def direct_dataset(tmp_path):
     root = write_bids_session(tmp_path / "direct", session_id="cal", target=2,
         started_utc="2026-09-06T08:00:00Z", blocks=(tuple(range(1, 10)) * 5,) * 3)
-    return load_brainsync_sessions((root,))
+    return load_brainsync_sessions((root,), continuous_qc_model=fit_raw_quality(root))
 
 
 def test_direct_budget_does_not_complete_a_partial_r5_with_future_labels(direct_dataset):

@@ -40,6 +40,10 @@ class PersonalEpochRawQualityError(ValueError):
 def validate_personal_epoch_raw_quality(processing: dict, quality) -> None:
     if not isinstance(quality, (PersonalEpochQualityPolicy, PersonalEpochQualityModel)):
         return
+    _validate_required_raw_quality(processing)
+
+
+def _validate_required_raw_quality(processing: dict) -> None:
     message = (
         "BrainSync personal epoch QC requires applied channel-local continuous QC /4 "
         "with raw exact-constant detection enabled; provide a compatible --continuous-qc-model. "
@@ -63,10 +67,10 @@ def validate_personal_epoch_raw_quality(processing: dict, quality) -> None:
 
 
 def _validate_dataset_raw_quality(dataset: EpochDataset, quality) -> None:
-    if dataset.provenance.get("session_schema") == BRAIN_SYNC_SESSION_SCHEMA:
+    if quality is not None and dataset.provenance.get("session_schema") == BRAIN_SYNC_SESSION_SCHEMA:
         processing = dataset.provenance.get("continuous_artifact_processing", {})
-        validate_personal_epoch_raw_quality(processing, quality)
-        if isinstance(quality, (PersonalEpochQualityPolicy, PersonalEpochQualityModel)) and dataset.preprocessing.filter_phase == "zero":
+        _validate_required_raw_quality(processing)
+        if dataset.preprocessing.filter_phase == "zero":
             try:
                 frozen = continuous_qc_from_record(processing["model"])
                 validate_recovery_contract(frozen, dataset.preprocessing,

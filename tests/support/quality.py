@@ -43,18 +43,8 @@ def masked_bids_calibration(tmp_path, *, drop_all_targets=False, continuous=True
         )
         for index, target in enumerate((1, 3, 5))
     ]
-    dataset = load_brainsync_sessions(roots)
-    if continuous:
-        first = declare_continuous_quality(load_brainsync_sessions([roots[0]]))
-        dataset = replace(
-            dataset,
-            provenance={
-                **dataset.provenance,
-                "continuous_artifact_processing": first.provenance[
-                    "continuous_artifact_processing"
-                ],
-            },
-        )
+    dataset = load_brainsync_sessions(roots,
+        continuous_qc_model=fit_raw_quality(roots[0]) if continuous else None)
     observed = np.ones(dataset.X.shape[:2], dtype=bool)
     if drop_all_targets:
         observed[dataset.y == 1, 0] = False

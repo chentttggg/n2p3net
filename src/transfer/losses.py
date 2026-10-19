@@ -131,6 +131,13 @@ def band_balanced_spectral_loss(
     weights: torch.Tensor | None = None,
     sample_mask: torch.Tensor | None = None,
 ) -> torch.Tensor:
+    """Compare demeaned, Hann-windowed, unnormalized FFT band magnitudes.
+
+    A sample mask gates the original time grid before detrending/windowing;
+    this is the spectrum of the gated signal, not concatenated segment power.
+    The waveform term supervises absolute offsets, while bands exclude DC.
+    Its numerical scale follows this declared DFT and the fitted band weights.
+    """
     if x.shape != x_hat.shape:
         raise ValueError("x and x_hat must have identical shape.")
     if sample_mask is not None:

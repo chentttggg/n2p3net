@@ -46,6 +46,8 @@ def resolve_subject_scope(
         if requested_subjects is not None
         else available
     )
+    if len(requested) != len(set(requested)):
+        raise ValueError("requested subject scope contains duplicate participants")
     unknown = set(requested) - set(available)
     if unknown:
         raise ValueError(f"requested subjects are absent from the dataset: {sorted(unknown)}")
