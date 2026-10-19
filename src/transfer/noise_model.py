@@ -205,7 +205,7 @@ class JointNoiseModel:
         provenance = json.loads(json.dumps(self.provenance, allow_nan=False))
         required = {"fit_scope", "scope_id", "draw_ids", "n_draws", "input_sha256", "shrinkage",
                     "implementation_sha256", "estimator"}
-        if (not isinstance(provenance, dict) or set(provenance) != required
+        if (not isinstance(provenance, dict) or set(provenance) not in (required, required | {"empirical_resolution"})
                 or provenance["fit_scope"] not in {"source_training", "target_calibration"}
                 or not isinstance(provenance["scope_id"], str) or not provenance["scope_id"].strip()
                 or provenance["estimator"] != "joint_standardized_covariance_with_cross_terms"):
@@ -218,6 +218,14 @@ class JointNoiseModel:
         if (isinstance(provenance["shrinkage"], bool) or not np.isfinite(provenance["shrinkage"])
                 or not 0 <= provenance["shrinkage"] <= 1):
             raise ValueError("noise shrinkage must be finite in [0, 1]")
+        empirical = provenance.get("empirical_resolution")
+        if empirical is not None and (
+                empirical.get("joint_dimension") != len(mean)
+                or empirical.get("n_draws") != provenance["n_draws"]
+                or empirical.get("centered_rank_upper_bound")
+                    != min(provenance["n_draws"]-1, empirical.get("active_dimensions", -1))
+                or not 0 <= empirical.get("active_dimensions", -1) <= len(mean)):
+            raise ValueError("noise empirical resolution differs from the actual paired fit dimensions")
         object.__setattr__(self, "provenance", freeze_metadata(provenance))
         scales, basis, gain, conditional, ledger = _conditional_factors(covariance, self.raw_dimension)
         object.__setattr__(self, "_raw_scales", frozen_array(scales))
@@ -256,6 +264,11 @@ class JointNoiseModel:
         observed = scale > 0
         safe_scale = np.where(observed, scale, 1)
         standardized = centered / safe_scale
+        empirical_resolution = {
+            "n_draws": len(raw), "joint_dimension": joint.shape[1],
+            "active_dimensions": int(observed.sum()),
+            "centered_rank_upper_bound": min(len(raw)-1, int(observed.sum())),
+        }
         if shrinkage is None:
             covariance = np.zeros((joint.shape[1], joint.shape[1]))
             actual_shrinkage = 0.
@@ -277,6 +290,37 @@ class JointNoiseModel:
             "shrinkage": actual_shrinkage,
             "implementation_sha256": _IMPLEMENTATION_SHA256,
             "estimator": "joint_standardized_covariance_with_cross_terms",
+            "empirical_resolution": empirical_resolution,
+        })
+
+    def estimation_diagnostics(self):
+        """Sample/rank disclosure, not a certificate of covariance accuracy.
+
+        Shrinkage defines a usable fitted covariance even when centered draws
+        do not span all active coordinates. A numerical support or a shrinkage
+        coefficient does not establish statistical identification or fit quality.
+        Old producers retain their scope and do not acquire an invented rank.
+        """
+        self.assert_integrity()
+        n, dimension = self.provenance["n_draws"], len(self.mean)
+        empirical = self.provenance.get("empirical_resolution")
+        return freeze_metadata({
+            "schema": "joint_noise_estimation_diagnostic/1", "n_draws": n,
+            "raw_dimension": self.raw_dimension, "state_dimension": dimension-self.raw_dimension,
+            "joint_dimension": dimension, "draws_per_joint_dimension": n/dimension,
+            "centered_rank_upper_bound": min(n-1, dimension),
+            "empirical_resolution": empirical,
+            "empirical_resolution_role": ("recorded_at_original_fit" if empirical is not None
+                                           else "not_recorded_by_original_producer"),
+            "shrinkage": self.provenance["shrinkage"],
+            "empirical_null_directions_at_least": (None if empirical is None else
+                empirical["active_dimensions"]-empirical["centered_rank_upper_bound"]),
+            "shrinkage_fills_empirical_null_directions": (
+                False if self.provenance["shrinkage"] == 0 else
+                True if empirical is not None and empirical["centered_rank_upper_bound"] < empirical["active_dimensions"]
+                else None),
+            "statistical_accuracy_certified": False,
+            "interpretation": "sample size, empirical resolution and shrinkage are distinct from physical support",
         })
 
     def _metadata(self):

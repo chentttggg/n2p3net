@@ -76,6 +76,7 @@ class OperatorAwareLDA:
     covariance: np.ndarray = field(init=False)
     identifiable_projector: np.ndarray = field(init=False)
     intercept: float = field(init=False)
+    regularization_diagnostics: dict = field(init=False, repr=False, compare=False)
     _integrity_sha256: str = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
@@ -118,6 +119,15 @@ class OperatorAwareLDA:
             raise ValueError("class contrast outside noise-identifiable support")
         # Add uncertainty only on physically represented output directions.
         regularized = values[keep] + self.ridge_relative * values[keep].mean()
+        object.__setattr__(self, "regularization_diagnostics", freeze_metadata({
+            "support_role": "numerical_covariance_support_not_statistical_identification",
+            "support_eigenvalue_floor": float(values[-1]*relative),
+            "support_relative_floor": float(relative), "retained_directions": int(keep.sum()),
+            "output_dimension": len(values),
+            "ridge_variance_on_retained_support": float(self.ridge_relative*values[keep].mean()),
+            "directional_precision_retention": (values[keep]/regularized).tolist(),
+            "ridge_role": "regularizes_precision_inside_support; does_not_define_or_expand_support",
+        }))
         weights = V @ ((V.T @ delta) / regularized)
         object.__setattr__(self, "class_means", frozen_array(means))
         object.__setattr__(self, "raw_operator", frozen_array(self.raw_operator))
@@ -258,10 +268,56 @@ class OperatorAwareLDA:
                           conditioning_gain=self.conditioning_gain, conditional_covariance=self.covariance)
         return arrays
 
+    def calibration_diagnostic(self, features, labels, *, calibration_ids, observed_raw=None):
+        """Compare actual fitted score scatter with the supplied noise law.
+
+        This uses the original calibration rows again; it is a descriptive
+        discrepancy, not an out-of-sample goodness-of-fit test or an acceptance
+        gate. Conditional programmes use their exact original raw conditioners.
+        """
+        self.assert_integrity()
+        X = finite_real_array(features, name="original calibration diagnostic features")
+        y = np.asarray(labels)
+        raw = None
+        if self.conditioning_gain is not None:
+            raw = finite_real_array(observed_raw, name="original calibration diagnostic conditioners")
+            if raw.shape != (len(X), self.noise.raw_dimension):
+                raise ValueError("diagnostic requires the exact original observed raw conditioners")
+        elif observed_raw is not None:
+            raise ValueError("raw conditioners require the original conditional programme")
+        if (X.ndim != 2 or X.shape[1] != len(self.weights) or y.shape != (len(X),)
+                or set(y.tolist()) != {0, 1}
+                or tuple(calibration_ids) != tuple(self.provenance["calibration_ids"])
+                or array_digest(X, y, *(() if raw is None else (raw,))) != self.provenance["fit_sha256"]):
+            raise ValueError("diagnostic requires the exact original calibration rows, labels and IDs")
+        residual = X-self.class_means[y.astype(int)]
+        if raw is not None:
+            residual -= (raw-self.conditioning_class_means[y.astype(int)]) @ self.conditioning_gain.T
+        residual_score = residual @ self.weights
+        degrees = len(X)-2
+        empirical = float(residual_score @ residual_score / degrees)
+        project = self.noise.project if raw is None else self.noise.conditional_project
+        propagated = project(self.raw_operator, self.state_operator).covariance
+        predicted = float(self.weights @ propagated @ self.weights)
+        regularized = float(self.weights @ self.covariance @ self.weights)
+        return freeze_metadata({
+            "schema": "operator_lda_calibration_score_diagnostic/1",
+            "n_calibration": len(X), "within_class_degrees_of_freedom": degrees,
+            "empirical_score_variance": empirical, "predicted_noise_score_variance": predicted,
+            "regularized_score_variance": regularized,
+            "empirical_to_noise_score_variance": empirical/predicted if predicted > 0 else None,
+            "ratio_status": "defined" if predicted > 0 else "undefined_zero_score_direction",
+            "inference_role": "same_calibration_descriptive_discrepancy_no_acceptance_gate",
+            "noise_estimation": self.noise.estimation_diagnostics(),
+            "regularization": self.regularization_diagnostics,
+            "source_model_digest": self._integrity_sha256,
+        })
+
     def _metadata(self):
         return {"schema": "n2p3_operator_aware_lda/2" if self.conditioning_gain is not None else "n2p3_operator_aware_lda/1", "ridge_relative": self.ridge_relative,
                 "input_identity": self.input_identity, "provenance": self.provenance,
                 "noise_raw_dimension": self.noise.raw_dimension, "noise_provenance": self.noise.provenance,
+                "regularization_diagnostics": self.regularization_diagnostics,
                 "arrays_sha256": array_digest(*self._arrays().values())}
 
     def _integrity_digest(self):

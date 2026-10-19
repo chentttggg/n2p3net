@@ -22,10 +22,19 @@ class PairedInterval:
     bootstrap_seed: int
     interval_method: str = "percentile_bootstrap"
     interval_estimable: bool = True
+    interval_role: str = "descriptive_resampling_interval"
+    finite_sample_coverage_guaranteed: bool = False
+    bounded_mean_interval: tuple[float, float] | None = None
+    bounded_mean_method: str | None = None
+    bounded_mean_assumption: str | None = None
+    population_value_bounds: tuple[float, float] | None = None
 
     def record(self) -> dict[str, object]:
         record = asdict(self)
         record["bootstrap_interval"] = list(self.bootstrap_interval)
+        for key in ("bounded_mean_interval", "population_value_bounds"):
+            if record[key] is not None:
+                record[key] = list(record[key])
         return record
 
 
@@ -36,6 +45,7 @@ def paired_interval(
     iterations: int,
     seed: int,
     confidence_level: float = 0.95,
+    value_bounds: tuple[float, float] | None = None,
 ) -> PairedInterval:
     """Bootstrap one declared independent unit without silently changing scope.
 
@@ -43,6 +53,12 @@ def paired_interval(
     target participant after applying the frozen model/ensemble rule. For
     ``training_procedure``, callers pass one whole-cohort paired difference per
     independently trained replicate defined by the preregistered design.
+
+    The percentile interval describes empirical resampling and has no finite-n
+    coverage guarantee. More units, BCa or a sample-size cutoff alone do not
+    supply one. With caller-declared population bounds, a separate Hoeffding
+    interval covers the mean under independent representative sampling units;
+    these bounds must describe the estimand, not the observed sample range.
     """
 
     values = np.asarray(differences, dtype=np.float64)
@@ -60,6 +76,15 @@ def paired_interval(
         unit = "independent_training_replicate"
     else:
         raise ValueError(f"unsupported inference_scope {inference_scope!r}.")
+    bounded_interval = None
+    if value_bounds is not None:
+        bounds = np.asarray(value_bounds, dtype=float)
+        if (bounds.shape != (2,) or not np.isfinite(bounds).all() or bounds[0] > bounds[1]
+                or np.any(values < bounds[0]) or np.any(values > bounds[1])):
+            raise ValueError("population value_bounds must contain every paired difference.")
+        radius = (bounds[1]-bounds[0])*np.sqrt(np.log(2/(1-confidence_level))/(2*len(values)))
+        bounded_interval = (float(max(bounds[0], values.mean()-radius)),
+                            float(min(bounds[1], values.mean()+radius)))
 
     rng = np.random.default_rng(seed)
     sampled = np.empty(iterations, dtype=np.float64)
@@ -72,8 +97,8 @@ def paired_interval(
     alpha = 1.0 - confidence_level
     lower, upper = np.quantile(sampled, [alpha / 2.0, 1.0 - alpha / 2.0])
     # When resampling every unit identically is at least alpha/2 likely, the tails
-    # are the sample range itself rather than a confidence interval.
-    estimable = (1.0 / len(values)) ** len(values) < alpha / 2.0
+    # hit the sample endpoints; even resolved tails do not certify coverage.
+    estimable = bool((1.0 / len(values)) ** len(values) < alpha / 2.0 and np.ptp(values) > 0)
     return PairedInterval(
         inference_scope=inference_scope,
         sampling_unit=unit,
@@ -85,6 +110,11 @@ def paired_interval(
         bootstrap_seed=seed,
         interval_method="percentile_bootstrap" if estimable else "not_estimable_sample_range",
         interval_estimable=estimable,
+        bounded_mean_interval=bounded_interval,
+        bounded_mean_method=None if bounded_interval is None else "Hoeffding_independent_bounded_mean",
+        bounded_mean_assumption=(None if bounded_interval is None else
+            "independent_representative_units_with_caller_declared_population_bounds"),
+        population_value_bounds=None if value_bounds is None else tuple(map(float, bounds)),
     )
 
 

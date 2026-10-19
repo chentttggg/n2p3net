@@ -1,0 +1,61 @@
+{
+  "schema": "n2p3_repository_audit_math_integration/1",
+  "delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-math\\DELIVERY.json",
+    "bytes": 5892,
+    "sha256": "18079c9b9a246b321c702215a91ffd2052d90f95c959a80d071120851774be6e"
+  },
+  "disposition": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-math\\AUDIT_DISPOSITION.json",
+    "bytes": 4650,
+    "sha256": "5217121dde5289e9c70f9219659eb5ac4a9c56bf6420b0684dde55ca0592383f"
+  },
+  "author_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-math\\SPEC_AND_REVIEW.zh.md",
+    "bytes": 8218,
+    "sha256": "2317441edf82b8d1d984d154dde6f368a1481a76abab9374c96bfdf7246349f6"
+  },
+  "canonical_sources": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\research\\test_audit_interval_contract.py",
+      "sha256": "860b0aea56b02823985dcca83cf5a56579a222e295717a382380896eb5dcd78a",
+      "bytes": 4614
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\transfer\\test_audit_covariance_diagnostics.py",
+      "sha256": "1f0e9dfaee76ff16b64f8fc7486136b7ba94cc790ebce0bad6717cbca59ea404",
+      "bytes": 7282
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\stats\\hierarchical.py",
+      "sha256": "9aa90394c2e188ba0e62d66c58c43e15ad913174540d497ad844bd4f731855c4",
+      "bytes": 5688
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\stats\\transfer.py",
+      "sha256": "a8e39a595dbebc8620d0971236a825513208ff78aa28228fb157b0fc72f53b23",
+      "bytes": 46781
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\noise_model.py",
+      "sha256": "da4286f1ff27bf2063e542eb261f39bc87637edd312586da4e189357c7d57dc2",
+      "bytes": 23524
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\transfer\\operator_lda.py",
+      "sha256": "5d599e401635ace8539bae47304c361e2a7bd138fb745c9e0d7db54678f411b3",
+      "bytes": 22656
+    }
+  ],
+  "root_review": {
+    "complete_changed_methods_and_callers_read": true,
+    "source_pins_before_copy": "four exact original baselines matched",
+    "mathematics": "Retain numerical estimator and support/ridge roles; centered empirical covariance rank upper bound; original-calibration score scatter; preserve percentile resampling numbers and expose known-bounds Hoeffding mean interval with independent-unit assumptions; keep full requested seed grid primary",
+    "evidence_reused": "77 necessary cases and independent bytewise estimator/bootstrap parity; M1/M2/M4 accepted-source pins matched"
+  },
+  "scope": "Scientific diagnostics and inference/report contracts; no new EEG fit or scientific model selection",
+  "cleanup": {
+    "status": "not_applicable",
+    "reason": "No superseded generated build; producer and mathematical counterexamples retained"
+  }
+}

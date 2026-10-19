@@ -170,6 +170,9 @@ def _participant_rows(unit_rows: list[dict], seeds: tuple[tuple, ...]) -> list[d
             "status": "complete_pair" if not missing else "incomplete_seed_grid",
             "difference": float(np.mean([row["difference"] for row in complete])) if not missing else None,
             "requested_seed_pairs": len(seeds), "failed_or_missing_seed_pairs": len(missing),
+            "available_seed_pairs": len(complete),
+            "available_seed_pair_mean_difference": (
+                float(np.mean([row["difference"] for row in complete])) if complete else None),
             "seed_failures": missing,
         })
     return result
@@ -187,8 +190,10 @@ def _summary(rows: list[dict], studies: tuple[str, ...], *, iterations: int, see
             samples[study] = values
         interval = None
         if with_intervals and len(values) > 1:
+            bound = None if contrast_bounds is None else contrast_bounds.get(study)
             interval = paired_interval(values, inference_scope="conditional_frozen_models",
-                                       iterations=iterations, seed=seed).record()
+                                       iterations=iterations, seed=seed,
+                                       value_bounds=None if bound is None else (-bound, bound)).record()
         by_study[study] = {
             "n_requested_participants": len(requested), "n_complete_participants": len(values),
             "mean_difference": float(values.mean()) if len(values) else None,
@@ -201,7 +206,12 @@ def _summary(rows: list[dict], studies: tuple[str, ...], *, iterations: int, see
                 bool(values.mean() >= -0.01) if len(values) and len(values) == len(requested) else None),
             "replacement_decline_gate_basis": (
                 "complete_requested" if len(values) and len(values) == len(requested) else None),
+            "replacement_decline_gate_inference_role": "descriptive_point_or_missing_result_bound; not_noninferiority_test",
             "paired_interval": interval,
+            "bounded_mean_decline_gate_passed": (
+                bool(interval["bounded_mean_interval"][0] >= -0.01)
+                if len(values) == len(requested) and interval is not None
+                and interval["bounded_mean_interval"] is not None else None),
         }
         if contrast_bounds is not None:
             bound = contrast_bounds.get(study)
@@ -243,6 +253,7 @@ def _summary(rows: list[dict], studies: tuple[str, ...], *, iterations: int, see
             "negative_fraction_study_equal": partial_negative,
             "decline_over_0_01_fraction_study_equal": partial_decline,
             "bootstrap_interval": overall_interval,
+            "bootstrap_interval_role": "descriptive_resampling_interval_no_finite_sample_coverage_guarantee",
             "estimand": "equal_weight_mean_over_only_studies_with_complete_participants",
         },
         "pooled_participant_p10": float(np.quantile(values, 0.1)) if len(values) else None,
@@ -250,8 +261,28 @@ def _summary(rows: list[dict], studies: tuple[str, ...], *, iterations: int, see
         "by_study": by_study, "participant_rows": rows,
         "bootstrap": {"interval": overall_interval if complete_studies else None, "confidence_level": 0.95, "iterations": iterations,
                       "seed": seed, "sampling_unit": "participant_within_fixed_study", "scope": INFERENCE_SCOPE,
+                      "interval_method": "stratified_percentile_bootstrap",
+                      "interval_role": "descriptive_resampling_interval",
+                      "finite_sample_coverage_guaranteed": False,
                       "limitation": "does_not_cover_new_studies_source_resampling_or_training_procedure_uncertainty"},
         "failure_policy": "complete_pairs_with_all_declared_seeds_only_failures_retained_in_denominator",
+    }
+    sensitivity = {}
+    for study in studies:
+        current = [row for row in rows if row["study"] == study]
+        available = [row.get("available_seed_pair_mean_difference", row["difference"])
+                     for row in current]
+        observed = [value for value in available if value is not None]
+        sensitivity[study] = {
+            "n_requested_participants": len(current), "n_with_any_complete_seed_pair": len(observed),
+            "mean_difference": float(np.mean(observed)) if observed else None,
+            "available_seed_pair_counts": [row.get("available_seed_pairs",
+                row["requested_seed_pairs"]-row["failed_or_missing_seed_pairs"]) for row in current],
+        }
+    result["available_seed_pair_sensitivity"] = {
+        "by_study": sensitivity,
+        "estimand": "participant_means_over_observed_seed_pairs_only; not_the_full_requested_seed_grid",
+        "missingness_bias_removed": False,
     }
     if contrast_bounds is not None:
         bounds = [by_study[study]["missing_result_bounds"] for study in studies]
