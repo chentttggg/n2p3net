@@ -65,6 +65,7 @@ from transfer.result_reuse import seal_result_record  # noqa: E402
 _RESEARCH_PATH = ROOT / "experiments" / "boundary_state_research.py"
 _spec = importlib.util.spec_from_file_location("boundary_state_research", _RESEARCH_PATH)
 _boundary = importlib.util.module_from_spec(_spec)
+sys.modules[_spec.name] = _boundary
 _spec.loader.exec_module(_boundary)
 ScaleInvariantContinuousModel = _boundary.ScaleInvariantContinuousModel
 
@@ -302,6 +303,7 @@ def _run_subject(row, plan, directory, expected_source):
                                     fit_seconds=fit_seconds, input_sha256=result.input_sha256)
                     else:
                         # E2 main arms: AR1/AR8 × innovation/marginal, full ridge grid
+                        use_operator = operator if arm.get("filter", False) else None
                         ridge_results = []
                         for ridge in plan["ridge_relative_grid"]:
                             t0 = time.perf_counter()
@@ -310,13 +312,13 @@ def _run_subject(row, plan, directory, expected_source):
                                 channels=BNCI2014_008_CHANNELS,
                                 candidate_ids=CANDIDATES,
                                 order=arm["order"],
-                                noise_method="burg",
-                                operator=None,   # raw signal arm (distributed MAT)
-                                filter_design=True,
+                                noise_method=arm.get("noise_method", "burg"),
+                                operator=use_operator,
+                                filter_design=arm.get("filter_design", True),
                                 ridge=ridge,
                                 feasible_iterations=arm.get("feasible_iterations", 1),
                                 channel_weighted_noise=arm.get("channel_weighted_noise", False),
-                                spatial_shrinkage="pooled_lw",
+                                spatial_shrinkage=arm.get("spatial_shrinkage", "pooled_lw"),
                                 kernel_prior_scale=arm["kernel_prior_scale"],
                                 startup_mode=arm.get("startup_mode", "stationary"),
                                 implementation_sha256=continuous_impl,
@@ -335,23 +337,21 @@ def _run_subject(row, plan, directory, expected_source):
                                          - res.log_evidence[CANDIDATES.index(truth)])
                             # Diagnostic fields from TemporalNoise
                             noise_rec = m.noise.record() if hasattr(m.noise, "record") else {}
+                            last_iteration = m.provenance["feasible_GLS_iterations"][-1]
                             ridge_results.append({
                                 "ridge": ridge,
                                 "correct": res.winner == truth,
                                 "nll": nll_r,
                                 "winner": res.winner,
                                 "fit_seconds": fit_t,
+                                "operator_declared": "project_bidirectional" if use_operator is not None else "raw_distributed_MAT",
                                 "marginal_variance_per_unit_innovation":
                                     float(m.noise.marginal_variance_per_unit_innovation),
-                                "effective_ridge": (
-                                    ridge / m.noise.marginal_variance_per_unit_innovation
-                                    if arm["kernel_prior_scale"] == "marginal" else ridge
-                                ),
+                                "effective_ridge": last_iteration["effective_ridge"],
                                 "ar_coefficients": m.noise.coefficients.tolist(),
                                 "noise_record": noise_rec,
                                 "train_residual_diagnostics":
-                                    m.provenance.get("feasible_GLS_iterations", [{}])[-1]
-                                    .get("residual_diagnostics", {}),
+                                    last_iteration.get("residual_diagnostics", {}),
                                 "saved_reload_exact": True,
                                 "input_sha256": res.input_sha256,
                                 "max_log_evidence_gap":
@@ -359,24 +359,30 @@ def _run_subject(row, plan, directory, expected_source):
                                 "max_probability": float(res.probabilities.max()),
                             })
                         # Use ridge=1 result as the primary cell summary (grid reported in full)
-                        primary = next((r for r in ridge_results if r["ridge"] == 1.), ridge_results[0])
+                        primary = next((r for r in ridge_results if r["ridge"] == 1.0), None)
+                        if primary is None:
+                            raise ValueError("declared ridge grid does not contain the primary ridge 1.0")
                         cell.update(
                             status="completed",
                             correct=primary["correct"],
                             nll=primary["nll"],
                             winner=primary.get("winner"),
                             fit_seconds=primary["fit_seconds"],
+                            effective_ridge=primary["effective_ridge"],
                             ridge_grid_results=ridge_results,
                             saved_reload_exact=True,
                             input_sha256=primary["input_sha256"],
                         )
                         files["prediction"] = cell_dir / "primary_prediction.json"
                         atomic_write_json(files["prediction"], {"ridge_grid_results": ridge_results,
-                                                                "truth_scorer_only": truth})
+                                                                "truth_scorer_only": truth, "primary_ridge": 1.0})
                 except (ValueError, RuntimeError, np.linalg.LinAlgError, AssertionError) as exc:
                     cell.update(status="failed", error=str(exc))
                 cell["elapsed_seconds"] = time.perf_counter() - began
-                cell = seal_result_record(cell, files=files)
+                try:
+                    cell = seal_result_record(cell, files=files)
+                except (OSError, TypeError, ValueError) as exc:
+                    cell.update(status="failed", error=f"seal:{exc!r}")
                 atomic_write_json(cell_dir / "record.json", cell)
                 cells.append(cell)
                 atomic_write_json(directory / "cells.json", cells)

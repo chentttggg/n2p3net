@@ -1,0 +1,163 @@
+{
+  "schema": "n2p3_saved_control_manifest_acceptance/1",
+  "passed": true,
+  "created_utc": "2026-10-18T15:46:12.092250+00:00",
+  "new_theorems": 81,
+  "new_strict_false_controls": 15,
+  "accepted_theorems": 2890,
+  "accepted_false_examples": 488,
+  "proof_members": 329,
+  "components": {
+    "NeuralSavedControl": [
+      56,
+      8
+    ],
+    "RawManifestSnapshots": [
+      25,
+      7
+    ]
+  },
+  "independent_reviews": [
+    {
+      "path": "doc/assets/lean_personal_erp_20261018/neural_control_independent_review_01.json",
+      "sha256": "efc613eeee30b2a1efd4b4de4167e517f8ec8259de4f650e2d98285b3ddeaacd"
+    },
+    {
+      "path": "doc/assets/lean_v08_fit_20261018/raw_manifest_independent_review_01.json",
+      "sha256": "9cd583da31a9fd8f7dd6db20afcfd95606ef171453f30a955fbfbcf243fde945"
+    }
+  ],
+  "source_contract": {
+    "path": "doc/assets/lean_personal_erp_20261018/science_contract_v5.json",
+    "sha256": "24146f3db60ec73b9d9ecb9b77fdc5cb1e607a210b541ebe61be38eced7e9e1f",
+    "source_count": 202,
+    "runtime_count": 191
+  },
+  "jobs": [
+    {
+      "tag": "neural_saved_control_components_build_02",
+      "kind": "build",
+      "passed": true,
+      "result_sha256": "dc026d9d6ce684330e13824a2b77513a510a6824717b32485200ba4e407ebdfb",
+      "protected_members_at_execution": 302
+    },
+    {
+      "tag": "neural_constructor_config_direct_01",
+      "kind": "direct",
+      "passed": true,
+      "result_sha256": "dbf938b6a563b828a03abe11ee5d58703ee862b835dbc7c558f67b62355ebd8a",
+      "protected_members_at_execution": 302
+    },
+    {
+      "tag": "neural_registered_state_direct_01",
+      "kind": "direct",
+      "passed": true,
+      "result_sha256": "cc733530ebc17ddd9d2098b19d816a97b211cf6137d2971980a44323da365def",
+      "protected_members_at_execution": 302
+    },
+    {
+      "tag": "neural_strict_load_direct_01",
+      "kind": "direct",
+      "passed": true,
+      "result_sha256": "373e60904e2f9b900164791f3952658ca369a0cd2de3db47aad87efe57efcb62",
+      "protected_members_at_execution": 317
+    },
+    {
+      "tag": "neural_evaluation_control_direct_01",
+      "kind": "direct",
+      "passed": true,
+      "result_sha256": "3f62e4933b24dd300918c897d46967f03522e0063e96b5d6dc817103ba9a0986",
+      "protected_members_at_execution": 317
+    },
+    {
+      "tag": "neural_saved_control_witnesses_direct_01",
+      "kind": "direct",
+      "passed": true,
+      "result_sha256": "477611379aa2890ca7440bd30eaa9de17063238fe02f13019d996d7d05b92512",
+      "protected_members_at_execution": 317
+    },
+    {
+      "tag": "neural_saved_control_audit_01",
+      "kind": "axioms",
+      "passed": true,
+      "result_sha256": "a09a526236ba03650842df037e9239d25b79612f4591d00a369b6fefeb64e3ee",
+      "protected_members_at_execution": 317
+    },
+    {
+      "tag": "neural_saved_control_negative_01",
+      "kind": "negative",
+      "passed": true,
+      "result_sha256": "0bf3dbaf5f8991236ac3e3ddaf5acc1a382d96af48b9d73aaf0fc11f4c96ee59",
+      "protected_members_at_execution": 317
+    },
+    {
+      "tag": "raw_manifest_snapshots_direct_04",
+      "kind": "direct",
+      "passed": true,
+      "result_sha256": "0084d1a7c3092312ec203eb643f1f8eaed07f15a3d720e85d4c3bacd52e4a655",
+      "protected_members_at_execution": 317
+    },
+    {
+      "tag": "raw_manifest_snapshots_build_01",
+      "kind": "build",
+      "passed": true,
+      "result_sha256": "58a299f9c8726c2750a3842d8205f89b66bfb58da431096c7827ad8c7a3c65e8",
+      "protected_members_at_execution": 317
+    },
+    {
+      "tag": "raw_manifest_snapshots_axioms_01",
+      "kind": "axioms",
+      "passed": true,
+      "result_sha256": "a1f0d8fdc2b8061843ec115e4fbce2d9b223f0b6190623dea082c9e9039c8c30",
+      "protected_members_at_execution": 317
+    },
+    {
+      "tag": "raw_manifest_snapshots_negative_01",
+      "kind": "negative",
+      "passed": true,
+      "result_sha256": "f0a5c90ad7dbdde514b2121d5fa5d270beffd090a810b650f2f4069d6eece318",
+      "protected_members_at_execution": 317
+    },
+    {
+      "tag": "saved_control_manifest_joint_build_01",
+      "kind": "build",
+      "passed": true,
+      "result_sha256": "fb6b62721904baca80eff5df3a12a3c09dba0400dd3b51efc2efc3437b3371ca",
+      "protected_members_at_execution": 317
+    }
+  ],
+  "maintenance": [
+    {
+      "command": [
+        "D:\\BCI\\n2p3-net\\.venv\\Scripts\\ruff.exe",
+        "check",
+        "D:\\BCI\\n2p3-net\\doc\\assets\\lean_personal_erp_20261018\\accept_saved_control_manifest_01.py"
+      ],
+      "exit_code": 0,
+      "stdout": "All checks passed!\n"
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.safecrlf=false",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "stdout": ""
+    }
+  ],
+  "active_aggregation": "N2P3.SavedControlManifestComponents",
+  "frozen_manifest": "frozen/lean_saved_control_manifest_20261018/manifest.json",
+  "frozen_manifest_sha256": "e67eb2d3f4fc48a8484daf96f0cae97b58d7c7c6860b46c89fb310cf831d19d1",
+  "source_evidence_manifest_sha256": "34b173b002eddd6afde945ddbdce98bff12fee8018795531779787d98e121468",
+  "cleanup": "doc/assets/lean_personal_erp_20261018/saved_control_manifest_cleanup_01.json",
+  "cleanup_sha256": "8d7de93e801a23b7dc873660a078faff64503cb3739b966058e7fe33746ff041",
+  "cleanup_files_verified_absent": 24,
+  "cleanup_directories_verified_absent": 12,
+  "new_original_subgoals_completed": [],
+  "whole_goal_complete": false,
+  "scope": "Normalized ordinary-neural registry/compat load/eval/stats controls and decoded source-produced manifest/file/snapshot inventory; retain qualified interfaces and original remaining compositions.",
+  "production_changes_training_fits_or_new_source_probes": 0
+}

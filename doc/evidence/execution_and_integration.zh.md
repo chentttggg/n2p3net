@@ -331,3 +331,5 @@ checkpoint读取安全整合（`codex/claude-improvements-20261012`，基于`ed2
 主目录审计按当前科研源码逐项复核，处置与实际验收统一记入[修复绑定](../assets/research_resume_20261012/repository_audit_resolution.json)。112个游离提交均新增持久rescue引用，其中30个原无ref或reflog保护；完整194-ref本地bundle已验证，632,995,483 bytes。主目录975份源码、测试、配置、Lean源码与活动指南已封存并逐成员核验，5,575,913-byte code-only归档不含环境、原始数据或构建缓存；捕获前后源码和Git状态保持一致。
 
 预处理执行回执测试的个人包夹具改用真实20Hz特征维数，并明示固定/历史选择元数据；该文件9项通过，生产LDA维数校验和保存合同保持原义。历史证明和运行结果继续由其原producer解释，当前修复以新来源记录。
+
+测试迁移逐项覆盖原1189个函数，补回一个活跃的旧schema拒绝回归。形式化恢复保留414份原工程源码、66份核心元数据，另按验收manifest原SHA补齐七份位于`artifacts/`的Lean检查源码；329个受保护证明输入均保持原身份。754个旧输出路径已有归档、精确回执重建或清理用途定位。逐函数祖先复核保留了旧主树有用的E2声明选项、实际ridge与完整失败账本，统计一般线性对比范围由同一数学owner承接。来源、主树裁决和复核入口见[收敛绑定](../assets/research_resume_20261012/repository_convergence_integration.json)。

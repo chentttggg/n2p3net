@@ -1,0 +1,38 @@
+{
+  "schema": "n2p3_p12_synthetic_cache_cleanup/1",
+  "review": "doc/assets/lean_personal_erp_20261018/p12_cache_probe_review_01.json",
+  "review_sha256": "1e4d5486f42286523afb00bcc5a6044a9da7a7349f505396013d81603facd293",
+  "archive": "frozen/lean_personal_erp_20261018/p12_synthetic_cache_probe.zip",
+  "archive_sha256": "dc0582ef3fbee6522f35f00bd1aa592b3f3e733c4f640bb3f4677bab17615eee",
+  "classification": "Only this probe synthetic scratch cache; actual payload retained in verified local archive. No scientific original/cache/model/result touched.",
+  "cmd_files": [
+    {
+      "path": "formal/lean/artifacts/p12_cache_probe_tmp_01/synthetic.npz",
+      "exit_code": 0,
+      "absent_after": true,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "path": "formal/lean/artifacts/p12_cache_probe_tmp_01/synthetic.record.json",
+      "exit_code": 0,
+      "absent_after": true,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "cmd_empty_directories": [
+    {
+      "path": "formal/lean/artifacts/p12_cache_probe_tmp_01/snapshots",
+      "exit_code": 0,
+      "absent_after": true
+    },
+    {
+      "path": "formal/lean/artifacts/p12_cache_probe_tmp_01",
+      "exit_code": 0,
+      "absent_after": true
+    }
+  ],
+  "passed": true,
+  "finished_utc": "2026-10-18T05:41:11.673859+00:00"
+}

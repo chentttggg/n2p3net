@@ -1,0 +1,20 @@
+import N2P3.DecisionLossChain
+
+#print axioms N2P3.DecisionLossCalculus.score_line_derivative
+#print axioms N2P3.DecisionLossCalculus.partition_line_derivative
+#print axioms N2P3.DecisionLossCalculus.log_partition_line_derivative
+#print axioms N2P3.DecisionLossCalculus.ce_directional_derivative
+#print axioms N2P3.DecisionLossCalculus.ce_actual_derivative
+#print axioms N2P3.DecisionLossCalculus.ce_single_score_derivative
+#print axioms N2P3.DecisionLossCalculus.tied_score_ce
+#print axioms N2P3.DecisionLossCalculus.tied_score_ce_positive
+#print axioms N2P3.DecisionLossReduction.prefix_reads_only_its_earlier_rows
+#print axioms N2P3.DecisionLossReduction.packed_is_decision_mean_of_prefix_risks
+#print axioms N2P3.DecisionLossReduction.packed_loss_nonnegative
+#print axioms N2P3.DecisionLossReduction.final_only_loss_is_actual_last_prefix
+#print axioms N2P3.DecisionLossReduction.uniform_loss_averages_all_prefixes
+#print axioms N2P3.DecisionLossReduction.zero_scores_have_positive_trainable_loss
+#print axioms N2P3.DecisionLossChain.prefix_sum_of_raw_evidence_line
+#print axioms N2P3.DecisionLossChain.prefix_scores_of_raw_evidence_line
+#print axioms N2P3.DecisionLossChain.prefix_ce_derivative_from_raw_evidence
+#print axioms N2P3.DecisionLossChain.packed_ce_derivative_from_raw_evidence

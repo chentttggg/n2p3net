@@ -1,0 +1,86 @@
+{
+  "schema": "n2p3_repository_convergence_integration/1",
+  "author_R1": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\DELIVERY_MANIFEST.json",
+    "bytes": 3058,
+    "sha256": "a1e199677569a71c49e465fa76caf7706ba3ff06942101a5e9781484bb745cf2"
+  },
+  "author_R2": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\revision2\\DELIVERY_MANIFEST.json",
+    "bytes": 2648,
+    "sha256": "45adcc2e8d5b74de29c48df7cdd830e86fce6d2a819cfdf6b0c672b962c43ad0"
+  },
+  "original_formal_sources": 414,
+  "original_core_metadata_members": 66,
+  "original_import_receipt": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\ROOT_FORMAL_IMPORTED_BYTES.json",
+    "bytes": 89998,
+    "sha256": "3ea9a2f4fef0f1d1eabda351591094fb0793f999316131bc143b1f35df8a6896"
+  },
+  "root_review": {
+    "source_recovery": "All original members byte-verified; historical whitespace preserved by attributes",
+    "new_tools": "Read complete locator and workspace driver, accepted original-only check and explicit current-target mode; current source identity remains separately checked",
+    "main_tree_adjudication": "149 differing paths plus six main-only paths reviewed by lineage and actual functions. Main-specific E2 options/effective ridge/primary status and dynamic module registration migrated; general contrast range migrated by mathR2. Retired tools/losses preserved in baseline without revival.",
+    "test_migration": "All1189 old tests mapped; one missing active schema regression restored; PDS fixture migrated to existing target scope contract"
+  },
+  "selected_candidate_sources": [
+    {
+      "path": "doc/assets/repository_audit_20261019/lean_evidence_locator.json",
+      "sha256": "8215016c5bf8e5a3e628c3285d80496f001a83db002250be17d9f9d3f9abd9b1"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/lean_source_rebase_review.json",
+      "sha256": "63828114307dbe8d25fe31e5b3e13f1c53be66a952f2f1c5eed5ce9a6408249b"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/test_migration_reviewed.json",
+      "sha256": "3a3555d5e568925c680f9853981a7df5ef3ab9b7b90347b7d701a6cfad076483"
+    },
+    {
+      "path": "formal/lean/scripts/locate_evidence.py",
+      "sha256": "084107d2e489c1a2f55e095baba0df26b5db51d73bde684f0194a41b722a4a5f"
+    },
+    {
+      "path": "tests/research/test_reorganized_contracts.py",
+      "sha256": "240d22ea0f2431b87b26353e3cd419794ea9b9ffd31e64ae0fb235a3bb183dd4"
+    },
+    {
+      "path": "experiments/run_e2_prior_scale.py",
+      "sha256": "52e6344d0ccac0dfd8082562698b989bc53f52a36847b24248395394d2878e4a"
+    },
+    {
+      "path": "formal/lean/scripts/workspace_status.py",
+      "sha256": "f949ed9d5c0efa9354886fda7a30f35ea86f2a440377c4c696ec609ef4356ca2"
+    },
+    {
+      "path": "tests/research/test_e2_declared_arms.py",
+      "sha256": "22295d8e62001ce80ee7b0302ba9f8ce289e6cdf205964e3eb18196279820a87"
+    },
+    {
+      "path": "tests/train/test_pretrain_supervised.py",
+      "sha256": "4f316c9724b51743c6e5bf517989198421f1687d1f3651b7fa6dc4cab7f29e88"
+    },
+    {
+      "path": "doc\\assets\\repository_audit_20261019\\lean_metadata_manifest.json",
+      "sha256": "b68e4d1ba17656eae128c62210c004ae705b92f19ce5999eb50c0bca7ed1961e"
+    },
+    {
+      "path": "doc\\assets\\repository_audit_20261019\\lean_metadata_core_manifest.json",
+      "sha256": "492c3f42e2e49277d3c521f7f8d6dfe56a296f63f30d8d4149f5fab2b7d9f181"
+    }
+  ],
+  "remaining": "Formal source-contract rebase belongs to new semantic acceptance; originalv5 proofs remain bound to original202-source producer. Main checkout convergence follows remaining audit slices and actual combined validation.",
+  "protected_inspection_sources": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\ROOT_PROTECTED_INSPECTION_SOURCES.json",
+    "sha256": "756e93874113f3903f60309b37fbf0ca61dbde75cf8c97409e1646a82f64cf3d",
+    "members": 7
+  },
+  "actual_root_validation": {
+    "migrated_schema_and_E2_cases": 3,
+    "pytest_exit_code": 0,
+    "E2_real_help_exit_code": 0,
+    "new_driver_Ruff": 0,
+    "original329_proof_inputs_byte_identity": "all_matched",
+    "original202_source_applicability": "source_changed_not_revalidated; exit2 is the expected state for the new source"
+  }
+}

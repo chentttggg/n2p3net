@@ -1,0 +1,1070 @@
+{
+  "schema": "n2p3_lean_active_checkpoint/1",
+  "status": "paused",
+  "accepted_theorems": 2890,
+  "current_accepted_receipt": "doc/assets/lean_personal_erp_20261018/saved_control_manifest_acceptance_01.json",
+  "frozen_manifest": "frozen/lean_saved_control_manifest_20261018/manifest.json",
+  "active_aggregation": "N2P3.SavedControlManifestComponents",
+  "agents": {
+    "V03.b": "lean_sos: SelectionERP seam/LLR/prior/full schedule",
+    "V04.a": "source_review: ordinary constructor/registered state/compat strict load/eval controls",
+    "V06.a": "lean_scope: original loss-family closure audit and missing mathematical contracts",
+    "V07.a": "erp_source_probe: actual latency grid/windows/bank/softmax/contrast",
+    "root": "independent acceptance, source correspondence and raw manifest/snapshot family RA1"
+  },
+  "cleanup": {
+    "current": "doc/assets/lean_personal_erp_20261018/saved_control_manifest_cleanup_01.json",
+    "sha256": "8d7de93e801a23b7dc873660a078faff64503cb3739b966058e7fe33746ff041",
+    "files_removed": 24,
+    "directories_removed": 12
+  },
+  "boundaries": "2890/488 reviewed components and historical strict negatives;329 protected proof files;v5 source202/runtime191. Five original math/source subgoals complete;remaining12 continue.",
+  "next_actions": [
+    "Read this pause receipt and current checkpoint; verify source/proof identities and process state.",
+    "Use at most3 subagents; do not automatically restart the fourth original agent.",
+    "Complete B02 candidate freezing and independent source/math review without repeating successful historical checks solely for a larger protection set.",
+    "Continue latency, V06 risk and RA2; retain original17 subgoals and separate numerical/physical dimensions.",
+    "Only after confirming new errors, consolidate evidence for research owner; do not implement production repairs."
+  ],
+  "accepted_false_examples": 488,
+  "current_subgoal": "V03.b/V04.a plus ready V07/V08/V09 and optimizer components; original17 incomplete",
+  "subagent_status": "All4 original agents interrupted at user request; maximum3 after an explicit future resume.",
+  "current_work": "Paused by user. Accepted2890/488 preserved; unaccepted B02/latency/risk/RA2 work frozen for explicit resume. No automatic continuation.",
+  "active_dependencies": {
+    "joint_kernel_cache": "formal/lean/artifacts/joint_law_cache_01/report.json",
+    "gaussian_real_basic_cache": "formal/lean/artifacts/gaussian_moments_cache_01/report.json",
+    "matrix_order_cache": "formal/lean/artifacts/retained_factor_cache_01/report.json"
+  },
+  "last_updated_utc": "2026-10-18T15:58:54.354454+00:00",
+  "previous_goal_turn_classification": "progress:193 theorems/39 strict negatives accepted;62 obsolete files/31dirs cmd-cleaned; then user requested3-agent limit and pause.",
+  "final_checks": {
+    "pause_receipt": "doc/assets/lean_gaussian_20261016/pause_wrapup_20261018_01.json",
+    "source202_and_proof329_current_hashes": "all match",
+    "accepted_and_paused_archives": "all members verified",
+    "Ruff_and_git_diff_check": "pass",
+    "live_Lean_processes": 0
+  },
+  "next_source_evidence": "doc/assets/lean_erp_20261018/next_slice_review.json",
+  "next_source_semantic_review": "doc/assets/lean_erp_20261018/next_slice_semantic_review.json",
+  "pause_checkpoint": "doc/assets/lean_gaussian_20261016/pause_wrapup_20261018_01.json",
+  "human_handoff": "doc/assets/lean_temporal_operator_20261016/pause_handoff_20261017.zh.md",
+  "resumed_utc": "2026-10-18T02:14:53.626728+00:00",
+  "resume_checkpoint": "doc/assets/lean_temporal_operator_20261016/resume_checkpoint_20261018.json",
+  "verification_progress": {
+    "groups": {
+      "V01": {
+        "status": "in_progress",
+        "pilot_status": "partial_math_lemmas_only"
+      },
+      "V02": {
+        "status": "complete",
+        "pilot_status": "partial_math_lemmas_only",
+        "completion_scope": "mathematical specification and reviewed source relation; numerical implementation certification excluded"
+      },
+      "V03": {
+        "status": "in_progress",
+        "pilot_status": "partial_math_lemmas_only"
+      },
+      "V04": {
+        "status": "in_progress",
+        "pilot_status": "not_started"
+      },
+      "V05": {
+        "status": "in_progress",
+        "pilot_status": "not_started"
+      },
+      "V06": {
+        "status": "in_progress",
+        "pilot_status": "not_started"
+      },
+      "V07": {
+        "status": "in_progress",
+        "pilot_status": "not_started"
+      },
+      "V08": {
+        "status": "in_progress",
+        "pilot_status": "not_started"
+      },
+      "V09": {
+        "status": "in_progress",
+        "pilot_status": "not_started"
+      },
+      "V10": {
+        "status": "planned",
+        "pilot_status": "not_started"
+      }
+    },
+    "subgoals": {
+      "V01.a": {
+        "status": "complete",
+        "evidence": [
+          "doc/assets/lean_first_slice_20261016/acceptance.json",
+          "doc/assets/lean_first_slice_20261016/source_review.json",
+          "doc/evidence/lean_first_slice_20261016.zh.md",
+          "frozen/lean_first_slice_20261016/manifest.json",
+          "doc/assets/lean_personal_20261016/acceptance.json",
+          "doc/assets/lean_personal_20261016/review.json",
+          "frozen/lean_personal_20261016/manifest.json",
+          "frozen/lean_personal_20261016/source_probe_manifest.json",
+          "doc/assets/lean_personal_20261016/source_probe_01.json",
+          "doc/assets/lean_personal_20261016/source_probe_equality_01.json"
+        ],
+        "verification_dimensions": {
+          "math_proved": true,
+          "source_audited": true,
+          "behavior_probed": true,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        },
+        "completed_utc": "2026-10-16T03:55:25.253904+00:00",
+        "completion_scope": "listed exact-real mathematics + source semantic audit + finite behavioral probes; not full Python/IEEE refinement",
+        "remaining_implementation_boundaries": [
+          "Python/MNE/SciPy formal refinement",
+          "certified floating point error",
+          "actual OS/file/metadata/clock assumptions outside isolated mathematical interface"
+        ],
+        "additional_accepted_scope": [
+          "Personal raw recording callback before numerical processing, positive same-participant/prospective route postcondition, grouped finite present-ID scope and explicit publicAPI missing-metadata counterexample"
+        ]
+      },
+      "V02.a": {
+        "status": "complete",
+        "evidence": [
+          "doc/assets/lean_first_slice_20261016/acceptance.json",
+          "doc/assets/lean_first_slice_20261016/source_review.json",
+          "doc/evidence/lean_first_slice_20261016.zh.md",
+          "frozen/lean_first_slice_20261016/manifest.json",
+          "doc/assets/lean_temporal_operator_20261016/acceptance.json",
+          "doc/assets/lean_temporal_operator_20261016/review.json",
+          "doc/assets/lean_temporal_operator_20261016/source_probe_01.json",
+          "frozen/lean_temporal_operator_20261018/manifest.json",
+          "frozen/lean_temporal_operator_20261018/source_probe_manifest.json"
+        ],
+        "verification_dimensions": {
+          "math_proved": true,
+          "source_audited": true,
+          "behavior_probed": true,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        },
+        "completed_utc": "2026-10-16T03:55:25.253918+00:00",
+        "completion_scope": "listed exact-real mathematics + source semantic audit + finite behavioral probes; not full Python/IEEE refinement",
+        "remaining_implementation_boundaries": [
+          "Python/MNE/SciPy formal refinement",
+          "certified floating point error",
+          "actual OS/file/metadata/clock assumptions outside isolated mathematical interface"
+        ],
+        "accepted_partial_scope": [
+          "Actual per-lag temporal whitening, preceding-history startup and literal dual-buffer PARCOR recurrence; mode-specific output length and record-local functional support"
+        ]
+      },
+      "V02.b": {
+        "status": "complete",
+        "evidence": [
+          "doc/assets/lean_first_slice_20261016/acceptance.json",
+          "doc/assets/lean_first_slice_20261016/source_review.json",
+          "doc/evidence/lean_first_slice_20261016.zh.md",
+          "frozen/lean_first_slice_20261016/manifest.json"
+        ],
+        "verification_dimensions": {
+          "math_proved": true,
+          "source_audited": true,
+          "behavior_probed": true,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        },
+        "completed_utc": "2026-10-16T03:55:25.253921+00:00",
+        "completion_scope": "listed exact-real mathematics + source semantic audit + finite behavioral probes; not full Python/IEEE refinement",
+        "remaining_implementation_boundaries": [
+          "Python/MNE/SciPy formal refinement",
+          "certified floating point error",
+          "actual OS/file/metadata/clock assumptions outside isolated mathematical interface"
+        ]
+      },
+      "V03.a": {
+        "status": "in_progress",
+        "evidence": [
+          "doc/assets/lean_gaussian_20261016/acceptance_v2.json",
+          "doc/assets/lean_gaussian_20261016/review.json",
+          "doc/evidence/lean_gaussian_20261016.zh.md",
+          "frozen/lean_gaussian_20261016_v2/manifest.json",
+          "doc/assets/lean_probability_20261016/acceptance.json",
+          "doc/assets/lean_probability_20261016/review.json",
+          "frozen/lean_probability_20261016/manifest.json",
+          "doc/assets/lean_posterior_20261016/acceptance.json",
+          "doc/assets/lean_posterior_20261016/review.json",
+          "frozen/lean_posterior_20261016/manifest.json",
+          "doc/assets/lean_gaussian_20261016/predictive_model_obligation.json",
+          "doc/assets/lean_conditional_20261016/acceptance.json",
+          "doc/assets/lean_conditional_20261016/review.json",
+          "doc/assets/lean_conditional_20261016/evidence_manifest.json",
+          "frozen/lean_conditional_20261016/manifest.json"
+        ],
+        "verification_dimensions": {
+          "math_proved": false,
+          "source_audited": false,
+          "behavior_probed": false,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        },
+        "preparation_status": "423 V03 algebra/probability/support/noise-identity theorems accepted in addition to136 earlier; full V03.a remains in progress at actual model-premise and numerical boundaries",
+        "accepted_partial_scope": [
+          "Woodbury/full low-rank score",
+          "QR/Cholesky normal equations",
+          "gauge and voltage units",
+          "exact AR1 whitening and rank-two dictionary",
+          "actual retained-coordinate covariance/determinant/quadratic under explicit basis equations",
+          "Gaussian completion-of-square and unnormalized kernel factorization",
+          "normalized finite Gaussian with actual affine Lebesgue Jacobian",
+          "normalized actual row-major matrix-normal density tied to source centered kernel",
+          "existence of actual nonredundant n-q complement from thin QR",
+          "actual positive finite evidence integral and proper prior/likelihood Bayes density quotient",
+          "basis-independent nonzero retained-space volume and actual multichannel row-major lift",
+          "joint-noise innovation/Schur PSD and PD, actual finite-second-moment covariance and zero cross-covariance",
+          "C=0 reduction and explicit correlated-noise counterexamples with source-bound behavioral probes",
+          "same actual joint measure has evidence marginal and measurable Markov posterior with compProd/nonnegative-function disintegration",
+          "general SPD nonzero-mean normalized coefficient convolution and intrinsic retained observation law",
+          "actual Gaussian L2/first/second moments transported through proved measure pushforward equality",
+          "actual projected source Gram/cross-Gram/mean/rowCov and per-record stacking in genuine coordinates",
+          "actual calibration posteriorKernel likelihood integral equals source Cholesky low-rank score plus common intrinsic constant"
+        ],
+        "remaining_math_obligations": [
+          "independent acceptance of actual3startup×2prior OperatorGLS Caller40/6 and final requirement-by-requirement V03.a source-math coverage audit"
+        ],
+        "model_assumption_obligation": {
+          "status": "declared_independent_block_model_mapped; disjointness_does_not_imply_independence; branch_composition_still_open",
+          "statement": "nonoverlap and distinct raw identities do not prove calibration-held stochastic independence",
+          "model_scope": "source independent-scope likelihood must be distinguished from a globally correlated AR1 conditional distribution",
+          "production_changed": false,
+          "evidence": "doc/assets/lean_gaussian_20261016/predictive_model_obligation.json",
+          "independent_source_probe_review": "doc/assets/lean_gaussian_20261016/predictive_cross_block_review.json"
+        },
+        "declared_model_probability_layer": {
+          "status": "complete",
+          "receipt": "doc/assets/lean_conditional_20261016/acceptance.json",
+          "receipt_sha256": "9d4b1d8b480b7935dbf14bd69caed035da281024aabc0789d0004ccb4d1d5c21",
+          "new_theorems": 149,
+          "limits": "fixed legal parameters, independent held observation noise, exact matrix-factor interfaces; actual EEG model assumptions remain separate"
+        },
+        "caller_model_scope_audit": {
+          "path": "doc/assets/lean_gaussian_20261016/v03a_caller_model_scope_audit_01.json",
+          "sha256": "82d80e80f2613fd13eb6f413f025ce9485b130694b1a90a793c5fb94b343afb3",
+          "status": "read_only_actual_source_audit_no_completion_claim"
+        },
+        "separate_refinement_and_empirical_boundaries": [
+          {
+            "id": "O01",
+            "topic": "full Python/NumPy/SciPy/native storage refinement and certified IEEE roundoff/solver guarantees",
+            "reason": "explicitly outside original V03 budget; retain separate verification dimensions and exact factor interfaces"
+          },
+          {
+            "id": "O02",
+            "topic": "integrating fitted AR/covariance/ridge/dictionary hyperparameter uncertainty in a new hierarchical prior",
+            "reason": "plan conditions on legally fitted noise and source explicitly declines integration; plug-in evaluation is not automatically a true conditional posterior under a random estimator"
+          },
+          {
+            "id": "O03",
+            "topic": "proving real EEG stochastic independence or quantitative finite-filter approximation error as a prerequisite to the declared independent-block identity",
+            "reason": "scientific/model-validity boundary unless caller claims globally correlated raw-process density; current raw model expressly approximate. Preserve existing counterexample; do not silently remove model boundary"
+          },
+          {
+            "id": "O04",
+            "topic": "physiological realism, adult/device posterior calibration, new accuracy or global nonconvex convergence guarantees",
+            "reason": "not source-math equivalence requirements"
+          }
+        ]
+      },
+      "V03.b": {
+        "status": "in_progress",
+        "evidence": [
+          "doc/assets/lean_candidates_20261016/acceptance.json",
+          "doc/assets/lean_candidates_20261016/review.json",
+          "doc/assets/lean_candidates_20261016/source_probe_02.json",
+          "frozen/lean_candidates_20261016/manifest.json",
+          "doc/assets/lean_joint_state_20261016/acceptance.json",
+          "doc/assets/lean_joint_state_20261016/review.json",
+          "frozen/lean_joint_state_20261016/manifest.json",
+          "frozen/lean_joint_state_20261016/state_probe_manifest.json",
+          "doc/assets/lean_event_ledger_20261016/acceptance.json",
+          "doc/assets/lean_event_ledger_20261016/review.json",
+          "doc/assets/lean_event_ledger_20261016/source_probe_01.json",
+          "frozen/lean_event_ledger_20261016/manifest.json",
+          "frozen/lean_event_ledger_20261016/source_probe_manifest.json"
+        ],
+        "verification_dimensions": {
+          "math_proved": false,
+          "source_audited": false,
+          "behavior_probed": false,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        },
+        "preparation_status": "event design/history specification slice accepted; complete all-caller, physical-model and numerical boundaries remain in progress",
+        "accepted_partial_scope": [
+          "finite positive candidate normalization/NLL/common constants and explicit proper priors; source uniform-prior weights",
+          "actual first argmax in frozen index order and all close candidates at absolute rational tolerance1e-10",
+          "actual scorer membership gates versus12 physical flash counts each10; two discriminating schedules",
+          "missing and excess counts, four refusal priorities, support endpoints and full-test offline availability",
+          "actual calibration posterior integral equals candidate density before independent positive/log arguments feed normalization and log-density winner",
+          "actual retained-Gaussian candidate-observation joint probability and both marginals",
+          "measurable Markov posterior and same-joint compProd/nonnegative-test disintegration, allowing zero priors",
+          "source uniform candidate probabilities are true posterior singleton masses; acceptedwinner conditional0-1error and NLL identities",
+          "literal per-event += design fold to finite sum, overlap, affine labels and retained support",
+          "decoded BNCI permutation and raw subset/physical coverage/neighbor geometry derive complete admitted history and bind operational design"
+        ],
+        "remaining_math_obligations": [
+          "complete every remaining caller and actual MAT/Python event-record refinement; generic NPZ history remains an external caller contract",
+          "actual physical noise assumptions, fitted hyperparameter uncertainty and Python/IEEE refinement remain independent"
+        ],
+        "source_semantic_review_scope": "four live modules and BNCI scoring caller plus31 imported/producer source probe inputs; not every algorithm caller",
+        "behavior_probe_scope": "synthetic fixed analytic-reference state directly invokes production scorer; independent denseGaussian/Decimal probabilities and actual near ties, coverage/outcome/raw views; no training or raw EEG performance claim",
+        "false_claims": [
+          {
+            "claim": "generic record/membership/score admission proves that no physical stimulus event was omitted",
+            "classification": "false_claim_with_evidence",
+            "evidence": "doc/assets/lean_event_ledger_20261016/source_probe_01.json",
+            "trigger": "remove onset3 from [1,3,5,7]; record and score still accept, design/evidence change",
+            "production_changed": false
+          }
+        ]
+      },
+      "V04.a": {
+        "status": "in_progress",
+        "evidence": [
+          "doc/assets/lean_joint_state_20261016/acceptance.json",
+          "doc/assets/lean_joint_state_20261016/review.json",
+          "frozen/lean_joint_state_20261016/manifest.json",
+          "frozen/lean_joint_state_20261016/state_probe_manifest.json",
+          "doc/assets/lean_event_ledger_20261016/acceptance.json",
+          "doc/assets/lean_event_ledger_20261016/review.json",
+          "doc/assets/lean_event_ledger_20261016/source_probe_01.json",
+          "frozen/lean_event_ledger_20261016/manifest.json",
+          "frozen/lean_event_ledger_20261016/source_probe_manifest.json",
+          "doc/assets/lean_personal_20261016/acceptance.json",
+          "doc/assets/lean_personal_20261016/review.json",
+          "frozen/lean_personal_20261016/manifest.json",
+          "frozen/lean_personal_20261016/source_probe_manifest.json",
+          "doc/assets/lean_personal_20261016/source_probe_01.json",
+          "doc/assets/lean_personal_20261016/source_probe_equality_01.json",
+          "doc/assets/lean_temporal_operator_20261016/acceptance.json",
+          "doc/assets/lean_temporal_operator_20261016/review.json",
+          "doc/assets/lean_temporal_operator_20261016/source_probe_01.json",
+          "frozen/lean_temporal_operator_20261018/manifest.json",
+          "frozen/lean_temporal_operator_20261018/source_probe_manifest.json",
+          "doc/assets/lean_erp_20261018/acceptance.json",
+          "doc/assets/lean_erp_20261018/review.json",
+          "doc/assets/lean_erp_20261018/source_probe_01.json",
+          "doc/assets/lean_erp_20261018/constructor_order_probe_01.json",
+          "frozen/lean_erp_20261018/manifest.json",
+          "frozen/lean_erp_20261018/source_probe_manifest.json"
+        ],
+        "verification_dimensions": {
+          "math_proved": false,
+          "source_audited": false,
+          "behavior_probed": false,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        },
+        "accepted_partial_scope": [
+          "independent all-field decoded semantic codecs for continuous and joint-noise state",
+          "recursive value-copy preservation, arbitrary hash mismatch rejection and exact schema/meta/state/core guard order",
+          "decoded core-domain roundtrip, explicit nonvacuous continuous/joint instances and covariance symmetric normalform preservation",
+          "explicit decoded Continuous/Joint constructor-ledger guard order, truthiness, exact scalar tags and identifier/digest rules",
+          "canonical producer field constraints derive full ledger guard acceptance; no acceptance/roundtrip/readiness premise",
+          "analytic accepted-but-not-record-traversal-ready and boolean/count/ridge/shrinkage distinction retained",
+          "five personal kinds full recursive metadata/named tensor dtype-shape-content semantic envelope and source loader order, returning copied constructor input",
+          "actual four-field saved LDA standardize/dot/intercept, selected-channel/missing policy/channel-major feature coordinates",
+          "concrete named Tensor to four-field constructor/evaluator/waveform bridge, scalar prod1 and extensions preserved",
+          "personal raw callback/input/session source gates with finite present-string grouping, Python finite JSON equality, exact weak empty/missing metadata paths and no-evidence count partition",
+          "Full three-schema temporal constructor and training ledger, numerical primitive boundaries and canonical record replay derived from successful literal constructor decomposition",
+          "Exact retained-support spectral operator geometry, strict eigenvalue threshold and support-only ridge; Gw=Pdelta and retained quadratic score identity",
+          "Five primitive arrays to normalized JointNoise and reconstructed P/G/w/b; actual source/target ledger, implementation identity rules and global batch Frobenius gate",
+          "Actual ERP complete-bin and time-major feature coordinate/projection/affine contracts and nonempty discriminating instances",
+          "Literal four-family decoded state guards with required-argument evaluation order, canonical producer numeric replay and concrete personal prefix restoration",
+          "Per-field xDAWN matrix reconstruction to bin/spatial/prototype-first/OAS/tangent/affine structure with explicit nonfinite abstraction and external numerical primitives"
+        ],
+        "remaining_math_obligations": [
+          "full neural/adapter/BN and ERP numerical construction/forward in official lifecycle, with V07/V09 dependencies",
+          "complete QC/EOG/raw numerical preparation and all-call-chain source binding beyond explicit decoded primitive steps",
+          "ERP/baseline/QC/EOG/EA/ACW/checkpoint full state and producer authority, plus numerical refinement of accepted temporal/operator specifications",
+          "Python/JSON/NPZ/Torch/SciPy dtype/rounding/byte ownership/I-O refinement and storage assumptions",
+          "same-representation saved LDA versus fitted sklearn float32 transform representation; constructor featurewidth mismatch and missing metadata publicAPI false implications remain explicit",
+          "Actual personal target-only/source-temporal ERP recipe defaults, strict role flags, target study exclusion, QC/selected-row composition and dtype producer correspondence; source-supervised temporal canonical replay and full xDAWN numerical refinement remain pending"
+        ],
+        "preparation_status": "ERP exact-real and decoded-state slice accepted; actual personal recipe/kind/source role/dtype/identity and whole-family lifecycle composition remain in progress",
+        "source_evidence": [
+          "doc/assets/lean_state_20261016/source_probe_01/report.json",
+          "doc/assets/lean_state_20261016/ledger_probe_01/report.json"
+        ],
+        "false_claims": [
+          {
+            "claim": "constructor/save/load acceptance implies score completes for every otherwise valid scoring input",
+            "classification": "false_claim_with_evidence",
+            "trigger": "analytic_reference provenance records=None/False/0 passes falsy guard, then score iterates it and raises TypeError",
+            "evidence": "doc/assets/lean_state_20261016/ledger_probe_01/report.json",
+            "production_changed": false,
+            "default_producer_failure_claimed": false
+          },
+          {
+            "claim": "personal arbitrary external public-state edits preserve current versus saved/reloaded predictions",
+            "classification": "false_claim_with_evidence",
+            "trigger": "explicit in-place classifierbias edit in predictor.state leaves live trunk old; reload uses editedstate",
+            "evidence": "doc/assets/lean_state_20261016/source_probe_01/report.json",
+            "normal_official_flow_passed": true
+          },
+          {
+            "claim": "generic epoch input/scope admission proves that every epoch has a prospective non-calibration session",
+            "classification": "false_claim_with_evidence",
+            "trigger": "nonnull4epoch X with allmissing session IDs/NaN timestamps or column-complete0row metadata passes generic methods",
+            "evidence": "doc/assets/lean_personal_20261016/source_probe_01.json",
+            "official_raw_callback_bypass_claimed": false,
+            "production_changed": false
+          },
+          {
+            "claim": "accepted personal LDA constructor state always matches actual prediction feature width",
+            "classification": "false_claim_with_evidence",
+            "trigger": "0or59 feature fields accepted, real60-feature map predict fails",
+            "evidence": "doc/assets/lean_personal_20261016/source_probe_01.json",
+            "typed_evaluator_extra_domain_explicit": true,
+            "production_changed": false
+          },
+          {
+            "claim": "accepted operator contrast lies exactly in retained support, so Gweights=delta",
+            "classification": "false_claim_with_evidence",
+            "evidence": "doc/assets/lean_temporal_operator_20261016/source_probe_01.json",
+            "trigger": "accepted nonzero null contrast; actual equation is Gweights=Pdelta",
+            "production_changed": false
+          },
+          {
+            "claim": "operator feature support admission is independent for each row",
+            "classification": "false_claim_with_evidence",
+            "evidence": "doc/assets/lean_temporal_operator_20261016/source_probe_01.json",
+            "trigger": "large supported row dilutes relative full-batch Frobenius residual",
+            "production_changed": false
+          },
+          {
+            "claim": "temporal allclose guard proves stored coefficients exactly equal the polynomial executed by PARCOR",
+            "classification": "false_claim_with_evidence",
+            "evidence": "doc/assets/lean_temporal_operator_20261016/source_probe_01.json",
+            "trigger": "allclose coefficients differ from actual executed PARCOR expansion",
+            "production_changed": false
+          },
+          {
+            "claim": "StructuredERP xDAWN reader acceptance and finite aligned future input imply a finite returned prediction",
+            "classification": "false_claim_with_evidence",
+            "evidence": "doc/assets/lean_erp_20261018/source_probe_01.json",
+            "trigger": "manually assembled reader-admitted zero filters/prototypes produce zero augmented OAS covariance; actual predict returns NaN plus numerical warnings without refusal",
+            "default_fitted_producer_failure_claimed": false,
+            "production_changed": false
+          }
+        ],
+        "next_family_obligations": "doc/assets/lean_event_ledger_20261016/next_family_obligations.json",
+        "additional_accepted_scope": [
+          {
+            "receipt": "doc/assets/lean_personal_erp_20261018/component_acceptance_01.json",
+            "scope": "listed mathematical components, not whole-source or whole-topic completion"
+          }
+        ]
+      },
+      "V05.a": {
+        "status": "in_progress",
+        "evidence": [
+          "doc/assets/lean_personal_20261016/acceptance.json",
+          "doc/assets/lean_personal_20261016/review.json",
+          "frozen/lean_personal_20261016/manifest.json",
+          "frozen/lean_personal_20261016/source_probe_manifest.json",
+          "doc/assets/lean_personal_20261016/source_probe_01.json",
+          "doc/assets/lean_personal_20261016/source_probe_equality_01.json"
+        ],
+        "verification_dimensions": {
+          "math_proved": false,
+          "source_audited": false,
+          "behavior_probed": false,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        },
+        "accepted_partial_scope": [
+          "Actual personal inference_trial_counts natural-domain partition and full scheduled denominator for no-usable-evidence abstention"
+        ],
+        "preparation_status": "personal no-evidence denominator sublayer accepted; general requested terminal partition/all metrics remains pending",
+        "source_bug_fixed": {
+          "case": "near-zero coefficients accepted but exact-zero symmetric missing bound used",
+          "delivery": "doc/assets/lean_outcomes_20261018/near_zero_fix_delivery_01.json",
+          "remaining": "general effective aggregation weights proof; independent85 source/math review"
+        }
+      },
+      "V06.a": {
+        "status": "in_progress",
+        "evidence": [
+          "doc/assets/lean_loss_20261018/acceptance_01.json"
+        ],
+        "verification_dimensions": {
+          "math_proved": false,
+          "source_audited": false,
+          "behavior_probed": false,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        },
+        "accepted_partial_scope": [
+          "finite CE directional calculus and candidate-major packed prefix mean risk/gradient chain;18 theorems/4 strict controls"
+        ],
+        "remaining_math_obligations": [
+          "all other source loss families, caller risk weights/degenerate branches and complete V06.a source correspondence; V03.b dependency remains unclosed"
+        ],
+        "preparation_status": "independent algebra/calculus slice accepted; complete V06.a is not complete"
+      },
+      "V07.a": {
+        "status": "in_progress",
+        "evidence": [
+          "doc/assets/lean_personal_erp_20261018/v07_parameter_ownership_author_01.json",
+          "doc/assets/lean_network_preprocessing_20261018/acceptance_01.json"
+        ],
+        "verification_dimensions": {
+          "math_proved": false,
+          "source_audited": false,
+          "behavior_probed": false,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        },
+        "preparation_status": "source-fixed independent slices in progress; no full subgoal acceptance",
+        "accepted_partial_scope": [
+          "structural parameter ownership15/6",
+          "observed channel statistics15/4"
+        ]
+      },
+      "V06.b": {
+        "status": "planned",
+        "evidence": [],
+        "verification_dimensions": {
+          "math_proved": false,
+          "source_audited": false,
+          "behavior_probed": false,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        }
+      },
+      "V08.a": {
+        "status": "in_progress",
+        "evidence": [
+          "doc/assets/lean_v08_fit_20261018/science_contract_01.json",
+          "doc/assets/lean_network_preprocessing_20261018/acceptance_01.json"
+        ],
+        "verification_dimensions": {
+          "math_proved": false,
+          "source_audited": false,
+          "behavior_probed": false,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        },
+        "preparation_status": "source-fixed independent slices in progress; no full subgoal acceptance",
+        "accepted_partial_scope": [
+          "frozen EOG/EA transforms, reference/unit dependencies and declared fit/OLA mathematics42/14"
+        ],
+        "closure_audit": "doc/assets/lean_v08_fit_20261018/closure_audit_05.json"
+      },
+      "V09.a": {
+        "status": "in_progress",
+        "evidence": [
+          "doc/assets/lean_erp_20261018/acceptance.json",
+          "doc/assets/lean_erp_20261018/review.json",
+          "doc/assets/lean_erp_20261018/source_probe_01.json",
+          "doc/assets/lean_erp_20261018/constructor_order_probe_01.json",
+          "frozen/lean_erp_20261018/manifest.json",
+          "frozen/lean_erp_20261018/source_probe_manifest.json"
+        ],
+        "verification_dimensions": {
+          "math_proved": false,
+          "source_audited": false,
+          "behavior_probed": false,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        },
+        "accepted_partial_scope": [
+          "Actual selected class1-minus-class0 means to equal-participant trace-normalized source temporal Gram, with heterogeneous observed-channel dimensions",
+          "Literal tapered Toeplitz lag writes from arbitrary initial buffer to finite zero-extension congruence sum, deriving PSD and PD preservation on the stated exact-real domain"
+        ],
+        "remaining_math_obligations": [
+          "Bind all actual authorized source/target fit, row/channel/QC and physical identity callers via V08.a",
+          "DCT exact orthogonality versus floating cosine construction, cutoff eigenspace/tie and source replay guarantees",
+          "Actual shrinkage/fit/eigenvalue/OAS/Riemann numerical correctness and IEEE bounds; remaining baseline and temporal transfer workflows"
+        ],
+        "preparation_status": "Independent upstream algebra components accepted; full V09.a still depends on remaining V08.a and caller/numerical contracts",
+        "additional_accepted_scope": [
+          {
+            "receipt": "doc/assets/lean_personal_erp_20261018/component_acceptance_01.json",
+            "scope": "listed mathematical components, not whole-source or whole-topic completion"
+          }
+        ]
+      },
+      "V01.b": {
+        "status": "planned",
+        "evidence": [],
+        "verification_dimensions": {
+          "math_proved": false,
+          "source_audited": false,
+          "behavior_probed": false,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        }
+      },
+      "V04.b": {
+        "status": "planned",
+        "evidence": [],
+        "verification_dimensions": {
+          "math_proved": false,
+          "source_audited": false,
+          "behavior_probed": false,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        }
+      },
+      "V05.b": {
+        "status": "planned",
+        "evidence": [],
+        "verification_dimensions": {
+          "math_proved": false,
+          "source_audited": false,
+          "behavior_probed": false,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        }
+      },
+      "V10.a": {
+        "status": "planned",
+        "evidence": [],
+        "verification_dimensions": {
+          "math_proved": false,
+          "source_audited": false,
+          "behavior_probed": false,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        }
+      },
+      "V10.b": {
+        "status": "planned",
+        "evidence": [],
+        "verification_dimensions": {
+          "math_proved": false,
+          "source_audited": false,
+          "behavior_probed": false,
+          "implementation_refinement_proved": false,
+          "floating_point_bound_proved": false
+        }
+      }
+    }
+  },
+  "accepted_slices": [
+    {
+      "stage": "first",
+      "receipt": "doc/assets/lean_first_slice_20261016/acceptance.json",
+      "sha256": "b9c185c9a46bf3f7c343b7b68a07c390c19a26824400bdff79892da83e13c09a"
+    },
+    {
+      "stage": "second",
+      "receipt": "doc/assets/lean_gaussian_20261016/acceptance_v2.json",
+      "sha256": "65ca5ec97d53cda58d269ddea96252b9943828c34424a60fbc3a559c8ad27d5e"
+    },
+    {
+      "stage": "third",
+      "receipt": "doc/assets/lean_probability_20261016/acceptance.json",
+      "sha256": "dc30a896d11c0a2bd4f26a1ee8313588b4465661f36acd56ce1a3bfa7df66187"
+    },
+    {
+      "stage": "fourth",
+      "receipt": "doc/assets/lean_posterior_20261016/acceptance.json",
+      "sha256": "a4b43f6684ca9e30c3b88ce5f7f58d05d61da61015bdca7efccdbbcb3b9ebf7d"
+    },
+    {
+      "stage": "fifth",
+      "receipt": "doc/assets/lean_conditional_20261016/acceptance.json",
+      "sha256": "9d4b1d8b480b7935dbf14bd69caed035da281024aabc0789d0004ccb4d1d5c21"
+    },
+    {
+      "stage": "sixth",
+      "receipt": "doc/assets/lean_candidates_20261016/acceptance.json",
+      "sha256": "0cdb31b3771ae4585744dca4a8bf9cfc8ca7c491e19175032dbaddd366465ca9"
+    },
+    {
+      "stage": "seventh",
+      "receipt": "doc/assets/lean_joint_state_20261016/acceptance.json",
+      "sha256": "28a79d3d9e161d6ff208c7e87022886e3e244506710222f8276ae9af74b09997"
+    },
+    {
+      "stage": "eighth",
+      "receipt": "doc/assets/lean_event_ledger_20261016/acceptance.json",
+      "sha256": "a45e92f349455cd225e00aa2d0f149b5144aeb8b39b1c83180218ac5d4abc8a3"
+    },
+    {
+      "stage": "ninth",
+      "receipt": "doc/assets/lean_personal_20261016/acceptance.json",
+      "sha256": "0b2775e40754d2c4db68d2f699353b68e1881a4294689425940dfc5913273f9f"
+    },
+    {
+      "stage": "tenth",
+      "receipt": "doc/assets/lean_temporal_operator_20261016/acceptance.json",
+      "sha256": "662eaa5e74cd19f8c4d593388a150f89aa6511774e6018790a298cf4cd785b11"
+    },
+    {
+      "stage": "eleventh",
+      "receipt": "doc/assets/lean_erp_20261018/acceptance.json",
+      "sha256": "d4d3b8a620e3fe8d540d770c925399ecb7f505794044c13cd1742a2656e6666c"
+    },
+    {
+      "stage": "twelfth_mathematical_component_increment",
+      "receipt": "doc/assets/lean_personal_erp_20261018/component_acceptance_01.json",
+      "sha256": "382b7dd9313add0727d1e6679187b3a28d8974d41c18fa04d809e3a27fed2162",
+      "scope": "six mathematical components only; full personalERP P01-P12 and V01-V10 remain unfinished"
+    },
+    {
+      "receipt": "doc/assets/lean_personal_erp_20261018/source_components_acceptance_01.json",
+      "receipt_sha256": "50c88c11537992716c7871296418eecb5b8d68c42cc0bcb3512d483c7cf343eb",
+      "new_theorems": 172,
+      "new_false_examples": 47,
+      "scope": "Six mathematical/source-control components and their joint imports, not complete P01/P06/P09/P10/P12 or IEEE certification",
+      "whole_project_complete": false
+    },
+    {
+      "stage": "continuation_components",
+      "receipt": "doc/assets/lean_personal_erp_20261018/continuation_component_acceptance_01.json",
+      "sha256": "dbdf5fa9872c4df8fc48333dc900d09f8f69e09c1812fbb7d1e1fc68ca105614",
+      "new_theorems": 78,
+      "new_false_examples": 37,
+      "scope": "Six reviewed mathematical/source-control components, not full P01/P06/P12 or whole-project certification",
+      "whole_project_complete": false
+    },
+    {
+      "stage": "full_recipe_control_components",
+      "receipt": "doc/assets/lean_personal_erp_20261018/full_recipe_acceptance_01.json",
+      "sha256": "ebd58e3d7012f49019246b3fd10459ce86ae34277153d1a74ac3cb91834ee59e",
+      "new_theorems": 111,
+      "new_false_examples": 16,
+      "scope": "Extended builtin/known NumPy-tag constructor, independent raw fields and single-operation conditions, JSON normalization specification and finite/nonfinite consumer continuations",
+      "whole_project_complete": false
+    }
+  ],
+  "execution_progress": {
+    "current_subgoal": "V04.a/V09.a complete actual personal ERP raw ingress/full-recipe/current consumer and source temporal production composition",
+    "next_subgoals": [
+      "V04.a actual TargetRecipe kwargs reconstruction/defaults, ERP kind and strict boolean source-pretraining roles",
+      "V04.a numeric erp.prefix state to actual selected-channel/QC/availability and source-study exclusion callers, with explicit dtype conversion boundary",
+      "V04.a complete source-supervised TemporalBasis replay and remaining personal neural/adapter/BN/QC/EOG/EA/ACW families with V07/V08/V09 dependencies",
+      "V05.a general requested terminal partition and denominator/caller contracts"
+    ],
+    "scope": "continue approved dependency order; first acceptance slice is V01.a/V02.a/V02.b",
+    "subtasks_started": [
+      "V01.a",
+      "V02.a",
+      "V02.b",
+      "V03.a",
+      "V03.b",
+      "V04.a",
+      "V05.a"
+    ],
+    "proof_review": "111 new declarations standard-axiom audited;9 empty direct rechecks/build/audit/strict16 new pinned before/after409 each, plus root412-pin joint import build. Original12 author identity gap preserved and closed only by new execution; earlier269 strict controls not all rerun.",
+    "v03_density_boundary": "Actual same-joint disintegration, normalized general predictive convolution, intrinsic retained law, true moments and actual projected source posterior-to-score chain accepted; physical noise-block assumptions, fitted hyperparameter uncertainty and numerical refinement remain separate",
+    "performance_evidence": "doc/evidence/lean_execution_performance_20261016.zh.md",
+    "cleanup_evidence": "doc/assets/lean_personal_erp_20261018/full_recipe_cleanup_01.json",
+    "in_progress_modules": [
+      "PersonalERPModelRuntime",
+      "PersonalERPQualityRuntime",
+      "PersonalERPDataRuntime",
+      "PersonalERPExecutionRuntime",
+      "PersonalERPInputRuntime",
+      "PersonalERPAdmissionRuntime",
+      "PersonalERPArrayIngress",
+      "PersonalERPGuardedViews",
+      "PersonalERPRawScope",
+      "PersonalERPGeometry",
+      "PersonalERPRawOperators",
+      "PersonalERPPostReference",
+      "ERPTemporalSnapshot",
+      "ERPTemporalNPZ",
+      "ERPTemporalArrayViews",
+      "ERPTemporalRawIdentity",
+      "ERPTemporalRawLineage",
+      "ERPTemporalCacheDecode",
+      "PersonalRecipeRecord",
+      "PersonalERPAdmissionSuccess",
+      "PersonalERPNineInputWitness",
+      "PersonalERPRawInputTail",
+      "PersonalERPPublicInput"
+    ],
+    "next_proof_obligations": [
+      "Complete full P06 all36 obligations with independent arbitrary raw arrays and actual guard-derived typed views; preserve missing timeline length checks, native strict-zip/hash precedence and actual provenance type/identity order.",
+      "Connect actual TargetRecipe.record/asdict conditional field omission→metadata JSON→kwargs default restoration and numeric-tag normalization to the accepted full constructor and consumer; keep typed object/subclass/codec/IEEE boundaries explicit.",
+      "Complete full P12 snapshot/NPZ/attested cache/RawJSON/native byte-storage/identity/authority/replay and actual source-to-target caller composition; accepted40/23 are decoded components.",
+      "Retain accepted actual raw8/8 nonempty witness: one public pooled_lda fit plus independent hand-state EDF coordinate oracle; do not reinterpret finite source probes as universal refinement.",
+      "Continue original V01-V10 dependency order and all remaining algorithm/library/IEEE/physical obligations, with frozen source identities, strict controls and cmd retirement of superseded outputs."
+    ],
+    "next_ready_slice": {
+      "scope": "Full pending P01/P06/P09/P10/P12 composition, not a reduced completion target",
+      "P06_inventory": "doc/assets/lean_personal_erp_20261018/personal_admission_preparation.json",
+      "P12_inventory": "doc/assets/lean_personal_erp_20261018/p12_source_preparation.json",
+      "P01_constructor_source_contract": "doc/assets/lean_personal_erp_20261018/full_recipe_source_contract_03.json",
+      "accepted_component_receipt": "doc/assets/lean_personal_erp_20261018/full_recipe_acceptance_01.json"
+    },
+    "active_aggregation": "N2P3.FullRecipeContinuationComponents",
+    "candidate_next_composition_obligation": "public BNCI event/history admission connected to actual design; allremainingcaller and physical/numerical refinement obligations retained",
+    "paused_by_user": false,
+    "pause_checkpoint": "doc/assets/lean_temporal_operator_20261016/pause_checkpoint_20261017.json",
+    "resumed_utc": "2026-10-18T02:14:53.626728+00:00",
+    "resume_evidence": "doc/assets/lean_temporal_operator_20261016/resume_checkpoint_20261018.json",
+    "current_source_probe": {
+      "receipt": "doc/assets/lean_personal_erp_20261018/source_probe_v3_02.json",
+      "checks": 24,
+      "expected_refusals": 44,
+      "source_input_identities": 218,
+      "runtime_sources": 189,
+      "scope": "synthetic CPU source behavior, no fitting; not universal implementation/IEEE proof",
+      "p12_cache_probe": "doc/assets/lean_personal_erp_20261018/p12_cache_mutation_probe_01.json",
+      "p12_scope": "205 source identities,6 checks, no source fit; scratch files archived and removed via cmd",
+      "scalar_probe": "doc/assets/lean_personal_erp_20261018/scalar_source_probe_01.json",
+      "scalar_cases": 32,
+      "scalar_scope": "Actual per-scalar exceptions/order,209 inputs; not universal domain certification or full P01.",
+      "p12_scratch_cleanup": "doc/assets/lean_personal_erp_20261018/p12_cache_cleanup_01.json",
+      "actual_raw_report": "doc/assets/lean_personal_erp_20261018/p06_actual_raw_probe_01.json",
+      "actual_raw_report_sha256": "debfa1351c69ac41a87e30a359c90ed901af38f43432a214dba7d0f97ecbeede",
+      "actual_raw_cases": 8,
+      "actual_public_ERP_fits": 1,
+      "actual_raw_scope": "Synthetic EDF/BIDS source behavior; explicitly unfitted hand projection oracle and separate genuine public ERP fit; not scientific/adult/IEEE certification",
+      "actual_raw_cleanup": "doc/assets/lean_personal_erp_20261018/continuation_cleanup_01.json",
+      "full_recipe_review": "doc/assets/lean_personal_erp_20261018/full_recipe_source_execution_review_01.json",
+      "full_recipe_cases": 35
+    },
+    "source_change_review": {
+      "v1_to_v2": "doc/assets/lean_personal_erp_20261018/source_revalidation_01.json",
+      "v2_to_v3": "doc/assets/lean_personal_erp_20261018/source_revalidation_02.json",
+      "independent_review": "doc/assets/lean_personal_erp_20261018/source_revalidation_review_v3.json",
+      "historical_proof_identities_preserved": true
+    }
+  },
+  "anti_circularity_review": "doc/assets/lean_personal_erp_20261018/source_combination_plan_independent_review_01.json",
+  "current_contract": "doc/assets/lean_personal_erp_20261018/science_contract_v5.json",
+  "specification": "formal/lean/verification_plan.json",
+  "performance_evidence": "doc/evidence/lean_execution_performance_20261016.zh.md",
+  "specification_convergence_review": "doc/assets/lean_temporal_operator_20261016/spec_convergence_review.json",
+  "current_performance_review": "doc/assets/lean_personal_erp_20261018/source_combination_execution_01.json",
+  "current_maintenance_review": {
+    "checks": "doc/assets/lean_personal_erp_20261018/full_recipe_maintenance_checks_01.json",
+    "checks_sha256": "eae5d0901f3356a89d3f4971973b65353e3d1cb2a172e33bd94c0ab091be3200",
+    "cleanup": "doc/assets/lean_personal_erp_20261018/full_recipe_cleanup_01.json",
+    "cleanup_sha256": "36921024331224be2c643b2cc89575890d0f47bb5a41d8c0f2838259d8352220"
+  },
+  "source_correspondence_status": "v5 source202/runtime191; accepted component source audits preserved per receipt; original17 closure remains separately tracked.",
+  "current_source_revalidation": "doc/assets/lean_gaussian_20261016/source_v5_delivery_01.json",
+  "current_contract_sha256": "24146f3db60ec73b9d9ecb9b77fdc5cb1e607a210b541ebe61be38eced7e9e1f",
+  "current_source_contract_amendment": {
+    "contract": "doc/assets/lean_personal_erp_20261018/science_contract_v3.json",
+    "sha256": "e06886715c99c875734b817dd8cf75b69aec63642aaf4c6dd69c32c415f6a843",
+    "members_verified": 199,
+    "old_receipts_preserved": true,
+    "acceptance_claimed": false
+  },
+  "current_preparation_review": {
+    "record": "doc/assets/lean_personal_erp_20261018/source_revalidation_review_v3.json",
+    "sha256": "99762052f94cb215f3cf3e263aaddba0dd86298701944c82b108bc1dcb0948d3",
+    "source_identity_passed": true,
+    "complete_implementation_refinement": false
+  },
+  "current_pending_reviews": {
+    "P06DataOrderAndRawIngress": {
+      "accepted": false,
+      "data_core_support_only_sha256": "31354318e287bf4ce60d43d91b87d5e54966afdd271c743aad16ef8d40237030",
+      "data_order_independent_review": "doc/assets/lean_personal_erp_20261018/p06_data_order_independent_review_01.json",
+      "pending": "AdmissionSuccess complete constructERP success from independent fields/atomic responses direct03+build01 passed author checks, still not counted. Fixed9-row1-channel2-time raw witness is being proved; broad RawInputTail has no Timeline/common-length premise. Full36/actual raw builder→receipt and native/URI/RawJSON boundaries remain open.",
+      "raw_tail_root_pre_review": "doc/assets/lean_personal_erp_20261018/p06_public_raw_tail_root_pre_review_01.json",
+      "raw_tail_root_pre_review_sha256": "dccad465d244842f15ce4b627b82bbc2dcfcd05933a1a595ce28efb626b0566b",
+      "array_order_review": "doc/assets/lean_personal_erp_20261018/p06_array_order_independent_review_02.json",
+      "array_order_review_sha256": "1104125242e6a8485e6f88bcc21d8672e324432bb797016fd36bf5fdc1152a01"
+    },
+    "P01FullRecipe": {
+      "accepted": false,
+      "accepted_constructor_control_components": "doc/assets/lean_personal_erp_20261018/full_recipe_acceptance_01.json",
+      "accepted_component_theorems": 111,
+      "accepted_component_strict_false_controls": 16,
+      "closed_identity_finding_review": "doc/assets/lean_personal_erp_20261018/full_recipe_independent_review_02.json",
+      "pending": "Actual record(asdict then conditional omission)→metadata JSON/default kwargs producer relation and remaining object/subclass/mutation/Unicode/JSON/native/IEEE obligations. New PersonalRecipeRecord only; do not edit accepted9 modules/11 author members."
+    },
+    "P12FullRawLoader": {
+      "accepted": false,
+      "decoded_components_accepted_under": "doc/assets/lean_personal_erp_20261018/continuation_component_acceptance_01.json",
+      "pending": "RawJSON retains NaN/Inf/negative-zero; RawIdentity and RawLineage explicit source-order readers, native cOrderBytes and actual record(validate=False) stage being completed. Preprocessing validation does not imply all unused fields are finite (unused trial-reference window can retain NaN), so no early whole-spec finite projection. FullSnapshot/NPZ/attested-loader/authority/replay and source-to-target composition pending."
+    }
+  },
+  "original17_coverage_audit": {
+    "path": "doc/assets/lean_personal_erp_20261018/original17_source_family_coverage_independent_review_01.json",
+    "sha256": "aee637e2cb679d4847218fd685c9f4fec8c36d9019e95ad82b9004da0874be4d",
+    "scope": "original math specification and source audit; no added full Python/IEEE requirement"
+  },
+  "unaccepted_candidates": {
+    "FullAdmissionOrder": {
+      "theorems": 17,
+      "strict_false_controls": 8,
+      "independent_review": "doc/assets/lean_personal_erp_20261018/full_admission_source_pre_review_03.json"
+    },
+    "FullAdmissionSuccess": {
+      "theorems": 22,
+      "independent_review": "doc/assets/lean_personal_erp_20261018/full_admission_success_independent_review_02.json",
+      "fresh_pinned_rechecks": "doc/assets/lean_personal_erp_20261018/full_admission_success_author_01.json"
+    },
+    "P06NineAdmission": {
+      "theorems": 34,
+      "strict_false_controls": 5,
+      "author_receipt": "doc/assets/lean_personal_erp_20261018/p06_nine_nonempty_author_01.json"
+    },
+    "P12RawCLI": {
+      "theorems": 8,
+      "strict_false_controls": 3,
+      "accepted_increment": 0
+    },
+    "P12RawPreprocessing": {
+      "theorems": 6,
+      "strict_false_controls": 3,
+      "accepted_increment": 0
+    },
+    "P12RawExecution": {
+      "theorems": 4,
+      "strict_false_controls": 3,
+      "accepted_increment": 0
+    },
+    "FullAdmissionInput": {
+      "theorems": 5,
+      "strict_false_controls_reused": 13,
+      "direct": "full_admission_input_direct_01 empty",
+      "audit": "full_admission_input_axioms_01 standard only",
+      "note": "actual same returned metadata/basis raw validation; whole P06 remains open"
+    }
+  },
+  "active_independent_slices": {
+    "V03.b": "paused: lean_sos SelectionERP seam/LLR/prior/schedule composition; B01 accepted",
+    "V07.a": "paused: erp_source_probe actual latency readout R03; accepted29/8 geometry/head arithmetic reused.",
+    "V08.a": "paused: Ocular EO1/EO2 math/source components69/12 accepted; whole-family QC/EA/alignment/preprocessing closure remains.",
+    "root": "paused: Raw manifest/verified snapshot RA1 math and actual caller correspondence; independent acceptance and explicit cmd cleanup.",
+    "V04.a": "paused: Prefix14/4 and normalized control56/8 components accepted; raw architecture normalization/actual architecture_record/full forward and source-checkpoint SplitBN remain.",
+    "V06.a": "paused: lean_scope original loss-family closure audit; derive remaining source-first obligations without expanding native/AD budget."
+  },
+  "active_source_contract": {
+    "path": "doc/assets/lean_personal_erp_20261018/science_contract_v5.json",
+    "sha256": "24146f3db60ec73b9d9ecb9b77fdc5cb1e607a210b541ebe61be38eced7e9e1f",
+    "source_count": 202,
+    "runtime_count": 191
+  },
+  "source_revalidation": {
+    "status": "v5 docstring/inventory activation independently reviewed, archived and confirmed by current202-source/230-proof empty direct; metadata hash changes are explicit",
+    "previous_source_contract": "doc/assets/lean_personal_erp_20261018/science_contract_v4.json",
+    "previous_source_sha256": "454cc391bc6ffea1459f94a8567462dde72115792ec24f2d7c6721c85da6fc5c",
+    "activation": "doc/assets/lean_gaussian_20261016/source_v5_activation_01.json",
+    "activation_sha256": "377634932df51821c86ed08a606f84998e5d65fa55e09f316c00f624bf1f6243",
+    "source_files": 202,
+    "runtime_files": 191,
+    "proof_files_unchanged": 230,
+    "prior_real_algorithm_fix": "doc/assets/lean_outcomes_20261018/near_zero_fix_delivery_01.json",
+    "delivery": "doc/assets/lean_gaussian_20261016/source_v5_delivery_01.json"
+  },
+  "original_subgoal_status": {
+    "V01.a": {
+      "status": "complete_original_math_source_scope",
+      "evidence": "doc/evidence/lean_first_slice_20261016.zh.md"
+    },
+    "V02.a": {
+      "status": "complete_original_math_source_scope",
+      "evidence": "doc/evidence/lean_first_slice_20261016.zh.md"
+    },
+    "V02.b": {
+      "status": "complete_original_math_source_scope",
+      "evidence": "doc/evidence/lean_first_slice_20261016.zh.md"
+    },
+    "V03.a": {
+      "status": "complete_original_math_source_scope",
+      "acceptance": "doc/assets/lean_gaussian_20261016/v03a_original_scope_acceptance_01.json",
+      "sha256": "2033e9c962b51da2bc41c95e831f321cdcc896dbce267469ce58456ce7331584"
+    },
+    "V03.b": {
+      "status": "incomplete"
+    },
+    "V04.a": {
+      "status": "incomplete"
+    },
+    "V05.a": {
+      "status": "complete_original_math_source_scope",
+      "acceptance": "doc/assets/lean_outcomes_20261018/fixed_resample_acceptance_01.json",
+      "sha256": "ee1eeee2c933bb7790fd61f7d5e118f2b3ba28fcc3cfa4da464bc91e7ca65a7d"
+    },
+    "V06.a": {
+      "status": "incomplete"
+    },
+    "V07.a": {
+      "status": "incomplete"
+    },
+    "V06.b": {
+      "status": "incomplete"
+    },
+    "V08.a": {
+      "status": "incomplete"
+    },
+    "V09.a": {
+      "status": "incomplete"
+    },
+    "V01.b": {
+      "status": "incomplete"
+    },
+    "V04.b": {
+      "status": "incomplete"
+    },
+    "V05.b": {
+      "status": "incomplete"
+    },
+    "V10.a": {
+      "status": "incomplete"
+    },
+    "V10.b": {
+      "status": "incomplete"
+    }
+  },
+  "last_original_subgoal_acceptance": "doc/assets/lean_outcomes_20261018/fixed_resample_acceptance_01.json",
+  "known_current_findings": {
+    "V07TargetCalibrationMask": {
+      "status": "confirmed_defect_frozen_unmerged_candidate_handoff_to_research",
+      "evidence": "doc/assets/lean_personal_erp_20261018/v07_calibration_mask_probe_red_01.json",
+      "independent_handoff": "doc/assets/lean_personal_erp_20261018/v07_calibration_mask_independent_handoff_01.json"
+    },
+    "V05VariablePolicyK": {
+      "status": "mathematical_component_verified_and_accepted",
+      "acceptance": "doc/assets/lean_outcomes_20261018/requested_policy_component_acceptance_01.json"
+    },
+    "V03RelativeTie": {
+      "status": "confirmed_common_shift_operational_invariance_false_claim",
+      "evidence": "doc/assets/lean_v03b_20261018/nonfit_probe_02.json",
+      "repair_owner": "research_agent"
+    },
+    "V05DeterministicResample": {
+      "status": "mathematical_source_obligation_verified_and_accepted_not_a_software_repair",
+      "acceptance": "doc/assets/lean_outcomes_20261018/fixed_resample_acceptance_01.json"
+    }
+  },
+  "verification_repair_ownership": {
+    "instruction_date": "2026-10-18",
+    "verification_owner": "this Lean thread and its existing subagents",
+    "scope": "formalization, counterexamples and source correspondence; do not own or integrate algorithm repairs",
+    "repair_owner": {
+      "thread_id": "01a13580-f42b-77a0-9fcc-e767c227d465",
+      "title": "推进科研计划并优化协作"
+    },
+    "communication_policy": "Only after confirming an actual error, consolidate source identities, actual callers and reproducible evidence into one handoff; no speculative findings or frequent status messages.",
+    "unmerged_mask_candidate": "doc/assets/lean_personal_erp_20261018/v07_calibration_mask_candidate_freeze_02.json",
+    "source_v6_migration_by_Lean": "cancelled_not_executed; shared source remains v5"
+  },
+  "research_error_handoff": {
+    "delivery": "doc/assets/lean_gaussian_20261016/research_error_handoff_delivery_01.json",
+    "sha256": "362004b04ee6ca3c495b283cb0730da4f470419205e1eb13311cab15cc3606bc",
+    "sent": true,
+    "recipient_thread": "01a13580-f42b-77a0-9fcc-e767c227d465",
+    "errors": [
+      "SplitBN target-calibration dropped channel masks",
+      "Relative-tolerance scorer operational decision changes under a common constant"
+    ],
+    "followup_policy": "Only new confirmed errors in consolidated reports; no routine status pings."
+  },
+  "paused_utc": "2026-10-18T15:58:54.354454+00:00",
+  "pause_checkpoint_sha256": "f2dc0571a0fdedc174d1e9f91c62689e839405ce3ed96b210995320f9eaba9bb",
+  "maximum_subagents": 3
+}

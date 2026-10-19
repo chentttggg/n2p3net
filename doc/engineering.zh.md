@@ -10,6 +10,8 @@
 
 `python experiments/check_docs.py`检查十五个活动入口的仓库相对链接，CI执行同一检查；本地原始载荷与归档成员的恢复身份由各自定位表和manifest核验。
 
+形式化工程使用`formal/lean/scripts/workspace_status.py`核源码与证明身份；`--compile-current-target`在当前源码上执行具名目标，保存实际运行前后身份。原版本验收及其源码对应关系独立保留，新的语义接受沿具名rebase和独立审阅推进。工具链由`--lake`、`N2P3_LAKE`或PATH提供；历史输出由`locate_evidence.py`按归档成员或原回执检索。`artifacts/`内被验收manifest明确保护的Lean检查源码属于恢复依赖。
+
 新源码、JSON、TOML、Markdown默认LF，已有显式producer行尾规则优先；
 捕获的`doc/assets`和`frozen`原字节默认不转换。不要全仓renormalize或统一格式化
 已绑定源码来修风格告警。忽略规则排除本机`.claude/settings.local.json`、`artifacts/`

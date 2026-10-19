@@ -12,7 +12,11 @@ import torch
 
 from baselines.n2p3net import N2P3NetBaseline as ContractN2P3NetBaseline
 from data.contract import SOURCE_COHORT_DATA_CONTRACTS
-from data.epochs import epoch_row_identity_digest, preprocessing_spec_from_contract
+from data.epochs import (
+    TARGET_CALIBRATION_SCOPE_SCHEMA,
+    epoch_row_identity_digest,
+    preprocessing_spec_from_contract,
+)
 from data.events import observed_only_timeline
 from data.identity import (
     DatasetIdentityTable,
@@ -273,6 +277,9 @@ def _selection_record(dataset, selected_indices, *, cache_digest="1" * 64, targe
         **selection.record(),
         "source_cache_sha256": cache_digest,
         "source_feature_record": {"row_identity_digest": epoch_row_identity_digest(dataset)},
+        "target_feature_record": {
+            "dataset_scope": {"schema": TARGET_CALIBRATION_SCOPE_SCHEMA}
+        },
     }
 
 

@@ -1,0 +1,29 @@
+{
+  "schema": "n2p3_lean_temporal_operator_evidence/1",
+  "original_producer": "formal/lean/artifacts/temporal_operator_01/report.json",
+  "acceptance_sha256": "662eaa5e74cd19f8c4d593388a150f89aa6511774e6018790a298cf4cd785b11",
+  "logs_sha256": {
+    "audit.log": "e4c33aba0efdda66b88a86a557544f52019b079edabda8e2f96f871e8c7c0ec1",
+    "build.log": "ef56289c8cfacf5366044ce13d49e5837686e87bcfc8b741980d32b88d67972c",
+    "recheck_OperatorGeometry.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "recheck_OperatorState.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "recheck_TemporalState.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "recheck_TemporalWhitening.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reject_FalseOperatorGeometry.log": "6c37e22d2c2c93d4c4a4c817f9077bf040a1b5e0511eb5123e997e19a9b0df91",
+    "reject_FalseOperatorState.log": "12ddec4b7623d735a5055f4cfbde695b3eaba238f3f25c775fc912d23996a34a",
+    "reject_FalseTemporalState.log": "6d23afb2eed60a65c9fd18dd036a57bce777e82fd55f780ebb984e67e462454b",
+    "reject_FalseTemporalWhitening.log": "5db8612ac297479b224ed4d64759a922de56948b857a1745ecba130bbdd5f243",
+    "version.log": "20dd5bbeb3ce20be071c327a6150a279adc3f51f0de2bbbc645eb84591543110"
+  },
+  "review_sha256": "f6bc42d2f8386ae3d2e1fd001b285f92a1a7a551620da983da6a3638af89ccbb",
+  "source_probe_sha256": "982ba1b991829000d7ea1712e6caa83d73d5ae5884907f70a4ce81510cab9893",
+  "seal_script_sha256": "5cc45942fd43231db5bc7691a245ad9e13ccae720c1858b37d8a8bdd666d5ae5",
+  "new_theorems": 196,
+  "cumulative_theorems": 1150,
+  "new_false_examples": 26,
+  "cumulative_false_examples": 110,
+  "checks_wall_seconds": 148.4523,
+  "sampled_command_cpu_seconds_sum": 224.75,
+  "maximum_sampled_command_tree_rss_bytes": 1998934016,
+  "performance_boundary": "local checks exclude remote reasoning and drafting; per-command peak is not concurrent host peak"
+}

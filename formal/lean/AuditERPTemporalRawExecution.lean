@@ -1,0 +1,6 @@
+import N2P3.ERPTemporalRawExecution
+
+#print axioms N2P3.ERPTemporalRawExecution.absent_record_skips_all_declaration_and_hash_operations
+#print axioms N2P3.ERPTemporalRawExecution.null_record_skips_all_declaration_and_hash_operations
+#print axioms N2P3.ERPTemporalRawExecution.bundle_headers_do_not_imply_all_fields_finite
+#print axioms N2P3.ERPTemporalRawExecution.bundle_nonfinite_data_reaches_actual_final_hash
