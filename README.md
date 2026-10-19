@@ -61,6 +61,10 @@ hardware are separate from dependency resolution; see the engineering guide.
 Tests should exercise the changed interface and counterexamples. A full-suite
 pass does not establish scientific validity or real-device performance.
 
+The dashboard and its SSH launcher use a loopback HTTP service and verified SSH
+host keys. Configure the SSH destination and remote project path as described in
+the [engineering guide](doc/engineering.zh.md); connection details are local settings.
+
 ## Entrypoints
 
 | Task | Script |

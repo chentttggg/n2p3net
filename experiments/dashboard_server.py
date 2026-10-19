@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
 import os
 import re
@@ -19,6 +20,19 @@ from urllib.parse import unquote, urlsplit
 
 RUN_NAME = re.compile(r"^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$")
 MONITOR_LEASE_SECONDS = 20.0
+TELEMETRY_FILES = {"progress.jsonl", "resources.jsonl", "resources.latest.json", "record.json"}
+
+
+def _local_origin(value: str) -> tuple[str, int]:
+    parsed = urlsplit(value)
+    if (parsed.scheme != "http" or parsed.hostname not in {"localhost", "127.0.0.1", "::1"}
+            or parsed.username is not None or parsed.password is not None
+            or parsed.path or parsed.query or parsed.fragment):
+        raise ValueError("dashboard requires its loopback HTTP origin")
+    port = 80 if parsed.port is None else parsed.port
+    if not 1 <= port <= 65535:
+        raise ValueError("invalid dashboard origin port")
+    return parsed.hostname, port
 
 
 def _run_dir(
@@ -310,22 +324,64 @@ class DashboardHandler(SimpleHTTPRequestHandler):
     monitor_clients: dict[str, dict[str, object]] = {}
     monitor_workers: dict[str, subprocess.Popen[bytes]] = {}
 
+    def parse_request(self) -> bool:
+        if not super().parse_request():
+            return False
+        try:
+            hosts = self.headers.get_all("Host", [])
+            if len(hosts) != 1:
+                raise ValueError("one loopback Host header is required")
+            origin = _local_origin("http://" + hosts[0])
+            supplied = self.headers.get("Origin")
+            if supplied is not None and _local_origin(supplied) != origin:
+                raise ValueError("cross-origin dashboard request refused")
+            if self.headers.get("Sec-Fetch-Site") not in {None, "none", "same-origin"}:
+                raise ValueError("cross-origin dashboard request refused")
+            if self.command == "POST":
+                if supplied is None:
+                    raise ValueError("dashboard writes require the same Origin")
+                if self.headers.get_content_type() != "application/json":
+                    raise ValueError("dashboard writes require application/json")
+        except ValueError as error:
+            self._json(403, {"ok": False, "error": str(error)})
+            return False
+        return True
+
+    def end_headers(self) -> None:
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Cross-Origin-Resource-Policy", "same-origin")
+        super().end_headers()
+
     def _resolve_run(self, run: object) -> Path:
         return _run_dir(self.runs_root, run, self.extra_run_roots)
 
     def translate_path(self, path: str) -> str:  # noqa: N802
         virtual = unquote(urlsplit(path).path).lstrip("/")
+        if virtual in {"", "dashboard.html", "active_run.txt"}:
+            name = virtual or "dashboard.html"
+            root = Path(self.directory).resolve()
+            candidate = (root / name).resolve()
+            if candidate.parent == root:
+                return str(candidate)
         if virtual.startswith("runs/"):
             relative = virtual[len("runs/"):]
-            for prefix, root in self.extra_run_roots.items():
-                marker = f"{prefix}/"
-                if not relative.startswith(marker):
-                    continue
-                root = root.resolve()
-                candidate = (root / relative[len(marker):]).resolve()
-                if candidate != root and root in candidate.parents:
+            run, separator, name = relative.rpartition("/")
+            if separator and name in TELEMETRY_FILES:
+                root = self._resolve_run(run)
+                candidate = (root / name).resolve()
+                if candidate.parent == root:
                     return str(candidate)
-        return super().translate_path(path)
+        raise ValueError("only dashboard assets and declared run telemetry are served")
+
+    def send_head(self):
+        try:
+            path = Path(self.translate_path(self.path))
+            if not path.is_file():
+                raise ValueError("dashboard file not found")
+        except ValueError as error:
+            self.send_error(404, str(error))
+            return None
+        return super().send_head()
 
     def _json(self, status: int, payload: dict[str, object]) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -527,9 +583,6 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
                 self._json(409, {"ok": False, "error": str(exc)})
             return
-        if self.headers.get("X-Dashboard-Confirm") != "yes":
-            self._json(403, {"ok": False, "error": "confirmation header required"})
-            return
         try:
             payload = self._read_payload()
             run = payload.get("run") if isinstance(payload, dict) else None
@@ -569,6 +622,13 @@ def main() -> None:
     parser.add_argument("--bind", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8812)
     args = parser.parse_args()
+    if args.bind != "localhost":
+        try:
+            loopback = ipaddress.ip_address(args.bind).is_loopback
+        except ValueError:
+            loopback = False
+        if not loopback:
+            parser.error("dashboard binds only to loopback; use an authenticated SSH tunnel")
     directory = args.directory.resolve()
     runs_root = directory / "runs"
 
@@ -576,7 +636,7 @@ def main() -> None:
         pass
 
     Handler.runs_root = runs_root
-    Handler.extra_run_roots = {"tmp": directory.parent / "tmp"}
+    Handler.extra_run_roots = {"tmp/runs": directory.parent / "tmp" / "runs"}
     server = ThreadingHTTPServer((args.bind, args.port), lambda *a, **kw: Handler(*a, directory=str(directory), **kw))
     reaper_stop = threading.Event()
 

@@ -1,0 +1,134 @@
+{
+  "schema": "n2p3_repository_audit_engineering_integration/1",
+  "acceptance": "root_source_review_and_author_focused_evidence",
+  "delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-engineering\\DELIVERY.json",
+    "bytes": 12176,
+    "sha256": "f8423e18bb77fe50fb0c3063aa39998c727665b8f5ff9b1e3ec1784c5d3dc79a"
+  },
+  "review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-engineering\\REVIEW.zh.md",
+    "bytes": 5952,
+    "sha256": "0af532052be0ad05f062313181698d008b0e44e15b923b342382a062dac2f114"
+  },
+  "canonical_sources": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\data\\source_records.py",
+      "bytes": 60997,
+      "sha256": "dd4c395c6d9ce6d90f745073191c347e7363885f75c2c492af629af20a30ed6f"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\stationary_panel.py",
+      "bytes": 36297,
+      "sha256": "d228c54435376937a3e77a4979c9448886342bb94b040c73d8f815bec9b680d0"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\data\\test_source_records.py",
+      "bytes": 17056,
+      "sha256": "478a3edf446285e126cd051c965d5bd5770dc117c16d6816dcfe5d84243e9dce"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\research\\test_dashboard.py",
+      "bytes": 10179,
+      "sha256": "82f8c35479a8e5da63dd90ec265dbd9f101ab26dc44b46b9c7cc65afb5ea7a87"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\audit_channel_noise_mechanism.py",
+      "bytes": 37123,
+      "sha256": "cf5082b5fb7cf94b99c86a565ea75779301288169b066b568a560f17b0210e8f"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\dashboard_server.py",
+      "bytes": 27059,
+      "sha256": "4d29264941ec6c0a1feee0d495460b27e3075cb11037b452f7dba78b75f7a2d8"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\experiments\\prepare_source_records.py",
+      "bytes": 12657,
+      "sha256": "643830ccf7df0cb520bfdb5d9f320d8a102f93ac5003d6b6d6d27b555005db8f"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\pyproject.toml",
+      "bytes": 2191,
+      "sha256": "fea48d469cf046ea70839103f2341375e3a7c2e9fff00cd4ba1b660312f77445"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\README.md",
+      "bytes": 6631,
+      "sha256": "470d60d003d8cd5109a6e85ca570753dbb4404cd6e676a9485ea80760fd890d9"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\open_dashboard.ps1",
+      "bytes": 7011,
+      "sha256": "2875fb2037e8f43b618d883e72bddb7a16c61c6d4b8288b2650682ff4149a323"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\.gitignore",
+      "bytes": 1217,
+      "sha256": "1c622f2ea3bc6fa08a2a78c8c6dbba3c80c666783292a3b4afefc3dffd5e692b"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\.gitattributes",
+      "bytes": 13083,
+      "sha256": "4b34ed17331dc954f9d622f41de522e38fad339425c16e588429011c98fb9227"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\doc\\engineering.zh.md",
+      "bytes": 74335,
+      "sha256": "a450501a492d91e4bef30c7bae6cfd99feedb626a30f01dcc508795f9d928527"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\channel_noise_audit_inputs.py",
+      "bytes": 3430,
+      "sha256": "e2a5c7365b0c2649fb3b6114a47cb15218aea9a301a292e38cc014768da88723"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\tests\\environment\\test_packaging_contract.py",
+      "bytes": 1517,
+      "sha256": "0d8668297e3a19c4f1518befaf9c0571611bc61082cad3463b63e517ce6113fe"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\.github\\workflows\\contracts.yml",
+      "bytes": 1225,
+      "sha256": "3364560446019e1bddc433b86ca64388192e5275dcffff54d44259713b122cf0"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\scripts\\setup_cloud.sh",
+      "bytes": 580,
+      "sha256": "f98de64296ba41320a04a77a95b0e17988c07168e76f3a27ec78bc12d75066ad"
+    }
+  ],
+  "root_review": {
+    "complete_delta_reviewed": true,
+    "mechanisms": "Loopback Host/Origin request boundary, restricted telemetry paths, SSH host-key/argument quoting, installed-library recipe and separate CLI identity, AST-preserving dependency extraction, fixed uv CI and old producer EOL exceptions",
+    "baseline_pin_check": "all 17 original/new preconditions passed"
+  },
+  "validation": {
+    "author": "84 passed, 1 Linux-specific skip; final port-zero HTTP negative passed separately; no SSH connection; verified isolated wheel imports",
+    "integrated_checks": {
+      "dashboard_package_source_record_contracts": 37,
+      "exit_code": 0,
+      "ruff": 0,
+      "git_diff_check": "after_policy_EOL_correction"
+    }
+  },
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-engineering\\cleanup.json",
+    "bytes": 13809,
+    "sha256": "c9089fcc4e9b8ab06a1400ed7609c6a63b110b7e7d0f1ef8ae12d0d5368b6ef9"
+  },
+  "root_checkout_eol_mapping": {
+    "new_edited_programs_normalized_to_declared_LF": [
+      "src/data/source_records.py",
+      "tests/data/test_source_records.py",
+      "tests/research/test_dashboard.py",
+      "experiments/dashboard_server.py",
+      "README.md",
+      ".gitignore",
+      "doc/engineering.zh.md"
+    ],
+    "policy_files_explicit_LF": true,
+    "old_producer_exceptions": "unchanged",
+    "scientific_definitions": "CRLF to LF only; source identity re-recorded, frozen author source preserved"
+  }
+}

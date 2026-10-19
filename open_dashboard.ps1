@@ -1,11 +1,13 @@
 param(
-    [string]$SshHost = "connect.weste.seetacloud.com",
-    [int]$SshPort = 35832,
-    [string]$SshUser = "root",
-    [string]$RemoteRoot = "/root/autodl-tmp/n2p3-net",
+    [string]$SshHost = $env:N2P3_SSH_HOST,
+    [ValidateRange(0, 65535)][int]$SshPort = 0,
+    [string]$SshUser = $env:N2P3_SSH_USER,
+    [string]$RemoteRoot = $env:N2P3_REMOTE_ROOT,
+    [ValidateRange(1, 65535)]
     [int]$LocalPort = 18812,
+    [ValidateRange(1, 65535)]
     [int]$RemotePort = 8812,
-    [string]$IdentityFile = (Join-Path $env:USERPROFILE ".ssh\id_ed25519_n2p3_cloud_20260827"),
+    [string]$IdentityFile = $env:N2P3_SSH_IDENTITY,
     [string]$Run,
     [switch]$NoBrowser,
     [switch]$Stop
@@ -29,6 +31,13 @@ function Get-ProcessCommandLine([int]$ProcessId) {
     }
 }
 
+function ConvertTo-WindowsArgument([string]$Argument) {
+    if ($Argument -notmatch '[\s"]') { return $Argument }
+    $escaped = [regex]::Replace($Argument, '(\\*)"', '$1$1\"')
+    $escaped = [regex]::Replace($escaped, '(\\+)$', '$1$1')
+    return '"' + $escaped + '"'
+}
+
 function Test-Dashboard {
     try {
         $status = Invoke-RestMethod "http://127.0.0.1:$LocalPort/api/status" -TimeoutSec 4
@@ -40,10 +49,13 @@ function Test-Dashboard {
 }
 
 function Ensure-RemoteDashboard {
-    $remoteCommand = "cd $RemoteRoot && mkdir -p logs && if .venv/bin/python -c 'import urllib.request; urllib.request.urlopen(`"http://127.0.0.1:$RemotePort/api/status`", timeout=2)' >/dev/null 2>&1; then echo '[monitor] Remote dashboard is already healthy.'; else echo '[monitor] Remote dashboard API is unavailable; starting it.'; nohup .venv/bin/python experiments/dashboard_server.py --port $RemotePort --bind 127.0.0.1 --directory experiments > logs/dashboard-http.log 2>&1 < /dev/null & fi"
+    # POSIX single quoting retains spaces and shell metacharacters as path bytes.
+    $quoteBreak = "'" + [char]34 + "'" + [char]34 + "'"
+    $quotedRoot = "'" + $RemoteRoot.Replace("'", $quoteBreak) + "'"
+    $remoteCommand = "cd -- $quotedRoot && mkdir -p logs && if .venv/bin/python -c 'import urllib.request; urllib.request.urlopen(`"http://127.0.0.1:$RemotePort/api/status`", timeout=2)' >/dev/null 2>&1; then echo '[monitor] Remote dashboard is already healthy.'; else echo '[monitor] Remote dashboard API is unavailable; starting it.'; nohup .venv/bin/python experiments/dashboard_server.py --port $RemotePort --bind 127.0.0.1 --directory experiments > logs/dashboard-http.log 2>&1 < /dev/null & fi"
     Write-Host "[monitor] Checking remote dashboard API on port $RemotePort."
     Write-Host "[monitor] SSH may prompt for a password; training processes are not restarted."
-    & ssh.exe @sshAuthArgs -o ConnectTimeout=10 -o StrictHostKeyChecking=no -p $SshPort "${SshUser}@${SshHost}" $remoteCommand
+    & ssh.exe @sshAuthArgs -o ConnectTimeout=10 $sshDestination $remoteCommand
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to start the remote dashboard service."
     }
@@ -57,7 +69,7 @@ function Stop-Tunnel {
     }
     $process = Get-Process -Id $connection.OwningProcess -ErrorAction SilentlyContinue
     $commandLine = Get-ProcessCommandLine $connection.OwningProcess
-    if ($process.ProcessName -ne "ssh" -or $commandLine -notmatch "-L\s*${LocalPort}:127\.0\.0\.1:${RemotePort}") {
+    if ($process.ProcessName -ne "ssh" -or $commandLine -notmatch "-L\s*(127\.0\.0\.1:)?${LocalPort}:127\.0\.0\.1:${RemotePort}") {
         throw "Local port $LocalPort is occupied by another process: PID $($connection.OwningProcess)"
     }
     Stop-Process -Id $connection.OwningProcess -Force
@@ -69,22 +81,34 @@ if ($Stop) {
     exit 0
 }
 
-if (-not (Test-Path -LiteralPath $IdentityFile -PathType Leaf)) {
+if (-not $SshHost -or $SshHost.StartsWith("-") -or $SshHost -notmatch '^[A-Za-z0-9_.:-]+$') {
+    throw "Set -SshHost or N2P3_SSH_HOST to an SSH config alias or hostname."
+}
+if ($SshUser -and ($SshUser.StartsWith("-") -or $SshUser -notmatch '^[A-Za-z0-9_.-]+$')) {
+    throw "Invalid SSH user."
+}
+if (-not $RemoteRoot -or -not $RemoteRoot.StartsWith("/") -or $RemoteRoot -match '[\x00\r\n]') {
+    throw "Set -RemoteRoot or N2P3_REMOTE_ROOT to the absolute POSIX project directory."
+}
+if ($IdentityFile -and -not (Test-Path -LiteralPath $IdentityFile -PathType Leaf)) {
     throw "SSH identity file does not exist: $IdentityFile"
 }
 
-$sshAuthArgs = @(
-    "-i", $IdentityFile,
-    "-o", "IdentitiesOnly=yes"
-)
+$sshAuthArgs = @("-o", "StrictHostKeyChecking=ask")
+if ($SshPort) { $sshAuthArgs += @("-p", $SshPort) }
+if ($IdentityFile) { $sshAuthArgs += @("-i", $IdentityFile, "-o", "IdentitiesOnly=yes") }
+$sshDestination = if ($SshUser) { "${SshUser}@${SshHost}" } else { $SshHost }
 
 Ensure-RemoteDashboard
 
 $listener = Get-LocalListener
 if ($listener) {
     $existingStatus = Test-Dashboard
-    if (-not $existingStatus) {
-        $commandLine = Get-ProcessCommandLine $listener.OwningProcess
+    $existingProcess = Get-Process -Id $listener.OwningProcess -ErrorAction SilentlyContinue
+    $commandLine = Get-ProcessCommandLine $listener.OwningProcess
+    if (-not $existingStatus -or $existingProcess.ProcessName -ne "ssh" -or
+        $commandLine -notmatch "-L\s*(127\.0\.0\.1:)?${LocalPort}:127\.0\.0\.1:${RemotePort}" -or
+        -not $commandLine.Contains($sshDestination)) {
         throw "Local port $LocalPort is occupied, but it is not a usable dashboard tunnel: $commandLine"
     }
     Write-Host "[monitor] Reusing existing SSH tunnel (PID $($listener.OwningProcess))."
@@ -95,14 +119,13 @@ if ($listener) {
         "-o", "ServerAliveInterval=30",
         "-o", "ServerAliveCountMax=3",
         "-o", "ExitOnForwardFailure=yes",
-        "-o", "StrictHostKeyChecking=no",
-        "-L", "${LocalPort}:127.0.0.1:${RemotePort}",
-        "-p", $SshPort,
-        "${SshUser}@${SshHost}"
+        "-L", "127.0.0.1:${LocalPort}:127.0.0.1:${RemotePort}",
+        $sshDestination
     )
     Write-Host "[monitor] Opening SSH tunnel: 127.0.0.1:$LocalPort -> remote 127.0.0.1:$RemotePort"
     Write-Host "[monitor] SSH may prompt for a password; it is not stored in this script."
-    $ssh = Start-Process -FilePath "ssh.exe" -ArgumentList $sshArgs -NoNewWindow -PassThru
+    $argumentLine = ($sshArgs | ForEach-Object { ConvertTo-WindowsArgument ([string]$_) }) -join " "
+    $ssh = Start-Process -FilePath "ssh.exe" -ArgumentList $argumentLine -NoNewWindow -PassThru
     $deadline = (Get-Date).AddSeconds(30)
     do {
         Start-Sleep -Milliseconds 500

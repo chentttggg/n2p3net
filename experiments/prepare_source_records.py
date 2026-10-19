@@ -112,15 +112,19 @@ def main(argv=None, *, merge_gate=None):
             else:
                 raise ValueError("unsupported explicit target protocol in source manifest")
     method = source_preparation_method() if spec == SOURCE_EOG_PREPROCESSING else source_preparation_method(spec)
+    entrypoint = {"path": "experiments/prepare_source_records.py", "sha256": file_sha256(Path(__file__))}
     result = json.loads(result_path.read_text(encoding="utf-8")) if result_path.exists() else {
         "schema": SOURCE_PREPARATION_SCHEMA, "study": manifest["study"],
         "preparation_method": method,
+        "preparation_entrypoint": entrypoint,
         "target_prefixes": prefixes,
         "manifest_sha256": file_sha256(args.manifest), "records": [], "errors": []}
     if result["manifest_sha256"] != file_sha256(args.manifest):
         raise ValueError("cannot resume preparation under different source evidence")
     if result.get("schema") != SOURCE_PREPARATION_SCHEMA or result.get("preparation_method") != method:
         raise ValueError("source preparation method changed or is unrecorded; preserve this run and use a new output directory")
+    if result.get("preparation_entrypoint") != entrypoint:
+        raise ValueError("source preparation entrypoint changed or is unrecorded; preserve this run and use a new output directory")
     if result.get("target_prefixes") != prefixes:
         raise ValueError("source preparation prefix allocation changed; use a new output directory")
     completed = {_row_key(row): row for row in result["records"]}

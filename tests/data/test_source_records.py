@@ -206,7 +206,7 @@ def test_completed_resume_requires_original_cache_attestation(huebner_record, tm
     assert all(path.read_bytes() == value for path, value in before.items())
 
 
-@pytest.mark.parametrize("changed", ["raw", "channels", "events", "method", "legacy"])
+@pytest.mark.parametrize("changed", ["raw", "channels", "events", "method", "entrypoint", "legacy"])
 def test_completed_resume_revalidates_actual_inputs_and_method_before_cache_reuse(huebner_record, tmp_path, monkeypatch, changed):
     runner, source, channels, events, _, manifest = huebner_record
     output = tmp_path / "run"
@@ -218,6 +218,11 @@ def test_completed_resume_revalidates_actual_inputs_and_method_before_cache_reus
     elif changed == "method":
         method = {**runner.source_preparation_method(), "schema": "changed_implementation"}
         monkeypatch.setattr(runner, "source_preparation_method", lambda: method)
+    elif changed == "entrypoint":
+        path = output / "preparation.json"
+        ledger = json.loads(path.read_text())
+        ledger["preparation_entrypoint"]["sha256"] = "0" * 64
+        path.write_text(json.dumps(ledger), encoding="utf-8")
     else:
         path = output / "preparation.json"
         ledger = json.loads(path.read_text())

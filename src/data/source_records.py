@@ -93,10 +93,11 @@ def source_preparation_method(preprocessing: PreprocessingSpec | None = None):
     directory = Path(__file__).parent
     spec = SOURCE_EOG_PREPROCESSING if preprocessing is None else preprocessing
     spec.validate()
-    return {"schema": "n2p3_source_record_method/2",
+    return {"schema": "n2p3_source_record_method/3",
             "preprocessing": spec.record(),
             "data_modules_sha256": {path.name: file_sha256(path) for path in sorted(directory.glob("*.py"))},
-            "runner_sha256": file_sha256(directory.parents[1] / "experiments/prepare_source_records.py"),
+            "runner_module": "data.source_records",
+            "runner_sha256": file_sha256(Path(__file__)),
             "packages": {name: version(name) for name in ("numpy", "scipy", "mne", "moabb")}}
 
 

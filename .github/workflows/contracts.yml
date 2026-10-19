@@ -1,0 +1,40 @@
+name: Python contracts
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python: "3.12"
+          - os: windows-latest
+            python: "3.14"
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.9"
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      - run: uv lock --check
+      - run: uv sync --locked --extra signals --extra baselines --extra dev
+      - run: uv run --no-sync ruff check src experiments tests
+      - run: uv run --no-sync pytest tests/environment tests/research/test_dashboard.py tests/data/test_source_records.py tests/data/test_source_prefix_preparation.py tests/research/test_stationary_panel_path_contract.py tests/research/test_stationary_cloud_control.py tests/research/test_channel_noise_paired.py
+      - run: git diff --check
+      - run: uv build --wheel

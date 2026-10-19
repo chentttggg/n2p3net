@@ -1,3 +1,17 @@
+# Future text checkouts use LF; the explicit producer rules below take precedence.
+*.py text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+*.pdf binary
+# Captured source/evidence keep original bytes unless explicitly opted in below.
+doc/assets/** -text whitespace=cr-at-eol
+frozen/** -text whitespace=cr-at-eol
+doc/assets/**/*.xml -whitespace
+
 # These actively edited Python files use stable bytes across checkouts.
 .gitattributes text eol=lf
 src/baselines/deep.py text eol=lf
@@ -240,3 +254,7 @@ src/research/existing_nn_public_learner.py text eol=lf
 doc/assets/research_resume_20261012/existing_nn_public_integration.json text eol=lf
 
 doc/assets/research_resume_20261012/existing_nn_panel_scope.json text eol=lf
+
+# Repository policy files use LF; captured evidence retains its own bytes.
+.gitattributes text eol=lf
+.gitignore text eol=lf

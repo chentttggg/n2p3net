@@ -8,6 +8,12 @@
 
 同一规则或状态只维护一处，其他位置改用链接。替换历史指导前保留必要原文和哈希，归档按[分发规则](../frozen/README.md)管理。本次整理的原文恢复关系见[清单](../frozen/guidance_consolidation.manifest.json)。
 
+新源码、JSON、TOML、Markdown默认LF，已有显式producer行尾规则优先；
+捕获的`doc/assets`和`frozen`原字节默认不转换。不要全仓renormalize或统一格式化
+已绑定源码来修风格告警。忽略规则排除本机`.claude/settings.local.json`、`artifacts/`
+及`doc/assets`模型/缓存/归档载荷；JSON、manifest和必要文本继续可跟踪。
+ignore规则只控制新增分发，不删除本地科研证据，也不自动移除已跟踪载荷。
+
 ## 交付与旧构建清理
 
 新构建确认可用后，删除已无复用价值的旧构建，这是交付完成条件。按以下顺序收尾：
@@ -30,6 +36,29 @@
 Python至少3.11；Linux x86_64且Python<3.14的Torch/Torchaudio固定2.8.0，
 其他平台/版本按项目声明的Torch>=2.4开发分支安装，不能当作RTX5090训练验证。
 历史GPU环境为Torch2.8.0/CUDA12.8，当前硬件与可用资源须在运行前重新核对。
+
+环境解析固定使用uv 0.12.9，`uv.lock`中的多个Torch版本分别服务互斥的平台/Python分支，
+不是同一环境中的多个解。Linux x86_64云端默认Python3.12，可运行
+`sh scripts/setup_cloud.sh`按锁同步并输出实际Torch/CUDA能力；`N2P3_PYTHON`可显式选择
+已声明的其他Python版本。脚本不启动训练，`uv sync --locked`与`uv pip check`都须通过。
+本地`.venv-gpu`的历史cu130手工覆盖属于独立、已记录环境，不由默认lock复现；
+需要复用时核其实际包、驱动和原运行凭证，不能把覆盖后的环境称为lock完全同步。
+
+wheel保留现有七个包名并显式白名单发布；暂不进行影响所有调用者和旧artifact模块身份的
+命名空间迁移。`source_preparation_method/3`只绑定已安装的data源码，CLI另在新准备账本
+保存并核对实际`preparation_entrypoint`源码摘要；旧准备账本保持原身份，不能直接重签续跑。
+仓库型科研编排入口仍从源码checkout运行，不将wheel描述为独立实验CLI发行包。
+CI按Linux/Python3.12和Windows/Python3.14分支执行lock、Ruff、必要合同与wheel构建；
+硬件、外部采集端和真实科研矩阵仍需各自环境的明确验收。
+
+dashboard只监听loopback；浏览器写请求须来自相同Origin、具有本机Host及JSON类型，
+monitor和kill共用该边界。静态HTTP仅发布页面、active-run指针及声明run的四种遥测文件，
+额外run目录限`tmp/runs`。本机同用户进程仍属于可信操作者范围。
+Windows使用`open_dashboard.ps1 -SshHost <SSH配置别名> -RemoteRoot <远端绝对项目路径>`；
+主机/用户/密钥分别可用`N2P3_SSH_HOST`、`N2P3_SSH_USER`、`N2P3_SSH_IDENTITY`指定，
+远端路径也可用`N2P3_REMOTE_ROOT`。默认遵循SSH config，首次连接核对主机指纹后写入
+known_hosts，脚本强制`StrictHostKeyChecking=ask`，拒绝已改变的主机key。
+隧道只绑定127.0.0.1，复用时同时核SSH进程、目标和转发端口；页面保留一次停止确认。
 
 源checkpoint、公共结果复用模型及BrainSync源模型统一经`transfer.checkpoint.load_weights_only`以`weights_only=True`读取，
 仅对NumPy产生的Unicode身份标量提供受限allowlist，不回退到任意对象反序列化；先核验摘要的调用者直接解码同一份已读字节。
@@ -146,6 +175,11 @@ matched_pools、product_pools和独立输入布局。示例默认三seed、四�
 准备与拟合重叠时声明`--wait-for-preparation-seconds <秒>`，超时/failed写明相关未执行任务；默认缺输入立即失败。
 准备完成数据在`input_bindings.json`绑定manifest、NPZ、record和处理方法；变更需新输出目录，
 旧153任务方案及已有产物继续保持原执行身份。新运行记录使用`n2p3_explicit_source_matrix/2`，不覆盖旧/1目录。
+`configs/candidate_promotion.example.json`同样是需要真实前置产物的计划模板，
+不附带可直接dry-run的EEG缓存或源码freeze。使用前先准备其target/source缓存、原selection
+与snapshot清单，保各自身份；不要为运行示例生成冒充真实参与者的空文件。
+未传`--root`时相对路径以plan目录解析；传`--root`时全部路径改以显式root解析并受该root
+包含边界约束，需先把示例中的`../`改为该root下的实际相对路径。
 公共评估`run_public_pool_targets.py`消费同一`--matrix-plan`；每目标的第一个声明池为full对照，
 所有配对seed带scratch，第一seed带确定性LDA。`--target-protocols`为额外目标显式声明记录顺序，
 不按文件名猜新库会话次序；`--wait-for-input-seconds`允许有截止时间的源/目标流水执行。
@@ -332,7 +366,8 @@ patience3、min_delta1e-4、最多12曝光周期。reference inner与refit的范
 主源两种配方/三个seed消费同一个冻结e*，每次直接拟合全部合法源。个人迁移和scratch固定90轮，完整C一次拟合。
 输入统计、BN重估和LDA为一次估计；K0/只读推理没有停止轮数。主K0/200/800，不默认展开更高K或模块大笛卡尔积。
 
-当前代码已由`UnifiedTrainingBudget`路由新预算，默认文件`configs/unified_training_budget.json`。
+当前代码已由`UnifiedTrainingBudget`路由新预算；省略`--training-budget`时使用dataclass默认值，
+`configs/unified_training_budget.json`是可显式传入的示例，不是自动读取的默认文件。
 复用`PatienceStopper`、source fit/refit及直接target fit；`GlobalEarlyStoppingPolicy`和`EpochSelectionPolicy`保留为其它显式研究能力。
 来源与反例见[实施验收](evidence/domain_transfer_major_20260920.zh.md)，没有新增每算法一个runner。参考source范围/配置、e*、λ、实际模式、目标轮数均进入checkpoint、计划和cache身份。
 相同e*对应不同fit行数时按曝光周期换算updates；固定个人模式不请求或生成无用途的inner raw缓存。
@@ -425,9 +460,16 @@ ordinary、group-LOO与整prefix选择共享该接点。source-only K0、结构�
 
 用户于2026-09-18明确要求今后云端统一CPU总线程预算至少25、GPU worker容量至少4。
 集中配置为`configs/cloud_training_resources.json`；源/目标worker须消费资源解析器给出的实际原生线程预算，
-不能只在plan里写25而在调用处固定1。四worker时每worker分配6个数值线程，另保留调度线程；
+不能只在plan里写25而在调用处固定1。四source worker时每worker总claim为6线程，
+新默认CUDA分支包含5个native线程与1个inter-op线程，另保留1个调度线程；
 源内子worker同时受GPU任务容量限制，避免嵌套进程超额争抢CPU。合同或内存无法满足声明下限时显式失败，不能静默串行。
 依赖末端只有一两个可执行拟合时记录就绪任务数，不通过重复拟合伪造四路工作量。
+该配置为资源声明模板，需进入实际runner的plan并记录解析结果；它不是自动启动任务。
+按当前4×18 GiB source组、10 GiB共享staging、host fraction .95，4组同时可就绪时
+需要至少约86.32 GiB实际可用host RAM；4×4 GiB GPU任务与80%准入余量需要至少
+20 GiB实际空闲显存。这是配置估算下限，不是任务实测峰值；其余占用和进程启动后仍须复测。
+`source_load_workers=1`只限制当前共享staging的并行loader，不把GPU worker容量降为1；
+任何调整必须用实际ready工作、内存与吞吐证据核验。
 大源路径同序通道采用显式只读共享视图；全行source refit避免再次复制X；成功GPU预加载释放归一化CPU副本；
 统计量保留原逐行float64归约与最终加权内积，只将临时矩阵分块。父调度器给每worker显式GPU常驻字节预算；
 `research.source_execution.PreparedSourceStorage`集中读取容量header、选择实际snapshot文件系统、

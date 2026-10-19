@@ -7,6 +7,8 @@ import subprocess
 import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from http.client import HTTPConnection
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -15,6 +17,73 @@ import pytest
 from experiments.dashboard_server import _list_runs, _run_dir
 from tests import PROJECT_ROOT
 from tests.support.io import write_json
+
+
+def test_dashboard_guards_origin_host_and_static_scope(tmp_path):
+    from experiments.dashboard_server import DashboardHandler
+
+    directory = tmp_path / "experiments"
+    run = directory / "runs" / "declared"
+    run.mkdir(parents=True)
+    (directory / "dashboard.html").write_text("dashboard", encoding="utf-8")
+    (directory / "private.py").write_text("secret", encoding="utf-8")
+    (run / "progress.jsonl").write_text('{}\n', encoding="utf-8")
+    (run / "model.pt").write_bytes(b"private model")
+    temp_run = tmp_path / "tmp" / "runs" / "temporary"
+    temp_run.mkdir(parents=True)
+    (temp_run / "record.json").write_text('{}', encoding="utf-8")
+    (tmp_path / "tmp" / "secret.json").write_text('private', encoding="utf-8")
+    claims = []
+
+    class Handler(DashboardHandler):
+        runs_root = directory / "runs"
+        extra_run_roots = {"tmp/runs": tmp_path / "tmp" / "runs"}
+
+        @classmethod
+        def _claim_monitor(cls, selected):
+            claims.append(selected)
+            return "lease", {"state": "started"}
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0),
+        lambda *args, **kwargs: Handler(*args, directory=str(directory), **kwargs))
+    thread = threading.Thread(target=server.serve_forever)
+    thread.start()
+    port = server.server_address[1]
+
+    def request(method, path, *, host=None, origin=None, content_type="application/json", fetch_site=None):
+        connection = HTTPConnection("127.0.0.1", port, timeout=5)
+        headers = {"Host": host or f"127.0.0.1:{port}", "Content-Type": content_type}
+        if origin is not None:
+            headers["Origin"] = origin
+        if fetch_site is not None:
+            headers["Sec-Fetch-Site"] = fetch_site
+        connection.request(method, path, body='{"run":"declared"}' if method == "POST" else None, headers=headers)
+        response = connection.getresponse()
+        result = response.status, response.read()
+        connection.close()
+        return result
+
+    try:
+        assert request("GET", "/dashboard.html") == (200, b"dashboard")
+        assert request("GET", "/private.py")[0] == 404
+        assert request("GET", "/runs/declared/model.pt")[0] == 404
+        assert request("GET", "/runs/declared/")[0] == 404
+        assert request("GET", "/runs/declared/progress.jsonl")[0] == 200
+        assert request("GET", "/runs/tmp/runs/temporary/record.json")[0] == 200
+        assert request("GET", "/runs/tmp/secret.json")[0] == 404
+        assert request("GET", "/api/status", host="attacker.example")[0] == 403
+        assert request("GET", "/api/status", host="127.0.0.1:0")[0] == 403
+        assert request("POST", "/api/monitor/claim")[0] == 403
+        assert request("POST", "/api/monitor/claim", origin="http://attacker.example")[0] == 403
+        assert request("POST", "/api/monitor/claim", origin=f"http://127.0.0.1:{port}", content_type="text/plain")[0] == 403
+        assert request("POST", "/api/monitor/claim", origin=f"http://127.0.0.1:{port}", fetch_site="cross-site")[0] == 403
+        assert not claims
+        assert request("POST", "/api/monitor/claim", origin=f"http://127.0.0.1:{port}")[0] == 200
+        assert claims == ["declared"]
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
 
 
 def test_dashboard_discovers_current_nested_run_and_done_state(tmp_path) -> None:

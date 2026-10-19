@@ -14,6 +14,12 @@ build/
 .env
 .env.*
 !.env.example
+/.claude/settings.local.json
+/artifacts/
+*.bak
+*.orig
+*.rej
+*~
 
 # Local datasets and experiment outputs.
 experiments/cache/
@@ -35,3 +41,19 @@ cloud_inputs/
 # Local junction used only to run frozen backend tests against the acquisition app.
 /frozen/bidirectional_qc_20260909_acceptance/BrainSync_Tool_newest/
 /doc/assets/**/*.npz
+/doc/assets/**/*.npy
+/doc/assets/**/*.pt
+/doc/assets/**/*.pth
+/doc/assets/**/*.onnx
+/doc/assets/**/*.safetensors
+/doc/assets/**/*.pkl
+/doc/assets/**/*.pickle
+/doc/assets/**/*.joblib
+/doc/assets/**/*.bin
+/doc/assets/**/*.zip
+/doc/assets/**/*.gz
+/doc/assets/**/*.tar
+/doc/assets/**/*.7z
+/doc/assets/**/cache/
+/doc/assets/**/.cache/
+/doc/assets/**/build/

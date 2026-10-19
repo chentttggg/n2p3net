@@ -18,16 +18,16 @@ from pathlib import Path, PureWindowsPath
 import numpy as np
 from threadpoolctl import threadpool_info, threadpool_limits
 
-from experiments.audit_channel_noise_mechanism import (
-    BoundInput,
-    paired_input_digests,
-    public_calibration_authority,
-)
 from models.candidate_evidence import CandidateEvidence, CandidateExpertIdentity
 from research import channel_noise_mechanism as noise_owner
 from research.candidate_metrics import (
     compare_candidate_probability_metrics,
     evaluate_candidate_evidence,
+)
+from research.channel_noise_audit_inputs import (
+    BoundInput,
+    paired_input_digests,
+    public_calibration_authority,
 )
 from research.contracts import DecisionPlanContract, semantic_sha256
 from research.local_program_control import atomic_record, score_checkpoints
