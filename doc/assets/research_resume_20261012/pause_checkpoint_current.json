@@ -281,12 +281,7 @@
       "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
     }
   },
-  "active_agents": {
-    "execution_failures": "Source QR/memory lifecycle, repeated raw prefix hash and consumed Future retention; code-only candidate.",
-    "source_slice_integration_review": "Posterior record/hash/save memory lifecycle; code-only candidate.",
-    "joint_slice_integration_review": "Full target matrix programme and819-request panel preparation; code only.",
-    "g1_exclusion_review": "Independent review of spatial numeric record/streamed save and same-fit saved-live admission."
-  },
+  "active_agents": {},
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
     "ownership": "separate_cloud_chat",
@@ -395,13 +390,10 @@
   },
   "pending_root_integrations": {
     "population_target_matrix_driver": {
-      "state": "external candidate in progress",
+      "state": "R2 independently accepted; root source review/integration pending",
       "directory": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/population-matrix-preparation",
-      "requirement": "78 genuine C fits, original63 held each, complete4914 denominator and independent complete source acceptance."
-    },
-    "source_memory_optimization": {
-      "state": "QR/prefix/Future3-file code accepted; spatial saved-model stream/copy candidate remains in progress",
-      "scope": "Block augmented QR/whole-source prefix identity reuse/failed Future cleanup plus posterior canonical record/digest/save copies; no truncation or changed numerical thresholds."
+      "requirement": "78 genuine C fits, original63 held each, complete4914 denominator and independent complete source acceptance.",
+      "review": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/independent-population-matrix-preparation/REVIEW_RECEIPT.json"
     }
   },
   "confirmed_Lean_error_handoff": {
@@ -516,51 +508,51 @@
       "actual_population_complete_hyperfits": 0,
       "candidate_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
       "execution": {
-        "state": "failed_serial_job_memory_limit_all_owned_processes_retired",
-        "integration_binding": "doc/assets/research_resume_20261012/source_managed_execution_integration.json",
+        "state": "running_full_programme_under_owned_local_supervision",
         "launch": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\ROOT_LAUNCH3.json",
-          "bytes": 933,
-          "sha256": "74e8e6265301d2c113135645e0371e32f9072995bcc1d6a0f634d2d776b4a419"
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\ROOT_LAUNCH.json",
+          "bytes": 1983,
+          "sha256": "3d9c1d218dc44cc84afaae8ff335db994cace65a683408a8923a2c7834b1f127"
         },
         "source_manifest": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\SOURCE_MANIFEST.json",
-          "bytes": 64342,
-          "sha256": "22f148ad043536b91b4b1dd92fdb7c50669b503d5c08fc4e6393db1534776272"
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\SOURCE_MANIFEST.json",
+          "bytes": 64072,
+          "sha256": "975b9ba33103f273adf5842a52a63fb1699ca1e972a16819eaa1a4f951073525"
         },
         "resources": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\RESOURCES.serial.json",
-          "bytes": 2906,
-          "sha256": "155575581680d2a06aa439ba6a25d76c679e11076247bc0956531bb93353c830"
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\RESOURCES.json",
+          "bytes": 2271,
+          "sha256": "e3438d233f1a9eed66b38da3c9d27309767229df32972e2077bbaec5370c0dc0"
         },
-        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-local-complete-source-serial\\checkpoint.json",
-        "supervision_progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision-serial\\progress.json",
-        "supervision_terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision-serial\\terminal.json",
+        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-bounded-source-programme\\checkpoint.json",
+        "supervision_progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\progress.json",
+        "supervision_terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\terminal.json",
+        "supervisor": {
+          "pid": 64940,
+          "created": 1792402344.285771
+        },
         "requested_people": 13,
         "requested_folds": 13,
-        "source_workers": 1,
-        "fold_workers": 1,
-        "native_threads_per_worker": 20,
+        "source_workers": 2,
+        "fold_workers": 2,
+        "native_threads_per_worker": 10,
         "cpu_threads_total": 21,
-        "scientific_acceptance_issued": false,
-        "terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision-serial\\terminal.json",
-        "peak_host_CPU_percent": 76.4,
-        "peak_host_memory_percent": 76.7,
         "completed_source_models": 0,
         "completed_folds": 0,
-        "profile_evidence": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\P1_OBSERVED_STACK_SCOPE.json",
-        "next_action": "Reduce full-record augmented QR/copy peaks and posterior record/hash duplication, retaining complete scientific dimensions and inputs; review and freeze fixes before new full execution."
+        "scientific_acceptance_issued": false,
+        "next_action": "Monitor real saved source/fold progress and utilization, then independently accept complete execution before target dispatch."
       },
       "code_preparation": {
         "conditioning": "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
         "cloud_execution": "doc/assets/research_resume_20261012/source_cloud_execution_preparation.json",
-        "state": "explicit_managed_local_mode_and_fresh_complete_source_freeze_accepted_new_attempt_started",
+        "state": "memory_lifecycle_and_serialization_accepted_exact_source_frozen_full_local_execution_started",
         "local_training_allowed": true,
         "completed_source_models_in_stopped_attempt": 0,
         "user_cloud_response": "User subsequently authorized local computation first with whole-machine CPU/RAM/GPU each below80percent.",
         "managed_execution": "doc/assets/research_resume_20261012/source_managed_execution_integration.json",
         "input_locations": "doc/assets/research_resume_20261012/source_input_location_integration.json",
-        "memory_lifecycle": "doc/assets/research_resume_20261012/source_memory_lifecycle_integration.json"
+        "memory_lifecycle": "doc/assets/research_resume_20261012/source_memory_lifecycle_integration.json",
+        "serialization": "doc/assets/research_resume_20261012/source_serialization_integration.json"
       },
       "completed_source_models": 0,
       "previous_stopped_local_execution": {
@@ -599,6 +591,42 @@
         "terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision\\terminal.json",
         "failure": "Two simultaneous full-source fits exhausted aggregate owned commit cap; no person/fold model published. Keep same scientific recipe/source and schedule one full-source fit at a time.",
         "next_attempt": "serial_source_fit_with_larger_per_fit_reservation_and20native_threads_under_same_host80percent_policy"
+      },
+      "previous_serial_supervised_local_execution": {
+        "state": "failed_serial_job_memory_limit_all_owned_processes_retired",
+        "integration_binding": "doc/assets/research_resume_20261012/source_managed_execution_integration.json",
+        "launch": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\ROOT_LAUNCH3.json",
+          "bytes": 933,
+          "sha256": "74e8e6265301d2c113135645e0371e32f9072995bcc1d6a0f634d2d776b4a419"
+        },
+        "source_manifest": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\SOURCE_MANIFEST.json",
+          "bytes": 64342,
+          "sha256": "22f148ad043536b91b4b1dd92fdb7c50669b503d5c08fc4e6393db1534776272"
+        },
+        "resources": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\RESOURCES.serial.json",
+          "bytes": 2906,
+          "sha256": "155575581680d2a06aa439ba6a25d76c679e11076247bc0956531bb93353c830"
+        },
+        "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-local-complete-source-serial\\checkpoint.json",
+        "supervision_progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision-serial\\progress.json",
+        "supervision_terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision-serial\\terminal.json",
+        "requested_people": 13,
+        "requested_folds": 13,
+        "source_workers": 1,
+        "fold_workers": 1,
+        "native_threads_per_worker": 20,
+        "cpu_threads_total": 21,
+        "scientific_acceptance_issued": false,
+        "terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision-serial\\terminal.json",
+        "peak_host_CPU_percent": 76.4,
+        "peak_host_memory_percent": 76.7,
+        "completed_source_models": 0,
+        "completed_folds": 0,
+        "profile_evidence": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\P1_OBSERVED_STACK_SCOPE.json",
+        "next_action": "Reduce full-record augmented QR/copy peaks and posterior record/hash duplication, retaining complete scientific dimensions and inputs; review and freeze fixes before new full execution."
       }
     },
     "joint_response_noise": {
@@ -670,10 +698,10 @@
     }
   },
   "next_actions": [
-    "Integrate independently reviewed source memory/lifecycle improvements, refresh exact scientific execution source and resume the complete local programme below80percent whole-host usage.",
-    "Independently accept complete13person/13fold source execution before issuing target admission.",
-    "Review and integrate full population target matrix driver, then genuine joint fit/first-held/typed replay and complete4914 new cells with original9828 baseline diagnostics.",
-    "Cloud input-location code accepted; future cloud execution will bind actual roots and a newly projected recipe."
+    "Monitor new complete13person/13fold local source programme below80percent whole-host resources; preserve real failures and completed artifacts.",
+    "Root review and integrate independently accepted R2 full target driver; prepare original819requested panel.",
+    "Independently accept complete source execution, then genuine joint fit/first-held/typed replay and complete4914new cells; original9828baseline remains diagnostic.",
+    "Cloud input-location code accepted; bind actual roots and newly projected recipe only when cloud resources are supplied."
   ],
   "active_local_checks": [],
   "folder_cleanup_review": {
@@ -684,7 +712,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T07:58:58.027605+00:00",
+  "last_updated_utc": "2026-10-19T09:33:36.226288+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
@@ -694,5 +722,10 @@
     "cloud_training_launch_requires_user_resource_authorization": true,
     "earlier_local_stop": "Original USER_STOP and failed/interrupted artifacts retain their own terminal identity; latest authorization applies to a new attempt."
   },
-  "integration_head_role": "Last committed code/retirement base before this metadata refresh; exact follow-up code is pinned in the integration bindings."
+  "integration_head_role": "Last committed code/retirement base before this metadata refresh; exact follow-up code is pinned in the integration bindings.",
+  "subagent_service_observation": {
+    "event": "source author and serialization reviewer turns ended with403insufficient balance",
+    "resolution": "root continued concrete source inspection/sealing and independent prewritten controls; another existing independent reviewer received final source package.",
+    "scientific_execution_authorization_changed": false
+  }
 }

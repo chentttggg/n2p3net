@@ -55,8 +55,12 @@ def _bytes(reference):
 
 def _artifact(path):
     path = Path(path).resolve()
-    content = path.read_bytes()
-    return {"path": str(path), "bytes": len(content), "sha256": hashlib.sha256(content).hexdigest()}
+    digest, nbytes = hashlib.sha256(), 0
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1048576), b""):
+            digest.update(chunk)
+            nbytes += len(chunk)
+    return {"path": str(path), "bytes": nbytes, "sha256": digest.hexdigest()}
 
 
 @dataclass(frozen=True, eq=False)
@@ -144,7 +148,7 @@ def fit_and_export_source_person(person, *, signal_programme, dictionary, noise_
     model_path = directory/"original_source_model.json"
     model.save(model_path)
     reference = _artifact(model_path)
-    handle = likelihood_export.admit_original_source_model(_bytes(reference),
+    handle = likelihood_export.admit_saved_original_source_model(model, model_path,
         expected_sha256=reference["sha256"], locator=reference)
     operands = likelihood_export.bind_original_fit_blocks(handle, blocks)
     likelihood = likelihood_export.export_original_source_likelihood(operands)

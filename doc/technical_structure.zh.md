@@ -12,6 +12,8 @@
 
 `population_source_inputs`只准备跨主机输入位置：保持原叶子字节摘要，按declaration→freeze→matrix→recipe重算父引用；source使用的common记录先筛选，future与排除账本原样保留。原回执内部历史路径不改，新metadata与准备输出均避开原证据位置，原reader继续核实际数据。来源与独审见[输入位置整合](assets/research_resume_20261012/source_input_location_integration.json)。
 
+`spatial_serialization`以内部只读数组视图流式生成原JSON字节，公共`record()`仍返回独立可变快照。`SpatialDecisionModel.fit_with_blocks`发行同次拟合的保存准入权限，`public_population_source`核实际保存流后复用该live模型；冷载状态仍走原数据与baseline核验。缓存摘要绑定不可变owner及数组视图身份，registry不反向持有模型。字节协议与生命周期接受见[序列化整合](assets/research_resume_20261012/source_serialization_integration.json)。
+
 `gaussian_local_factor/gaussian_local_conditional`在同一次QR中积分selection独立变化并保其条件后验，shared响应与原record漂移留给外层各处理一次。`joint_response_noise_reference`持固定两曝光GLS刻度，`joint_response_noise_calibration`持完整C的响应/噪声联合边缘似然、残差二阶矩和private AR1/full-Q解析梯度。它们是数值owner；真实source/C factory、新fit artifact与held消费者沿同一权限链连接。源码、独审与组合检查见[通用响应核心整合](assets/research_resume_20261012/general_response_core_integration.json)。
 
 新joint路径由`public_source_context`区分原native与population issuer；`private_ar1_noise_point`保完整stationary startup和full-Q创新根，`native_joint_sufficient`在同一次完整后验的mean/factor上先形成创新，再计算Fisher score。原raw二阶矩继续作诊断。`public_joint_response_noise`持真实fit、数值保存及对原C的重新准入；cold load只解析已核验的同一份字节。

@@ -340,6 +340,8 @@ checkpoint读取安全整合（`codex/claude-improvements-20261012`，基于`ed2
 
 跨主机位置工具保原metadata和opaque叶子字节，仅迁移common记录的实际输入位置并依次重算父摘要。独审发现的新metadata目的地覆盖原图问题已在写出前拒绝，原位复用raw输入仍可用；future/排除记录不进入投影读取，原marker receipt内部历史archive位置保留。实际13人、234/213/21记录、101388标签和完整fold范围核对保持，代码与微型metadata控制的接受见[输入位置整合](../assets/research_resume_20261012/source_input_location_integration.json)。
 
+完整source的两项内存路径已按原数学关系接受：每record保完整增广R再合并，避免拼接全记录大矩阵；空间模型沿原JSON字节协议流式保存，同次拟合保存准入复用原live模型，避免整串、数值列表及第二份冷模型同时常驻。独立Fraction高斯控制及codec/lifecycle正反控分别核验数学与字节、所有权关系，实际训练峰值由新执行记录另报。代码、独审和范围分别见[QR与生命周期](../assets/research_resume_20261012/source_memory_lifecycle_integration.json)及[序列化整合](../assets/research_resume_20261012/source_serialization_integration.json)。
+
 ## 文件夹清理复核
 
 主目录交付先核Git blob，随后补充核原working bytes：发现904项仅行尾差异，含624份历史/形式化记录；原科研树完整保留并用于逐字节恢复。Git改为保存实际字节，EditorConfig与工程规范约束新编辑LF；主目录2,500文件、28份原审计、329份受保护Lean输入及159件冻结source均重新核对。全新index与独立新clone通过，旧raw-blob检查由此补充，见[主目录收敛](../assets/research_resume_20261012/main_materialization_integration.json)。本机旧历史原件按精确清单保留原位，另与接受代码分开登记。

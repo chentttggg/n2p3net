@@ -13,6 +13,7 @@ import io
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
+from weakref import ref
 
 import numpy as np
 from scipy.special import logsumexp
@@ -20,7 +21,6 @@ from scipy.special import logsumexp
 from data.candidate_task import MembershipDecision
 from data.identity import DatasetIdentityTable, assert_target_identity_excluded, origin_subject_key
 from data.study import study_ids_for_identity
-from research.execution import atomic_write_json
 from transfer.continuous_decision import (
     CalibrationRecord,
     ContinuousDecisionModel,
@@ -37,6 +37,13 @@ from transfer.noise_model import (
     require_sha256,
 )
 from transfer.response_dictionary import ResponseDictionary
+from transfer.spatial_serialization import (
+    SpatialRecord,
+    record_digest,
+    record_owners,
+    same_record_owners,
+    save_record,
+)
 from transfer.spatial_signal_prior import (
     ERPChannelEstimate,
     ERPPhysicalEffect,
@@ -51,6 +58,23 @@ from transfer.spatial_signal_prior import (
 )
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+_ORIGINAL_FIT_MODELS = {}
+
+
+def _remember_original_fit(model):
+    """Issue only at fit_with_blocks' completed original producer boundary."""
+    key = id(model)
+    _ORIGINAL_FIT_MODELS[key] = (ref(model, lambda _: _ORIGINAL_FIT_MODELS.pop(key, None)),
+                                model._serialization_owners())
+
+
+def _require_original_fit(model):
+    row = _ORIGINAL_FIT_MODELS.get(id(model))
+    if (row is None or row[0]() is not model
+            or not same_record_owners(model._serialization_owners(), row[1])):
+        raise TypeError("the unchanged actual original same-fit producer is required")
+    return model
+
 
 
 def _layout(receipt):
@@ -243,7 +267,7 @@ class SpatialSignalProgram:
 
 
 @dataclass(frozen=True)
-class SpatialDecisionModel:
+class SpatialDecisionModel(SpatialRecord):
     programme: SpatialSignalProgram
     baseline: ContinuousDecisionModel
     posterior: SpatialSignalPosterior
@@ -252,6 +276,7 @@ class SpatialDecisionModel:
     producer_implementation_sha256: str = IMPLEMENTATION_SHA256
 
     def __post_init__(self):
+        object.__setattr__(self, "baseline_content", bytes(self.baseline_content))
         require_sha256(self.producer_implementation_sha256, "original physical response programme implementation")
         if not isinstance(self.programme, SpatialSignalProgram) or not isinstance(self.baseline, ContinuousDecisionModel):
             raise TypeError("physical response model requires owned programme and original noise dependency")
@@ -273,7 +298,7 @@ class SpatialDecisionModel:
                for record in self.posterior.fit_records):
             raise ValueError("physical response records differ from the original fitted temporal noise")
         self.programme.validate_prior(self.posterior.prior, self.baseline)
-        if (self.provenance["physical_response_artifact_sha256"] != self.posterior.record()["artifact_sha256"]
+        if (self.provenance["physical_response_artifact_sha256"] != self.posterior.digest()
                 or self.provenance["response_fit_passes_after_noise_freeze"] != 1
                 or self.provenance["noise_refitted_after_freeze"] is not False
                 or self.provenance["joint_spatial_noise_response_MLE_claimed"] is not False
@@ -400,11 +425,13 @@ class SpatialDecisionModel:
             "source_group_artifact_sha256": None if programme.source_group is None else programme.source_group.record()["artifact_sha256"],
             "source_cohort_authority_sha256": None if programme.source_group is None else
                 programme.source_group.fit_binding["source_authority"]["authority_sha256"],
-            "physical_response_artifact_sha256": posterior.record()["artifact_sha256"],
+            "physical_response_artifact_sha256": posterior.digest(),
             "kernel_uncertainty": "general_vec_Gaussian_given_original_fitted_noise",
             "response_fit_passes_after_noise_freeze": 1, "noise_refitted_after_freeze": False,
             "joint_spatial_noise_response_MLE_claimed": False}
-        return cls(programme, baseline, posterior, content, provenance), tuple(blocks)
+        model = cls(programme, baseline, posterior, content, provenance)
+        _remember_original_fit(model)
+        return model, tuple(blocks)
 
     def score_view(self, view):
         if not isinstance(view, PredictionDecisionView) or view.samples is None:
@@ -435,31 +462,36 @@ class SpatialDecisionModel:
         return ContinuousDecisionResult(view.decision.candidate_vocabulary, frozen_array(evidence), frozen_array(probability),
             winner, "unique_maximum" if winner else "tie", len(view.samples), view.raw_input_digest, self.conditioning_samples)
 
-    def record(self):
+    def _serialization_owners(self):
+        # The original baseline is serialized as its owned dependency
+        # bytes. Preserve its owner without expanding a new math audit.
+        return record_owners(self, opaque=(self.baseline,))
+
+    def _record_payload(self):
         payload = {"schema": "n2p3_spatial_decision_programme/1", "implementation_sha256": self.producer_implementation_sha256,
             "signal_programme": self.programme.record(), "original_noise_dependency": base64.b64encode(self.baseline_content).decode("ascii"),
-            "posterior": self.posterior.record(), "provenance": self.provenance}
-        return {**payload, "artifact_sha256": metadata_digest(payload)}
-
-    def digest(self):
-        return self.record()["artifact_sha256"]
+            "posterior": self.posterior._record_view(), "provenance": self.provenance}
+        return payload
 
     def save(self, path):
-        return atomic_write_json(path, self.record())
+        return save_record(path, self._record_view())
 
     @classmethod
     def load(cls, path):
-        content = path.read() if hasattr(path, "read") else Path(path).read_bytes()
-        saved = json.loads(content)
+        if hasattr(path, "read"):
+            saved = json.load(path)
+        else:
+            with Path(path).open("rb") as stream:
+                saved = json.load(stream)
         if (saved["schema"] != "n2p3_spatial_decision_programme/1"
-                or metadata_digest({key:value for key,value in saved.items() if key != "artifact_sha256"}) != saved["artifact_sha256"]):
+                or record_digest({key:value for key,value in saved.items() if key != "artifact_sha256"}) != saved["artifact_sha256"]):
             raise ValueError("physical response programme artifact differs from its original producer")
         require_sha256(saved["implementation_sha256"], "original physical response programme implementation")
         dependency = base64.b64decode(saved["original_noise_dependency"], validate=True)
         model = cls(SpatialSignalProgram.from_record(saved["signal_programme"]),
-            ContinuousDecisionModel.load(io.BytesIO(dependency)), SpatialSignalPosterior.from_record(saved["posterior"]),
+            ContinuousDecisionModel.load(io.BytesIO(dependency)), SpatialSignalPosterior._from_owned_record(saved["posterior"]),
             dependency, saved["provenance"], producer_implementation_sha256=saved["implementation_sha256"])
-        if metadata_digest(model.record()) != metadata_digest(saved):
+        if model._record_sha256 != record_digest(saved):
             raise ValueError("physical response programme replay differs from original state")
         return model
 

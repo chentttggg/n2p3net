@@ -33,6 +33,7 @@ from transfer.noise_model import (
     require_identifiers,
     require_sha256,
 )
+from transfer.spatial_serialization import SpatialRecord, record_digest, save_record
 from transfer.temporal_noise import TemporalNoise
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
@@ -837,7 +838,7 @@ class SpatialObservation:
 
 
 @dataclass(frozen=True)
-class SpatialSignalPrior:
+class SpatialSignalPrior(SpatialRecord):
     """Proper physical response prior; H_time is independent of residual noise."""
 
     layout: SpatialLayout
@@ -984,24 +985,25 @@ class SpatialSignalPrior:
             raise ValueError("unknown source-learning mechanism")
         return SourceGroupPrior.fit(estimates, policy=policy, source_authority=source_authority)
 
-    def record(self):
-        state = {"schema": _PRIOR_SCHEMA, "layout": self.layout.record(), "mean": self.mean.tolist(),
-                 "temporal_covariance": self.temporal_covariance.tolist(),
-                 "signal_covariance": self.signal_covariance.tolist(),
-                 "design_binding": json.loads(json.dumps(self.design_binding)),
-                 "source": json.loads(json.dumps(self.source)),
-                 "precision_root": self.precision_root.tolist(),
+    def _record_payload(self):
+        state = {"schema": _PRIOR_SCHEMA, "layout": self.layout.record(), "mean": self.mean,
+                 "temporal_covariance": self.temporal_covariance,
+                 "signal_covariance": self.signal_covariance,
+                 "design_binding": self.design_binding,
+                 "source": self.source,
+                 "precision_root": self.precision_root,
                  "prior_covariance_semantics": "S_signal_kronecker_H_time_independent_of_noise",
                  "arrays_sha256": array_digest(self.mean, self.temporal_covariance, self.signal_covariance,
                                                 self.precision_root)}
-        return {**state, "artifact_sha256": metadata_digest(state)}
-
-    def digest(self):
-        return self.record()["artifact_sha256"]
+        return state
 
     @classmethod
     def from_record(cls, record):
-        payload = json.loads(json.dumps(record, allow_nan=False))
+        return cls._from_owned_record(json.loads(json.dumps(record, allow_nan=False)))
+
+    @classmethod
+    def _from_owned_record(cls, record):
+        payload = dict(record)
         digest = payload.pop("artifact_sha256", None)
         if payload.pop("schema", None) != _PRIOR_SCHEMA or digest != metadata_digest({"schema": _PRIOR_SCHEMA, **payload}):
             raise ValueError("spatial signal prior artifact identity mismatch")
@@ -1100,7 +1102,7 @@ class SpatialResponseBlock:
 
 
 @dataclass(frozen=True)
-class _SpatialCompression:
+class _SpatialCompression(SpatialRecord):
     """The noise factor and D/Z QR operands from the original compression."""
 
     spatial_map: np.ndarray = field(repr=False, compare=False)
@@ -1161,24 +1163,24 @@ class _SpatialCompression:
         if not np.array_equal(information, np.kron(self.spatial_map, self.design_root)):
             raise ValueError("saved source information root differs from its original factor compression")
 
-    def record(self):
+    def _record_payload(self):
         payload = {"schema": "n2p3_spatial_source_compression/1"}
         for name in ("spatial_map", "observed_noise_root", "design_q", "design_root", "nuisance_q", "nuisance_root"):
             value = getattr(self, name)
-            payload[name] = None if value is None else value.tolist()
-        return {**payload, "artifact_sha256": metadata_digest(payload)}
+            payload[name] = None if value is None else value
+        return payload
 
     @classmethod
     def from_record(cls, record):
         names = ("spatial_map", "observed_noise_root", "design_q", "design_root", "nuisance_q", "nuisance_root")
         compression = cls(*(record[name] for name in names))
-        if metadata_digest(compression.record()) != metadata_digest(record):
+        if compression._record_sha256 != record_digest(record):
             raise ValueError("saved source compression identity differs from its original QR operands")
         return compression
 
 
 @dataclass(frozen=True)
-class _SpatialStructuralFactors:
+class _SpatialStructuralFactors(SpatialRecord):
     """Original physical observation/D/Z factors for one actual C record.
 
     Joint original [Z D] row-space eliminates each record's own nuisance.
@@ -1213,7 +1215,7 @@ class _SpatialStructuralFactors:
         object.__setattr__(self, "spatial_map", exact)
         quotient, certificate = _temporal_structural_rowspace(design, nuisance)
         object.__setattr__(self, "response_quotient", quotient)
-        object.__setattr__(self, "temporal_rowspace", certificate)
+        object.__setattr__(self, "temporal_rowspace", freeze_metadata(certificate))
 
     @property
     def observation_coordinates(self):
@@ -1228,25 +1230,25 @@ class _SpatialStructuralFactors:
         return (rank * len(self.design),
                 self.design.shape[1] * len(self.observation.layout.channels) + rank * nuisance_width)
 
-    def record(self):
+    def _record_payload(self):
         payload = {"schema": "n2p3_spatial_physical_C_factors/2",
             "observation_sha256": metadata_digest(self.observation.record()),
             "observation_coordinates": self.observation_coordinates,
             "spatial_map": [[str(value) for value in row] for row in self.spatial_map],
-            "design": self.design.tolist(),
-            "nuisance": None if self.nuisance is None else self.nuisance.tolist(),
-            "source_compression": None if self.compression is None else self.compression.record(),
-            "temporal_rowspace": json.loads(json.dumps(self.temporal_rowspace)),
+            "design": self.design,
+            "nuisance": None if self.nuisance is None else self.nuisance,
+            "source_compression": None if self.compression is None else self.compression._record_view(),
+            "temporal_rowspace": self.temporal_rowspace,
             "coefficient_order": "column_major_response_by_native_EEG",
             "nuisance_order": "record_local_column_major_response_by_observed_coordinate"}
-        return {**payload, "artifact_sha256": metadata_digest(payload)}
+        return payload
 
     @classmethod
     def from_record(cls, record, *, observation):
         compression = (None if record["source_compression"] is None
                        else _SpatialCompression.from_record(record["source_compression"]))
         factor = cls(observation, record["design"], record["nuisance"], compression)
-        if metadata_digest(factor.record()) != metadata_digest(record):
+        if factor._record_sha256 != record_digest(record):
             raise ValueError("saved physical C factors differ from their original factor-generation relations")
         return factor
 
@@ -1314,7 +1316,7 @@ def _posterior_state(prior, roots, responses, state):
 
 
 @dataclass(frozen=True)
-class SpatialSignalPosterior:
+class SpatialSignalPosterior(SpatialRecord):
     """Frozen exact general-Gaussian posterior, conditional on actual fitted noise."""
 
     prior: SpatialSignalPrior
@@ -1391,14 +1393,14 @@ class SpatialSignalPosterior:
                     or factor.design.shape[1] != self.prior.mean.shape[0]
                     or nuisance_width != record["nuisance_dimensions"]
                     or root.shape != (len(factor.spatial_map) * min(factor.design.shape), width)
-                    or record["compression"]["physical_structural_factors_sha256"] != factor.record()["artifact_sha256"]):
+                    or record["compression"]["physical_structural_factors_sha256"] != factor.digest()):
                 raise ValueError("saved structural C identifiability binding differs from its physical factor generation")
         rowspace, structural_resolution = _factor_structural_rowspace(factors, width)
         saved_space = tuple(tuple(Fraction(value) for value in vector) for vector in self.structural_rowspace)
         if saved_space != rowspace:
             raise ValueError("saved structural C row space differs from its exact actual design relation")
         if (not isinstance(self.structural_binding, dict)
-                or self.structural_binding.get("factors_sha256") != metadata_digest([factor.record() for factor in factors])
+                or self.structural_binding.get("factors_sha256") != record_digest([factor._record_view() for factor in factors])
                 or self.structural_binding.get("arithmetic") != "exact_binary64_joint_temporal_rowspace_record_local_quotient_beta_fraction_rref"
                 or metadata_digest(self.structural_binding.get("resolution")) != metadata_digest(structural_resolution)
                 or tuple(self.structural_binding.get("observation_coordinates", ())) != tuple(
@@ -1467,11 +1469,11 @@ class SpatialSignalPosterior:
             record["compression"] = {"native_noise_sha256": array_digest(noise),
                                      "native_noise_root_sha256": array_digest(native_root),
                                      "noise_factorization": "actual_range_square_root_pushforward_QR",
-                                     "physical_structural_factors_sha256": factors.record()["artifact_sha256"],
+                                     "physical_structural_factors_sha256": factors.digest(),
                                      "likelihood_sha256": array_digest(root, response)}
             records.append(record)
         rowspace, structural_resolution = _factor_structural_rowspace(structural_factors, prior.mean.size)
-        structural_binding = {"factors_sha256": metadata_digest([factor.record() for factor in structural_factors]),
+        structural_binding = {"factors_sha256": record_digest([factor._record_view() for factor in structural_factors]),
             "arithmetic": "exact_binary64_joint_temporal_rowspace_record_local_quotient_beta_fraction_rref",
             "resolution": structural_resolution,
             "observation_coordinates": [factor.observation_coordinates for factor in structural_factors]}
@@ -1536,40 +1538,47 @@ class SpatialSignalPosterior:
             raise ValueError("conditional prefix must be the same actual rows and coordinates")
         return self.log_density(full) - self.log_density(prefix)
 
-    def record(self):
-        state = {"schema": _POSTERIOR_SCHEMA, "prior": self.prior.record(),
-                 "native_noise_covariance": self.native_noise_covariance.tolist(),
-                 "native_noise_root": self.native_noise_root.tolist(),
-                 "noise_binding": json.loads(json.dumps(self.noise_binding)),
-                 "information_roots": [root.tolist() for root in self.information_roots],
-                 "responses": [response.tolist() for response in self.responses],
-                 "fit_records": json.loads(json.dumps(self.fit_records)),
-                 "structural_factors": [factor.record() for factor in self.structural_factors],
+    def _precision_binding(self):
+        return {"method": "actual_C_column_equilibrated_QR_and_unit_directions",
+                    "identity_resolution": _IDENTITY_RESOLUTION,
+                    "actual_stacked_root_sha256": array_digest(np.vstack((self.prior.precision_root, *self.information_roots))),
+                    "actual_stacked_response_sha256": array_digest(np.concatenate((
+                        self.prior.precision_root @ self.prior.mean.flatten(order="F"), *self.responses)))}
+
+    def _record_payload(self):
+        state = {"schema": _POSTERIOR_SCHEMA, "prior": self.prior._record_view(),
+                 "native_noise_covariance": self.native_noise_covariance,
+                 "native_noise_root": self.native_noise_root,
+                 "noise_binding": self.noise_binding,
+                 "information_roots": [root for root in self.information_roots],
+                 "responses": [response for response in self.responses],
+                 "fit_records": self.fit_records,
+                 "structural_factors": [factor._record_view() for factor in self.structural_factors],
                  "structural_rowspace": [[[value.numerator, value.denominator] for value in vector]
                                            for vector in self.structural_rowspace],
-                 "structural_binding": json.loads(json.dumps(self.structural_binding)),
-                 "mean": self.mean.tolist(), "covariance": self.covariance.tolist(),
-                 "precision_root": self.precision_root.tolist(), "response": self.response.tolist(),
-                 "orthogonal_factor": self.orthogonal_factor.tolist(),
-                 "qr_column_scales": self.qr_column_scales.tolist(),
+                 "structural_binding": self.structural_binding,
+                 "mean": self.mean, "covariance": self.covariance,
+                 "precision_root": self.precision_root, "response": self.response,
+                 "orthogonal_factor": self.orthogonal_factor,
+                 "qr_column_scales": self.qr_column_scales,
                  "numeric_sha256": array_digest(self.mean, self.covariance, self.native_noise_covariance,
                                                 self.precision_root, self.response,
                                                 self.orthogonal_factor, self.qr_column_scales, self.native_noise_root),
                  "observed_noise_factorization": "actual_range_square_root_pushforward_QR",
                  "posterior_semantics": "exact_vec_Gaussian_conditional_on_frozen_noise",
-                 "precision_binding": {"method": "actual_C_column_equilibrated_QR_and_unit_directions",
-                    "identity_resolution": _IDENTITY_RESOLUTION,
-                    "actual_stacked_root_sha256": array_digest(np.vstack((self.prior.precision_root, *self.information_roots))),
-                    "actual_stacked_response_sha256": array_digest(np.concatenate((
-                        self.prior.precision_root @ self.prior.mean.flatten(order="F"), *self.responses)))},
+                 "precision_binding": self._precision_binding(),
                  "fit_sha256": metadata_digest(self.fit_records)}
-        return {**state, "artifact_sha256": metadata_digest(state)}
+        return state
 
     @classmethod
     def from_record(cls, record):
-        payload = json.loads(json.dumps(record, allow_nan=False))
+        return cls._from_owned_record(json.loads(json.dumps(record, allow_nan=False)))
+
+    @classmethod
+    def _from_owned_record(cls, record):
+        payload = dict(record)
         artifact = payload.pop("artifact_sha256", None)
-        if artifact != metadata_digest(payload) or payload.get("schema") != _POSTERIOR_SCHEMA:
+        if artifact != record_digest(payload) or payload.get("schema") != _POSTERIOR_SCHEMA:
             raise ValueError("spatial signal posterior artifact identity mismatch")
         if payload["posterior_semantics"] != "exact_vec_Gaussian_conditional_on_frozen_noise":
             raise ValueError("spatial signal posterior semantics mismatch")
@@ -1583,7 +1592,7 @@ class SpatialSignalPosterior:
         structural_factors = tuple(_SpatialStructuralFactors.from_record(factor,
             observation=SpatialObservation.from_record(record["observation"]))
             for factor, record in zip(payload["structural_factors"], payload["fit_records"], strict=True))
-        model = cls(SpatialSignalPrior.from_record(payload["prior"]), payload["native_noise_covariance"],
+        model = cls(SpatialSignalPrior._from_owned_record(payload["prior"]), payload["native_noise_covariance"],
                     tuple(payload["information_roots"]), tuple(payload["responses"]),
                     tuple(payload["fit_records"]), payload["noise_binding"],
                     structural_basis,
@@ -1593,19 +1602,19 @@ class SpatialSignalPosterior:
             raise ValueError("saved spatial posterior numeric identity mismatch")
         if payload["fit_sha256"] != metadata_digest(model.fit_records):
             raise ValueError("saved spatial posterior C identity mismatch")
-        if payload["precision_binding"] != model.record()["precision_binding"]:
+        if payload["precision_binding"] != model._precision_binding():
             raise ValueError("saved spatial precision differs from its actual prior/C/source binding")
         return model
 
     def save(self, path):
-        return atomic_write_json(path, self.record())
+        return save_record(path, self._record_view())
 
     @classmethod
     def load(cls, path, *, expected_artifact_sha256=None):
         record = json.loads(Path(path).read_text(encoding="utf-8"))
         if expected_artifact_sha256 is not None and record.get("artifact_sha256") != expected_artifact_sha256:
             raise ValueError("spatial signal posterior differs from external artifact authority")
-        return cls.from_record(record)
+        return cls._from_owned_record(record)
 
 
 @dataclass(frozen=True)
@@ -1810,7 +1819,7 @@ class ERPPhysicalTransport:
 
 
 def _likelihood_frame(posterior):
-    return {"posterior_artifact_sha256": posterior.record()["artifact_sha256"],
+    return {"posterior_artifact_sha256": posterior.digest(),
         "coordinates": "block_then_column_major_observed_response_QR_rows",
         "blocks": [{"record_id": record["authorization"]["record_id"], "rows": len(root),
                     "root_response_sha256": array_digest(root, response)}
@@ -2016,7 +2025,7 @@ class ERPChannelEstimate:
             object.__setattr__(result, name, frozen_array(value))
         receipt = {"fit_scope": next(iter(scopes)), "participant_key": next(iter(participants)),
             "producer_implementation_sha256": IMPLEMENTATION_SHA256,
-            "posterior_artifact_sha256": posterior.record()["artifact_sha256"],
+            "posterior_artifact_sha256": posterior.digest(),
             "actual_C": list(records), "dependency": dependence.record(), "resolution": resolution,
             "temporal_noise_sha256": temporal_sha,
             "native_noise_sha256": array_digest(posterior.native_noise_covariance),

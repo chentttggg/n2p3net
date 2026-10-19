@@ -19,7 +19,8 @@ import numpy as np
 from scipy.linalg import solve_triangular
 
 from transfer.noise_model import array_digest, metadata_digest
-from transfer.spatial_programme import SpatialDecisionModel
+from transfer.spatial_programme import SpatialDecisionModel, _require_original_fit
+from transfer.spatial_serialization import same_record_owners, saved_record_identity
 from transfer.spatial_signal_prior import SpatialResponseBlock
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
@@ -116,6 +117,27 @@ def admit_original_source_model(content, *, expected_sha256, locator):
     if not isinstance(content, bytes) or _sha(content) != expected_sha256:
         raise ValueError("original source model bytes differ from their external identity")
     model = SpatialDecisionModel.load(io.BytesIO(content))
+    return _admit_source_model(model, expected_sha256=expected_sha256, locator=locator)
+
+
+def admit_saved_original_source_model(model, path, *, expected_sha256, locator):
+    """Admit the same fit by comparing every original saved byte to its owner.
+
+    The cold byte ingress remains available for replay. This same-fit ingress
+    avoids decoding a second complete model while the fit blocks are resident.
+    """
+    if type(model) is not SpatialDecisionModel:
+        raise TypeError("the actual original SpatialDecisionModel producer is required")
+    _require_original_fit(model)
+    identity = saved_record_identity(path, model._record_view())
+    if (identity["sha256"] != expected_sha256 or identity["sha256"] != locator["sha256"]
+            or identity["bytes"] != locator["bytes"]
+            or Path(path).resolve() != Path(locator["path"]).resolve()):
+        raise ValueError("saved original source model differs from its external file identity")
+    return _admit_source_model(model, expected_sha256=expected_sha256, locator=locator)
+
+
+def _admit_source_model(model, *, expected_sha256, locator):
     if (model.provenance["fit_scope"] != "source_training"
             or any(row["authorization"]["fit_scope"] != "source_training" for row in model.posterior.fit_records)):
         raise ValueError("data-likelihood export requires an original source-training producer")
@@ -123,15 +145,16 @@ def admit_original_source_model(content, *, expected_sha256, locator):
     if len(people) != 1:
         raise ValueError("one person likelihood cannot pool different independent source people")
     handle = SourceModelHandle(expected_sha256)
-    _MODELS[handle] = (model, model.digest(), _json(locator), next(iter(people)))
+    _MODELS[handle] = (model, model.digest(), _json(locator), next(iter(people)), model._serialization_owners())
     return handle
 
 
 def _require_model(handle):
     row = _MODELS.get(handle) if type(handle) is SourceModelHandle else None
-    if row is None or row[0].digest() != row[1]:
+    if (row is None or not same_record_owners(row[0]._serialization_owners(), row[4])
+            or row[0].digest() != row[1]):
         raise TypeError("the original admitted source model and fit state are required")
-    return row
+    return row[:4]
 
 
 @dataclass(frozen=True, eq=False)
@@ -211,7 +234,7 @@ def _recover_block(model, block, saved, physical, information, response):
         "original_input_sha256": saved["actual_input_sha256"],
         "original_information_sha256": array_digest(information, response),
         "original_noise_binding_sha256": metadata_digest(model.posterior.noise_binding),
-        "original_compression_sha256": metadata_digest(compression.record()),
+        "original_compression_sha256": compression._record_sha256,
         "original_temporal_program_sha256": authorization["temporal_program_sha256"],
         "rows_after_nuisance": rows, "observed_spatial_dimensions": channels,
         "logdet_noise": noise_logdet, "logdet_nuisance": nuisance_logdet,
@@ -294,8 +317,8 @@ def export_original_source_likelihood(operands):
         "source_model_artifact_sha256": model_identity,
         "source_model_producer_sha256": model.producer_implementation_sha256,
         "source_model_consumer_sha256": model.consumer_implementation_sha256,
-        "source_posterior_artifact_sha256": posterior.record()["artifact_sha256"],
-        "source_prior_numeric_chart_sha256": posterior.prior.record()["artifact_sha256"],
+        "source_posterior_artifact_sha256": posterior.digest(),
+        "source_prior_numeric_chart_sha256": posterior.prior.digest(),
         "prior_information_in_data_likelihood": False, "block_constants": records,
         "block_log_constants_sum": sum(constants), "compression": compression,
         "log_constant": constant, "exporter_sha256": IMPLEMENTATION_SHA256,
