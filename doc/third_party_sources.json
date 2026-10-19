@@ -1,0 +1,863 @@
+{
+  "schema": "third_party_source_and_permission_inventory/1",
+  "repository_license": {
+    "status": "no_repository_license_declared",
+    "license_selected_here": false
+  },
+  "adapted_code": [
+    {
+      "path": "src/baselines/structured_erp.py",
+      "upstream": "https://github.com/jsosulski/toeplitzlda",
+      "license_path": "src/baselines/structured_erp.LICENSE",
+      "license_sha256": "490c51cd6382f7ca6997015bb1635a5bb8b93333016c33f6c9dd8d6b3b4a588e",
+      "license_status": "local_text_verified_BSD_style_3_conditions_with_patent_disclaimer",
+      "copyright": "Copyright (c) 2022 Jan Sosulski",
+      "redistribution_condition": "retain_original_notice_conditions_disclaimer_and_binary_documentation_notice"
+    }
+  ],
+  "papers": [
+    {
+      "local_path": "Paper/102482.pdf",
+      "sha256": "315d34612c6b5430da6d998fb4aeb93d38cde8118b1b3cc0ad9c744721c9e6ca",
+      "bytes": 1269798,
+      "title_from_existing_metadata": "",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.5220/0010248201860191"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "OA conference"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Active_Sampling_Multicentre_P300_arXiv_2412.17833.pdf",
+      "sha256": "80b77d0531b4a4c0272dc79a7b1f552fff4476e47185fb11d9410f408eba578d",
+      "bytes": 4296641,
+      "title_from_existing_metadata": "",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2412.17833"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Adaptive_Semisupervised_P300_arXiv_2602.15955.pdf",
+      "sha256": "e13aea72d79d4a92224a793bdcb2c52da5fbb51951fcd51bb7891c002bb91d2b",
+      "bytes": 1350747,
+      "title_from_existing_metadata": "Adaptive Semi-Supervised Training of P300 ERP-BCI Speller System with Minimum Calibration Effort",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2602.15955"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Adaptive_Split_MMD_P300_arXiv_2510.21969.pdf",
+      "sha256": "52498fa5a244e63cf79159300e69ee3dba95c28082e40f597961675370bdd552",
+      "bytes": 1265413,
+      "title_from_existing_metadata": "Adaptive Split-MMD Training for Small-Sample Cross-Dataset P300 EEG Classification",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2510.21969"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/ASPEN_Cross_Subject_arXiv_2602.16147.pdf",
+      "sha256": "867ab8519024b7da88bf2376bb938ddef349f1962bd92ebe7156738971b33ccb",
+      "bytes": 18974050,
+      "title_from_existing_metadata": "ASPEN: Spectral-Temporal Fusion for Cross-Subject Brain Decoding",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2602.16147"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Bayesian_Signal_Matching_ERP_Transfer_arXiv_2401.07111.pdf",
+      "sha256": "22284e59bd0f0a7195f051a4482cab534d903e3870ccc9f044e6d9f36795b33e",
+      "bytes": 2994078,
+      "title_from_existing_metadata": "Bayesian Signal Matching for Transfer Learning in ERP-Based Brain Computer Interface",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2401.07111",
+        "https://doi.org/10.1080/01621459.2025.2563189"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint/journal metadata"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/BI2014a_Author_Report_HAL_02171575.pdf",
+      "sha256": "984c4fcca62f47efe65638579c3ae4e424a8c56c4aa0491c4641c11568e40e0a",
+      "bytes": 811706,
+      "title_from_existing_metadata": "",
+      "source_urls_from_existing_ledger": [],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": null
+    },
+    {
+      "local_path": "Paper/Block_Toeplitz_LDA_ERP_JNE_2022.pdf",
+      "sha256": "ad490b2aceb5dd1110b4652d1ddf67afe091d53b8b5967d9bce5cd6a766f1b8a",
+      "bytes": 602509,
+      "title_from_existing_metadata": "Introducing Block-Toeplitz Covariance Matrices to Remaster Linear Discriminant Analysis for Event-related Potential Brain-computer Interfaces",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2202.02001",
+        "https://doi.org/10.1088/1741-2552/ac9c98"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "arXiv manuscript"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/BLPM_Continuous_Latent_Predictive_Modeling_arXiv_2608.11656.pdf",
+      "sha256": "916695243a1dbf3ca4e4ad4b4422c523afef9c73ae11b0cf459f097335f8e633",
+      "bytes": 5044947,
+      "title_from_existing_metadata": "Continuous-Latent Predictive Modeling with Semantic Alignment for EEG-Language Foundation Models",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2608.11656"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Calibration_Free_P300_2022_Accepted.pdf",
+      "sha256": "5568281f8fc615d1f1bdac734933a720a4d25d1b23f2aa345103873357e54b3c",
+      "bytes": 786501,
+      "title_from_existing_metadata": "",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.1007/s12559-021-09971-1"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "accepted manuscript"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Channel_Reflection_EEG_Augmentation_arXiv_2412.03224.pdf",
+      "sha256": "7c83f381e72576fd6cf400bbce890f08edb049e78f04a367ffad0bbb30dc73f3",
+      "bytes": 9774876,
+      "title_from_existing_metadata": "Channel Reflection: Knowledge-Driven Data Augmentation for EEG-Based Brain-Computer Interfaces",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2412.03224"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Contrastive_ERP_CNN_arXiv_2407.04738.pdf",
+      "sha256": "3f1f958b53eddc6972f84792f0caf0b893d27920e6fca3d2dfe5fe1d64a9aca2",
+      "bytes": 368265,
+      "title_from_existing_metadata": "",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2407.04738"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/CrossScale_Transformer_Domain_Rectified_RSVP_TNSRE_2024.pdf",
+      "sha256": "69ee9a0ce2401bc74dc2c02fbe7e8682a3afcca254c9cce2936f636d7684ccaa",
+      "bytes": 17883983,
+      "title_from_existing_metadata": "A Cross-Scale Transformer and Triple-View Attention based Domain-Rectified Transfer Learning for EEG Classification in RSVP Tasks",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.1109/TNSRE.2024.3359191"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Dynamic_Stopping_Subject_Independent_P300_GLOBECOM_2017.pdf",
+      "sha256": "abbd398b741b693c4bff30e3f06128ac073dd383a39813377f987c4eaaf79f95",
+      "bytes": 508510,
+      "title_from_existing_metadata": "",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.1109/GLOCOM.2017.8255030"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "repository manuscript"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/EEG_Cross_Dataset_Variability_2020.pdf",
+      "sha256": "189d25c8453ab5fcd046d0e7f3411d50faae67bbd334ab0018c7c717f54abd31",
+      "bytes": 979349,
+      "title_from_existing_metadata": "Cross-Dataset Variability Problem in EEG Decoding With Deep Learning",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.3389/fnhum.2020.00103"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/EEG_Deep_Learning_Data_Leakage_2024.pdf",
+      "sha256": "db7f117198403ee6d674549c645c1c22144e9e44ef3aa3de9d5eea95fc03c4f3",
+      "bytes": 687209,
+      "title_from_existing_metadata": "Data leakage in deep learning studies of translational EEG",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.1101/2024.01.16.24301366"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T/protocol"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/EEG_FM_BCI_Diverse_Features_arXiv_2506.01867.pdf",
+      "sha256": "416c231f59f11d87e0e2af12ea569969bf39cfd9cd645dc301561a4ca4e83e9f",
+      "bytes": 5788971,
+      "title_from_existing_metadata": "Ogg_et_al_2025_EEG_BCI_FM_mk2",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2506.01867"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/EEG_FM_Compass_arXiv_2601.17883.pdf",
+      "sha256": "57966927ca446a85b52b4cbd354fdb5844febe5d266f09418c1a5bbd006896d6",
+      "bytes": 11317806,
+      "title_from_existing_metadata": "EEG-FM-Compass: Progress, Benchmarking, and Future Directions for EEG Foundation Models",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2601.17883"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T/benchmark"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/EEG_FM_Generalization_Framework_arXiv_2605.28563.pdf",
+      "sha256": "8e4e49b23220d74385c242bd0a52ce16744f74949990e5c70612d38ef04f5273",
+      "bytes": 2180466,
+      "title_from_existing_metadata": "A Multi-dimensional Framework for Evaluating Generalization in EEG Foundation Models",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2605.28563"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T/negative"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/EEG_FM_Negative_Control_Protocol_arXiv_2607.24519.pdf",
+      "sha256": "4853deed57939a7ff9371bcce9d95c6d06936dbd6032a5631fc126e6dcb0cd22",
+      "bytes": 595650,
+      "title_from_existing_metadata": "A Negative-Control Protocol for Clinical EEG Foundation-Model Benchmarks: Dataset Identity and External-Cohort Stress Testing",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2607.24519"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T/protocol"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/EEG_PRISM_arXiv_2608.13676.pdf",
+      "sha256": "d62a0d988a96e0ff78df52152740fddcb1a5f9e1ad9bd5d1e63321ed34bc8505",
+      "bytes": 3504516,
+      "title_from_existing_metadata": "EEG-PRISM: Physiologically-Grounded Interpretability of Predictions by EEG Foundation Models",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2608.13676"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/EEG_Task_Specification_NeuroDoc_arXiv_2606.22925.pdf",
+      "sha256": "b11c833ff69a046efa81178639e16f571e80202217bedee6b0ebd44d3b8dedf9",
+      "bytes": 3272421,
+      "title_from_existing_metadata": "EEG Benchmarking Needs a Task Specification Layer: NeuroDoc for Rulebook-Guided, Executable Benchmark Construction",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2606.22925"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T/protocol"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/EEGNet_Compact_CNN_JNE_2018.pdf",
+      "sha256": "d1df9172d70c1a06fc7b54340ae021af1a561e1e3dcd4f9a4dbe2ea56eb5a03b",
+      "bytes": 1869065,
+      "title_from_existing_metadata": "",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/1611.08024",
+        "https://doi.org/10.1088/1741-2552/aace8c"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "author manuscript"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Effective_Receptive_Field_Luo_NeurIPS_2016.pdf",
+      "sha256": "3c6fcfa484a10bad19d01e59718e94c09f319cf86716b3081ee0b15f1afa3168",
+      "bytes": 615339,
+      "title_from_existing_metadata": "Understanding the Effective Receptive Field in Deep Convolutional Neural Networks",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/1701.04128"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T/method"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/ERP_XTTN_arXiv_2606.02939.pdf",
+      "sha256": "023d501937949029f9f707d0c102780d312337626dbb464233ed02ba026abb5a",
+      "bytes": 7045544,
+      "title_from_existing_metadata": "ERP-XTTN: Interpretable Prototype-Guided Cross-Attention for Cross-Subject ERP Classification",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2606.02939"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Estimating_Event_Related_Potential_from_Few_EEG_Trials_arXiv_2511.23162.pdf",
+      "sha256": "c9b43e8a50a566aebb29e22409712f93dce27b8e6b549252d0f5911c81edd748",
+      "bytes": 13043179,
+      "title_from_existing_metadata": "Estimating the Event-Related Potential from Few EEG Trials",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2511.23162"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Few_Filters_P300_arXiv_1909.06970.pdf",
+      "sha256": "2b8a2c6ee8592bb62f8b5c2b79e694b607a830414d878ea685474eb6ab078e25",
+      "bytes": 791483,
+      "title_from_existing_metadata": "",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/1909.06970",
+        "https://doi.org/10.1016/j.neucom.2020.10.104"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint/published metadata"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/gtn_unet_2023.pdf",
+      "sha256": "e228734a877c856cfccb11ddd48eb66697793a60b197b948ae2836bac372c43e",
+      "bytes": 179954,
+      "title_from_existing_metadata": "",
+      "source_urls_from_existing_ledger": [],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "local OA PDF"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Identity_Trap_in_EEG_Foundation_Models_arXiv_2606.06647.pdf",
+      "sha256": "5eaf70bfad8eb7f645a8b4a3db6addb7e56985ee66dd2ae5e5f950f2d67572a1",
+      "bytes": 1286567,
+      "title_from_existing_metadata": "The Identity Trap in EEG Foundation Models: A Diagnostic Audit",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2606.06647"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T/negative"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Improving_P300_Morphology_Single_Trial_Latency_Realignment_JNE_2026.pdf",
+      "sha256": "adb8adb9f42001952f4a073e24485f1b414adc2503af8a57c61c4fa7eca6e76a",
+      "bytes": 1385414,
+      "title_from_existing_metadata": "Improving P300 morphology through single-trial latency realignment: a comparative study of template-matching approaches",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.1088/1741-2552/ae7766"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "OA publisher PDF"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Invariant_Patterns_Subject_Independent_P300_TNSRE_2021.pdf",
+      "sha256": "82b975fc4cb569233e5fd9b2ea1d6e9209e58b2e645f4d2a2beda050a29a30df",
+      "bytes": 1280836,
+      "title_from_existing_metadata": "Learning Invariant Patterns Based on a Convolutional Neural Network and Big Electroencephalography Data for Subject-Independent P300 Brain-Computer Interfaces",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.1109/TNSRE.2021.3083548"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "OA publisher PDF"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Large_Multisubject_P300_CNN_arXiv_2001.04225.pdf",
+      "sha256": "7ccf41550f49f5fe81ad824f519c2e362c5858f47d020b413353448f23ed0122",
+      "bytes": 477627,
+      "title_from_existing_metadata": "",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2001.04225",
+        "https://doi.org/10.1016/j.bspc.2019.101837"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/MOABB_Reproducibility_Benchmark_arXiv_2404.15319.pdf",
+      "sha256": "a72a75d1c382fb4163db66e1ebcb68799754247f723e091e452543f3ad4a580e",
+      "bytes": 1849897,
+      "title_from_existing_metadata": "",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2404.15319"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T/benchmark"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/MS_EEGNet_P300_Frontiers_2021.pdf",
+      "sha256": "93488bb7b7db18558488bf93d5f70e2faec12a37be0e085867d5e63ca718ad1c",
+      "bytes": 7030443,
+      "title_from_existing_metadata": "A Lightweight Multi-Scale Convolutional Neural Network for P300 Decoding: Analysis of Training Strategies and Uncovering of Network Decision",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.3389/fnhum.2021.655840"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "CC/open publisher PDF"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/MultiTask_SSL_RSVP_TNSRE_2024.pdf",
+      "sha256": "4ba300118cc05f09b879552b0534998ff5a2e30f3ba8d8fd8d91c291fe87b5c3",
+      "bytes": 7230310,
+      "title_from_existing_metadata": "Multi-Task Collaborative Network: Bridge the Supervised and Self-Supervised Learning for EEG Classification in RSVP tasks",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.1109/TNSRE.2024.3357863"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "OA publisher PDF"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/MultiTrial_P300_Character_arXiv_2410.08561.pdf",
+      "sha256": "7557c2301ce8ee77eaa3a61b4c029511380803093861488ae2c11195186f2f2c",
+      "bytes": 411677,
+      "title_from_existing_metadata": "",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2410.08561"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/NeuralBench_arXiv_2605.08495.pdf",
+      "sha256": "fcabbb2666ed3dfb43fb6d3fbba96c5062d92343f77f7ad1d29dc78e7cce063c",
+      "bytes": 1377201,
+      "title_from_existing_metadata": "NeuralBench: A Unifying Framework to Benchmark NeuroAI Models",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2605.08495"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T/benchmark"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/OmniEEG_Bench_arXiv_2606.00815.pdf",
+      "sha256": "3c704afc0efaf9b1d74d6504401af6c628e1395a3d2fd67eabb33fd17a812ccf",
+      "bytes": 6355799,
+      "title_from_existing_metadata": "OmniEEG-Bench: A Standardized Evaluation Benchmark for EEG Foundation Models",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2606.00815"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T/benchmark"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/P300_Rereferencing_arXiv_2510.10733.pdf",
+      "sha256": "7d9e2243bc2b7d014892590463aeb1bef4304994d89fc7f3d8fa3595f3bca2e2",
+      "bytes": 2646805,
+      "title_from_existing_metadata": "Does Re-referencing Matter? Large Laplacian Filter Optimizes Single-Trial P300 BCI Performance",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2510.10733"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/P300_Spatial_ROI_arXiv_2511.02735.pdf",
+      "sha256": "3346e295b467df3a6acc7a5b70a07efa824697e2aab7214baae43da4d344a061",
+      "bytes": 10063755,
+      "title_from_existing_metadata": "Spatial Insight: How Data-Driven Regions of Interest Selection Enhances Single-Trial P300 Classification in EEG-Based BCIs",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2511.02735"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/P300_Speller_Advances_Review_2022.pdf",
+      "sha256": "053427a4ac8a94b91b7ac7cf6ee67c6fd20414e1decf5a52717a58e583e0969a",
+      "bytes": 1273512,
+      "title_from_existing_metadata": "Advances in P300 brain–computer interface spellers: toward paradigm design and performance evaluation",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.3389/fnhum.2022.1077717"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "CC review"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/P_SMGP_Bayesian_ERP_arXiv_2605.30775.pdf",
+      "sha256": "5a4cec8be2d4f67a851e52b04f24a7f8892c9e80b2373e758ce95a95a336a98e",
+      "bytes": 5582609,
+      "title_from_existing_metadata": "Bayesian Classification with Probit-link Split-and-merge Gaussian Process Prior in EEG-based Brain-Computer Interfaces",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2605.30775"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Riemannian_Artifact_Subspace_Reconstruction_2019.pdf",
+      "sha256": "13466c8e05864cecd5d9a607844012bea9a1bff35c71c55658264b0618115351",
+      "bytes": 624697,
+      "title_from_existing_metadata": "A Riemannian Modification of Artifact Subspace Reconstruction for EEG Artifact Handling",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.3389/fnhum.2019.00141"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Riemannian_Means_Field_BCI_arXiv_2504.17352.pdf",
+      "sha256": "b3578fc87e3df8563b082dc3036edc56f6d228c51b18ef7b61570ca1b204e5c7",
+      "bytes": 1156358,
+      "title_from_existing_metadata": "Type of the Paper (Article",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2504.17352"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Riemannian_Transfer_Minimal_Calibration_arXiv_2111.12071.pdf",
+      "sha256": "1d64de6043dccc316330fd495e955f6d6988c08e41cff184cf8c269f8cf9d4e7",
+      "bytes": 289891,
+      "title_from_existing_metadata": "",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2111.12071"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/SHTI-292-SHTI220333.pdf",
+      "sha256": "bcf929fd1fac4d24e9b60c1eab075028ccff5fb53e2fdda99a02c14b7ca49cee",
+      "bytes": 761979,
+      "title_from_existing_metadata": "",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.3233/SHTI220333"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "OA proceedings"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Sparse_Bayesian_Channel_Interactions_P300_arXiv_2602.17772.pdf",
+      "sha256": "b03744e0947a1f6c89f98415bd7333d840cd1f30abb4b29a08ff42f0b1833bf9",
+      "bytes": 5524309,
+      "title_from_existing_metadata": "Sparse Bayesian Modeling of EEG Channel Interactions Improves P300 Brain-Computer Interface Performance",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2602.17772"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Spectral_Audit_Task_Dependent_Aperiodic_Reliance_arXiv_2606.08583.pdf",
+      "sha256": "f576392918f8e1d7f378ce8e9f317d678ee6686b8322bcfce7ca225afa402883",
+      "bytes": 740615,
+      "title_from_existing_metadata": "A spectral audit framework reveals task-dependent aperiodic reliance across EEG and ECG deep learning",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2606.08583"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T/negative"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/SpellerSSL_arXiv_2509.19401.pdf",
+      "sha256": "3e3cf87e3d5d8662f74ef4b8a048a9aab3cdf9a7c68e8e292b4741cccf3316cb",
+      "bytes": 13527174,
+      "title_from_existing_metadata": "SpellerSSL: Self-Supervised Learning with P300 Aggregation for Speller BCIs",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2509.19401"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "preprint"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/ST_CapsNet_P300_TNSRE_2023.pdf",
+      "sha256": "ee53cd6dcd65d8f38d0a8c85330233608fbba038245d15ad4874a738fa594d49",
+      "bytes": 2956114,
+      "title_from_existing_metadata": "ST-CapsNet: Linking Spatial and Temporal Attention With Capsule Network for P300 Detection Improvement",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.1109/TNSRE.2023.3237319"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "OA publisher PDF"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Temporal_Convolutional_Networks_Lea_CVPR_2017.pdf",
+      "sha256": "009ed1921b987dd6d2d614d9b6b0d5dd759899590211d34c0bb86ce0980d70cb",
+      "bytes": 733157,
+      "title_from_existing_metadata": "Temporal Convolutional Networks for Action Segmentation and Detection",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.1109/CVPR.2017.113"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T/method"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Understanding_and_Correcting_Low-Frequency_Bias_in_EEG_Foundation_Models_arXiv_2608.01898.pdf",
+      "sha256": "fd696adef5b32508e6a9178d7a5ca77c4b4eee49faab5caf750f49239bf8bb2b",
+      "bytes": 4315407,
+      "title_from_existing_metadata": "Understanding and Correcting Low-Frequency Bias in EEG Foundation Model",
+      "source_urls_from_existing_ledger": [
+        "https://arxiv.org/abs/2608.01898"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "T/negative"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/xDAWN_Riemannian_Transfer_P300_2020.pdf",
+      "sha256": "92ef68b01c3dca90459bb8d314e734267568a87da1a237d59474d571e218c045",
+      "bytes": 1004705,
+      "title_from_existing_metadata": "Transfer Learning Algorithm of P300-EEG Signal Based on XDAWN Spatial Filter and Riemannian Geometry Classifier",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.3390/app10051804"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "CC publisher PDF"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    },
+    {
+      "local_path": "Paper/Zero_Training_Online_P300_CNN_ACCESS_2020.pdf",
+      "sha256": "f6fbb83b563cc7cf1e10a5c0b9e4802ae5498e1c1a520ac9798906161725feea",
+      "bytes": 2965267,
+      "title_from_existing_metadata": "CNN With Large Data Achieves True Zero-Training in Online P300 Brain-Computer Interface",
+      "source_urls_from_existing_ledger": [
+        "https://doi.org/10.1109/ACCESS.2020.2988057"
+      ],
+      "license_status": "not_verified_for_this_exact_PDF_copy",
+      "prior_ledger_access_claims": [
+        "OA publisher PDF"
+      ],
+      "redistribution_authorized_by_this_index": false,
+      "existing_validation_sha_matches": true
+    }
+  ],
+  "paper_PDFs_copied_or_removed": 0,
+  "datasets": [
+    {
+      "name": "BI2014a",
+      "source_owner": "MOABB dataset/source admission",
+      "license_status": "not_verified_for_exact_dataset_release",
+      "raw_redistribution_authorized_by_this_index": false
+    },
+    {
+      "name": "BNCI2014-008",
+      "source_owner": "MOABB dataset/source admission",
+      "license_status": "not_verified_for_exact_dataset_release",
+      "raw_redistribution_authorized_by_this_index": false
+    },
+    {
+      "name": "GTN",
+      "source_owner": "local GTN data source",
+      "license_status": "not_verified_for_exact_dataset_release",
+      "raw_redistribution_authorized_by_this_index": false
+    },
+    {
+      "name": "Mainsah",
+      "source_owner": "external Mainsah source admission",
+      "license_status": "not_verified_for_exact_dataset_release",
+      "raw_redistribution_authorized_by_this_index": false
+    },
+    {
+      "name": "Huebner2017",
+      "source_owner": "registered public native source admission",
+      "license_status": "not_verified_for_exact_dataset_release",
+      "raw_redistribution_authorized_by_this_index": false
+    }
+  ],
+  "interpretation": "Access/OA/arXiv/accepted-manuscript labels are not proof of redistribution permission; preserve exact original copies locally and export citation metadata until exact rights are verified."
+}

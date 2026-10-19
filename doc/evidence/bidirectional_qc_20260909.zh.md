@@ -1,5 +1,8 @@
 # 双向滤波与QC联合优化
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 2026-09-09。用户明确确定应用双向滤波，以减轻漂移。本轮据此将完成记录的双向处理接入
 个人校准、推理和QC；此前四会话LDA比较继续作为已观察的开发证据，不限制本轮实施方向。
 
@@ -82,7 +85,7 @@ Gustafsson 1996，[10.1109/78.492552](https://doi.org/10.1109/78.492552)，初�
 相对无漂移真实ERP的RMSE单向10.652–13.013μV、双向0.296–0.347μV。
 这是所测信号的保真与抗漂移证据，不能代替真实识别率。
 
-![漂移与ERP验证](../../experiments/runs/bidirectional_qc_20260909/signal_audit/drift_and_erp.png)
+[图像历史定位：漂移与ERP验证](../assets/repository_audit_20261019/docs_historical_index.json)
 
 ## 真实QC与本人模型
 

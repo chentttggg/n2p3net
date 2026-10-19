@@ -1,5 +1,8 @@
 # 四库标准预算完整结果
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 2026-09-07，单训练seed=20260906，公开开发证据，不是外部封存或成人九选一确认。
 
 ## 验收与复现
@@ -91,4 +94,4 @@ Mainsah未纳入评分，成人九选一仍待验证。
 K0、闭式LDA不适用；K内时序purged验证选轮、原初始化全K refit；固定轮数、完整轨迹选轮、
 patience停止分开消融。当前结果未证明过拟合是原因，更未证明早停有效。
 
-![逐人迁移收益](../../experiments/runs/four_dataset_20260907/analysis_c/paired_transfer.png)
+[图像历史定位：逐人迁移收益](../assets/repository_audit_20261019/docs_historical_index.json)

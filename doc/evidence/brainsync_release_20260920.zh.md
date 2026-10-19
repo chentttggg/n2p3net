@@ -1,5 +1,8 @@
 # BrainSync发布版整理与EXE验收
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 日期：2026-09-20。源采集端为`D:/BCI/BrainSync_Tool_newest/BrainSync_Tool`，
 发布目录为`D:/BCI/BrainSync_Release_20260920`。本次创建独立发布副本，保留源工作树、
 原始数据、开发环境、模型运行历史和测试文件；开发入口只从发布副本移除。
@@ -57,7 +60,7 @@ QtCore DLL搜索问题；“不包括runtime”按发布载荷排除`_internal/`
 | Qt/PySide6依赖 | 显式收集shiboken6运行库、QtCore依赖的`icuuc.dll`，注册`_internal/`根目录，并清除外部Python/Qt环境变量；污染环境后仍能启动8秒 |
 | 发布载荷体积（不含`_internal/`运行时） | 134,552,186 bytes / 128.319 MiB，小于200 MiB |
 | `_internal/`运行时 | 294.375 MiB；按用户要求不计入200 MiB载荷限制 |
-| 发布哈希与文件清单 | [release-manifest.json](../../../../BCI/BrainSync_Release_20260920/release-manifest.json) |
+| 发布哈希与文件清单 | [release-manifest.json](../assets/repository_audit_20261019/docs_historical_index.json) |
 | 源前端完整套件 | 291项通过，退出码0 |
 | 设备模式边界 | 未扫描、连接或执行真实串口/BLE录制 |
 

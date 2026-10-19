@@ -1,5 +1,8 @@
 # BrainSync 连续质量与滤波状态研究方案
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 日期：2026-09-07。交付范围为文献核查、数学与反例、实施规格和验证顺序。
 本轮没有修改生产算法、替换预处理默认、生成新训练缓存或训练模型。
 前置实测见[瞬态诊断](brainsync_transient_quality_20260907.zh.md)，时钟问题见
@@ -281,10 +284,10 @@ attempt及额外flash/time，不能只保留补采成功结果后仍标45闪烁�
 [12] BIDS [Events](https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/events.html)和[EEG](https://bids-specification.readthedocs.io/en/stable/modality-specific-files/electroencephalography.html)，官方正文已核验。
 
 分支研究材料与核验边界在 `experiments/runs/brainsync_quality_research_20260907/`：
-[滤波](../../experiments/runs/brainsync_quality_research_20260907/literature_filter.md)、
-[时钟](../../experiments/runs/brainsync_quality_research_20260907/literature_clock.md)、
-[EOG/QC/参考](../../experiments/runs/brainsync_quality_research_20260907/literature_qc_reference.md)。
-[10组反例与五会话覆盖复核](../../experiments/runs/brainsync_quality_research_20260907/counterexamples.json)，
-[反例图](../../experiments/runs/brainsync_quality_research_20260907/counterexamples.png)。
+[滤波](../assets/repository_audit_20261019/docs_historical_index.json)、
+[时钟](../assets/repository_audit_20261019/docs_historical_index.json)、
+[EOG/QC/参考](../assets/repository_audit_20261019/docs_historical_index.json)。
+[10组反例与五会话覆盖复核](../assets/repository_audit_20261019/docs_historical_index.json)，
+[反例图](../assets/repository_audit_20261019/docs_historical_index.json)。
 脚本为`tmp/verify_continuous_qc_design_20260907.py`，使用项目venv；这是机制验证，不是新自动
 检测器验证。更正前指导已[物理归档并校验](../../frozen/brainsync_quality_design_20260907/manifest.json)。

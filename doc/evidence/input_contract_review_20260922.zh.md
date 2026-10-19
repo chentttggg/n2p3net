@@ -1,5 +1,8 @@
 # 输入合同与路线审查：复核与修正（2026-09-22）
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 本次按用户要求复核原审计并修改已确认问题。使用项目`.venv`，检查当前dirty工作树，
 HEAD为`f1a303c42c68173e8b1452ceb26bd84923b8a6aa`；HEAD不代表全部实际执行源码。
 应用`astra-research-workflow`、`eeg-p300-research`、`experimental-design`。
@@ -60,7 +63,7 @@ ZIP SHA-256：`07c256d8d540b9cffafdcda08e1fd0f2307fdaa41ce04f9bdb6dd65e91fd9891`
 ```
 
 完整逐人记录、ZIP摘要及执行工具/码本源码摘要在
-[本地JSON](../../experiments/results/input_window_audit_20260922/raw_timing.json)。
+[本地JSON](../assets/repository_audit_20261019/docs_historical_index.json)。
 JSON SHA-256：`6642176c33e64391ca4546b94edfa0d6fb0efeb191e5328193857c5b4d4a280a`。
 原始数据和结果保持本地，不加入Git分发。
 

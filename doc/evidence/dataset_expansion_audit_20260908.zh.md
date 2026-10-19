@@ -1,5 +1,8 @@
 # 现有公开数据能否扩入域迁移：文件、合同与调用链审计
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 日期：2026-09-08。范围：本地数据、当前源码、官方分发元数据和无训练接口探针。
 结论：现有四库不是数据能力上限，也不以用完全部本地库为目标。GTN和BI2013a保留候选价值，
 双人合作/竞争库不进入默认主矩阵，优先补单人视觉P300的独立来源。
@@ -106,8 +109,8 @@ GTN单源控制应声明自己的可观测布局或另行验证可变输入架�
 ## 5. 新的单人视觉数据
 
 新增分发和网络恢复证据保存在本次运行目录，完成状态以
-[逐文件下载账本](../../experiments/runs/dataset_expansion_audit_20260908/additional_downloads.json)及
-[EPFL账本](../../experiments/runs/dataset_expansion_audit_20260908/epfl_download.json)为准。
+[逐文件下载账本](../assets/repository_audit_20261019/docs_historical_index.json)及
+[EPFL账本](../assets/repository_audit_20261019/docs_historical_index.json)为准。
 没有把下载当成训练准入，也没有调用模型给新库评分。
 
 最终四套所选分发均已完整下载：2428个文件，4536021765字节，约4.22 GiB。
@@ -276,8 +279,8 @@ SHA256与镜像逐字节相同。20份无真值Online记录不在这个监督子
 
 本地探针及原始检查账本：
 
-- [audit.py](../../experiments/runs/dataset_expansion_audit_20260908/audit.py)
-- [audit.json](../../experiments/runs/dataset_expansion_audit_20260908/audit.json)，含NIX/ZIP摘要、
+- [audit.py](../assets/repository_audit_20261019/docs_historical_index.json)
+- [audit.json](../assets/repository_audit_20261019/docs_historical_index.json)，含NIX/ZIP摘要、
   逐文件官方校验、GTN元数据、代表性parser读数和9份被审计源码SHA256。
 
 当前dirty工作树的base commit为`f54e45c48014d05a71d9644b0cecd7aa041f873f`，

@@ -1,6 +1,9 @@
 # 四库整库留出：单seed结果分析
 
-详细版：[逐被试矩阵与训练曲线](../../experiments/runs/four_dataset_20260907/analysis/detailed/report.zh.md)。
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
+详细版：[逐被试矩阵与训练曲线](../assets/repository_audit_20261019/docs_historical_index.json)。
 包含123×18完整AUC矩阵、72格分布、重复负迁移、预算变化、漏检/误报、
 1107次目标拟合的逐轮loss，以及逐预测重新核验的来源与文件哈希。
 K192全网微调有16/123人AUC低于0.6；8人三档都不如scratch，20人三档都不如原波形LDA。
@@ -29,8 +32,8 @@ BrainSync九数字各10block、总4050次闪烁的实际校准预算没有在这
 - 这是公共binary开发，AUC不是九选一命中率，2214单元不是2214名独立被试。
 
 原始归档SHA256：`4b311349f18c9f487d8ea9ec80bdc1834a6dfd4fcc335212b02dd61587bb93c8`。
-详细核验：[integrity.json](../../experiments/runs/four_dataset_20260907/analysis/integrity.json)。
-分析入口：[analyze_results.py](../../experiments/runs/four_dataset_20260907/analyze_results.py)。
+详细核验：[integrity.json](../assets/repository_audit_20261019/docs_historical_index.json)。
+分析入口：[analyze_results.py](../assets/repository_audit_20261019/docs_historical_index.json)。
 
 ## 三档预算全部比较
 
@@ -46,7 +49,7 @@ BrainSync九数字各10block、总4050次闪烁的实际校准预算没有在这
 | 目标原波形收缩LDA | 0.5893 | 0.6403 | 0.6904 |
 | 冻结源特征加收缩LDA | 0.5830 | 0.6140 | 0.6558 |
 
-![所有预算的各库AUC](../../experiments/runs/four_dataset_20260907/analysis/budget_auc.png)
+[图像历史定位：所有预算的各库AUC](../assets/repository_audit_20261019/docs_historical_index.json)
 
 三档中全网微调相对scratch的四库等权差值及条件性bootstrap区间：
 
@@ -66,7 +69,7 @@ K192仍有33/123人不如原波形LDA，不能只提供平均最优模型而声�
 这些是探索性描述区间，没有进行确认性多重检验，不作为因果或最终验收证据。
 BNCI只有8人，K96/K192的全网减scratch分库区间跨0，不能据总体均值宣称每库稳定受益。
 
-![每名被试在三档K的迁移差值](../../experiments/runs/four_dataset_20260907/analysis/paired_transfer.png)
+[图像历史定位：每名被试在三档K的迁移差值](../assets/repository_audit_20261019/docs_historical_index.json)
 
 ## 各库差异
 
@@ -119,6 +122,6 @@ full_fine相对原运行的AUC差落在[-0.00502,+0.00758]，scratch在[-0.00044
 原始logit最大差0.929不等于AUC下降0.929。当前没有开启严格CUDA确定性，
 不能把单seed当逐bit重放，也不将重复性能任务当新增seed以缩窄置信区间。
 
-所有表格：[analysis目录](../../experiments/runs/four_dataset_20260907/analysis)。
+所有表格：[analysis目录](../assets/repository_audit_20261019/docs_historical_index.json)。
 其中`participant_metrics.csv`保留逐人结果，`study_metrics.csv`包含median/p10/SD/BACC/AP，
 `paired_contrasts.csv`保留各库各K配对差，`calibration_and_test_counts.csv`记录预算对应的正例数。

@@ -8,11 +8,21 @@
 
 同一规则或状态只维护一处，其他位置改用链接。替换历史指导前保留必要原文和哈希，归档按[分发规则](../frozen/README.md)管理。本次整理的原文恢复关系见[清单](../frozen/guidance_consolidation.manifest.json)。
 
+`python experiments/check_docs.py`检查十五个活动入口的仓库相对链接，CI执行同一检查；本地原始载荷与归档成员的恢复身份由各自定位表和manifest核验。
+
 新源码、JSON、TOML、Markdown默认LF，已有显式producer行尾规则优先；
 捕获的`doc/assets`和`frozen`原字节默认不转换。不要全仓renormalize或统一格式化
 已绑定源码来修风格告警。忽略规则排除本机`.claude/settings.local.json`、`artifacts/`
 及`doc/assets`模型/缓存/归档载荷；JSON、manifest和必要文本继续可跟踪。
 ignore规则只控制新增分发，不删除本地科研证据，也不自动移除已跟踪载荷。
+
+历史测试数、运行数和“已通过”绑定其原命令、执行源码及日期；新的全仓验收由本次实际日志给出，不能将旧计数当作当前树成绩。独立源码版本的证据分别保留，当前状态仍只由checkpoint维护。
+
+## 证据导出与第三方来源
+
+对外导出从原证据派生独立摘要，保原文件SHA、来源角色、requested分母、失败及验证范围。新摘要使用repo相对路径或具名artifact key，省去账户名、hostname、临时目录和凭据路径；完整本地定位关系另保私有记录。脱敏摘要持有自己的SHA，原日志、manifest、producer和Git历史保持原字节，不能将清理后的文件重签成旧证据。
+
+第三方代码、文献及数据的已知许可和未核实状态见[来源索引](third_party_sources.json)。许可证文本的保留条件随实际代码分发；公开可访问、arXiv、作者接受稿及OA标签不能代替对当前副本的再分发许可。新源码/证据导出默认只含代码、紧凑记录与引用元数据；原PDF、原始数据、模型和运行载荷按原保管/分发边界处理。
 
 ## 交付与旧构建清理
 
@@ -93,9 +103,9 @@ SDK发行包版本0.3.0的运行时自报0.2.0，来源记录分别保存，不�
 `tests/verify_transport_ui.py <TEMP输出目录>`在真实qasync下使用FakeSdk检验串口/BLE启动与预览，
 不扫描或连接硬件。测试证据见[连接统一验收](evidence/domain_transfer_major_20260920.zh.md)。
 2026-09-20发布构建位于`D:/BCI/BrainSync_Release_20260920`，使用PyInstaller onedir并随附`_internal`运行时；
-构建时排除未使用的Qt WebEngine/Qt3D/Quick等模块，排除`_internal`后的发布载荷128.319 MiB，小于200 MiB，
+构建时排除未使用的Qt WebEngine/Qt3D/Quick等模块；单个EXE、发布载荷与`_internal`运行时分别计量，
 不复制`.venv`、源码、测试、开发入口或历史数据。启动探针使用`BrainSync.exe --mock`，
-不代表真实设备验收。完整清单见[发布版EXE验收](evidence/brainsync_release_20260920.zh.md)。
+不代表真实设备验收。发布manifest的实际字段和历史文字勘误见[发布计量](evidence/execution_and_integration.zh.md#发布载荷与历史计量)，原启动验收见[发布版记录](evidence/brainsync_release_20260920.zh.md)。
 Qt测试必须注入临时`app_root`，在同一qasync循环内完成`window.shutdown()`，不得读取操作员设置或
 以强制`_close_ready`跳过进程回收。应用直接quit与启动中的模型任务须有真实子进程回归。
 
@@ -503,7 +513,7 @@ raw、model和唯一evidence不属于此清理名单；压缩/删除失败保留
 不把cache容器编码变化误记为重滤波，也不倒填已有准备凭证。
 
 
-2026-09-16统一精简矩阵总执行器实测52.1分钟，6138个正式目标NN拟合、246个LDA拟合、4416个拟合请求复用。
+2026-09-16统一精简矩阵的完整计数与总执行时间见[历史公共程序口径](evidence/public_evaluation.zh.md#历史公共程序的计数与结果归属)。
 该墙钟不含此前补传及提前源折；完整计数、保存模型重放、数值规则及压缩结果验证见
 [结果与核验](evidence/unified_results_20260916.zh.md)。旧200-update重放器不能直接验证新90-epoch程序；
 预算须包含D0/D1匹配的decision工作集，LDA重放须还原实际数值dtype及标准化次序，不靠放宽容差通过。

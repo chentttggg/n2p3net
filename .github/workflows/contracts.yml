@@ -35,6 +35,7 @@ jobs:
       - run: uv lock --check
       - run: uv sync --locked --extra signals --extra baselines --extra dev
       - run: uv run --no-sync ruff check src experiments tests
+      - run: uv run --no-sync python experiments/check_docs.py
       - run: uv run --no-sync pytest tests/environment tests/research/test_dashboard.py tests/data/test_source_records.py tests/data/test_source_prefix_preparation.py tests/research/test_stationary_panel_path_contract.py tests/research/test_stationary_cloud_control.py tests/research/test_channel_noise_paired.py
       - run: git diff --check
       - run: uv build --wheel

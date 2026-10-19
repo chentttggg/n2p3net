@@ -1,5 +1,7 @@
 # 当前技术结构与完整链条
 
+`research.common_cloud_transition_trace`持有完整proposal、ancestry、move/accept与原RNG/seed.spawn轨迹；`collapsed_continuous_inference`只在原科学核observer接点记录。schema2重构器消费已封存轨迹，原schema1持原producer；接点、codec、原核AST关系与接受范围见[轨迹整合](assets/research_resume_20261012/transition_trace_integration.json)。
+
 `research.saved_public_noise_reuse`连接原保存噪声与当前source/C权限：原witness固定旧programme/完整参数，当前compiler重编实际C均值和残差并核完整关系，新issuer持本次live使用权限。独立数值重放恢复保存关系；运行状态和下一步仍由checkpoint维护。实际K200/K800来源见[整合绑定](assets/research_resume_20261012/saved_public_noise_integration.json)。
 
 `models.candidate_ties`统一generic、membership、row/column及`CandidateEvidence`的operational平局规则：最高分与候选分差不超过原绝对floor `1e-12` 时不可区分，公共分数原点不放大该floor。它保原score单位；log score中即log odds的数值分辨率，不作统计置信度。完整tie仍保概率供NLL/Brier，缺失/coverage权限由原owner处理。原连续/算子/SelectionERP的`1e-10`规则保各自含义；历史操作结果按原冻结consumer重放，新规则用于新执行。

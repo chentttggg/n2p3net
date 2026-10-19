@@ -40,8 +40,8 @@ BLE对应`--transport ble --address BrainSync`。省略地址使用所选模式�
 
 发布使用`D:/BCI/BrainSync_Release_20260920/BrainSync.exe`，不再使用开发目录的Python入口或模拟启动器。
 发布版数据、日志和用户模型分别写入发布目录的`data/`、`logs/`和`models/`；算法设置中仍可显式选择
-后端项目与计算环境。发布目录随附`_internal`运行时，排除运行时后的载荷约6.847 MiB，发布清单和限制见
-[发布版EXE验收](evidence/brainsync_release_20260920.zh.md)。
+后端项目与计算环境。发布目录随附`_internal`运行时；单个EXE大小与完整载荷范围分别解释，发布计量和历史勘误见
+[发布载荷](evidence/execution_and_integration.zh.md#发布载荷与历史计量)，启动/设备验收边界见[原发布记录](evidence/brainsync_release_20260920.zh.md)。
 
 采集端使用自己的Python3.10/SDK/Qt环境，模型任务通过结构化argv调用后端项目`.venv`。
 模型任务支持进度、取消和日志，并与设备/录制生命周期互斥；运行问题先查实际解释器与日志。

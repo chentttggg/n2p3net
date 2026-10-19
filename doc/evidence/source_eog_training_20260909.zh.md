@@ -1,5 +1,8 @@
 # 新陷波输入下的源池与EOG矩阵：完整结果与执行记录
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 状态：**完整A/B/C训练、保存模型复核及主归档本地校验均已完成，未晋升产品模型。**
 原设计见[路线图](domain_transfer_major_20260920.zh.md)。
 本地机器可同时发生其他开发；训练使用物理冻结checkout，不以当前Git HEAD代替实际执行源码。
@@ -233,7 +236,7 @@ Git内保留[完成清单](../../frozen/source_eog_training_20260909/completion.
 并确认除明确重绑定的账本/合同/runtime字段外，权重与输入payload严格一致。
 复用不会新增物理更新，也没有用最终代码摘要重标旧源。
 
-九份源权重已原样提取到本地[source_models索引](../../experiments/runs/source_eog_20260909/source_models/README.md)：
+九份源权重已原样提取到本地[source_models索引](../assets/repository_audit_20261019/docs_historical_index.json)：
 A/GTN、完整B0、完整B7各三seed。详细摘要和执行身份见
 [可分发模型清单](../../frozen/source_eog_training_20260909/source_model_index.json)。
 这些是源初始化权重，仍需匹配合同的本人校准；本轮没有覆盖工作站默认模型。

@@ -1,5 +1,21 @@
 # 执行、保存重放与代码集成
 
+## 文档入口与历史证据定位
+
+六指南、四主题页和唯一checkpoint入口继续各持原职责。此次对科研树15份活动入口核570条本地链接，目标均存在；旧main审计的编年史入口和9份manifest缺失不能直接当作科研树当前结论。历史页的本地payload引用与clone内容分开，逐条定位和未找到的原目标见[历史来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原日期页的原字节封存于索引所列本地小归档；导航副本只将失效href重定向到持久locator并明确标注，结果和producer未重算。原审计报告保原字节；未找到原manifest时记录缺口，不以较新的源码快照冒充当时验收。
+
+原先未单独索引的八份日期证据（E2先验尺度、算法链修复、串口/BLE统一、代码质量、源模块、预算执行、精简训练、统一模型实施）已按原字节保入本地小归档，逐成员核SHA，由同一[来源索引](../assets/repository_audit_20261019/docs_historical_index.json)检索。它们是历史原文，活动规则仍在六指南；当前测试结果由本次实际执行日志提供。Lean locator与测试迁移沿各自审计owner，不在本页重写历史证明记录。
+
+## 发布载荷与历史计量
+
+BrainSync 2026-09-20 onedir的原冻结release manifest中，`payload_bytes_excluding_runtime=127417982`，即121.515 MiB；`runtime_bytes=308674564`，即294.375 MiB。逐条清单的非`_internal/`字节总和与前者相同。原manifest保存在[大版本清单](../../frozen/major_domain_transfer_20260920/manifest.json)的`final_evidence/brainsync_release_manifest.json`，成员SHA为`22b8de1091dc112f758039bbbc512edb4ec3e64835cfbe572a4c8349aa343d3f`；本地现存manifest同SHA。
+
+原日期页134,552,186 B/128.319 MiB、旧索引119,627,193 B及工作站6.847 MiB的文字与该冻结载荷字段不符；它们也不能用来证明发布没有运行时。本节按原manifest纠正活动文档的口径，原文字仍保历史身份，没有重新构建或补签启动/实机验收。[计量凭证](../assets/repository_audit_20261019/docs_result_semantics.json)保原成员与精确单位换算；原mock启动证据仅支持软件启动。
+
+## 完整转移轨迹的源码与重放
+
+`common_cloud_transition_trace`持有完整proposal因子、原seed.spawn/RNG关系、有序ancestry及move/accept记录；`collapsed_continuous_inference`在原科学核的observer接点记录，不由重构器重新决策。新schema2与原schema1 producer分别保存；root已读完整codec和原SMC接点，18个科学函数AST相同，实际Ruff/import检查通过。接受范围是源码与软件数值重放，完整公共矩阵/吞吐另验收，见[接线绑定](../assets/research_resume_20261012/transition_trace_integration.json)。
+
 ## 保存噪声的当前权限接入
 
 saved-public候选以原字节整合；root审完整模块与执行脚本，两格实际接入/保存重放完成并正常退出。成功执行与首启监测hook错误分别保留原源码和记录；两套code-only producer的508成员已独立逐byte核验，再用cmd删除514个冗余展开文件/缓存，共12118330字节。原数据、参数、实际programme和冻结producer保留。接受范围及清理回执见[绑定](../assets/research_resume_20261012/saved_public_noise_integration.json)。

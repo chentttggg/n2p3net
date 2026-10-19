@@ -1,11 +1,14 @@
 # 域迁移首批实现：P1时空适配与P2源目标函数
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 2026-09-16。用户要求结合`codebase-design`逐步实现，并取消蒸馏。
 本次完成P1/P2的软件能力、调用链和反例；未启动公共/本人真实数据训练，没有新迁移效能结论。
 后续次序由[路线图](domain_transfer_major_20260920.zh.md)统一维护。
 
 修改前的323份源码、测试与指导已物理压缩并逐成员验证，
-[清单](../../frozen/domain_transfer_20260915_before/manifest.json)保留SHA-256；payload留在本地。
+[清单](../assets/repository_audit_20261019/docs_historical_index.json)保留SHA-256；payload留在本地。
 工作树原有大量并发修改及测试目录迁移全部保留，没有恢复旧平铺测试、重置源码或更改真实数据。
 
 ## 1. Module与interface选择
@@ -118,7 +121,7 @@ POSIX保留link；原始文件只读取，现存目标仍核验摘要，正常�
 活动源码、实验入口与测试全量Ruff通过；`git diff --check`通过。
 保存真实source CLI两更新软件探针及其中间更新点的合同反例；不把这些合成拟合当真实开发矩阵。
 日志保存在本地`experiments/runs/domain_transfer_implementation_20260916/`；
-[结构化验收记录](../../frozen/domain_transfer_20260916_validation/acceptance.json)绑定退出码、XML/log摘要与源码快照。
+[结构化验收记录](../assets/repository_audit_20261019/docs_historical_index.json)绑定退出码、XML/log摘要与源码快照。
 
 尚待后续的范围明确保留：P1-G的source/target EA拟合与评估联动、真实开发矩阵、
 依据结果决定的episodic训练/电极集合编码/基础模型、新成人确认。没有实现蒸馏，也没有生成真实新模型成绩。

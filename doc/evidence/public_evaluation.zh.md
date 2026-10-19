@@ -1,5 +1,20 @@
 # 公共数据评估与配对分析
 
+## 历史公共程序的计数与结果归属
+
+本节从原run的JSON与原冻结manifest派生口径，原结果和日期页保持原字节。具体输入SHA、字段和复算值见[计量凭证](../assets/repository_audit_20261019/docs_result_semantics.json)。此次只读元数据，无新EEG、fit或模型重放；所有下列结果都是公共开发证据。
+
+| 原程序 | 请求与执行单位 | 可据此陈述的结果 |
+|---|---|---|
+| BNCI连续八人，`system_implementation_20261004/bnci_continuous_real_v2` | 16个subject×K模型、464个requested decisions，448评分、16不完整 | K200/K800 participant-macro `hit@all`为0.4051724/0.5905172；覆盖均28/29。448是decision级原重放次数，不是448个模型 |
+| 十二库，`unified12_20260918` | 48目标分片、3632保存模型、4082逻辑评分；去重3166单元、916重复baseline行 | 原48分片全部在`rtol=atol=1e-4`内通过，最大绝对预测差0.0003662109375；不称逐bit一致 |
+| P1/P2，`domain_transfer_cloud_20260916` | 45源；15684 NN＋915 LDA＝16599次物理目标拟合；12939复用、2700 zero-shot；32238评分行 | ordinary/family等名单重叠，评分行、保存模型副本和独立参与者分别计数，不能相加解释为新受试者 |
+| 统一精简矩阵，`unified_cloud_20260916` | 6138 NN＋246 LDA＋4416复用＋1350 zero-shot＝12150逻辑评分 | 总执行器3126.7849秒（52.113分钟）包含source阶段；与09-07的`training_chain_compact512_20260907`分别保来源 |
+
+0.7057075是`training_chain_auto_20260907`的K200 full-fine AUC，其同程序scratch为0.6563828；十二库K200 A0Q0为0.6995。09-07 compact512也出现0.6995，但它们的程序、输入、source和评价名单不同，数值接近不构成结果复用关系。
+
+十二库原收据报告归档11,990,531,333 B＝11.1671 GiB（约11.17 GiB）、19779成员及原SHA；此次核对本地汇总、原重放脚本容差和该云端收据，没有取得大归档并独立重跑其3632模型。BNCI原runner中有逐decision的重放数组相等断言，单独`saved_reload_scores_exact`布尔只表示对应行具有NLL；原字段不能替代独立load/score验证。以上边界不改变原执行身份。
+
 ## 旧NN跨研究适配的完整诊断
 
 13人×每人63个原请求×K200/800/2000×四方法共9828评分格完整终态；每方法每K分母819，814项有概率、5项原clock不完整计未命中，无tie或拟合失败。H1原504格按原future身份引用，其余9324格新执行；原parent和selected-inner回放完成，未重训source。

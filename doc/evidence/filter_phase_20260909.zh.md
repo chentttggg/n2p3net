@@ -1,5 +1,8 @@
 # 单向与双向滤波：科研裁决及实施
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 本文件保存首轮无QC比较。后续按用户确定的双向方向完成个人默认与QC迁移，当前实现见
 [双向滤波与QC联合优化](bidirectional_qc_20260909.zh.md)，以下首轮裁决不覆盖后续默认。
 
@@ -79,7 +82,7 @@ legacy边缘RMSE为0.000017/0.000140/0.001003/0.020215μV，reflect为
 0.049812/0.004801/0.000015/0.051131μV。新策略在这一组位置并非普遍更好，不能按padding长短选优。
 单向因已知信号的前史为零，本组边缘差为零，不是任意真实信号的无边缘误差声明。
 
-![幅频、ERP及未来阶跃反例](../../experiments/runs/filter_phase_20260909_final/filter_phase.png)
+[图像历史定位：幅频、ERP及未来阶跃反例](../assets/repository_audit_20261019/docs_historical_index.json)
 
 附加反例覆盖非零first_samp下的断点隔离、1/2/32/250/5000点常量短段、EOG独立性、旧
 SciPy波形逐位重放、无效策略拒绝、未来依赖、不可用epoch的NaN账本及缓存重载。

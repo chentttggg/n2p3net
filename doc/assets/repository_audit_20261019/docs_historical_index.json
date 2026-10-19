@@ -1,0 +1,784 @@
+{
+  "schema": "historical_document_and_locator_index/1",
+  "payload_local_only": {
+    "artifact_key": "repository-audit-docs/HISTORICAL_SOURCE_DOCS.zip",
+    "sha256": "64c231daede0d8503ccba56f4cd2b905cc3db45c4600013e68b3a48363374998",
+    "bytes": 53349,
+    "all_members_verified": true
+  },
+  "previously_unindexed_original_documents": [
+    {
+      "original_path": "doc/evidence/e2_prior_scale_20261006.zh.md",
+      "member": "doc/evidence/e2_prior_scale_20261006.zh.md",
+      "sha256": "23ae34c4551a12210816bafe33a658e1284f60da0445b2c4e0b34d3d61a637de",
+      "bytes": 11600,
+      "status": "historical_original_not_current_rule"
+    },
+    {
+      "original_path": "doc/evidence/algorithm_chain_repairs_20260916.zh.md",
+      "member": "doc/evidence/algorithm_chain_repairs_20260916.zh.md",
+      "sha256": "09e1973596ba8968d7137e986d20138c64ac2e3936bf04f4a84782958c9c2218",
+      "bytes": 10017,
+      "status": "historical_original_not_current_rule"
+    },
+    {
+      "original_path": "doc/evidence/brainsync_transport_unification_20260917.zh.md",
+      "member": "doc/evidence/brainsync_transport_unification_20260917.zh.md",
+      "sha256": "580d84cd56765a0d4185788a337bdfc2c49265e76ebbea66200f16e79871ca83",
+      "bytes": 5729,
+      "status": "historical_original_not_current_rule"
+    },
+    {
+      "original_path": "doc/evidence/code_quality_audit_20260908.zh.md",
+      "member": "doc/evidence/code_quality_audit_20260908.zh.md",
+      "sha256": "76614d778e9fd378ef96f60cc912607304220efd8c283672342cc4552a9d5777",
+      "bytes": 18687,
+      "status": "historical_original_not_current_rule"
+    },
+    {
+      "original_path": "doc/evidence/source_modules_20260918.zh.md",
+      "member": "doc/evidence/source_modules_20260918.zh.md",
+      "sha256": "9a3d698daff4051df6dc317eb928eab2397b107e425674f7124ac9df8590444a",
+      "bytes": 6512,
+      "status": "historical_original_not_current_rule"
+    },
+    {
+      "original_path": "doc/evidence/unified_budget_execution_20260916.zh.md",
+      "member": "doc/evidence/unified_budget_execution_20260916.zh.md",
+      "sha256": "dc450f503ce456580e65f864896f19fb6f1a9f498c0d2db1671eea2cb075c716",
+      "bytes": 7457,
+      "status": "historical_original_not_current_rule"
+    },
+    {
+      "original_path": "doc/evidence/unified_compact_training_20260916.zh.md",
+      "member": "doc/evidence/unified_compact_training_20260916.zh.md",
+      "sha256": "c62fd72d74cc2baea509a64fa0f396c9abddc1cb59b38d4c1c7a1538b02088a9",
+      "bytes": 19171,
+      "status": "historical_original_not_current_rule"
+    },
+    {
+      "original_path": "doc/evidence/unified_model_implementation_20260916.zh.md",
+      "member": "doc/evidence/unified_model_implementation_20260916.zh.md",
+      "sha256": "8648ab885ab3bdce7db64e64fe98b18b0351c1a2bc45db5fa5670bca001f9b65",
+      "bytes": 14982,
+      "status": "historical_original_not_current_rule"
+    }
+  ],
+  "historical_references": [
+    {
+      "source": "doc/evidence/bidirectional_qc_20260909.zh.md",
+      "original_target": "../../experiments/runs/bidirectional_qc_20260909/signal_audit/drift_and_erp.png",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/bidirectional_qc_20260909/signal_audit/drift_and_erp.png",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "a37a32219f4be5f7e8b80c6bb8a54a3cfb82f14473e5b8efd13c9ba7f014611c",
+      "bytes": 104454,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_auc_cause_audit_20260908.zh.md",
+      "original_target": "../../experiments/runs/brainsync_recovery_20260908/result_audit/review.zh.md",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_recovery_20260908/result_audit/review.zh.md",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "a8207f8c22c0e130f086562f8f141301206083dc34574faa9b3b8173f13dd770",
+      "bytes": 7358,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_auc_cause_audit_20260908.zh.md",
+      "original_target": "../../experiments/runs/brainsync_cause_audit_20260908/diagnosis.png",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_cause_audit_20260908/diagnosis.png",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "9db04e3595a0349b64cc4ba338184e2123439e55bedc2235c641b436462b92ab",
+      "bytes": 224840,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_input_replay_20260909.zh.md",
+      "original_target": "../../frozen/brainsync_input_replay_20260909_validation/manifest.json",
+      "root_key": "backend_primary",
+      "relative_path": "frozen/brainsync_input_replay_20260909_validation/manifest.json",
+      "current_payload_present": false,
+      "original_document_rewritten": false,
+      "status": "original_target_not_found_do_not_claim_recoverability"
+    },
+    {
+      "source": "doc/evidence/brainsync_input_replay_20260909.zh.md",
+      "original_target": "../../frozen/brainsync_input_replay_20260909_before/manifest.json",
+      "root_key": "backend_primary",
+      "relative_path": "frozen/brainsync_input_replay_20260909_before/manifest.json",
+      "current_payload_present": false,
+      "original_document_rewritten": false,
+      "status": "original_target_not_found_do_not_claim_recoverability"
+    },
+    {
+      "source": "doc/evidence/brainsync_recovery_20260908.zh.md",
+      "original_target": "../../experiments/runs/brainsync_recovery_20260908/result_audit/review.zh.md",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_recovery_20260908/result_audit/review.zh.md",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "a8207f8c22c0e130f086562f8f141301206083dc34574faa9b3b8173f13dd770",
+      "bytes": 7358,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_recovery_20260908.zh.md",
+      "original_target": "../../experiments/runs/brainsync_recovery_20260908/deterministic_replay/analysis.json",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_recovery_20260908/deterministic_replay/analysis.json",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "a1b97a9e78bdb911c84cb7c5e384487a8eec69d3034b06db6d394ed2dda25095",
+      "bytes": 10754,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_recovery_20260908.zh.md",
+      "original_target": "../../experiments/runs/brainsync_recovery_20260908/fourth_session_check/result.json",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_recovery_20260908/fourth_session_check/result.json",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "569dc9c8bde0787cdf002a980aead857b9b4f900d8896a57e25aaac5ca448ef4",
+      "bytes": 2522,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_release_20260920.zh.md",
+      "original_target": "../../../../BCI/BrainSync_Release_20260920/release-manifest.json",
+      "root_key": "backend_primary",
+      "relative_path": null,
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "22b8de1091dc112f758039bbbc512edb4ec3e64835cfbe572a4c8349aa343d3f",
+      "bytes": 92746,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_signal_quality_design_20260907.zh.md",
+      "original_target": "../../experiments/runs/brainsync_quality_research_20260907/literature_filter.md",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_quality_research_20260907/literature_filter.md",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "0f39b81773b0b0ae9a27b03792eb6602d6af4eaae4767ef026c76907926374ff",
+      "bytes": 10513,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_signal_quality_design_20260907.zh.md",
+      "original_target": "../../experiments/runs/brainsync_quality_research_20260907/literature_clock.md",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_quality_research_20260907/literature_clock.md",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "8ecbc7cab19e721eda89a50c4f3f4900ea654f377a076f3a4e66b0fd42c10aa2",
+      "bytes": 14513,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_signal_quality_design_20260907.zh.md",
+      "original_target": "../../experiments/runs/brainsync_quality_research_20260907/literature_qc_reference.md",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_quality_research_20260907/literature_qc_reference.md",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "766b448f6704b3c49ad1c374f8af7e3caf8c440d1e8661ee51018db04e7bf049",
+      "bytes": 15907,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_signal_quality_design_20260907.zh.md",
+      "original_target": "../../experiments/runs/brainsync_quality_research_20260907/counterexamples.json",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_quality_research_20260907/counterexamples.json",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "9d2008292acc779924336fa3c3a43b29ce56b7e323c899ba783570013a5d5df4",
+      "bytes": 7068,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_signal_quality_design_20260907.zh.md",
+      "original_target": "../../experiments/runs/brainsync_quality_research_20260907/counterexamples.png",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_quality_research_20260907/counterexamples.png",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "a16f25cea9216af0a3eb16e95d39318ce0282e6634eba1477b77f54e621958b1",
+      "bytes": 145281,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_transient_quality_20260907.zh.md",
+      "original_target": "../../experiments/runs/brainsync_p001_20260907/withdrawal.json",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_p001_20260907/withdrawal.json",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "dea07ff1b34af4a7530adc2724c51cac2f8fbc805b1b1dcdbb77cc1611824e3c",
+      "bytes": 1246,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_transient_quality_20260907.zh.md",
+      "original_target": "../../experiments/runs/brainsync_quality_20260907/session_disposition.json",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_quality_20260907/session_disposition.json",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "d8d985521e7429651b051f7f5854a8c46c915949e08b61a997b492c03f5f718e",
+      "bytes": 1716,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_transient_quality_20260907.zh.md",
+      "original_target": "../../experiments/runs/brainsync_quality_20260907/P001_20260903_173947_01_transients.png",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_quality_20260907/P001_20260903_173947_01_transients.png",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "06d920f540ec3289987454b9da452d48ddeae3ac513f036de29d36d7c01aab10",
+      "bytes": 259170,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_transient_quality_20260907.zh.md",
+      "original_target": "../../experiments/runs/brainsync_quality_20260907/startup_step_counterexample.json",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_quality_20260907/startup_step_counterexample.json",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "993233ecc5185b5ca795d0df3414ad1214d6841992848971e13e8dbb9c489f8f",
+      "bytes": 950,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_transient_quality_20260907.zh.md",
+      "original_target": "../../experiments/runs/brainsync_quality_20260907/P001_20260907_150258_01_transients.png",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_quality_20260907/P001_20260907_150258_01_transients.png",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "a3f36e2610ba2e75afd3fd898f616628c891887a7c092d76e4f675449d5340c9",
+      "bytes": 325972,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_transient_quality_20260907.zh.md",
+      "original_target": "../../experiments/runs/brainsync_quality_20260907/P001_20260907_150258_01.png",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_quality_20260907/P001_20260907_150258_01.png",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "3b3b93048cf11b9aed7e57fceeb9187ddf15736a0e4b70d92e259fbeacd358f8",
+      "bytes": 466932,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_transient_quality_20260907.zh.md",
+      "original_target": "../../experiments/runs/brainsync_quality_20260907/signal_diagnosis.json",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_quality_20260907/signal_diagnosis.json",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "6df4bf5b0f6c522be74b2f00d0275ed3dd99fd2956ea4a04c74dd0d62050e0ad",
+      "bytes": 88361,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/brainsync_transient_quality_20260907.zh.md",
+      "original_target": "../../experiments/runs/brainsync_quality_20260907/localized_transients.json",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/brainsync_quality_20260907/localized_transients.json",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "2332a182524b79b47921be05ec8f9a94fd392087bc53097d90f9050a74ed9e04",
+      "bytes": 7853,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/completed_result_admission_20260909.zh.md",
+      "original_target": "../../frozen/completed_result_admission_20260909_validation/manifest.json",
+      "root_key": "backend_primary",
+      "relative_path": "frozen/completed_result_admission_20260909_validation/manifest.json",
+      "current_payload_present": false,
+      "original_document_rewritten": false,
+      "status": "original_target_not_found_do_not_claim_recoverability"
+    },
+    {
+      "source": "doc/evidence/completed_result_admission_20260909.zh.md",
+      "original_target": "../../frozen/completed_result_admission_20260909_before/manifest.json",
+      "root_key": "backend_primary",
+      "relative_path": "frozen/completed_result_admission_20260909_before/manifest.json",
+      "current_payload_present": false,
+      "original_document_rewritten": false,
+      "status": "original_target_not_found_do_not_claim_recoverability"
+    },
+    {
+      "source": "doc/evidence/dataset_expansion_audit_20260908.zh.md",
+      "original_target": "../../experiments/runs/dataset_expansion_audit_20260908/additional_downloads.json",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/dataset_expansion_audit_20260908/additional_downloads.json",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "8cdcccefb7a5e43bea9b398fc44f6fd51ed6b4736f7df4c991ca31792ea89fae",
+      "bytes": 1723864,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/dataset_expansion_audit_20260908.zh.md",
+      "original_target": "../../experiments/runs/dataset_expansion_audit_20260908/epfl_download.json",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/dataset_expansion_audit_20260908/epfl_download.json",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "120d60d30789aa265cd50fc41c7e558f466d564592b397ae303fa9b1e12f74e8",
+      "bytes": 15156,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/dataset_expansion_audit_20260908.zh.md",
+      "original_target": "../../experiments/runs/dataset_expansion_audit_20260908/audit.py",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/dataset_expansion_audit_20260908/audit.py",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "e58252edc4327ee74706c7bb2df0b020e47457410a0b8b9fa029b86b218a14f4",
+      "bytes": 12916,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/dataset_expansion_audit_20260908.zh.md",
+      "original_target": "../../experiments/runs/dataset_expansion_audit_20260908/audit.json",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/dataset_expansion_audit_20260908/audit.json",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "16ac891aa3e93d3c6b767a1665983628067f7f6dc514462291a182a46b816d0d",
+      "bytes": 410238,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/domain_transfer_implementation_20260916.zh.md",
+      "original_target": "../../frozen/domain_transfer_20260915_before/manifest.json",
+      "root_key": "backend_primary",
+      "relative_path": "frozen/domain_transfer_20260915_before/manifest.json",
+      "current_payload_present": false,
+      "original_document_rewritten": false,
+      "status": "original_target_not_found_do_not_claim_recoverability"
+    },
+    {
+      "source": "doc/evidence/domain_transfer_implementation_20260916.zh.md",
+      "original_target": "../../frozen/domain_transfer_20260916_validation/acceptance.json",
+      "root_key": "backend_primary",
+      "relative_path": "frozen/domain_transfer_20260916_validation/acceptance.json",
+      "current_payload_present": false,
+      "original_document_rewritten": false,
+      "status": "original_target_not_found_do_not_claim_recoverability"
+    },
+    {
+      "source": "doc/evidence/domain_transfer_plan_20260915.zh.md",
+      "original_target": "../../frozen/domain_transfer_20260915_before/manifest.json",
+      "root_key": "backend_primary",
+      "relative_path": "frozen/domain_transfer_20260915_before/manifest.json",
+      "current_payload_present": false,
+      "original_document_rewritten": false,
+      "status": "original_target_not_found_do_not_claim_recoverability"
+    },
+    {
+      "source": "doc/evidence/filter_phase_20260909.zh.md",
+      "original_target": "../../experiments/runs/filter_phase_20260909_final/filter_phase.png",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/filter_phase_20260909_final/filter_phase.png",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "ccc4d0368a3ca7a9cb2fc561930d7be9389e49e28da638b86306de5caad5aaa6",
+      "bytes": 182180,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/four_study_results_20260907.zh.md",
+      "original_target": "../../experiments/runs/four_dataset_20260907/analysis/detailed/report.zh.md",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/four_dataset_20260907/analysis/detailed/report.zh.md",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "77c7b0219a4b68d52d0ddf900d9ea556953d72c6bd050fe55507ae71cf65f73f",
+      "bytes": 31212,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/four_study_results_20260907.zh.md",
+      "original_target": "../../experiments/runs/four_dataset_20260907/analysis/integrity.json",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/four_dataset_20260907/analysis/integrity.json",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "083c7c02168219290b1841b2f8f94bdc18a21e955a4818138f12ebea10bd3112",
+      "bytes": 959,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/four_study_results_20260907.zh.md",
+      "original_target": "../../experiments/runs/four_dataset_20260907/analyze_results.py",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/four_dataset_20260907/analyze_results.py",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "fbe624b867fc28ecef64b2306f194aa2e2f95de9ae6534ce622321549d68e58c",
+      "bytes": 13434,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/four_study_results_20260907.zh.md",
+      "original_target": "../../experiments/runs/four_dataset_20260907/analysis/budget_auc.png",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/four_dataset_20260907/analysis/budget_auc.png",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "987833a72669b372c0a754ba22cf82b0f3df30645c625f24d1a8fc49428baac1",
+      "bytes": 184577,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/four_study_results_20260907.zh.md",
+      "original_target": "../../experiments/runs/four_dataset_20260907/analysis/paired_transfer.png",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/four_dataset_20260907/analysis/paired_transfer.png",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "9c1eabfe97a9f00821d3148523e3dce7c364eff86a6295ac7eeb64a270046f2f",
+      "bytes": 113520,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/four_study_results_20260907.zh.md",
+      "original_target": "../../experiments/runs/four_dataset_20260907/analysis",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/four_dataset_20260907/analysis",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "status": "local_directory_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/four_study_standard_budgets_20260907.zh.md",
+      "original_target": "../../experiments/runs/four_dataset_20260907/analysis_c/paired_transfer.png",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/four_dataset_20260907/analysis_c/paired_transfer.png",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "eae0e40deae6c1525b9ac911a60517023c123cee0ef72ea3113af8afc525235b",
+      "bytes": 166210,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/input_contract_review_20260922.zh.md",
+      "original_target": "../../experiments/results/input_window_audit_20260922/raw_timing.json",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/results/input_window_audit_20260922/raw_timing.json",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "6642176c33e64391ca4546b94edfa0d6fb0efeb191e5328193857c5b4d4a280a",
+      "bytes": 110120,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/preprocessing_contract_research_20260915.zh.md",
+      "original_target": "../../frozen/preprocessing_contract_research_20260915/manifest.json",
+      "root_key": "backend_primary",
+      "relative_path": "frozen/preprocessing_contract_research_20260915/manifest.json",
+      "current_payload_present": false,
+      "original_document_rewritten": false,
+      "status": "original_target_not_found_do_not_claim_recoverability"
+    },
+    {
+      "source": "doc/evidence/source_eog_training_20260909.zh.md",
+      "original_target": "../../experiments/runs/source_eog_20260909/source_models/README.md",
+      "root_key": "backend_primary",
+      "relative_path": "experiments/runs/source_eog_20260909/source_models/README.md",
+      "current_payload_present": true,
+      "original_document_rewritten": false,
+      "sha256": "c95c750d39ec64809c3188d49355760bd30f0afcb5f0df5dbaeaa2f3a1c45060",
+      "bytes": 1456,
+      "status": "local_payload_locator_not_clone_content"
+    },
+    {
+      "source": "doc/evidence/unified_model_plan_20260916.zh.md",
+      "original_target": "../../frozen/unified_model_plan_20260916_before/manifest.json",
+      "root_key": "backend_primary",
+      "relative_path": "frozen/unified_model_plan_20260916_before/manifest.json",
+      "current_payload_present": false,
+      "original_document_rewritten": false,
+      "status": "original_target_not_found_do_not_claim_recoverability"
+    },
+    {
+      "source": "doc/evidence/unified_optimization_20260929.zh.md",
+      "original_target": "../../tmp/counterexample_verification_20260929.py",
+      "root_key": "backend_primary",
+      "relative_path": "tmp/counterexample_verification_20260929.py",
+      "current_payload_present": false,
+      "original_document_rewritten": false,
+      "status": "original_target_not_found_do_not_claim_recoverability"
+    }
+  ],
+  "remaining_unlocated_original_targets_are_not_new_validation": true,
+  "unlocated_original_target_search": {
+    "all_refs_git_history": [
+      {
+        "path": "frozen/brainsync_input_replay_20260909_before/manifest.json",
+        "command": "git log --all --format=%H -- frozen/brainsync_input_replay_20260909_before/manifest.json",
+        "commits": [],
+        "exit_code": 0
+      },
+      {
+        "path": "frozen/brainsync_input_replay_20260909_validation/manifest.json",
+        "command": "git log --all --format=%H -- frozen/brainsync_input_replay_20260909_validation/manifest.json",
+        "commits": [],
+        "exit_code": 0
+      },
+      {
+        "path": "frozen/completed_result_admission_20260909_before/manifest.json",
+        "command": "git log --all --format=%H -- frozen/completed_result_admission_20260909_before/manifest.json",
+        "commits": [],
+        "exit_code": 0
+      },
+      {
+        "path": "frozen/completed_result_admission_20260909_validation/manifest.json",
+        "command": "git log --all --format=%H -- frozen/completed_result_admission_20260909_validation/manifest.json",
+        "commits": [],
+        "exit_code": 0
+      },
+      {
+        "path": "frozen/domain_transfer_20260915_before/manifest.json",
+        "command": "git log --all --format=%H -- frozen/domain_transfer_20260915_before/manifest.json",
+        "commits": [],
+        "exit_code": 0
+      },
+      {
+        "path": "frozen/domain_transfer_20260916_validation/acceptance.json",
+        "command": "git log --all --format=%H -- frozen/domain_transfer_20260916_validation/acceptance.json",
+        "commits": [],
+        "exit_code": 0
+      },
+      {
+        "path": "frozen/preprocessing_contract_research_20260915/manifest.json",
+        "command": "git log --all --format=%H -- frozen/preprocessing_contract_research_20260915/manifest.json",
+        "commits": [],
+        "exit_code": 0
+      },
+      {
+        "path": "frozen/unified_model_plan_20260916_before/manifest.json",
+        "command": "git log --all --format=%H -- frozen/unified_model_plan_20260916_before/manifest.json",
+        "commits": [],
+        "exit_code": 0
+      },
+      {
+        "path": "tmp/counterexample_verification_20260929.py",
+        "command": "git log --all --format=%H -- tmp/counterexample_verification_20260929.py",
+        "commits": [],
+        "exit_code": 0
+      }
+    ],
+    "archive_metadata_tables_scanned": 288,
+    "archive_metadata_hits": 0,
+    "larger_compressed_payloads_not_scanned": [],
+    "scope": "primary frozen archives plus guidance-lifecycle and source-response-states delivery archives",
+    "additional_compressed_archive_member_search": {
+      "record": "docs_additional_archive_search.json",
+      "members": 222,
+      "concrete_targets": 9,
+      "hits": 0
+    }
+  },
+  "historical_navigation_copies": [
+    {
+      "path": "doc/evidence/bidirectional_qc_20260909.zh.md",
+      "original_member": "doc/evidence/bidirectional_qc_20260909.zh.md",
+      "original_sha256": "e87fd438abde888072f3a830e1aa87c5a346113e8b30e4c06026d01d41bb3547",
+      "original_bytes": 10954,
+      "navigation_copy_sha256": "0a428a6de6a5ecb27990e11f8b68459e189c122c2ec4d62776d1a48924fb8d42",
+      "changed_href_count": 1,
+      "result_or_producer_relabelled": false,
+      "image_references_converted_to_named_locator_links": 1
+    },
+    {
+      "path": "doc/evidence/brainsync_auc_cause_audit_20260908.zh.md",
+      "original_member": "doc/evidence/brainsync_auc_cause_audit_20260908.zh.md",
+      "original_sha256": "61622388c5c3c9fd6aee5878ac14e161d7d526fae8a924de3898088e233bebd8",
+      "original_bytes": 18728,
+      "navigation_copy_sha256": "c96102f7b365dfb9a9d92022f677fab7eb01cb440b0aed5f48481e9d22b38bf4",
+      "changed_href_count": 2,
+      "result_or_producer_relabelled": false,
+      "image_references_converted_to_named_locator_links": 1
+    },
+    {
+      "path": "doc/evidence/brainsync_input_replay_20260909.zh.md",
+      "original_member": "doc/evidence/brainsync_input_replay_20260909.zh.md",
+      "original_sha256": "54234fe0942870aa061e069118ed7b0dccfa917e895360ad149ceac191b8a47f",
+      "original_bytes": 5601,
+      "navigation_copy_sha256": "6e13157e41c910837ebbe86934d094e6bdd825da454b19357981f051118259b1",
+      "changed_href_count": 2,
+      "result_or_producer_relabelled": false
+    },
+    {
+      "path": "doc/evidence/brainsync_recovery_20260908.zh.md",
+      "original_member": "doc/evidence/brainsync_recovery_20260908.zh.md",
+      "original_sha256": "b71e9ba042576e4033942e988387b99ceb9096a2b80e47f6cd1c87e72ed38c56",
+      "original_bytes": 15505,
+      "navigation_copy_sha256": "ae0392069af1db68526f0507a8aa0f138e31ef5d938874b5cb6682bce826003f",
+      "changed_href_count": 3,
+      "result_or_producer_relabelled": false
+    },
+    {
+      "path": "doc/evidence/brainsync_release_20260920.zh.md",
+      "original_member": "doc/evidence/brainsync_release_20260920.zh.md",
+      "original_sha256": "9cc7c5c564ca845ba6f57e417fac4747a84e080916de383297bbc5ceb5561d79",
+      "original_bytes": 3500,
+      "navigation_copy_sha256": "5f66402e18d355b4d7f5b90e66371f29cb7c82e02ba6e366f4d7dac48599ce7a",
+      "changed_href_count": 1,
+      "result_or_producer_relabelled": false
+    },
+    {
+      "path": "doc/evidence/brainsync_signal_quality_design_20260907.zh.md",
+      "original_member": "doc/evidence/brainsync_signal_quality_design_20260907.zh.md",
+      "original_sha256": "054e663ff1b7b185e065e6488aae69dc46e17a441e139c703b47c809711ae73e",
+      "original_bytes": 21051,
+      "navigation_copy_sha256": "60eb946dc88a7b52f9d531c30ba207585143e7d724dab4e169bc31109003e5ce",
+      "changed_href_count": 5,
+      "result_or_producer_relabelled": false
+    },
+    {
+      "path": "doc/evidence/brainsync_transient_quality_20260907.zh.md",
+      "original_member": "doc/evidence/brainsync_transient_quality_20260907.zh.md",
+      "original_sha256": "6b36226adb8bbb396c0bd934fb49cb5030629f02ba2aff60726292873384b7c4",
+      "original_bytes": 7463,
+      "navigation_copy_sha256": "011c5651a68137ac7f8d5e0edc7d2ac0c4bb4b56f4dbf81655274545bf5ee37d",
+      "changed_href_count": 8,
+      "result_or_producer_relabelled": false
+    },
+    {
+      "path": "doc/evidence/completed_result_admission_20260909.zh.md",
+      "original_member": "doc/evidence/completed_result_admission_20260909.zh.md",
+      "original_sha256": "aa90b0f0cb8c2cd30c286dfab8bf18a68810cdd7791ace1b240a345fb9a75505",
+      "original_bytes": 5346,
+      "navigation_copy_sha256": "374819ea7978883687b5b019efb96064a68339cd398a98d03dbfe27d7d274f8e",
+      "changed_href_count": 2,
+      "result_or_producer_relabelled": false
+    },
+    {
+      "path": "doc/evidence/dataset_expansion_audit_20260908.zh.md",
+      "original_member": "doc/evidence/dataset_expansion_audit_20260908.zh.md",
+      "original_sha256": "cfdaf4adc7848a01e7074abcb198f585d5d177863bbcc4b37f796941a1e768a4",
+      "original_bytes": 24487,
+      "navigation_copy_sha256": "ba40a077e3f94e7838faf463019000416cfa6a0d566f1e309f61869a4e480c54",
+      "changed_href_count": 4,
+      "result_or_producer_relabelled": false
+    },
+    {
+      "path": "doc/evidence/domain_transfer_implementation_20260916.zh.md",
+      "original_member": "doc/evidence/domain_transfer_implementation_20260916.zh.md",
+      "original_sha256": "fc6414352e7ca8edb6e68de6dc9912464e78a98b8bf84f022e6cd5b18ce2b54c",
+      "original_bytes": 9195,
+      "navigation_copy_sha256": "f47f41eb6e4e3ee7a7ee7c3f3f0c10bb11933fac47a0882ac35080081bee026b",
+      "changed_href_count": 2,
+      "result_or_producer_relabelled": false
+    },
+    {
+      "path": "doc/evidence/domain_transfer_plan_20260915.zh.md",
+      "original_member": "doc/evidence/domain_transfer_plan_20260915.zh.md",
+      "original_sha256": "cde45b010fde2e3c7ed220bda3bdd71e24b54795680faa74d56d158548fbc503",
+      "original_bytes": 34522,
+      "navigation_copy_sha256": "d7dfe9ad50223a09ed5e25eca5ef24e5dee2385b8faf40bc2a771c202744d560",
+      "changed_href_count": 1,
+      "result_or_producer_relabelled": false
+    },
+    {
+      "path": "doc/evidence/filter_phase_20260909.zh.md",
+      "original_member": "doc/evidence/filter_phase_20260909.zh.md",
+      "original_sha256": "d05219583834daa0ca40b5b43c0c4b42723ffebc6bac546023cba75dc99956cf",
+      "original_bytes": 11094,
+      "navigation_copy_sha256": "f474e834625c9518421c78ef884671d3d763048d886cb435046b85a172f0da92",
+      "changed_href_count": 1,
+      "result_or_producer_relabelled": false,
+      "image_references_converted_to_named_locator_links": 1
+    },
+    {
+      "path": "doc/evidence/four_study_results_20260907.zh.md",
+      "original_member": "doc/evidence/four_study_results_20260907.zh.md",
+      "original_sha256": "bb33c3bf1ff09f90c2812ba7cb222a2b4f388385b011e0bafed0d7006aaa756d",
+      "original_bytes": 8284,
+      "navigation_copy_sha256": "dc806b72aedfdd46fd641cfefda58f975a1c0b67746b51c05ff0ed10a2fa4642",
+      "changed_href_count": 6,
+      "result_or_producer_relabelled": false,
+      "image_references_converted_to_named_locator_links": 2
+    },
+    {
+      "path": "doc/evidence/four_study_standard_budgets_20260907.zh.md",
+      "original_member": "doc/evidence/four_study_standard_budgets_20260907.zh.md",
+      "original_sha256": "8e298db5a5be18875231fe378f1e5dc5224a9fdf144cdc6e9b48bc3f6eba6033",
+      "original_bytes": 6388,
+      "navigation_copy_sha256": "41b988ee74c95fad72b729da6ea9f4b094dedfe8497f4a21ca1b9478a94901fe",
+      "changed_href_count": 1,
+      "result_or_producer_relabelled": false,
+      "image_references_converted_to_named_locator_links": 1
+    },
+    {
+      "path": "doc/evidence/input_contract_review_20260922.zh.md",
+      "original_member": "doc/evidence/input_contract_review_20260922.zh.md",
+      "original_sha256": "73bb41de7d479bc0b45aeb89578d0e8a918df9d26cf3bc118b43cc3c44e103be",
+      "original_bytes": 9101,
+      "navigation_copy_sha256": "eec15a64e7190cade46726d1f866730a5c8b98a35f7515061dcd704036fb166f",
+      "changed_href_count": 1,
+      "result_or_producer_relabelled": false
+    },
+    {
+      "path": "doc/evidence/preprocessing_contract_research_20260915.zh.md",
+      "original_member": "doc/evidence/preprocessing_contract_research_20260915.zh.md",
+      "original_sha256": "f717ad0c2ab3d3fcb8c3dad4be749452c7232287e6ce6d24a6201d0733ac7201",
+      "original_bytes": 19999,
+      "navigation_copy_sha256": "b6bf8558a4bc33ab21f5b712a73d9f2d10330daaee85f0856d2721aa7c04580d",
+      "changed_href_count": 1,
+      "result_or_producer_relabelled": false
+    },
+    {
+      "path": "doc/evidence/source_eog_training_20260909.zh.md",
+      "original_member": "doc/evidence/source_eog_training_20260909.zh.md",
+      "original_sha256": "81d7335676db7774089cbdacd1975f2e46f3763b4e0e4d88581bc1488e8c6095",
+      "original_bytes": 18343,
+      "navigation_copy_sha256": "32bd6e39c50f49cd0c79d836ee49536acb00df5804e75e9c801f741b30a99807",
+      "changed_href_count": 1,
+      "result_or_producer_relabelled": false
+    },
+    {
+      "path": "doc/evidence/unified_model_plan_20260916.zh.md",
+      "original_member": "doc/evidence/unified_model_plan_20260916.zh.md",
+      "original_sha256": "a8c1f96134587182ece7df201ef43b4708b601e8483c8ddd2d6e05519a0880d3",
+      "original_bytes": 52248,
+      "navigation_copy_sha256": "3826fc8185953d6240ca15a7ddc9e9c6b41c9baa254f3158a189a6b741ce277f",
+      "changed_href_count": 1,
+      "result_or_producer_relabelled": false
+    },
+    {
+      "path": "doc/evidence/unified_optimization_20260929.zh.md",
+      "original_member": "doc/evidence/unified_optimization_20260929.zh.md",
+      "original_sha256": "e218d0f1268662bf9d2bd60f68adc0f2ee6fd62f98d5af5b240e318604dfc795",
+      "original_bytes": 24484,
+      "navigation_copy_sha256": "927420434174103355449dbdee03bd082d986964e0a09386608f24b67492ba44",
+      "changed_href_count": 1,
+      "result_or_producer_relabelled": false
+    }
+  ],
+  "historical_navigation_originals": {
+    "artifact_key": "repository-audit-docs/HISTORICAL_LINK_ORIGINALS.zip",
+    "sha256": "f4b6ff4b6f10dc2d189550aa8aa8bc024f97c7fee84c42c75a1dfe92a6124b66",
+    "bytes": 167067,
+    "all_members_verified": true
+  }
+}

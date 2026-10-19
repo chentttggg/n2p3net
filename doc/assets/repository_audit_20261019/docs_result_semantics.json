@@ -1,0 +1,147 @@
+{
+  "schema": "original_public_results_semantics_view/1",
+  "original_receipts": [
+    {
+      "root_key": "backend_primary",
+      "path": "experiments/runs/system_implementation_20261004/bnci_continuous_real_v2/result.json",
+      "sha256": "868c4c7ee7a8934675debe70d3691152c052efdae76d75550492063020059f0d",
+      "bytes": 62597,
+      "original_rewritten": false
+    },
+    {
+      "root_key": "backend_primary",
+      "path": "experiments/runs/unified12_20260918/results/verification.json",
+      "sha256": "1c897f7f25cebc60f557894be405ca9b3470b4904986cf1df58fb51c10bcd7bd",
+      "bytes": 18233,
+      "original_rewritten": false
+    },
+    {
+      "root_key": "backend_primary",
+      "path": "experiments/runs/unified12_20260918/results/integrity_inventory.json",
+      "sha256": "258b9b1eae9932ef617ccde2318f7f725c8f3b3b59af2be61cb98aa708fb6231",
+      "bytes": 12772,
+      "original_rewritten": false
+    },
+    {
+      "root_key": "backend_primary",
+      "path": "experiments/runs/unified12_20260918/results/archive_receipt.json",
+      "sha256": "05cd462ac35bffbda2d9f6f645dbcee12ed77f7c2752543a76fec28e35175d59",
+      "bytes": 311,
+      "original_rewritten": false
+    },
+    {
+      "root_key": "backend_primary",
+      "path": "experiments/runs/unified12_20260918/verify_unified_results.py",
+      "sha256": "07a9fc60d428c1d5abd061963eb8193534ed4de3d8afc522a9f66176410eccc4",
+      "bytes": 8026,
+      "original_rewritten": false
+    },
+    {
+      "root_key": "backend_primary",
+      "path": "experiments/runs/training_chain_auto_20260907/completed_analysis/primary_metrics.json",
+      "sha256": "7cb3f127dc7af8d9a0f17f4eacc5d57e3d3eea682a5b6e538250060c4bd18479",
+      "bytes": 2638,
+      "original_rewritten": false
+    },
+    {
+      "root_key": "backend_primary",
+      "path": "experiments/runs/domain_transfer_cloud_20260916/completion.json",
+      "sha256": "e4045f41858b27eda4c667b33f58b7a44e70469089a398726727c0030febd4ee",
+      "bytes": 1471,
+      "original_rewritten": false
+    },
+    {
+      "root_key": "backend_primary",
+      "path": "experiments/runs/unified_cloud_20260916/analysis/integrity_inventory.json",
+      "sha256": "bb28ba71c1b77435742852e5f96b80b526fea9086b063a1c6dab413a86914efb",
+      "bytes": 72120,
+      "original_rewritten": false
+    },
+    {
+      "root_key": "backend_primary",
+      "path": "experiments/runs/unified_cloud_20260916/analysis/matrix_matrix.json",
+      "sha256": "a3a75fea0afe7071403f05488b8cee88a849d0a0b3a9e472be1933b0f540321a",
+      "bytes": 92749,
+      "original_rewritten": false
+    }
+  ],
+  "new_fits": 0,
+  "EEG_reads": 0,
+  "replay_runs": 0,
+  "BNCI_continuous": {
+    "run": "system_implementation_20261004/bnci_continuous_real_v2",
+    "model_cells": 16,
+    "requested_decisions": 464,
+    "scored_decisions": 448,
+    "incomplete_decisions": 16,
+    "participant_macro_hit_all": {
+      "200": 0.4051724137931034,
+      "800": 0.5905172413793104
+    },
+    "replay_scope": "original_runner_assert_array_equal_for_448_decisions_from_16_models",
+    "independent_rerun_here": false,
+    "saved_reload_scores_exact_field_is_alone_insufficient": true
+  },
+  "unified12": {
+    "run": "unified12_20260918",
+    "target_shards": 48,
+    "saved_models": 3632,
+    "logical_cells": 4082,
+    "unique_cells": 3166,
+    "duplicate_baseline_rows": 916,
+    "replay_tolerance": {
+      "atol": 0.0001,
+      "rtol": 0.0001
+    },
+    "maximum_absolute_prediction_difference": 0.0003662109375,
+    "archive_bytes": 11990531333,
+    "archive_GiB": 11.167052512057126,
+    "archive_sha256": "db3456fada03f6cc7177c225b822c4884aef4e2204c646218c029ef0bd99c790",
+    "archive_members_reported_by_original_receipt": 19779,
+    "local_archive_presence": "not_located_in_original_run_export",
+    "new_local_archive_hash_or_replay_verification": false
+  },
+  "training_chain_auto_20260907": {
+    "K": 200,
+    "arm": "full_fine",
+    "participant_macro_auc": 0.7057074933538198,
+    "is_unified12": false
+  },
+  "domain_transfer_cloud_20260916": {
+    "source_models": 45,
+    "cells": 32238,
+    "failed": 0,
+    "physical_nn_fits": 15684,
+    "physical_lda_fits": 915,
+    "reused_fits": 12939,
+    "zero_shot": 2700,
+    "physical_target_fits": 16599,
+    "overlapping_analysis_rosters_are_not_independent_participants": true
+  },
+  "unified_cloud_20260916": {
+    "logical_cells": 12150,
+    "fits": {
+      "neural": 6138,
+      "lda": 246,
+      "reused": 4416,
+      "zero_shot": 1350
+    },
+    "matrix_elapsed_seconds": 3126.7848796844482,
+    "includes_source_stage": true
+  },
+  "brainsync_release_20260920": {
+    "archive_manifest": "frozen/major_domain_transfer_20260920/manifest.json",
+    "member": "final_evidence/brainsync_release_manifest.json",
+    "member_sha256": "22b8de1091dc112f758039bbbc512edb4ec3e64835cfbe572a4c8349aa343d3f",
+    "payload_bytes_excluding_runtime": 127417982,
+    "payload_MiB_excluding_runtime": 121.51525688171387,
+    "runtime_bytes": 308674564,
+    "runtime_MiB": 294.37500381469727,
+    "inventory_sum_verified": true,
+    "new_build_or_hardware_validation": false
+  },
+  "test_counts": {
+    "policy": "historical_counts_bind_their_original_source_and_command",
+    "new_whole_repository_test_claim": false
+  }
+}

@@ -258,3 +258,20 @@ doc/assets/research_resume_20261012/existing_nn_panel_scope.json text eol=lf
 # Repository policy files use LF; captured evidence retains its own bytes.
 .gitattributes text eol=lf
 .gitignore text eol=lf
+
+# Original Lean proof and acceptance records preserve executed bytes.
+formal/lean/** -text
+doc/assets/lean*/** -text
+frozen/lean*/** -text
+
+# Preserve read-only historical audit and Lean narrative evidence.
+doc/evidence/repository_audit_20261019.zh.md -text
+doc/evidence/lean*.md -text
+
+# Captured original evidence is byte-attested, including its original whitespace.
+doc/assets/repository_audit_20261019/*.md -text -whitespace
+doc/evidence/repository_audit_20261019.zh.md -text -whitespace
+formal/lean/** -text -whitespace
+doc/assets/lean*/** -text -whitespace
+doc/evidence/lean*.md -text -whitespace
+frozen/lean*/** -text -whitespace

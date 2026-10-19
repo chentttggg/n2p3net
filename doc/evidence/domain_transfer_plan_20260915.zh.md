@@ -1,8 +1,11 @@
 # 域迁移改进：文献证据、机制设计与验证方案
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 日期：2026-09-15；2026-09-16按用户要求分步实施并取消蒸馏。
 状态：**P1/P2首批软件实施见[验收记录](domain_transfer_implementation_20260916.zh.md)；完整公开数据开发矩阵已完成，见[执行与结果](domain_transfer_cloud_20260916.zh.md)。**
-修改前完整方案已[压缩并逐成员核验](../../frozen/domain_transfer_20260915_before/manifest.json)。
+修改前完整方案已[压缩并逐成员核验](../assets/repository_audit_20261019/docs_historical_index.json)。
 活动排程入口仍为[执行计划](domain_transfer_major_20260920.zh.md)。
 
 建议主线是：**固定已验证源池，学习更适合目标校准的表征，验证有限自由度的时空适配，再评估电极集合编码。**

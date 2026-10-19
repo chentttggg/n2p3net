@@ -21,3 +21,16 @@ producer identities; historical commit mappings stay local and are not rewritten
 to match publication.
 
 Start with the [current guides](../doc/README.md) and [evidence index](../doc/evidence/README.md).
+
+Historical relative paths may identify local payloads or retired stage layouts.
+Use the [document locator inventory](../doc/assets/repository_audit_20261019/docs_historical_index.json)
+to distinguish a hash-verified original, a local-only payload and an original
+target that has not been found. A replacement source archive does not recreate
+the acceptance evidence of a missing historical manifest.
+
+New public exports use relative paths or artifact keys and a separate summary
+identity; original logs and manifests retain their bytes. Third-party code,
+papers and datasets follow the [source and permission inventory](../doc/third_party_sources.json).
+Raw materials and PDF copies are not included in a new source/evidence export
+until redistribution rights for the exact copy have been verified. This does not
+delete local evidence, choose a repository license or rewrite Git history.

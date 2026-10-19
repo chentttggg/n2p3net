@@ -1,5 +1,8 @@
 # BrainSync 低 AUC 与迁移负效应的原因核查
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 2026-09-08，单人回顾性开发诊断。加载 `eeg-p300-research`、`eeg-bci-transfer-learning`
 和 `scientific-critical-thinking`；历史 skill 的默认架构判断不覆盖当前源码或实测。
 本轮不训练、不修改原始记录、缓存、源权重或个体模型，不按测试结果选门限或部署赢家。
@@ -28,7 +31,7 @@
 - 联网核验七个一手来源，区分全文与摘要核查，以及文献机制与本地归因。
 
 本轮项目 `.venv` 为 CPU Torch 2.13.0，重载原 CUDA 模型的最大 logit 差为
-`5.7220459e-6`，可用行一致。既有 GPU 逐位重载证据另见[原独立复核](../../experiments/runs/brainsync_recovery_20260908/result_audit/review.zh.md)。
+`5.7220459e-6`，可用行一致。既有 GPU 逐位重载证据另见[原独立复核](../assets/repository_audit_20261019/docs_historical_index.json)。
 不能把本次 CPU 重载称为 GPU 训练的独立重复。
 
 完整结构化数据与可复算程序位于
@@ -36,7 +39,7 @@
 `audit.py/json`、`supplement.py/json`、`summarize.py`、`summary.json`、`raw_waveforms.npz`。
 消费的原始文件、模型、计划、执行源码和本次脚本摘要均随记录保存。
 
-![信号、尺度、跨会话泛化与不确定性](../../experiments/runs/brainsync_cause_audit_20260908/diagnosis.png)
+[图像历史定位：信号、尺度、跨会话泛化与不确定性](../assets/repository_audit_20261019/docs_historical_index.json)
 
 ## 1. 先核对负迁移是否存在
 

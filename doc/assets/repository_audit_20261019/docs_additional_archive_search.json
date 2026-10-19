@@ -1,0 +1,21 @@
+{
+  "schema": "n2p3_additional_historical_archive_member_search/1",
+  "bytes": 85206420,
+  "sha256": "d69428cae31bfe500ddba48ba590f8a9928f0c23d095af1562d78cdaeaa4c36a",
+  "members": 222,
+  "targets": [
+    "frozen/brainsync_input_replay_20260909_before/manifest.json",
+    "frozen/brainsync_input_replay_20260909_validation/manifest.json",
+    "frozen/completed_result_admission_20260909_before/manifest.json",
+    "frozen/completed_result_admission_20260909_validation/manifest.json",
+    "frozen/domain_transfer_20260915_before/manifest.json",
+    "frozen/domain_transfer_20260916_validation/acceptance.json",
+    "frozen/preprocessing_contract_research_20260915/manifest.json",
+    "frozen/unified_model_plan_20260916_before/manifest.json",
+    "tmp/counterexample_verification_20260929.py"
+  ],
+  "hits": [],
+  "EEG_decoded": 0,
+  "model_loads": 0,
+  "artifact_key": "before_first_session_withdrawal.tar.gz"
+}

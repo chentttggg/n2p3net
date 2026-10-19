@@ -1,5 +1,8 @@
 # BrainSync 局部污染后的有限恢复
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 实施日期：2026-09-08。用户要求第三、第五份剔除局部异常后能继续使用，并尽量避免污染。
 前版软件/原始数据已冻结在`frozen/brainsync_quality_implementation_20260907/`；原始EDF不改写。
 
@@ -127,7 +130,7 @@ R2/R3/R5真实目标分别为2/3/5，存在跨目标测试；每个会话内10�
 scratch由0.0333到0.1667，均使用全部10个请求block分母，不作为新产品决策规则。
 LDA只在59个完整六导事件上评分，AUC由0.3428到0.3679；不能与229行NN结果直接比较。
 完整共同支持、历史无QC/仅恢复臂、实际预算及逐事件审计见
-[独立结果复核](../../experiments/runs/brainsync_recovery_20260908/result_audit/review.zh.md)。
+[独立结果复核](../assets/repository_audit_20261019/docs_historical_index.json)。
 
 35个保存模型的56次重载评分逐位一致，推理不改参数。独立CUDA重拟合未启用确定性算法，
 同QC/初始化/数据/抽样顺序下有小差异：最大AUC差0.00106，块级诊断预测相同；不称重训逐位可复现。
@@ -135,7 +138,7 @@ LDA只在59个完整六导事件上评分，AUC由0.3428到0.3679；不能与229
 启用确定性CUDA后，28个初态、30个最终state张量和R3/R5全部logits均逐字节一致，最大差0。
 每次仍为327行/200updates/5950draws，支持数值运行时解释，但范围限于此次诊断，未替换主结果。
 其原始`result.json`曾将计时字段也要求相同而写总体false，追加`analysis.json`核对仅计时不同，
-原执行脚本和证据保留，见[确定性复核](../../experiments/runs/brainsync_recovery_20260908/deterministic_replay/analysis.json)。
+原执行脚本和证据保留，见[确定性复核](../assets/repository_audit_20261019/docs_historical_index.json)。
 未按第五份成绩重新选择门限、学习率、source或产品赢家。一次配置反序列化失败的首轮部分结果
 单独保留，成功重跑使用同一预声明计划，未把失败结果换身份。
 
@@ -189,5 +192,5 @@ LDA只在59个完整六导事件上评分，AUC由0.3428到0.3679；不能与229
 并非信号质量判废。原始来源文件仍在采集目录，本次按字节补齐该依赖并核对SHA，原始EDF和
 既有session/BIDS文件不改写。第四份未纳入前一轮35拟合的预声明矩阵，不能把未纳入解释为完全不可用。
 本次补充记录独立保存于
-[第四份核查](../../experiments/runs/brainsync_recovery_20260908/fourth_session_check/result.json)，
+[第四份核查](../assets/repository_audit_20261019/docs_historical_index.json)，
 不重标前一轮冻结实验或其归档。

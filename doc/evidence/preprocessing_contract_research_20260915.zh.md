@@ -1,5 +1,8 @@
 # 预处理合同执行：科研裁决、数学与实施清单
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 2026-09-15。状态：**科研裁决完成，生产重构待实施**。本轮研究此前架构报告的第三项，
 交付范围为现行源码审计、文献核验、数学反例和有序代码清单。
 未更改生产源码或正式测试，未重训模型、重建真实缓存或启动云端实验。
@@ -251,5 +254,5 @@ QC/EOG在新入口重新fit或使用测试统计；MOABB高层被静默宣称同
 也不能声称提高AUC、hit@R5或训练吞吐。任何性能主张另做条件配对与实测。
 
 研究产物见[结构化验证](../assets/preprocessing_contract_research_20260915/validation.json)及
-[源码、探针与文献核验归档](../../frozen/preprocessing_contract_research_20260915/manifest.json)。
+[源码、探针与文献核验归档](../assets/repository_audit_20261019/docs_historical_index.json)。
 归档是列明范围的科研证据，不是新的训练执行快照。生产实施状态只在roadmap中维护。

@@ -15,7 +15,11 @@
 
 原云端四个完成程序的载荷已按原SHA恢复，原分数复算及临时清理的来源集中见[恢复与复算绑定](../assets/research_resume_20261011/cloud_payload_recovery_binding.json)；指标、选择行为、P1关系和磁盘账本分别维护在上列四页。
 
+[历史公共程序口径](public_evaluation.zh.md#历史公共程序的计数与结果归属)区分decision、分片、模型、物理拟合与重复分析；[发布计量](execution_and_integration.zh.md#发布载荷与历史计量)以原冻结manifest核对范围与单位。原日期证据与审计报告保原字节，后续纠正维护在主题页。
+
 ## 历史与来源
+
+- [原全仓审计](repository_audit_20261019.zh.md)及[分区原文索引](../assets/repository_audit_20261019/docs_original_audit_index.json)：保留原main快照的观察、命令范围和SHA；旧发现与当前处置分别解释。当前文档定位与勘误见[执行主题](execution_and_integration.zh.md#文档入口与历史证据定位)，原报告不改签为科研树当前结论。
 
 近期科研续接、八人候选分析、小组协议、P1数值和缓存重放分别更新上方四个主题页。日期页原文与哈希由[主题页历史恢复清单](../../frozen/research_topic_documents_history.manifest.json)保存。
 
@@ -76,7 +80,7 @@
 
 - [十二库停训优化与恢复](unified12_performance_20260918.zh.md)：25线程/4 GPU worker、内存与缓存修复、数值及大输入验证；全量训练已完成，最终结果见统一框架最终结果记录。
 
-- [十二库统一框架最终结果](unified12_results_20260918.zh.md)：单seed完整训练、48/48重放、AUC/BNCI决策分析及结论边界。
+- [十二库统一框架最终结果](unified12_results_20260918.zh.md)：单seed完整训练；48个分片、3632个保存模型的原容差重放，计数/归档适用范围见[当前口径](public_evaluation.zh.md#历史公共程序的计数与结果归属)。
 - [十二库数据分析批判评估](unified12_analysis_critique_20260918.zh.md)：处理定义、单seed推断、队列多重比较、K cohort、BNCI指标与source attribution审查。
 - [Zero-shot 正迁移路线与门槛](zero_shot_transfer_routes_20260920.zh.md)：EA/RPA/xDAWN/Riemannian/P300 joint alignment、预期增益与state接口；09-22统一为四库等权mean ΔAUC≥0.01，正迁移率作为风险诊断，窗口判定先行。
 本目录保存独立实验、推导和审计。正文中的“当前”“下一步”指写作时点，
@@ -92,7 +96,7 @@
 | 十二库单seed输入是否已交付云端 | [非核心清理与输入交付](cloud_delivery_20260918.zh.md) | 释放26.00 GiB；3324文件和885压缩成员校验通过，源码/清单部署完成；Lee排除，尚未启动新训练 |
 | 新下载来源如何进入同一训练链 | [源接入与排程模块化](domain_transfer_major_20260920.zh.md) | 任意显式源集合、prepared产物核验、完整剂量比较与新格式输入；原B7已训练，本轮是软件和无训练输入验收 |
 | BrainSync串口与BLE是否共用采集链 | [固定250 Hz连接统一](domain_transfer_major_20260920.zh.md) | 共用录制/时钟/暂停/BIDS及连接清理；FakeSdk与qasync软件验收，不代表实机确认 |
-| BrainSync发布版如何从开发树整理 | [发布版整理与EXE验收](brainsync_release_20260920.zh.md) | 独立发布副本、119,627,193 bytes、无独立runtime；不包含实机或成人效能验收 |
+| BrainSync发布版如何从开发树整理 | [发布计量与原来源](execution_and_integration.zh.md#发布载荷与历史计量) | 独立发布副本包含`_internal`运行时；载荷按冻结manifest单列，不包含实机或成人效能验收 |
 | 从科学推理判断全链条哪个环节优先改进 | [信息保留、监督单位与决策目标](chain_mechanism_20260916.zh.md) | 源码、原始协议和10组数学反例；不按训练成绩倒推；无新拟合、无生产算法修改，优先级不等于实测损失占比 |
 | 统一完整矩阵是否带来收益、哪里需要继续优化 | [完整结果与核验](unified_results_20260916.zh.md) | 35源、12150单元、失败0及288分片重放；K200迁移优于scratch，完整包未优于普通微调，BNCI真实决策下降；仅公开开发结论 |
 | 新预算是否已在云端执行、资源和耗时如何 | [统一预算云端运行](unified_cloud_20260916.zh.md) | 新双向输入重建、首个正式源折与补传并行、全矩阵自动接续；实际完成状态看运行账本，未作成人确认 |
@@ -101,7 +105,7 @@
 | 统一模型逐模块实施到哪里 | [实施、反例与阶段归档](domain_transfer_major_20260920.zh.md) | 持续记录真实代码和测试状态；各模块冻结不等于新矩阵或成人效能完成 |
 | 如何形成统一模型并保留模块协同 | [统一模型科研与实施方案](unified_model_plan_20260916.zh.md) | 共享图、源中心收缩、联合决策目标已实现；原16格改为精简两包设计，保信息与episodic扩展待验证 |
 | 算法链八项缺陷是否修复 | [修复与完整验收](domain_transfer_major_20260920.zh.md) | 校准/损失/统计/预处理/缓存合同；1936通过、4跳过，含独立反例及本地CUDA验证，不代表新效能 |
-| P1/P2完整云端矩阵与数据盘整理 | [云端执行](domain_transfer_cloud_20260916.zh.md) | 45源、16599目标拟合、32238评分及完整重放完成；full占优，SupCon小幅开发收益，家族敏感性与负迁移保留 |
+| P1/P2完整云端矩阵与数据盘整理 | [云端执行](domain_transfer_cloud_20260916.zh.md) | 45源、15684 NN＋915 LDA物理拟合、32238评分行；含重叠分析名单，计数不能当独立参与者或模型数 |
 | BrainSync前端潜在逻辑缺陷 | [前端逻辑修复](brainsync_frontend_logic_20260916.zh.md) | 数值滤波、任务/设备竞态、会话恢复、反馈和报告；软件故障注入及模拟采集验收 |
 | 域迁移首批软件是否已落实 | [P1/P2实施与验收](domain_transfer_implementation_20260916.zh.md) | 参数组、个人模型重载、固定剂量源目标函数、矩阵与复用；软件证据，不是新迁移成绩 |
 | 域迁移下一步应改什么、怎样验证 | [多库文献检索与改进方案](domain_transfer_plan_20260915.zh.md) | 时空适配、跨域监督对比及几何对照；18篇分级核查、数学反例；蒸馏已取消，不晋升产品 |

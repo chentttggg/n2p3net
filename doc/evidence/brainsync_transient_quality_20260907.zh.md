@@ -1,5 +1,8 @@
 # BrainSync 第三、第五会话的漂移与震荡诊断
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 日期：2026-09-07。承接[时轴核查](brainsync_epoch_timing_audit_20260907.zh.md)。
 用户明确拒绝第一份 `0903_170721`，并要求判断第三、第五份是否因预处理而异常。
 第三、第五份指 `P001_20260903_173947_01` 与 `P001_20260907_150258_01`。
@@ -16,12 +19,12 @@
 旧五会话 pilot 的 calibration/full 缓存、旧 test 缓存、全部个体拟合、结果包、模型 ZIP、
 计划与准备清单均已隔离，旧分数只保留历史含义，没有重标成排除第一份后的成绩。
 没有更改公共源 checkpoint，没有训练替代个体模型。远端历史副本未修改，同样不能当作当前模型。
-[旧入口撤回记录](../../experiments/runs/brainsync_p001_20260907/withdrawal.json)。
+[旧入口撤回记录](../assets/repository_audit_20261019/docs_historical_index.json)。
 
 第三、第五份原始记录保留，状态为 `retained_pending_transient_qc`；本轮未删除 trial 或 block。
 原因不是“波形不平滑就保留”，而是定位到可分解的局部原始瞬态及其滤波记忆，
 没有证据支持整个会话不可恢复。当前未处理版本也不能直接认定为质量合格的新训练输入。
-[会话处置清单](../../experiments/runs/brainsync_quality_20260907/session_disposition.json)。
+[会话处置清单](../assets/repository_audit_20261019/docs_historical_index.json)。
 
 ## 对上一轮结论的限定
 
@@ -51,8 +54,8 @@
 
 进一步只作诊断地不平均第一个 block，Pz 晚期差异由 -28.80 降至 +1.54 uV。
 这不是按目标波形选择删除 block 的规则；第八 block 也有局部大幅污染，不能认定其余全部合格。
-[原始/滤波与局部影响图](../../experiments/runs/brainsync_quality_20260907/P001_20260903_173947_01_transients.png)，
-[阶跃反例](../../experiments/runs/brainsync_quality_20260907/startup_step_counterexample.json)。
+[原始/滤波与局部影响图](../assets/repository_audit_20261019/docs_historical_index.json)，
+[阶跃反例](../assets/repository_audit_20261019/docs_historical_index.json)。
 
 ## 第五份：局部污染加共同参考成分
 
@@ -70,8 +73,8 @@
 震荡的大部分在通道间共同出现，Cz 差分后减少约 97.7%。这不证明所有共同成分均是伪迹，
 也不证明 Cz 差分没有同时消掉真实 ERP；但此前原始参考图不能直接代表模型六导输入。
 EOG 未拟合清理，不能将共同成分直接命名为眼电。
-[原始瞬态与参考对照](../../experiments/runs/brainsync_quality_20260907/P001_20260907_150258_01_transients.png)，
-[完整处理对照](../../experiments/runs/brainsync_quality_20260907/P001_20260907_150258_01.png)。
+[原始瞬态与参考对照](../assets/repository_audit_20261019/docs_historical_index.json)，
+[完整处理对照](../assets/repository_audit_20261019/docs_historical_index.json)。
 
 ## 为什么不以回零或平滑为删除标准
 
@@ -93,8 +96,8 @@ EOG 未拟合清理，不能将共同成分直接命名为眼电。
 不能按“目标峰更漂亮”删除试次。第五份已有测试与本轮形态查看，后续新配方须用新的独立记录验证。
 本轮保留原始数据，只撤回明确拒绝的第一份及其旧模型，不自动修改滤波或套用固定恢复秒数。
 
-数值证据：[处理诊断](../../experiments/runs/brainsync_quality_20260907/signal_diagnosis.json)、
-[逐 block 与大幅 epoch](../../experiments/runs/brainsync_quality_20260907/localized_transients.json)。
+数值证据：[处理诊断](../assets/repository_audit_20261019/docs_historical_index.json)、
+[逐 block 与大幅 epoch](../assets/repository_audit_20261019/docs_historical_index.json)。
 `tmp/diagnose_brainsync_waveform_20260907.py`、`tmp/diagnose_brainsync_transients_20260907.py`、
 `tmp/diagnose_brainsync_step_response_20260907.py` 使用项目 venv 执行；稳定性、阶跃反例、
 四会话对照及原始文件 hash 核查完成，所有诊断图已查看，Ruff 与 `git diff --check` 通过。

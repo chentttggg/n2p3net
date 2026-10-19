@@ -1,0 +1,332 @@
+{
+  "schema": "n2p3_repository_audit_docs_integration/1",
+  "delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-docs\\DELIVERY_MANIFEST_R2.json",
+    "bytes": 24610,
+    "sha256": "e71768c5f8eebec4b1d1b852abe8f0fc53dc8a01fd523b9a5995726015054f3b"
+  },
+  "review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-docs\\REVIEW_AND_HANDOFF.zh.md",
+    "bytes": 5511,
+    "sha256": "78e070e6c724b4f0d5a3e20ac2d61271dc72613a3f09dc425578f0bd6a0704bc"
+  },
+  "canonical_files": [
+    {
+      "path": "doc/assets/repository_audit_20261019/00-consolidated.md",
+      "bytes": 39340,
+      "sha256": "bf787e444b6b41edaf33cfd39f4adfb28572839d24b7a40fb7b57e3ffa1fdf6a"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/01-data-core.md",
+      "bytes": 18515,
+      "sha256": "70e4fa4a9f00be488f3b164b5aabc6718de8444dda68149889eac1c53620e852"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/02-models-train.md",
+      "bytes": 27007,
+      "sha256": "1af6eb5ba4ef73e17ceef34fed50fcdea583d1a1238be0d35aa42177caed6259"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/03-transfer-core.md",
+      "bytes": 32947,
+      "sha256": "891032b2b3eb5b5019b5800b4834902737c2119f76108a74219b93cfbdce744f"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/04-transfer-math-stats.md",
+      "bytes": 24889,
+      "sha256": "729c1831a74e9ab4a4f5830d1694a1fc928c96404064fd2f51e5e2c92dcf1e9d"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/05-research-experiments.md",
+      "bytes": 22697,
+      "sha256": "ada27ae400211da843618a3f5f7a7e82a2416088a126d10dfd824dd25ee9f343"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/06-tests.md",
+      "bytes": 17727,
+      "sha256": "0b732765d7030301a1af4ba3223572dfc011ef44bceb67cc87d9cb85457f2094"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/07-math-contract.md",
+      "bytes": 17808,
+      "sha256": "c697ffac78e17fce4b0e1c421f3cb84a5a53dc5031d855c633b05388a1b2bcdd"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/08-engineering-tooling.md",
+      "bytes": 35794,
+      "sha256": "1b37f38a8550e67c259e755c503796d5e78e27448a5e5fa6a4abe1b88083752b"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/09-repo-management.md",
+      "bytes": 31656,
+      "sha256": "204591b7f553776bfdf5c12193661f6c04e7840940d18a9123ddee3d3efd79da"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/10-docs-consistency.md",
+      "bytes": 34043,
+      "sha256": "c124d6d9a4e34626b1e0eeada1ead91cfd2a0ddf3360ee9bf91a72c8be8130cd"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/11-security-privacy.md",
+      "bytes": 32032,
+      "sha256": "df8ec124946e7b46bec3d0f0abb7c53f4b9429cc401a04239b8ef75d1687cf04"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/12-performance.md",
+      "bytes": 35142,
+      "sha256": "c6da6d33865b9c9684170fe76c9102cea71d9a1fec51627c9c4702acd2f8be15"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/13-formal-lean.md",
+      "bytes": 31645,
+      "sha256": "eab404ac641aa6fda08624959720e75643e648925cb685fa13f26ec76e9a14af"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/docs_historical_index.json",
+      "bytes": 38739,
+      "sha256": "25db04a578a8a8400cc84edde003fc3f23d033f60e055d1ce209054e7a641b82"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/docs_original_audit_index.json",
+      "bytes": 13285,
+      "sha256": "df8c52ae47b257e5ab8730f2a5ca09b7962f79f3c742f7ca8e51d14a8121a7e6"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/docs_result_semantics.json",
+      "bytes": 5238,
+      "sha256": "d1df398235c74a347b6bf525fbb460aa9e6b4cafa18b1c745bd329470ae82447"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G1-data-metadata.md",
+      "bytes": 27162,
+      "sha256": "1f13ad37f16bd5b8caf6f4b6fbadaa3918dda74b7a2baab618ae15a64be6561a"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G2-transfer-helpers.md",
+      "bytes": 32711,
+      "sha256": "d05da069c85380fb01e91b122ce09c0c8bdbf71c445edad6ba30fe3fabb176bd"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G3-brainsync-workstation.md",
+      "bytes": 31866,
+      "sha256": "9bf66b4c5a9c8867b982dcbf5021da20373ba7dfa53275e42b14ed40358baec0"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G3b-brainsync-workstation.md",
+      "bytes": 26545,
+      "sha256": "0c022ee7b2c01d1a662ac37de04e0898c9a1e5290319f386da9c37e0de01065c"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G4-evidence-repro.md",
+      "bytes": 16950,
+      "sha256": "3b70989bbc1d1e3b93e13af5c097f505d11526d2ccc0b0c72c0a3cdb43a16ae4"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G5-configs.md",
+      "bytes": 26704,
+      "sha256": "88006aebe0e8c1094cdd88c6a04929f8e7e7c4f28fcd33e90f82514426bd5740"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G6-code-structure.md",
+      "bytes": 18541,
+      "sha256": "2f5cc6da7de9c0dfad79626a6d05824e9d2596f15dbb1e109d9135ccd5fbd786"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G7-cli-consistency.md",
+      "bytes": 26507,
+      "sha256": "2c4512a79f199423a74777921f186947019bf23974d320520b171c8ad80e907b"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G8-run-lineage.md",
+      "bytes": 29399,
+      "sha256": "2f2b184c49c0d143b94191eb9f931de1330ac52dd410310810f376ad504edaeb"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/R1-report-review.md",
+      "bytes": 22607,
+      "sha256": "334b0a9c0cd8ec94229c096d111bb0e7804aa49522466f0c16da9dcb8d51986b"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/V1-verification.md",
+      "bytes": 14125,
+      "sha256": "3719b75718b6f39ccd077be8d3cd49fce08708de8bd0b02cb8d4eb6c44f4505e"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/V2-verification.md",
+      "bytes": 21392,
+      "sha256": "d263f84a223f0f37f8446618d17f60f7abe773f91281165212c2d12471e88801"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/V3-verification.md",
+      "bytes": 15448,
+      "sha256": "e73afa6fb1397545f2a4c8aaf2cbdd4cc091dad6997a27e02b8f5b753f18cc77"
+    },
+    {
+      "path": "doc/engineering.zh.md",
+      "bytes": 75848,
+      "sha256": "9fa3610e1f115125a7db64ed120cd9da7050ec261435006c6eacb7065571c99c"
+    },
+    {
+      "path": "doc/evidence/bidirectional_qc_20260909.zh.md",
+      "bytes": 11070,
+      "sha256": "0a428a6de6a5ecb27990e11f8b68459e189c122c2ec4d62776d1a48924fb8d42"
+    },
+    {
+      "path": "doc/evidence/brainsync_auc_cause_audit_20260908.zh.md",
+      "bytes": 18736,
+      "sha256": "c96102f7b365dfb9a9d92022f677fab7eb01cb440b0aed5f48481e9d22b38bf4"
+    },
+    {
+      "path": "doc/evidence/brainsync_input_replay_20260909.zh.md",
+      "bytes": 5776,
+      "sha256": "6e2c1b02ff5b72793b749afa8de71a732d81a8a5496ef1168a944f49d0a301cb"
+    },
+    {
+      "path": "doc/evidence/brainsync_recovery_20260908.zh.md",
+      "bytes": 15516,
+      "sha256": "334ca10e3ecd0fd45150f790e088a97b24bf1f164bbebc877ab372aa66a53a06"
+    },
+    {
+      "path": "doc/evidence/brainsync_release_20260920.zh.md",
+      "bytes": 3695,
+      "sha256": "8f03fcaa7a8d881b5613f7989b8256bf00dd637a19caf6b0ee19b50a12e5c8a0"
+    },
+    {
+      "path": "doc/evidence/brainsync_signal_quality_design_20260907.zh.md",
+      "bytes": 20934,
+      "sha256": "c7ba205dbe5f8989f186542fcc374d5047c380a0a60ddc051243baedb15d67ea"
+    },
+    {
+      "path": "doc/evidence/brainsync_transient_quality_20260907.zh.md",
+      "bytes": 7504,
+      "sha256": "30d71c563169634a549a870971d990c25d964c61651519ce80ad89976e32e28b"
+    },
+    {
+      "path": "doc/evidence/completed_result_admission_20260909.zh.md",
+      "bytes": 5515,
+      "sha256": "b1b145c1bfe90528b5ed17cd5f017a22f7f58578b040257a3f5723c5f65989a3"
+    },
+    {
+      "path": "doc/evidence/dataset_expansion_audit_20260908.zh.md",
+      "bytes": 24411,
+      "sha256": "88b3de4a8e1c979a8ceb632942bdf9d9d6f2be3d47d369a80b6cd9ed60141a56"
+    },
+    {
+      "path": "doc/evidence/domain_transfer_implementation_20260916.zh.md",
+      "bytes": 9334,
+      "sha256": "40df7693b04eafb42140548383d81a7a5c5c7f07eafcd0c4d63f2f8f0147c7c4"
+    },
+    {
+      "path": "doc/evidence/domain_transfer_plan_20260915.zh.md",
+      "bytes": 34387,
+      "sha256": "3873759b96c70625b52c1072dc3f6fe4e4447808b935c8def847730b6af1bc9b"
+    },
+    {
+      "path": "doc/evidence/execution_and_integration.zh.md",
+      "bytes": 72457,
+      "sha256": "2d5c0a97676be1f352e7aa783bdf92d7f98b5fac213efb629386c5fff7b052d1"
+    },
+    {
+      "path": "doc/evidence/filter_phase_20260909.zh.md",
+      "bytes": 11225,
+      "sha256": "f474e834625c9518421c78ef884671d3d763048d886cb435046b85a172f0da92"
+    },
+    {
+      "path": "doc/evidence/four_study_results_20260907.zh.md",
+      "bytes": 8434,
+      "sha256": "dc806b72aedfdd46fd641cfefda58f975a1c0b67746b51c05ff0ed10a2fa4642"
+    },
+    {
+      "path": "doc/evidence/four_study_standard_budgets_20260907.zh.md",
+      "bytes": 6563,
+      "sha256": "41b988ee74c95fad72b729da6ea9f4b094dedfe8497f4a21ca1b9478a94901fe"
+    },
+    {
+      "path": "doc/evidence/input_contract_review_20260922.zh.md",
+      "bytes": 9243,
+      "sha256": "9366d84518d2839c2c2e83e4a666ec5145960d3391b1700094afa96d1dce8b27"
+    },
+    {
+      "path": "doc/evidence/preprocessing_contract_research_20260915.zh.md",
+      "bytes": 20001,
+      "sha256": "0dbec9a5e83f05d58a2589b77a7484d825891d8a1e23dddebb5e47ebbea915e2"
+    },
+    {
+      "path": "doc/evidence/public_evaluation.zh.md",
+      "bytes": 41766,
+      "sha256": "d024eb375b9830714f18dd773226b85431a49fc66b786e6e05afe8c793f51021"
+    },
+    {
+      "path": "doc/evidence/README.md",
+      "bytes": 32129,
+      "sha256": "4408a5b3d2aef01e05a8e3d49559076673038ddf789f295932915a732823ac8f"
+    },
+    {
+      "path": "doc/evidence/repository_audit_20261019.zh.md",
+      "bytes": 60233,
+      "sha256": "55d7fc7d05dc6cc30b1b5cf95b99f48907b70c1f037ce6bb5963f939453138f5"
+    },
+    {
+      "path": "doc/evidence/source_eog_training_20260909.zh.md",
+      "bytes": 18353,
+      "sha256": "f3527c77bfd370aeddb920ac38d8f96b30fffa1e1c9e133c080352b53c60e0e3"
+    },
+    {
+      "path": "doc/evidence/unified_model_plan_20260916.zh.md",
+      "bytes": 51833,
+      "sha256": "016d1530ead8fb746bca7fde8793998f8631c88d79962b9305b835e06059cae9"
+    },
+    {
+      "path": "doc/evidence/unified_optimization_20260929.zh.md",
+      "bytes": 24531,
+      "sha256": "f36dfa2307724e0eda3a7814116f1d754cbf057c9db84023822c19b367732e21"
+    },
+    {
+      "path": "doc/technical_structure.zh.md",
+      "bytes": 97763,
+      "sha256": "bdd87114ea38293d51e2ff7a46a6f592debe369e93a325d3241f9e0f5a7d36de"
+    },
+    {
+      "path": "doc/third_party_sources.json",
+      "bytes": 36794,
+      "sha256": "e4d39f0f6ec50d48ea1d2d83031c4750a5a7aedafc1ebc06143d19b9126085a1"
+    },
+    {
+      "path": "doc/workstation.zh.md",
+      "bytes": 24266,
+      "sha256": "b202448cf6aab219500c6811031737dbd4a0f71f8376bbe497ffebfe6b9ea75f"
+    },
+    {
+      "path": "frozen/README.md",
+      "bytes": 2269,
+      "sha256": "e5f4e5c94b00e900cec89378455a1687791ac2f0becaac80e9382b5aa5d4b175"
+    }
+  ],
+  "root_review": {
+    "historical_originals_verified": "Original SHA and zip members retained; working navigation copies named as such",
+    "release_count_definition": "Manifest member and file inventory sums; no substitution of current models for historical producer",
+    "engineering_merge": "Kept root environment/CI/packaging/EOL sections and added independent result/citation corrections; one same-insertion conflict joined both sections",
+    "root_found_and_author_fixed": "Six Markdown image tags wrongly targeted JSON locator; converted to explicitly labelled ordinary historical-location links in R2",
+    "limits": "Eight old stage manifests and one temporary counterexample remain explicitly unlocated; superseded historical claims are not active acceptance. Third-party rights indexed from known source, no license grant invented.",
+    "new_navigation_EOL": "LF; read-only audit originals and original archives preserved byte for byte",
+    "additional_archive_search": {
+      "artifact_key": "before_first_session_withdrawal.tar.gz",
+      "sha256": "d69428cae31bfe500ddba48ba590f8a9928f0c23d095af1562d78cdaeaa4c36a",
+      "members": 222,
+      "concrete_targets": 9,
+      "hits": 0
+    }
+  },
+  "validation": {
+    "author": "720 scoped links checked; focused image-kind correction; original bytes archived",
+    "integrated_active_entry_points": 15,
+    "integrated_repository_links": 588,
+    "missing": 0,
+    "persistent_checker": "experiments/check_docs.py; same command added to CI"
+  },
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-docs\\cleanup.json",
+    "bytes": 1244,
+    "sha256": "f8a06f9355461a97e1d6fd85943dc1b12b4bebfffd4f7cfc3e874239ff897ba0"
+  }
+}

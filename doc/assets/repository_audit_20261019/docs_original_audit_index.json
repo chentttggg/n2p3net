@@ -1,0 +1,288 @@
+{
+  "schema": "original_repository_audit_text_index/1",
+  "attempted_source_git_ref": "3d5f545",
+  "total_bytes": 771432,
+  "documents": [
+    {
+      "path": "doc/evidence/repository_audit_20261019.zh.md",
+      "sha256": "55d7fc7d05dc6cc30b1b5cf95b99f48907b70c1f037ce6bb5963f939453138f5",
+      "bytes": 60233,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": false,
+      "baseline_path_present": true,
+      "git_blob_sha256": "5515854ab1651d318c80249aeda061750734d01b57bab1ad96dfd7177083b97e",
+      "working_vs_git_relation": "CRLF_vs_LF_only"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/00-consolidated.md",
+      "sha256": "bf787e444b6b41edaf33cfd39f4adfb28572839d24b7a40fb7b57e3ffa1fdf6a",
+      "bytes": 39340,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "bf787e444b6b41edaf33cfd39f4adfb28572839d24b7a40fb7b57e3ffa1fdf6a",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/01-data-core.md",
+      "sha256": "70e4fa4a9f00be488f3b164b5aabc6718de8444dda68149889eac1c53620e852",
+      "bytes": 18515,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "70e4fa4a9f00be488f3b164b5aabc6718de8444dda68149889eac1c53620e852",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/02-models-train.md",
+      "sha256": "1af6eb5ba4ef73e17ceef34fed50fcdea583d1a1238be0d35aa42177caed6259",
+      "bytes": 27007,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "1af6eb5ba4ef73e17ceef34fed50fcdea583d1a1238be0d35aa42177caed6259",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/03-transfer-core.md",
+      "sha256": "891032b2b3eb5b5019b5800b4834902737c2119f76108a74219b93cfbdce744f",
+      "bytes": 32947,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "891032b2b3eb5b5019b5800b4834902737c2119f76108a74219b93cfbdce744f",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/04-transfer-math-stats.md",
+      "sha256": "729c1831a74e9ab4a4f5830d1694a1fc928c96404064fd2f51e5e2c92dcf1e9d",
+      "bytes": 24889,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "729c1831a74e9ab4a4f5830d1694a1fc928c96404064fd2f51e5e2c92dcf1e9d",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/05-research-experiments.md",
+      "sha256": "ada27ae400211da843618a3f5f7a7e82a2416088a126d10dfd824dd25ee9f343",
+      "bytes": 22697,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "ada27ae400211da843618a3f5f7a7e82a2416088a126d10dfd824dd25ee9f343",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/06-tests.md",
+      "sha256": "0b732765d7030301a1af4ba3223572dfc011ef44bceb67cc87d9cb85457f2094",
+      "bytes": 17727,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "0b732765d7030301a1af4ba3223572dfc011ef44bceb67cc87d9cb85457f2094",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/07-math-contract.md",
+      "sha256": "c697ffac78e17fce4b0e1c421f3cb84a5a53dc5031d855c633b05388a1b2bcdd",
+      "bytes": 17808,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "c697ffac78e17fce4b0e1c421f3cb84a5a53dc5031d855c633b05388a1b2bcdd",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/08-engineering-tooling.md",
+      "sha256": "1b37f38a8550e67c259e755c503796d5e78e27448a5e5fa6a4abe1b88083752b",
+      "bytes": 35794,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "1b37f38a8550e67c259e755c503796d5e78e27448a5e5fa6a4abe1b88083752b",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/09-repo-management.md",
+      "sha256": "204591b7f553776bfdf5c12193661f6c04e7840940d18a9123ddee3d3efd79da",
+      "bytes": 31656,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "204591b7f553776bfdf5c12193661f6c04e7840940d18a9123ddee3d3efd79da",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/10-docs-consistency.md",
+      "sha256": "c124d6d9a4e34626b1e0eeada1ead91cfd2a0ddf3360ee9bf91a72c8be8130cd",
+      "bytes": 34043,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "c124d6d9a4e34626b1e0eeada1ead91cfd2a0ddf3360ee9bf91a72c8be8130cd",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/11-security-privacy.md",
+      "sha256": "df8ec124946e7b46bec3d0f0abb7c53f4b9429cc401a04239b8ef75d1687cf04",
+      "bytes": 32032,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "df8ec124946e7b46bec3d0f0abb7c53f4b9429cc401a04239b8ef75d1687cf04",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/12-performance.md",
+      "sha256": "c6da6d33865b9c9684170fe76c9102cea71d9a1fec51627c9c4702acd2f8be15",
+      "bytes": 35142,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "c6da6d33865b9c9684170fe76c9102cea71d9a1fec51627c9c4702acd2f8be15",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/13-formal-lean.md",
+      "sha256": "eab404ac641aa6fda08624959720e75643e648925cb685fa13f26ec76e9a14af",
+      "bytes": 31645,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "eab404ac641aa6fda08624959720e75643e648925cb685fa13f26ec76e9a14af",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G1-data-metadata.md",
+      "sha256": "1f13ad37f16bd5b8caf6f4b6fbadaa3918dda74b7a2baab618ae15a64be6561a",
+      "bytes": 27162,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "1f13ad37f16bd5b8caf6f4b6fbadaa3918dda74b7a2baab618ae15a64be6561a",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G2-transfer-helpers.md",
+      "sha256": "d05da069c85380fb01e91b122ce09c0c8bdbf71c445edad6ba30fe3fabb176bd",
+      "bytes": 32711,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "d05da069c85380fb01e91b122ce09c0c8bdbf71c445edad6ba30fe3fabb176bd",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G3-brainsync-workstation.md",
+      "sha256": "9bf66b4c5a9c8867b982dcbf5021da20373ba7dfa53275e42b14ed40358baec0",
+      "bytes": 31866,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "9bf66b4c5a9c8867b982dcbf5021da20373ba7dfa53275e42b14ed40358baec0",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G3b-brainsync-workstation.md",
+      "sha256": "0c022ee7b2c01d1a662ac37de04e0898c9a1e5290319f386da9c37e0de01065c",
+      "bytes": 26545,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "0c022ee7b2c01d1a662ac37de04e0898c9a1e5290319f386da9c37e0de01065c",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G4-evidence-repro.md",
+      "sha256": "3b70989bbc1d1e3b93e13af5c097f505d11526d2ccc0b0c72c0a3cdb43a16ae4",
+      "bytes": 16950,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "3b70989bbc1d1e3b93e13af5c097f505d11526d2ccc0b0c72c0a3cdb43a16ae4",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G5-configs.md",
+      "sha256": "88006aebe0e8c1094cdd88c6a04929f8e7e7c4f28fcd33e90f82514426bd5740",
+      "bytes": 26704,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "88006aebe0e8c1094cdd88c6a04929f8e7e7c4f28fcd33e90f82514426bd5740",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G6-code-structure.md",
+      "sha256": "2f5cc6da7de9c0dfad79626a6d05824e9d2596f15dbb1e109d9135ccd5fbd786",
+      "bytes": 18541,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "2f5cc6da7de9c0dfad79626a6d05824e9d2596f15dbb1e109d9135ccd5fbd786",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G7-cli-consistency.md",
+      "sha256": "2c4512a79f199423a74777921f186947019bf23974d320520b171c8ad80e907b",
+      "bytes": 26507,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "2c4512a79f199423a74777921f186947019bf23974d320520b171c8ad80e907b",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/G8-run-lineage.md",
+      "sha256": "2f2b184c49c0d143b94191eb9f931de1330ac52dd410310810f376ad504edaeb",
+      "bytes": 29399,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "2f2b184c49c0d143b94191eb9f931de1330ac52dd410310810f376ad504edaeb",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/R1-report-review.md",
+      "sha256": "334b0a9c0cd8ec94229c096d111bb0e7804aa49522466f0c16da9dcb8d51986b",
+      "bytes": 22607,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "334b0a9c0cd8ec94229c096d111bb0e7804aa49522466f0c16da9dcb8d51986b",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/V1-verification.md",
+      "sha256": "3719b75718b6f39ccd077be8d3cd49fce08708de8bd0b02cb8d4eb6c44f4505e",
+      "bytes": 14125,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "3719b75718b6f39ccd077be8d3cd49fce08708de8bd0b02cb8d4eb6c44f4505e",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/V2-verification.md",
+      "sha256": "d263f84a223f0f37f8446618d17f60f7abe773f91281165212c2d12471e88801",
+      "bytes": 21392,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "d263f84a223f0f37f8446618d17f60f7abe773f91281165212c2d12471e88801",
+      "working_vs_git_relation": "exact_bytes"
+    },
+    {
+      "path": "doc/assets/repository_audit_20261019/V3-verification.md",
+      "sha256": "e73afa6fb1397545f2a4c8aaf2cbdd4cc091dad6997a27e02b8f5b753f18cc77",
+      "bytes": 15448,
+      "historical_read_only_original": true,
+      "source_baseline_3d5f545_match": true,
+      "baseline_path_present": true,
+      "git_blob_sha256": "e73afa6fb1397545f2a4c8aaf2cbdd4cc091dad6997a27e02b8f5b753f18cc77",
+      "working_vs_git_relation": "exact_bytes"
+    }
+  ],
+  "interpretation": "Original audit observations refer to their original main working-tree snapshot; current dispositions belong to the new root acceptance binding. These texts are separately pinned even when not in the source baseline commit."
+}

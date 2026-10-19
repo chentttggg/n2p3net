@@ -1,5 +1,8 @@
 # 完成实验产物准入：实现与软件验证
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 日期：2026-09-09。范围为公共源池目标矩阵与本人EOG矩阵的完成结果复用，
 不启动或续跑真实云训练，不改写既有模型、预测或冻结执行快照。
 
@@ -64,12 +67,12 @@ source初始化还核对源checkpoint与训练合同摘要，scratch/LDA不伪�
 首次全套有1722通过、4跳过、1失败：代理在测试期间更新了`doc/roadmap.zh.md`，
 源码快照测试正确拒绝该变化。停止源文件及文档修改后完整重跑通过；未放宽快照门禁。
 两次日志均已物理压缩并核验，最终源码摘要与检查记录见
-[验收清单](../../frozen/completed_result_admission_20260909_validation/manifest.json)。
+[验收清单](../assets/repository_audit_20261019/docs_historical_index.json)。
 
 独立`verify_pool_matrix.py`还负责从指定冻结runtime读取cache/source并重新预测、复算指标，
 本轮保留其接口。既有完成验证记录不能代替新一次伴随文件准入。
 状态摘要实现集中于result_reuse，target_experiments保持既有导出供当前验证脚本及冻结runtime调用。
 
 改动前10份相关源码、验证入口和活动指南已压缩并逐成员核验，见
-[局部源码归档](../../frozen/completed_result_admission_20260909_before/manifest.json)。
+[局部源码归档](../assets/repository_audit_20261019/docs_historical_index.json)。
 该归档只覆盖清单中的文件，不声称是可执行训练快照。

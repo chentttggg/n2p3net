@@ -1,5 +1,8 @@
 # 十二库 A1/Q1 负交互：分层复算、机制反例与优化规格
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 日期：2026-09-29。交付类型：科研方案与可复现分析；未实施新训练算法、未启动训练、未消费成人确认集。
 
 同日后续[全链深审](deep_chain_audit_20260929.zh.md)进一步发现当前有限raw边缘保真问题及EA的
@@ -198,7 +201,7 @@ EA新增验收须覆盖：共同实测mask；源与目标本来相同的坐标�
 
 ## 8. 本轮验证与文献界限
 
-独立脚本[tmp/counterexample_verification_20260929.py](../../tmp/counterexample_verification_20260929.py)通过11组断言，结果见[math_probes.json](../assets/unified_optimization_20260929/math_probes.json)：负交互无需decision或梯度冲突；零参数prior不保证函数保持；两种物理排程的autograd/系数；loss缩放不等于温度；正温度和联合候选置换；Adam预条件反例；双侧EA正增益不变性与旧checkpoint错配；相同协方差的旋转反例；state只读与重载；相同AUC可有不同hit。
+独立脚本[tmp/counterexample_verification_20260929.py](../assets/repository_audit_20261019/docs_historical_index.json)通过11组断言，结果见[math_probes.json](../assets/unified_optimization_20260929/math_probes.json)：负交互无需decision或梯度冲突；零参数prior不保证函数保持；两种物理排程的autograd/系数；loss缩放不等于温度；正温度和联合候选置换；Adam预条件反例；双侧EA正增益不变性与旧checkpoint错配；相同协方差的旋转反例；state只读与重载；相同AUC可有不同hit。
 
 项目venv运行`tests/data/test_euclidean_alignment.py`、`tests/train/test_source_objectives.py`、`tests/train/test_unified_chain.py`，75项通过。反例只证明公式/边界，合同测试只证明所测软件行为；本轮未重放全部历史模型、未复算原trial预测、未跑新训练，也不声称全部dirty tree回归通过。
 `Ruff check src experiments tests`及两份研究脚本通过，`git diff --check`通过；本报告本地链接均存在。

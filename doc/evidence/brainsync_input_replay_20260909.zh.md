@@ -1,5 +1,8 @@
 # BrainSync冻结输入重放：实现与软件验证
 
+> 导航副本：历史失效链接现指向[持久来源索引](../assets/repository_audit_20261019/docs_historical_index.json)。原文以原SHA保存在本地归档；本次只改定位入口，原结果、执行producer与未找到凭证的边界保持。
+
+
 日期：2026-09-09。范围为后端已保存个体包到无标签完整记录的接入；
 不包含公共矩阵训练、已有模型重训、滤波默认裁决或成人效能评估。
 
@@ -68,10 +71,10 @@ native及raw已参考路径使用已有坐标解析和float32结果比较保存�
 
 全仓活动文件Ruff额外发现并发新增`experiments/audit_bidirectional_drift.py:12`有一项`I001`；
 该文件属于另一项正在进行的修改，本次没有改写，故不声称整个并发工作树Ruff全绿。
-最终源码摘要、跳过原因及压缩验证日志见[验收清单](../../frozen/brainsync_input_replay_20260909_validation/manifest.json)。
+最终源码摘要、跳过原因及压缩验证日志见[验收清单](../assets/repository_audit_20261019/docs_historical_index.json)。
 
 ## 改动前源码
 
 改动前11份相关源码、测试及活动指南已经物理压缩，逐成员字节和归档SHA-256均核验。
-见[归档清单](../../frozen/brainsync_input_replay_20260909_before/manifest.json)。
+见[归档清单](../assets/repository_audit_20261019/docs_historical_index.json)。
 该归档是所列文件的局部历史，不是可执行训练快照；同时保留当时dirty工作树的实际字节。
