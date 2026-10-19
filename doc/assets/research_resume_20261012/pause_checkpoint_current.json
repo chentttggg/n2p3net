@@ -1042,6 +1042,25 @@
       },
       "candidate_integration": "doc/assets/research_resume_20261012/transition_trace_integration.json",
       "complete_original_science_arrays": "preserved in existing golden and fresh-process evidence"
+    },
+    "adult_programme_input": {
+      "state": "candidate_complete_under_independent_review_then_root_integration",
+      "candidate_delivery": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\DELIVERY_MANIFEST.json",
+        "bytes": 5678,
+        "sha256": "ddb8856036417471c10de5b57ba04270edf7350f19539e4bea3db8e01c47ef31"
+      },
+      "candidate_owner": "src/research/adult_programme_input.py",
+      "candidate_source_sha256": "e13b29eee1b6e8ea80c34199867f9e2c973cc16e0e2b2ac42faa4f2baf155c72",
+      "main_integrated": false,
+      "independent_review_directory": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\independent-review",
+      "scientific_scope": "neutral complete adult multi-C/held original input and replay; downstream population transport/joint/history remain separate"
+    },
+    "adult_population_transport_science": {
+      "state": "in_progress_independent_proper_completion_policy_and_counterexamples",
+      "owner": "/root/history_slice_integration_review",
+      "topic": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\POPULATION_TRANSPORT_SCIENCE.zh.md",
+      "code_or_scientific_reference_policy_accepted": false
     }
   },
   "next_actions": [
@@ -1059,7 +1078,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T13:40:36.625799+00:00",
+  "last_updated_utc": "2026-10-19T13:41:43.391549+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
