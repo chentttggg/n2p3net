@@ -358,6 +358,10 @@ source group以participant为单位，对效应measurement covariance与人际va
 
 完整成人接入还需将全部13份已接受个人likelihood建立的新成人forecast、population transport、250Hz实际时钟、多C-session权限、joint保存后原C重新准入及typed个人入口连通。现个人入口消费epoch logits，新joint入口应直接发布候选证据；session共享目标与block独立响应分别由真实parent声明。数学关系、六类反例和A–E完整切片见[成人接入交接](D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/ADULT_BRIDGE_HANDOFF.zh.md)。这是代码与数学依赖研究，尚无本次成人拟合或评价。
 
+### 源数据因子的充分状态与产物职责
+
+在原噪声、字典、观测算子和flat测度固定时，同次压缩的全列A、响应r与完整常数c决定整条数据似然：`log L(θ)=c−||r−Aθ||²/2`。c保正交残差、nuisance体积、时间Jacobian与原物理行数；个体proper prior独立于这一数据因子。源moments实际只从原baseline的PARCOR/full Q取得，population、fold冷载及target随后消费compact因子与QR见证。因此下一版可由原reader/压缩owner直接发行这些充分状态，并为完整模型恢复任务另保具名载荷。来源链、精确结构支持、反例和完整实现切片见[源产物必要性研究](D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/SOURCE_ARTIFACT_PLAN.zh.md)；实现接受由对应代码审阅和真实运行记录给出。
+
 ## B11：同记录漂移与噪声尺度
 
 同record Gamma/flat科研程序已接受并集成`dd63d32`：global proper β prior一次，每真实record一个Gamma λ和原物理flat漂移测度。有效信息量按原raw行数减漂移rank计数，同一full-record白化用于C、prefix与tail。固定noise shape与动态λ分开，proper β不随test λ缩放。source参数从原保存Continuous模型恢复，原prior因子经等价QR转换，原noise-fit保持；C-plugin与source-only权限各用真实issuer。

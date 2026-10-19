@@ -282,7 +282,8 @@
     }
   },
   "active_agents": {
-    "history_slice_integration_review": "Read-only necessity study of full source artifacts and new compact numeric producer; current programme continues."
+    "history_slice_integration_review": "Implement complete compact source data-factor owner and consumer chain in candidate; no main/frozen writes or training.",
+    "execution_failures": "Independent Gaussian/structure/identity and full source-to-cold-consumer review preparation."
   },
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
@@ -390,7 +391,30 @@
     "process_state": "parent and workers exited normally; original handle33930 exit0",
     "extra_legacy_NN_tuning_planned": false
   },
-  "pending_root_integrations": {},
+  "pending_root_integrations": {
+    "compact_source_factor": {
+      "state": "implementation_in_independent_candidate_after_root_code_and_math_plan_review",
+      "plan": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\SOURCE_ARTIFACT_PLAN.zh.md",
+        "bytes": 18608,
+        "sha256": "58a6615bc2153bb6c20accf465634942b0135fdc4cd48e2ae6b375a19827ee92"
+      },
+      "candidate_directory": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/compact-factor-delivery/candidate",
+      "implementation_goal": "Original reader/noise/same-fit compression to explicit compact full-column data-factor publication and complete source/fold/target cold consumer chain; no auxiliary posterior or giant JSON dependency.",
+      "current_running_source_unchanged": true,
+      "interface_handoff": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\INTERFACE_HANDOFF.zh.md",
+        "bytes": 3470,
+        "sha256": "9d44f3bbdb43b9e1f7606e4cc93462b65b3131982a1662e46afeec43527112b6"
+      },
+      "independent_predeclared_math": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-compact-factor\\MATHEMATICAL_ORACLES.predeclared.json",
+        "bytes": 2642,
+        "sha256": "cdf8a0f981ef25918ae8ad1d96e2edfa5f5844ce7385cb5ccd1a0246b76d0e62"
+      },
+      "scope_note": "Native31 fixed-noise data factor remains complete; original noise-fit prior retained, auxiliary physical posterior omitted by explicit new programme. Existing v1 product and current frozen run remain their own producer."
+    }
+  },
   "confirmed_Lean_error_handoff": {
     "input": {
       "path": "D:\\BCI\\n2p3-net\\doc\\assets\\lean_gaussian_20261016\\research_error_handoff_01.json",
@@ -551,6 +575,11 @@
           "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-execution-acceptance\\STREAMED_PREFLIGHT.json",
           "bytes": 101263,
           "sha256": "f876b1cd244e30f442dab62bcf43948d8d59405464f3484c344d16a54174ce8a"
+        },
+        "profile_scope": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\streamed-source-execution\\SOURCE_PROFILE_SCOPE.json",
+          "bytes": 727,
+          "sha256": "e0ab6ff16bff39fd98ae59119f3aa35cb796906608c72490d1475cb7fccbfcd4"
         }
       },
       "code_preparation": {
@@ -821,7 +850,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T10:16:12.465070+00:00",
+  "last_updated_utc": "2026-10-19T10:50:11.292616+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
@@ -836,5 +865,18 @@
     "event": "source author and serialization reviewer turns ended with403insufficient balance",
     "resolution": "root continued concrete source inspection/sealing and independent prewritten controls; another existing independent reviewer received final source package.",
     "scientific_execution_authorization_changed": false
+  },
+  "research_workflow": {
+    "skill": "C:/Users/chent/.codex/skills/astra-research-workflow/SKILL.md",
+    "coverage": {
+      "delivery": "complete: source artifact plan and explicit implementation scope",
+      "science": "complete: original A/r/c algebra, actual baseline-only moments consumer and ten independent predeclared Gaussian/Fraction controls; candidate correspondence is engineering review.",
+      "engineering": "in_progress: complete producer/save/load/cold-consumer slice",
+      "execution": "in_progress: existing complete13person/13fold frozen programme; next code version has not started training",
+      "knowledge": "in_progress: existing topic owns conclusions and this checkpoint owns state",
+      "external_research": "not_applicable: current decision derives from actual source and Gaussian algebra",
+      "github": "not_applicable: no remote publication requested"
+    },
+    "handoff": "science_to_engineering: SOURCE_ARTIFACT_PLAN@58a6615b; preserve complete raw identity, noise programme, all columns, weak directions, flat measure and requested denominator."
   }
 }
