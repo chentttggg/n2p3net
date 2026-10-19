@@ -282,11 +282,12 @@
     }
   },
   "active_agents": {
-    "/root/audit_disposition_refresh": "Final complete adult C/D source-bound one-shot control and trace2 cold/typed exit.",
-    "/root/history_slice_integration_review": "Original E waiter and12 fresh-session controls; main test adaptation supplied.",
-    "/root/adult_population_transport_independent": "Full physical-theta general marginalization design and independent numerical-owner interface review.",
-    "/root/physical_gaussian_image": "Isolated general exact physical Gaussian image/codec candidate; no fit or large computation.",
-    "/root/zero_latent_graph_fix": "Completed final C/D/E Standards and core math reviews; receipts pinned by root source review."
+    "/root/target_interface_review": "Implement general layout-preserving proposal codecs and versioned trace fingerprint after independent diagnosis.",
+    "/root/audit_disposition_refresh": "Preserve C10 fit/source/control closure and certify original scientific-array/recipe replay recovery; no refit.",
+    "/root/history_slice_integration_review": "Retain original E waiter and plan actual corrected shared-codec runtime closure; do not issue premature ready.",
+    "/root/physical_gaussian_image": "Preserve original v1 and finish actual12control acceptance for exact-iterable fix v2 after resource admission.",
+    "/root/zero_latent_graph_fix": "Completed independent Standards; v2 source fix accepted, final behavior control pending.",
+    "/root/adult_population_transport_independent": "Completed CDE Spec, complete-physical-law mathematics and numerical interface review."
   },
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
@@ -1187,12 +1188,12 @@
       }
     },
     "adult_joint_history": {
-      "state": "root_and_independent_source_reviews_complete_final_C_D_control_waiting_original_resource_gate",
+      "state": "final_C_fit_and_D_save_cold_passed_trace_replay_layout_defect_confirmed_preserve_saved_fit",
       "owner": "/root/audit_disposition_refresh",
       "candidate_root": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/adult-programme-input/adult-joint-history/candidate",
       "handoff": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\ADULT_JOINT_HISTORY_HANDOFF.zh.md",
       "confirmed_seam": "existing JointCalibrationProblem assumes materialized physical source and same source/target clock; new actual-functional shared-latent compiler required",
-      "next_exit": "Original one-shot control follows four-resource gate for final imports10; then D trace2/cold/typed closure unlocks existing E waiter. Apply prepared main patch after actual behavior acceptance; source closure preserves original C06.",
+      "next_exit": "Reuse saved C10 fit/target/scientific trace. Integrate independently reviewed layout-preserving proposal codec and versioned trace fingerprint, then replay original saved evidence without refit and release E only with its actual corrected runtime closure.",
       "candidate_isolation": "C core files moved by SHA from shared B namespace; B uses its own explicit production whitelist",
       "confirmed_preintegration_issues": [
         "Core math and actual source/caller Spec/Standards reviewed; complete finite states and all physical source directions retained.",
@@ -1234,19 +1235,42 @@
         },
         "expected_receipt": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\final-main-imports10.resources.json",
         "result": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\final-main-imports10.result.json",
-        "controls_started": 0,
-        "original_birth_identity_live_at_checkpoint": true,
+        "controls_started": 2,
+        "original_birth_identity_live_at_checkpoint": false,
         "prelaunch_control_sources": {
           "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\source_snapshots\\final-main-imports10\\CONTROL_SOURCE_PREIMAGES.json",
           "bytes": 2450,
           "sha256": "688eee715c4f4d645dc53a1ff08e48408ae8a8eb3563456ae7d6b17fa64c987f"
-        }
+        },
+        "result_status": "one_pass_one_failure",
+        "original_waiter_and_control_retired": true,
+        "completed_runtime_seconds": 291.28,
+        "failure": "schema2final_points_sha256; source intact, JSON proposal root changed F-to-C storage order",
+        "retry_authority": "No replacement C fit or new SMC to bypass replay defect; diagnose/replay original saved operands first."
       },
       "preserved_C06_original_source_test_and_runner_closure": {
         "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\root-integration\\C06_READER_SOURCE_CLOSURE.json",
         "bytes": 58716,
         "sha256": "39a9f8129b1887444167ad004b28f971c2d76836ae3af44f0c7e645885d62b37"
-      }
+      },
+      "final_control_receipt": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\final-main-imports10.result.json",
+        "bytes": 26239,
+        "sha256": "c9ff68c132800b1faa11be46b369bf1b77bcb5babdbc8f954faabe019b00451a"
+      },
+      "final_control_JUnit": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\final-main-imports10.junit.xml",
+        "bytes": 9201,
+        "sha256": "a5e0ddb5e4f8b570c4da6c32db9ac3d55e5378d6beab27997a5ea26a039a5778"
+      },
+      "saved_C_D_directory": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\control_history\\final-main-imports10\\final-original-fit0",
+      "trace_layout_diagnosis": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\trace-replay-diagnosis\\author-proposal\\PROPOSAL_RESTORE_RESULT.json",
+        "bytes": 7066,
+        "sha256": "082d546c43e2aac7fdec26baa88e6084de55518632c2ab8d56535ffd3c798dee"
+      },
+      "final_C_fit_control_passed": true,
+      "final_trace_replay_passed": false
     },
     "future_target_checker": {
       "state": "lifetime_source_interface_and_actual_execution_seal_independently_accepted_scientific_completion_pending",
@@ -1449,7 +1473,7 @@
       }
     },
     "adult_joint_personal": {
-      "state": "source_review_complete_original_waiter_waiting_for_passed_D_codec_dependency",
+      "state": "original_waiter_retained_controls0_awaiting_true_D_and_corrected_shared_codec_runtime_closure",
       "owner": "/root/history_slice_integration_review",
       "candidate_root": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/adult-programme-input/adult-joint-personal",
       "production_file_scope": "src/research/adult_joint_personal.py; isolated from six C/D owner files",
@@ -1476,7 +1500,8 @@
         "bytes": 1038,
         "sha256": "8f58981db5e9902342066c4c4a76fd45c458d2538dea2c07c8aee6c8d97f0b88"
       },
-      "main_test_adaptation": "Absent external tiny software fixture is explicitly skipped; provided fixture runs all12, positive path checks original trace2. Original waiter tests remain unchanged."
+      "main_test_adaptation": "Absent external tiny software fixture is explicitly skipped; provided fixture runs all12, positive path checks original trace2. Original waiter tests remain unchanged.",
+      "upstream_trace_defect": "Confirmed C10 plain-proposal layout loss; CODEC_READY not issued. Do not run against stale shared modules merely because six C/D files match."
     },
     "target_memory_lifecycle": {
       "state": "code_and_full_public_scope_overlap_accepted_original_attempt_launched_peak_RSS_pending",
@@ -1523,10 +1548,10 @@
       }
     },
     "physical_gaussian_image": {
-      "state": "candidate_module_and_tiny_controls_written_save_and_posterior_cost_review_in_progress",
+      "state": "v1_small_controls_passed_v2_exact_iterable_fix_reviewed_final12_waiting_resource_gate",
       "owner": "/root/physical_gaussian_image",
       "independent_design_owner": "/root/adult_population_transport_independent",
-      "candidate_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\physical-gaussian-image\\candidate",
+      "candidate_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\physical-gaussian-image\\candidate-v2",
       "main_integrated": false,
       "scope": "Complete fixed physical Gaussian image, exact rational covariance and PSD-LDL, query-time surd rounding/error, versioned origin/codec and posterior physical-image seam for adult and public consumers.",
       "no_source_or_C_fit_or_EEG_or_large_Gram_authority": true,
@@ -1538,13 +1563,51 @@
         "default posterior mean/factor without unconditional n_squared covariance",
         "reuse bounded numerical contraction arithmetic instead of cubic_fraction_loop_for_large_tile"
       ],
-      "actual_numerical_controls_run": 0
+      "actual_numerical_controls_run": 0,
+      "v1_manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\physical-gaussian-image\\MANIFEST.json",
+        "bytes": 10063,
+        "sha256": "2b9fc95aa0f7490a5ed7fe232e67f9cace9ec1266654a96db493fa066576e7fb"
+      },
+      "v2_production_sha256": "8f6c79ab625e5040fb7bdf174e1c3563abde05846d99d55cb90001949ce70682",
+      "v2_tests_sha256": "15f62f06c424078a28c33aed8df63d0450c4e381a1d6dca3b480f6c5c82ecbf5",
+      "v2_Standards": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\physical-gaussian-image\\independent-review\\STANDARDS_MANIFEST.json",
+        "bytes": 8691,
+        "sha256": "425f480527f9afdbb737769c7c7f732498e51683d4dfee6209fa4583f34b6140"
+      },
+      "actual_v1_numerical_controls": 11,
+      "actual_v2_numerical_controls_run": 0,
+      "pending_change": "Single-pass materialize exact cross-covariance inputs before Fraction-only gate; v1 float-generator bypass reproduced, v2 source and6-container test reviewed; old11test AST unchanged."
+    },
+    "trace_layout_codec": {
+      "state": "confirmed_JSON_layout_defect_general_codec_candidate_in_implementation",
+      "owner": "/root/target_interface_review",
+      "candidate_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\trace-layout-codec\\candidate",
+      "causal_evidence": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\trace-replay-diagnosis\\author-proposal\\PROPOSAL_RESTORE_RESULT.json",
+        "bytes": 7066,
+        "sha256": "082d546c43e2aac7fdec26baa88e6084de55518632c2ab8d56535ffd3c798dee"
+      },
+      "mechanism": "GaussianProposal np.array(copy=True,order=K) preserves QR root Fortran layout; plain tolist/from_record restores C layout; BLAS draw/move differs at last bits while old value-only fingerprint matches.",
+      "actual_controls": "All10C10scientific arrays bitexact to oldC06; actual recipe proposal replays; plainC proposal fails; originalF-layout counterfactual alone replays both original final SHA.",
+      "implementation_scope": [
+        "Gaussian root storage order in JSON record and decoder",
+        "preserve original order despite shared CAS logical-value aliasing",
+        "new layout-bound fingerprint with explicit version marker under schema2; no-marker legacy identity remains separate"
+      ],
+      "original_draw_log_density_move_methods_unchanged_required": true,
+      "original_source_C_fit_trace_and_frozen_public_runtime_preserved": true,
+      "current_public_runtime_impact": "Public RecipeHistoryProposal reconstructs original generation recipe, outside this confirmed plain-JSON F-to-C seam; same original target handle remains authoritative.",
+      "source_or_C_refit_authorized": false,
+      "E_runtime_closure_owner": "/root/history_slice_integration_review"
     }
   },
   "next_actions": [
-    "Follow original78C/4914held target supervisor68812 and one-shot final-C/D worker13512 by PID/birth; four-resource gates own execution, no restart.",
-    "Read actual final C/D trace2/cold/typed result, then original E waiter67164 actual12case/trace2 receipt; apply prepared7source+test main patch and close producer/lint/integration evidence.",
-    "Review and integrate general exact physical Gaussian image/codec after independent formulas/counterexamples/behavior evidence; then wire both compile and posterior physical-image paths in adult and public consumers under a new representation."
+    "Follow original public78C/4914held supervisor68812 by PID/birth and resource policy; do not restart original frozen execution.",
+    "Complete shared proposal-layout codec candidate and distinguish new layout fingerprint from legacy schema2; recover/replay saved C10 scientific state without another source/C fit, then accept actual E runtime closure and run original12 E controls once.",
+    "At actual four-resource admission run final12tiny physical-Gaussian v2 controls; integrate final2files after original evidence and reviewer closure, preserving v1 pins.",
+    "Apply reviewed7source+test adult patch together with accepted shared-codec revision after complete C/D/E behavior acceptance; then wire general physical representation through adult and public compile+posterior-moment paths."
   ],
   "active_local_checks": [],
   "folder_cleanup_review": {
@@ -1555,7 +1618,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T18:04:31.800000+00:00",
+  "last_updated_utc": "2026-10-19T18:21:37.640739+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
