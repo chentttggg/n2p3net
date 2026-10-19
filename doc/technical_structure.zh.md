@@ -20,6 +20,8 @@
 
 `public_joint_history_execution`连接真实fit与完整history：每record观测并集一次，精确离散sum-product保全部候选，Gaussian算术按tile批处理。compact native状态、proposal recipe与shared numeric store供原SMC/trace `/2`冷重放；typed publication仍需同一live issuer和实际重放。每cell使用独占新目录，失败留下原产物及收据；共享数值store位于cell的同级目录。精确源码关系见[三切片整合](assets/research_resume_20261012/source_joint_history_integration.json)。
 
+`run_public_population_joint_matrix`编排13个互补源target、三档K和G0/G1：独立接受完整source后，每K沿原compiler授予C，拟合、保存、原C重放准入，再逐题消费63个原history请求。819请求panel的truth只在controller末端评价；六面板保4914分母。原executor返回的target发布连接fit、typed重放及原数值存储闭包，同store的CAS按实体去重计量。源码与失败政策见[完整矩阵整合](assets/research_resume_20261012/population_joint_matrix_integration.json)。
+
 `public_native_learner_plan`持实际C/history的原record观测并集、完整q/shape/unknown变量与精确C标签因子；运行期对照初次封存的真实law、质量、scope和算子，正常缓存不进入科学身份。`public_native_noise_reuse`要求原、新两个live parent和完整实际残差关系；保存态复用由独立issuer处理。`response_frontier`保C排除候选的真实零似然及完整候选轴。
 
 `research.existing_nn_public_learner`把原留整库H源权重接入原public compiler、`fit_with_epoch_selection`、`FrozenTrialPredictor`和完整prefix parent回放；source/scratch共用原profile与C选择政策，scratch仅借架构并重新估计目标统计。原source输入的baseline为none，按保存合同逐字段核；H实际缺PO8和OZ，经典方法只用FZ/P3/PZ/P4四个实测信号槽，CZ只作参考。wrapper复用原LDA/xDAWN和CandidateEvidence，保存真正selected inner state并回放原停止规则，完整请求顺序随fit context绑定。该程序评价跨研究适配；首批来源见[现成NN整合](assets/research_resume_20261012/existing_nn_public_integration.json)，完整诊断与科学用途见[公共评估](evidence/public_evaluation.zh.md)。

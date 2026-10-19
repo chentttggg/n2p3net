@@ -1,0 +1,92 @@
+{
+  "schema": "population_joint_matrix_driver_integration/1",
+  "status": "accepted_code_and_metadata_contracts",
+  "recorded_utc": "2026-10-19T09:36:52.295170+00:00",
+  "canonical_base": "a649e98d05ff63366db990465f559e6e0818f2db",
+  "author_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-preparation\\DELIVERY_MANIFEST.json",
+    "bytes": 8641,
+    "sha256": "f99711b924b95c2db6def2b7e0d623fc79cee4c8120e4a0b7214f80574d9c5b3"
+  },
+  "independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\independent-population-matrix-preparation\\REVIEW_RECEIPT.json",
+    "bytes": 10663,
+    "sha256": "f5ae84473bae968463be8d588bf92f3d33800e9f2817381561ea07002d9eb5c8"
+  },
+  "files": [
+    {
+      "relative": "experiments/run_public_population_joint_matrix.py",
+      "preimage": "absent",
+      "after_sha256": "8b68bcec4384507deed14f50e7b7f2359ceb5987677347b459a7a0b1cf6641a3",
+      "same_bytes_as_reviewed_candidate": true
+    }
+  ],
+  "root_review": "Read complete driver plus original source admission, compiler physical grants, joint save/cold/load/readmission, held history consumer, storage closure, requested metrics and resource owner relationships. R2 original file closure and same-store CAS unions preserve complete physical accounting.",
+  "composition_with_serialization_rev3": {
+    "consumed_public_source_functions": [
+      "admit_public_population_source",
+      "load_population_native_response",
+      "load_source_population_execution",
+      "require_source_population_execution"
+    ],
+    "AST_equal_to_independently_reviewed_preimage": true,
+    "accepted_change_binding": "doc/assets/research_resume_20261012/source_serialization_integration.json"
+  },
+  "requested_scope": {
+    "targets": 13,
+    "other_source_people_per_target": 12,
+    "K": [
+      200,
+      800,
+      2000
+    ],
+    "arms": [
+      "G0",
+      "G1"
+    ],
+    "genuine_C_programmes": 78,
+    "original_decisions": 819,
+    "held_cells": 4914,
+    "historical_baseline_diagnostic_cells": 9828
+  },
+  "scientific_settings": "Original source-only initialization, full response/private AR1 and full Q, maxiter2000/gtol0.001, fixed SMC recipe; every original held request remains in denominator.",
+  "fatal_actor_policy": "No completed TARGET_RESULT means all378 target cells remain missing/unadmitted; partial physical files retained for independent recovery. Expected numerical fit failure remains a separate original63-request failure.",
+  "reused_verification": {
+    "author_contracts": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-preparation\\CONTRACT_RESULT.json",
+      "bytes": 4040,
+      "sha256": "eb237c8db0e15f8723905b97ad7ed15fc2986c4e7cde289de81746f3ca1b68ef"
+    },
+    "independent_metadata": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\independent-population-matrix-preparation\\METADATA_INGRESS_RESULT.json",
+      "bytes": 3814,
+      "sha256": "ce36cc390457e65e8ef316dcba1d1988c17e471685b66eb01be393d04a1f6d23"
+    },
+    "independent_storage": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\independent-population-matrix-preparation\\STORAGE_MANIFEST_RESULT.json",
+      "bytes": 1135,
+      "sha256": "a9120f566938f3bd172d2a98ac6fcee1239e73290f15281c0c0338f562bf6c89"
+    },
+    "root_actual_main_inspect": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-execution\\INSPECT.stdout.json",
+      "bytes": 5936,
+      "sha256": "d07996ede81830439305d0f5c5d7de5840f0443415b91fd72198048e4bab3bc6"
+    },
+    "root_inspect_exit_code": 0
+  },
+  "execution_prerequisites": [
+    "Fresh complete executed-source freeze",
+    "Original819requested panel preparation",
+    "Actual full13person/13fold source execution and independent acceptance",
+    "Measured local resource declaration and whole-host supervision"
+  ],
+  "cleanup": {
+    "status": "not_applicable",
+    "reason": "New single code entrypoint; no replaced build. Original author fixture retirement recorded separately.",
+    "author_cleanup": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\population-matrix-preparation\\cleanup.json",
+      "bytes": 5802,
+      "sha256": "751167d6f6c7b152cb219b3e4b74e0cb220fb0a8d85045b76823acfc9a6a1aa8"
+    }
+  }
+}
