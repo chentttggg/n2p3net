@@ -1,0 +1,279 @@
+{
+  "schema": "n2p3_folder_cleanup_root_review/1",
+  "reviewed_utc": "2026-10-19T02:53:19.892448+00:00",
+  "scope": "all original cleanup-plan rows, with exact file-level restrictions",
+  "plan": {
+    "path": "D:\\BCI\\n2p3-net\\tmp\\audit\\folder_cleanup_plan.csv",
+    "bytes": 2684,
+    "sha256": "99464a8380e4f94f72f17138a98246f0a5060dfb32e930e96f1a050f79af6365"
+  },
+  "original_independent_report": {
+    "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\workspace_folder_management_20261019.zh.md",
+    "bytes": 18799,
+    "sha256": "6a8d27c427cbee779b357c78aa459f6e04d6e41875d5b3f788daf1a36da0829e"
+  },
+  "reviewed_original_rows": 18,
+  "rows": [
+    {
+      "id": "D1",
+      "review_decision": "已执行；本轮不重复计入回收",
+      "observed_logical_bytes": null,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "原执行记录保留；本轮新增删除为零。",
+      "required_before_action": "",
+      "evidence": "D:\\BCI\\n2p3-net\\tmp\\audit\\cleanup_executed_20261019.json",
+      "original_plan_path": "git gc (.git objects)"
+    },
+    {
+      "id": "D2",
+      "review_decision": "已执行；本轮不重复计入回收",
+      "observed_logical_bytes": null,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "原执行记录保留；本轮新增删除为零。",
+      "required_before_action": "",
+      "evidence": "D:\\BCI\\n2p3-net\\tmp\\audit\\cleanup_executed_20261019.json",
+      "original_plan_path": "delete incomplete partials"
+    },
+    {
+      "id": "D3",
+      "review_decision": "已执行；本轮不重复计入回收",
+      "observed_logical_bytes": null,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "原执行记录保留；本轮新增删除为零。",
+      "required_before_action": "",
+      "evidence": "D:\\BCI\\n2p3-net\\tmp\\audit\\cleanup_executed_20261019.json",
+      "original_plan_path": "delete pyc/pytest/ruff cache"
+    },
+    {
+      "id": "D4",
+      "review_decision": "保留备份",
+      "observed_logical_bytes": null,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "历史 bundle 已移出 Git 目录；同盘迁移未释放卷容量。",
+      "required_before_action": "",
+      "evidence": "D:\\BCI\\n2p3-net\\doc\\evidence\\workspace_folder_management_20261019.zh.md",
+      "original_plan_path": "historical git bundle"
+    },
+    {
+      "id": "E1",
+      "review_decision": "保留；与 T5a 为同一对象",
+      "observed_logical_bytes": 3547367255,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "六个导出数据对象在当前 Git 中全部 missing；两份历史 bundle 的引用闭包均未覆盖。索引哈希不能恢复文件。",
+      "required_before_action": "",
+      "evidence": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\E1_T5A_EVIDENCE.json",
+      "original_plan_path": "git-unreachable exported blobs"
+    },
+    {
+      "id": "T1",
+      "review_decision": "条件可清：仅九个 tar.gz",
+      "observed_logical_bytes": 22334021797,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 22334021797,
+      "reason": "成员名和大小与清单相符；当前原始文件的内容摘要尚待核验。",
+      "required_before_action": "核对全部保留 raw 文件或原 ZIP member 与记录 SHA256；保留九份 JSON、原 ZIP、sidecar 及冻结 manifest。",
+      "evidence": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\T1_T3_READ_ONLY_REVIEW.json",
+      "original_plan_path": "experiments/runs/source_eog_20260909/delivery/*.tar.gz"
+    },
+    {
+      "id": "T2a",
+      "review_decision": "保留或迁往已验证的外部冷存",
+      "observed_logical_bytes": 33831994187,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "Lee 下载尚不完整，包含 203 个 BDF、138 个续传状态；当前没有已验证的替代副本。",
+      "required_before_action": "若迁移，保留续传状态并核对不同卷的完整副本；同 D 盘移动回收为零。",
+      "evidence": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\CLEANUP_DECISIONS.json",
+      "original_plan_path": "mne_data/lee2019_erp_nemar_nm000323_v1.0.4"
+    },
+    {
+      "id": "T2b",
+      "review_decision": "部分可清：只删除 8940 个 range part",
+      "observed_logical_bytes": 4682269622,
+      "eligible_now_logical_bytes": 2341134811,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "十九个完整 ZIP 当前 SHA 匹配旧记录，逐个对应的分片拼接 SHA 全部与原 ZIP 一致。保留十九个 ZIP。",
+      "required_before_action": "仅使用 exact delete_allowlist，执行时重核所保留 ZIP 与目标文件身份；不删除完整数据集目录。",
+      "evidence": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\BI2014B_REDUNDANT_PARTS_VERIFICATION.json",
+      "original_plan_path": "mne_data/MNE-braininvaders2014b-data"
+    },
+    {
+      "id": "T2c",
+      "review_decision": "可清：八个失败下载 ZIP",
+      "observed_logical_bytes": 1324904448,
+      "eligible_now_logical_bytes": 1324904448,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "八个文件均无可读 ZIP 中央目录，旧准入记录明确排除；不涉及已准入的 Huebner NEMAR 数据。",
+      "required_before_action": "只删除清单内 subject01.zip 至 subject08.zip；保留旧拒绝证据和本轮异常记录。",
+      "evidence": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\LLP_FAILED_DOWNLOAD_ALLOWLIST.json",
+      "original_plan_path": "mne_data/MNE-llp-data"
+    },
+    {
+      "id": "T2d",
+      "review_decision": "保留活动原始数据",
+      "observed_logical_bytes": 306970985,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "RomaniBF 是 BrainForm 的读取入口；B7_plus_three 与原始 ZIP/事件派生准入仍有引用。",
+      "required_before_action": "",
+      "evidence": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\CLEANUP_DECISIONS.json",
+      "original_plan_path": "mne_data/MNE-RomaniBF2025ERP-data"
+    },
+    {
+      "id": "T3a",
+      "review_decision": "条件可清：仅十个运输 tar；保留解包数据",
+      "observed_logical_bytes": null,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 4571937280,
+      "reason": "十个 tar 共约 4.26 GiB；header 覆盖及小 sidecar 字节已核，两份 tar 截断。整个 local_prepared 不是删除范围。",
+      "required_before_action": "现存 shards/*.npz 的 SHA256 全部匹配 preparation.json 的 cache_sha256；保留 NPZ、record、账本与 delivered 回执。",
+      "evidence": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\T1_T3_READ_ONLY_REVIEW.json",
+      "original_plan_path": "experiments/runs/source_eog_20260909/local_prepared"
+    },
+    {
+      "id": "T3b",
+      "review_decision": "保留历史缓存与 sidecar",
+      "observed_logical_bytes": 4070366421,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "history 为明确迁移保留的历史输入；另两组缓存尚无完整替代凭证。混合斜杠的路径别名不是两份文件。",
+      "required_before_action": "",
+      "evidence": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\T1_T3_READ_ONLY_REVIEW.json",
+      "original_plan_path": "experiments/cache"
+    },
+    {
+      "id": "T3c",
+      "review_decision": "保留六份科学结果/来源恢复包",
+      "observed_logical_bytes": 5593168646,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "含尚未完整解包的模型、预测与执行来源；新源码和原始数据不能还原原训练产物。",
+      "required_before_action": "",
+      "evidence": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\T1_T3_READ_ONLY_REVIEW.json",
+      "original_plan_path": "experiments/runs/*/export/*.tar.gz"
+    },
+    {
+      "id": "T4",
+      "review_decision": "保留工作树证据；仅一个 pyc 可清",
+      "observed_logical_bytes": 5757310449,
+      "eligible_now_logical_bytes": 38933,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "两份同内容 K950 图分别被正例结果与反例恢复记录引用；旧外部备份目录为空，Git 分支未保存 ignored 的科研载荷。",
+      "required_before_action": "仅清指定 continuation_20261016.cpython-314.pyc；归档并验证科研载荷、迁移恢复入口后再退役整个工作树。",
+      "evidence": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\INDEPENDENT_E1_T4_T5_MANIFEST.json",
+      "original_plan_path": "tmp of D:/BCI/worktrees/bi2014a-label-prefix"
+    },
+    {
+      "id": "T5a",
+      "review_decision": "与 E1 重复；保留并且不重复计量",
+      "observed_logical_bytes": null,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "同一个 git-unreachable-20261019 目录。",
+      "required_before_action": "",
+      "evidence": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\E1_T5A_EVIDENCE.json",
+      "original_plan_path": "D:/BCI/artifacts/git-unreachable-20261019"
+    },
+    {
+      "id": "T5b",
+      "review_decision": "保留当前 Lean 缓存及证据",
+      "observed_logical_bytes": 2673864088,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "当前源码仍需 target compile；.lake 还含独有调度日志、环境记录和两份被固定 SHA 引用的 setup JSON。",
+      "required_before_action": "未来仅按明确 build 子树清理，先保全调度与固定 setup 证据；整目录不列入当前删除范围。",
+      "evidence": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\T4_DUPLICATE_AND_T5B_SUBSCOPES.json",
+      "original_plan_path": "formal/lean/.lake"
+    },
+    {
+      "id": "T5c",
+      "review_decision": "保留历史恢复载荷",
+      "observed_logical_bytes": 2987893535,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "local_history 不只压缩包，还含原始 EDF、模型、NPZ 和恢复依赖；哈希清单不能替代这些字节。",
+      "required_before_action": "如需迁移，先验证不同卷的完整实体副本并更新恢复定位。",
+      "evidence": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\CLEANUP_DECISIONS.json",
+      "original_plan_path": "frozen/local_history"
+    },
+    {
+      "id": "T6",
+      "review_decision": "保留两套当前环境",
+      "observed_logical_bytes": null,
+      "eligible_now_logical_bytes": 0,
+      "conditional_candidate_logical_bytes": 0,
+      "reason": "CPU/GPU 环境用途不同且当前入口依赖其路径；venv 内 editable .pth 均指向主目录 src。移至同一 D 盘不释放容量。",
+      "required_before_action": "若将来统一迁移，重建环境并核对 CLI/工作站/console-script 入口后再退役旧环境。",
+      "evidence": "D:\\BCI\\n2p3-net\\doc\\engineering.zh.md",
+      "original_plan_path": ".venv + .venv-gpu"
+    }
+  ],
+  "eligible_now": {
+    "files": 8949,
+    "logical_bytes": 3666078192,
+    "logical_GiB": 3.4143013805150986,
+    "scope_owners": [
+      "BI2014B_REDUNDANT_PARTS_VERIFICATION.json:delete_allowlist",
+      "LLP_FAILED_DOWNLOAD_ALLOWLIST.json:delete_scope_if_later_authorized",
+      "T4_BYTECODE_CANDIDATES.json:files"
+    ]
+  },
+  "conditional_transport_candidates": {
+    "files": 19,
+    "logical_bytes": 26905959077,
+    "logical_GiB": 25.058127080090344
+  },
+  "new_deletions": 0,
+  "new_moves": 0,
+  "actual_reclaimed_bytes_this_review": 0,
+  "capacity_semantics": "logical candidate sizes; physical free-space increase is measured only after an actual deletion; moves on D: recover zero volume capacity",
+  "execution_policy": "review only; any subsequent deletion uses cmd with exact reviewed paths, source retention and per-file actual results; do not execute the original bulk cleanup_remaining.ps1",
+  "original_executor_review": "Apply always deletes all T1 archives without payload-identity checks; PowerShell deletion also differs from the user-required cmd workflow; its plan log is not an actual per-file deletion receipt",
+  "evidence": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\CLEANUP_DECISIONS.json",
+      "bytes": 19964,
+      "sha256": "fd50494a6d7c0078649d982bb44b592e9d592167192707fa1eccab576c45e167"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\BI2014B_REDUNDANT_PARTS_VERIFICATION.json",
+      "bytes": 7931993,
+      "sha256": "4e3b78b8e5a1c412a06c8f3aa39886f92e3c035265bd19a2e5d5ff4dd8328e63"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\LLP_FAILED_DOWNLOAD_ALLOWLIST.json",
+      "bytes": 4016,
+      "sha256": "ff2e7cb7f1044209362fd105a2765afc5078d07f9a4cd0ef5187536e83302a13"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\T1_T3_READ_ONLY_REVIEW.json",
+      "bytes": 3127874,
+      "sha256": "e642fe9a7fa3a990969e25eb14c6004569613bbb1427902b99b862df48d271ff"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\INDEPENDENT_E1_T4_T5_MANIFEST.json",
+      "bytes": 2134,
+      "sha256": "86829be53d4eb93de1a1efdbef31c1f271e4765fc105a7f0085d3754e5c4565b"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\E1_T5A_EVIDENCE.json",
+      "bytes": 8152,
+      "sha256": "ea8b29106009614c2216355a59dc18570b2af12e4c86ff7fe4b67490a850fc3f"
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\folder-cleanup-review\\T4_DUPLICATE_AND_T5B_SUBSCOPES.json",
+      "bytes": 5799,
+      "sha256": "76ba55030b2ca9951da80d7ee376177888946afd3cf5a68759c81cd863f8a358"
+    }
+  ],
+  "environment_observations": {
+    "editable_install_source": "D:/BCI/n2p3-net/src",
+    "cpu_venv": "D:/BCI/n2p3-net/.venv",
+    "gpu_venv": "D:/BCI/n2p3-net/.venv-gpu"
+  }
+}
