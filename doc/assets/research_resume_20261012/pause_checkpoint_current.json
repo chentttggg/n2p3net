@@ -1193,7 +1193,7 @@
       "candidate_root": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/adult-programme-input/adult-joint-history/candidate",
       "handoff": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\ADULT_JOINT_HISTORY_HANDOFF.zh.md",
       "confirmed_seam": "existing JointCalibrationProblem assumes materialized physical source and same source/target clock; new actual-functional shared-latent compiler required",
-      "next_exit": "Reuse saved C10 fit/target/scientific trace. Integrate independently reviewed layout-preserving proposal codec and versioned trace fingerprint, then replay original saved evidence without refit and release E only with its actual corrected runtime closure.",
+      "next_exit": "After codec controls and independent review, original C10fit/actualA-B-C-history re-admission -> original infer/publish with complete ten-source runtime; no replacement typed issuer or weak-registry mutation. Retain old failed run and exact original recovery evidence, then issue actual D ready to existing E waiter.",
       "candidate_isolation": "C core files moved by SHA from shared B namespace; B uses its own explicit production whitelist",
       "confirmed_preintegration_issues": [
         "Core math and actual source/caller Spec/Standards reviewed; complete finite states and all physical source directions retained.",
@@ -1246,7 +1246,7 @@
         "original_waiter_and_control_retired": true,
         "completed_runtime_seconds": 291.28,
         "failure": "schema2final_points_sha256; source intact, JSON proposal root changed F-to-C storage order",
-        "retry_authority": "No replacement C fit or new SMC to bypass replay defect; diagnose/replay original saved operands first."
+        "retry_authority": "Reuse preserved C10fit with0source/Cfits. Original saved-state causal recovery0SMC; after fixed codec acceptance one necessary original infer->publish SMC run under same original seed8x2/fullschedule is authorized in a new source-bound directory."
       },
       "preserved_C06_original_source_test_and_runner_closure": {
         "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-joint-history\\root-integration\\C06_READER_SOURCE_CLOSURE.json",
@@ -1501,7 +1501,14 @@
         "sha256": "8f58981db5e9902342066c4c4a76fd45c458d2538dea2c07c8aee6c8d97f0b88"
       },
       "main_test_adaptation": "Absent external tiny software fixture is explicitly skipped; provided fixture runs all12, positive path checks original trace2. Original waiter tests remain unchanged.",
-      "upstream_trace_defect": "Confirmed C10 plain-proposal layout loss; CODEC_READY not issued. Do not run against stale shared modules merely because six C/D files match."
+      "upstream_trace_defect": "Confirmed C10 plain-proposal layout loss; CODEC_READY not issued. Do not run against stale shared modules merely because six C/D files match.",
+      "corrected_runtime_seam": {
+        "original_waiter_can_remain": true,
+        "ready_joint_snapshot": "New named research directory containing byte-identical C10six sources plus accepted shared-codec four sources",
+        "snapshot_manifest": "SOURCE_HASHES.json Path/Hash format covers all10; original324frozen main-code files unchanged",
+        "original_E_controls_started": 0,
+        "must_precede_ready": "codec actual controls+independent review, original actual-parent C10fit reuse and original D infer/publish trace/cold/typed success"
+      }
     },
     "target_memory_lifecycle": {
       "state": "code_and_full_public_scope_overlap_accepted_original_attempt_launched_peak_RSS_pending",
@@ -1578,7 +1585,13 @@
       },
       "actual_v1_numerical_controls": 11,
       "actual_v2_numerical_controls_run": 0,
-      "pending_change": "Single-pass materialize exact cross-covariance inputs before Fraction-only gate; v1 float-generator bypass reproduced, v2 source and6-container test reviewed; old11test AST unchanged."
+      "pending_change": "Single-pass materialize exact cross-covariance inputs before Fraction-only gate; v1 float-generator bypass reproduced, v2 source and6-container test reviewed; old11test AST unchanged.",
+      "v2_manifest": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\physical-gaussian-image\\MANIFEST.v2.json",
+        "bytes": 8143,
+        "sha256": "fd5ce481cab34743a978b7a1d741e4adb788cef9f6f398f70570b2b158ce2da2"
+      },
+      "v2_handoff": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\physical-gaussian-image\\V2_HANDOFF.zh.md"
     },
     "trace_layout_codec": {
       "state": "confirmed_JSON_layout_defect_general_codec_candidate_in_implementation",
@@ -1618,7 +1631,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T18:21:37.640739+00:00",
+  "last_updated_utc": "2026-10-19T18:25:25.492643+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
