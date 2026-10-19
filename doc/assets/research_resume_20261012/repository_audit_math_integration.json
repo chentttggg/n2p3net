@@ -57,5 +57,31 @@
   "cleanup": {
     "status": "not_applicable",
     "reason": "No superseded generated build; producer and mathematical counterexamples retained"
+  },
+  "revision2": {
+    "delivery": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-audit-math\\r2-policy-sensitivity\\DELIVERY.json",
+      "sha256": "55a225580f79835b3ecbe0ac44c953668768e4da613920a60717c102909fbb5b"
+    },
+    "root_review": "Read the policy aggregation, actual sum-negative/sum-positive AUC interval, and saved-vs-reconstructed diagnostic comparison; preserves primary requested seed denominator and legacy missing-field loading",
+    "source_relation": "R1 sources matched before copy; final edited source is LF",
+    "canonical_sources": [
+      {
+        "path": "tests\\research\\test_policy_available_seed_sensitivity.py",
+        "sha256": "e9e8935ddae5257fa7c4fb0cc2d345a8054ed6b99862d35c41714f3dd031cc24"
+      },
+      {
+        "path": "tests\\transfer\\test_operator_saved_diagnostic_relation.py",
+        "sha256": "71b9269b7d77f33e0e8a2ea3f5885e3052a1f9efbdc2bfb5907b79fcd5a2b5bd"
+      },
+      {
+        "path": "src\\stats\\transfer.py",
+        "sha256": "fab4df2c6d350e3e0efc9db770ece2146fa7d9b06cb5c4c128714c1ae40b2b6d"
+      },
+      {
+        "path": "src\\transfer\\operator_lda.py",
+        "sha256": "181145fc87a2779379b30949aa64e6f3e594590e628f55d7baea4140a43d7447"
+      }
+    ]
   }
 }

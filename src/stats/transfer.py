@@ -179,7 +179,8 @@ def _participant_rows(unit_rows: list[dict], seeds: tuple[tuple, ...]) -> list[d
 
 
 def _summary(rows: list[dict], studies: tuple[str, ...], *, iterations: int, seed: int,
-             with_intervals: bool = True, contrast_bounds: Mapping[str, float | None] | None = None) -> dict:
+             with_intervals: bool = True, contrast_bounds: Mapping[str, float | None] | None = None,
+             contrast_lower_bounds: Mapping[str, float | None] | None = None) -> dict:
     complete = [row for row in rows if row["status"] == "complete_pair"]
     by_study = {}
     samples = {}
@@ -188,12 +189,14 @@ def _summary(rows: list[dict], studies: tuple[str, ...], *, iterations: int, see
         values = np.asarray([row["difference"] for row in complete if row["study"] == study], dtype=float)
         if len(values):
             samples[study] = values
+        bound = None if contrast_bounds is None else contrast_bounds.get(study)
+        lower = (contrast_lower_bounds.get(study) if contrast_lower_bounds is not None
+                 else -bound if bound is not None else None)
         interval = None
         if with_intervals and len(values) > 1:
-            bound = None if contrast_bounds is None else contrast_bounds.get(study)
             interval = paired_interval(values, inference_scope="conditional_frozen_models",
                                        iterations=iterations, seed=seed,
-                                       value_bounds=None if bound is None else (-bound, bound)).record()
+                                       value_bounds=None if lower is None or bound is None else (lower, bound)).record()
         by_study[study] = {
             "n_requested_participants": len(requested), "n_complete_participants": len(values),
             "mean_difference": float(values.mean()) if len(values) else None,
@@ -214,12 +217,12 @@ def _summary(rows: list[dict], studies: tuple[str, ...], *, iterations: int, see
                 and interval["bounded_mean_interval"] is not None else None),
         }
         if contrast_bounds is not None:
-            bound = contrast_bounds.get(study)
             missing = len(requested) - len(values)
-            bounds = ([(float(values.sum()) - missing * bound) / len(requested),
+            bounds = ([(float(values.sum()) + missing * lower) / len(requested),
                        (float(values.sum()) + missing * bound) / len(requested)]
-                      if len(requested) and bound is not None else None)
-            by_study[study].update(contrast_bound=bound, missing_result_bounds=bounds)
+                      if len(requested) and lower is not None and bound is not None else None)
+            by_study[study].update(contrast_bound=bound, contrast_lower_bound=lower,
+                                  contrast_upper_bound=bound, missing_result_bounds=bounds)
             if missing and bounds is not None:
                 by_study[study].update(replacement_decline_gate_passed=bool(bounds[0] >= -0.01),
                                        replacement_decline_gate_basis="missing_result_lower_bound")
@@ -291,7 +294,7 @@ def _summary(rows: list[dict], studies: tuple[str, ...], *, iterations: int, see
             "is_confidence_interval": False,
             "weighting": "equal_declared_study_weights_after_within_study_requested_participant_bounds",
             "population": "known_actual_K_requested_and_observed_participants",
-            "assumption": "each_missing_zero_sum_AUC_contrast_lies_in_plus_minus_sum_positive_weights",
+            "assumption": "each_missing_AUC_contrast_lies_between_sum_negative_and_sum_positive_weights",
         }
     return result
 
@@ -309,9 +312,12 @@ def _contrast_report(
 
     bounds = {study: float(sum(value for value in coefficients(study).values() if value > 0))
               if coefficients(study) else None for study in studies}
+    lower_bounds = {study: float(sum(value for value in coefficients(study).values() if value < 0))
+                    if coefficients(study) else None for study in studies}
 
     def summarize(rows, **options):
-        return _summary(rows, studies, iterations=iterations, seed=seed, contrast_bounds=bounds, **options)
+        return _summary(rows, studies, iterations=iterations, seed=seed, contrast_bounds=bounds,
+                        contrast_lower_bounds=lower_bounds, **options)
 
     relevant = {key[:-1] for key in lookup if coefficients(key[0])}
     relevant.update((row["study"], row["participant_key"], row["actual_K"], *pair)
@@ -344,13 +350,24 @@ def _contrast_report(
     policy = []
     for (study, participant), rows in sorted(policy_rows.items()):
         legal = all(row["status"] == "complete_pair" for _, row in rows)
+        available = [(budget, row["available_seed_pair_mean_difference"]) for budget, row in rows
+                     if row["available_seed_pair_mean_difference"] is not None]
         policy.append({
             "study": study, "participant_key": participant, "status": "complete_pair" if legal else "incomplete_budget_policy",
             "actual_Ks": [budget for budget, _ in rows],
             "difference": float(np.mean([row["difference"] for _, row in rows])) if legal else None,
             "requested_seed_pairs": sum(row["requested_seed_pairs"] for _, row in rows),
             "failed_or_missing_seed_pairs": sum(row["failed_or_missing_seed_pairs"] for _, row in rows),
+            "available_seed_pairs": sum(row["available_seed_pairs"] for _, row in rows),
+            "available_seed_pair_mean_difference": (
+                float(np.mean([value for _, value in available])) if available else None),
+            "available_seed_pair_actual_Ks": [budget for budget, _ in available],
+            "available_seed_pairs_by_actual_K": {str(budget): row["available_seed_pairs"] for budget, row in rows},
         })
+    policy_summary = summarize(policy)
+    policy_summary["available_seed_pair_sensitivity"]["estimand"] = (
+        "participant_mean_of_per_K_available_seed_pair_means_with_equal_actual_K_weights; "
+        "K_without_any_complete_pair_omitted; not_the_full_requested_seed_grid")
     seed_panels = []
     for source_seed, target_seed in seeds:
         for budget in actual_budgets:
@@ -423,7 +440,7 @@ def _contrast_report(
     return {
         "input_comparison_plan": (comparison_plan or ContrastPlan()).record(),
         "weights": dict(weights), "exact_K": exact, "fallback_actual_K": fallback,
-        "budget_policy": {**summarize(policy),
+        "budget_policy": {**policy_summary,
                           "estimand": "participant_mean_over_unique_available_actual_positive_K_including_fallback"},
         "per_seed": seed_panels,
         "seed_stability_range_by_K": seed_ranges, "seed_marginals": marginal_seeds,

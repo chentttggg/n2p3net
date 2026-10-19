@@ -360,6 +360,9 @@ class OperatorAwareLDA:
         model = cls(means, noise, A, B, metadata["ridge_relative"], metadata["input_identity"], metadata["provenance"],
                     conditioning_class_means=arrays[5] if conditional else None,
                     observation_support=ConditioningObservationSupport.from_record(metadata["provenance"]["observation_support"]) if conditional else None)
+        if ("regularization_diagnostics" in metadata and metadata_digest(metadata["regularization_diagnostics"])
+                != metadata_digest(model.regularization_diagnostics)):
+            raise ValueError("saved operator regularization diagnostic differs from its actual covariance and ridge")
         if conditional and (not np.array_equal(arrays[6], model.conditioning_gain) or not np.array_equal(arrays[7], model.covariance)):
             raise ValueError("operator conditional mean/covariance differs from actual joint noise")
         return model
