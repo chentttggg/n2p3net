@@ -1,0 +1,39 @@
+{
+  "schema": "n2p3_transition_trace_integration/1",
+  "acceptance": "source_and_software_numeric_replay",
+  "canonical_sources": [
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\collapsed_continuous_inference.py",
+      "bytes": 32474,
+      "sha256": "79a0a21099017890974cf920a37b46c52b20d579af51f38342ad57474dac5a71"
+    },
+    {
+      "path": "D:\\BCI\\worktrees\\research-director\\src\\research\\common_cloud_transition_trace.py",
+      "bytes": 16324,
+      "sha256": "6a83661c717e0c3cfd19638c410acfe4595241d425fbb6c18e6ab45e854aa0c1"
+    }
+  ],
+  "author_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\common-cloud-transition-trace\\REVIEW_DELIVERY.json",
+    "bytes": 8207,
+    "sha256": "03b5909d0a6a4d7a52727062f15d1fa7f8b86c94210b32c16801b2e2aef43224"
+  },
+  "independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\independent-review\\RECIPE_TRACE_REVIEW_RECEIPT.json",
+    "bytes": 11680,
+    "sha256": "94fc462c8a0644face07800b13fbd2a104a12009ee6754f48adb5d33df14f53e"
+  },
+  "root_review": {
+    "complete_codec_read": true,
+    "original_smc_observer_sites_read": true,
+    "baseline_bytes_match": true,
+    "scientific_kernel_original_definitions_AST_equal": 18,
+    "checks": "RNG original program, seed.spawn identity, complete proposal factor arrays, ordered ancestry/move/accept transcript, no target or redecision in reconstruction, full float64 original science payload and final points digests"
+  },
+  "scope": "Generic proper Gaussian/mixture/record proposals; fixed new trace schema2; frozen schema1 producer remains available; no new public fit or full-matrix throughput assertion",
+  "cleanup": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\common-cloud-transition-trace\\cleanup.json",
+    "bytes": 5229,
+    "sha256": "bca0a0c51f440e982174ac3f37ae3c683c14595e2f4795ea5a02db86e9beedf4"
+  }
+}

@@ -7,6 +7,7 @@ or finite-sample-certified producer. Input authority and fitted-model adapters h
 """
 from __future__ import annotations
 
+import copy
 import hashlib
 from dataclasses import dataclass
 from itertools import product
@@ -405,7 +406,7 @@ def _psi(joint, scales):
 
 
 def run_smc(target, proposal, endpoint_log_scales, *, inference_seed, particles,
-            replicates, temperatures, moves, pcn_scale):
+            replicates, temperatures, moves, pcn_scale, observer=None):
     """Fixed-schedule tempered SMC with shared positive P/F and complete current q.
 
     Resampling each stage is unbiased systematic resampling. Each production
@@ -425,13 +426,16 @@ def run_smc(target, proposal, endpoint_log_scales, *, inference_seed, particles,
     output, arrays, component_estimates = [], {}, []
     for replicate, stream in enumerate(streams):
         rng = np.random.default_rng(stream)
+        if observer is not None:
+            observer('initial_draw', replicate=replicate, rng_state=copy.deepcopy(rng.bit_generator.state),
+                bit_generator=type(rng.bit_generator), particles=particles)
         points = proposal.draw(rng, particles)
         joint = target.evaluate_many(points)
         log_g = proposal.log_density(points)
         log_psi = _psi(joint, scales)
         ell = log_psi-log_g
         log_z, trace = 0., []
-        for previous, gamma in zip(temperatures[:-1], temperatures[1:], strict=True):
+        for stage, (previous, gamma) in enumerate(zip(temperatures[:-1], temperatures[1:], strict=True)):
             log_w = (gamma-previous)*ell
             norm = logsumexp(log_w)
             log_z += norm-np.log(particles)
@@ -440,10 +444,15 @@ def run_smc(target, proposal, endpoint_log_scales, *, inference_seed, particles,
             cdf = np.cumsum(weights)
             cdf[-1] = 1.
             ancestors = np.searchsorted(cdf, (rng.random()+np.arange(particles))/particles)
+            if observer is not None:
+                observer('resample', replicate=replicate, stage=stage, gamma=float(gamma),
+                    ancestors=ancestors.copy())
             points, joint = points[ancestors], joint[ancestors]
             log_g, log_psi, ell = log_g[ancestors], log_psi[ancestors], ell[ancestors]
             accepted = 0
-            for _ in range(moves):
+            for move in range(moves):
+                if observer is not None:
+                    move_rng_state = copy.deepcopy(rng.bit_generator.state)
                 trial = proposal.reversible_move(rng, points, pcn_scale)
                 tj = target.evaluate_many(trial)
                 tg = proposal.log_density(trial)
@@ -453,6 +462,9 @@ def run_smc(target, proposal, endpoint_log_scales, *, inference_seed, particles,
                 accepted += int(accept.sum())
                 points[accept], joint[accept] = trial[accept], tj[accept]
                 log_g[accept], log_psi[accept], ell[accept] = tg[accept], tp[accept], te[accept]
+                if observer is not None:
+                    observer('move', replicate=replicate, stage=stage, move=move,
+                        rng_state=move_rng_state, rho=pcn_scale, accept=accept.copy())
             trace.append({'gamma': float(gamma), 'log_normalizer': float(log_z),
                 'increment_ess_diagnostic': ess, 'accepted_moves': accepted,
                 'proposed_moves': moves*particles, 'ancestors': ancestors.tolist()})
@@ -463,6 +475,9 @@ def run_smc(target, proposal, endpoint_log_scales, *, inference_seed, particles,
         arrays[key+'_points'], arrays[key+'_joint'] = points, joint
         arrays[key+'_log_g'], arrays[key+'_log_psi'] = log_g, log_psi
         arrays[key+'_scaled_log_component'] = component
+        if observer is not None:
+            observer('replicate_complete', replicate=replicate, points_sha256=array_digest(points),
+                points_shape=points.shape)
         output.append({'replicate': replicate, 'spawn_key': list(stream.spawn_key),
             'log_normalizer': float(log_z), 'trace': trace})
     components = np.array(component_estimates)
