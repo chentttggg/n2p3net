@@ -412,7 +412,22 @@
         "bytes": 2642,
         "sha256": "cdf8a0f981ef25918ae8ad1d96e2edfa5f5844ce7385cb5ccd1a0246b76d0e62"
       },
-      "scope_note": "Native31 fixed-noise data factor remains complete; original noise-fit prior retained, auxiliary physical posterior omitted by explicit new programme. Existing v1 product and current frozen run remain their own producer."
+      "scope_note": "Native31 fixed-noise data factor remains complete; original noise-fit prior retained, auxiliary physical posterior omitted by explicit new programme. Existing v1 product and current frozen run remain their own producer.",
+      "independent_review_preparation": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-compact-factor\\PREPARATION_MANIFEST.json",
+        "bytes": 4801,
+        "sha256": "aa2922d5112668381995a663551db0182d407c351637942db46950cca6c37703"
+      },
+      "review_fixture_retention": {
+        "original_cleanup_receipt": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-compact-factor\\cleanup.json",
+          "bytes": 2332,
+          "sha256": "64356b4a4c23988ce87fd279e803da1981a60f9a8a5fb3a56314dfcd0d459287"
+        },
+        "disposition": "Retain all three current negative-control/reproduction inputs during unsealed implementation review; no deletion retried. Root will review actual references at final candidate acceptance.",
+        "retained_apparent_bytes": 2570,
+        "actual_deleted_bytes": 0
+      }
     }
   },
   "confirmed_Lean_error_handoff": {
@@ -527,7 +542,7 @@
       "actual_population_complete_hyperfits": 0,
       "candidate_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
       "execution": {
-        "state": "running_complete_programme_with_bounded_fast_codec",
+        "state": "resource_paused_by_external_GPU_pressure",
         "launch": {
           "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\streamed-source-execution\\ROOT_LAUNCH.json",
           "bytes": 2262,
@@ -564,11 +579,42 @@
         "completed_folds": 0,
         "scientific_acceptance_issued": false,
         "last_observation": {
-          "time": 1792405276.8629913,
-          "action": "running",
-          "host_cpu_percent": 31.6,
-          "host_memory_percent": 57.9,
-          "owned_cpu_percent_of_host": 3.2310605390493565
+          "time": 1792408074.3268223,
+          "action": "pause_external_gpu_pressure",
+          "scientific_process_status": "stopped",
+          "host_cpu_percent": 12.0,
+          "host_memory_percent": 55.7,
+          "owned_cpu_percent_of_host": 0.0,
+          "gpu_observation": {
+            "observed_time": 1792408073.4784236,
+            "status": "observed",
+            "devices": [
+              {
+                "index": 0,
+                "utilization_percent": 79.0,
+                "memory_total_mib": 8151.0,
+                "memory_used_mib": 5226.0,
+                "memory_percent": 64.11483253588517
+              }
+            ]
+          },
+          "person_states": {
+            "running": 2,
+            "pending": 11
+          },
+          "fold_states": {
+            "pending": 13
+          },
+          "observed_source_files": [
+            {
+              "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-streamed-source-programme\\source-1\\original_source_model.json",
+              "bytes": 4286091323
+            },
+            {
+              "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-streamed-source-programme\\source-2\\original_source_model.json",
+              "bytes": 4531299850
+            }
+          ]
         },
         "next_action": "Monitor actual source publications and utilisation; after complete execution and actual tree retirement run the prepared independent acceptance with this new launch/manifest pins.",
         "independent_static_preflight": {
@@ -850,7 +896,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T10:50:11.292616+00:00",
+  "last_updated_utc": "2026-10-19T11:07:54.621985+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
