@@ -41,5 +41,6 @@
     "doc/assets/research_resume_20261012/source_cloud_execution_preparation.json"
   ],
   "original_raw_inputs_results_and_paused_checkpoints": "preserved",
-  "training_performed_by_materialization": 0
+  "training_performed_by_materialization": 0,
+  "old_research_worktree_retirement": "doc/assets/research_resume_20261012/research_worktree_retirement.json"
 }

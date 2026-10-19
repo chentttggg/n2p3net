@@ -1,0 +1,160 @@
+{
+  "schema": "merged_research_worktree_retirement_binding/1",
+  "status": "completed",
+  "retired_git_checkout": "D:\\BCI\\worktrees\\research-director",
+  "canonical_repository": "D:\\BCI\\n2p3-net",
+  "receipt": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\research-worktree-retirement\\RETIREMENT.json",
+    "sha256": "bdc009301aea0d80a58772ffda804040f90c1a1de3ba9ae53deff646db37254d"
+  },
+  "git_worktrees_remaining": 4,
+  "all_on_D_drive": true,
+  "duplicate_code_paper_and_cache_logical_bytes_removed": 296686536,
+  "scientific_tmp_files_retained_at_original_paths": 1876,
+  "scientific_tmp_bytes_retained": 662083651,
+  "preserved_accepted_code_commit": "7ac2add12a89c731f79a8e8f3e8ffbf12e492540",
+  "current_checkpoint_retrieval_refs_rebound_by_exact_sha256": [
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\actual004_complete_recovery.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\actual004_complete_recovery.json",
+      "sha256": "a5e255bf8d7f229c0eb973103b843f088f1f890973b432334d457e6e3d8d22cb"
+    },
+    {
+      "original": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/structured_frontier_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\structured_frontier_integration.json",
+      "sha256": "a383c4117cbb59989eee2a5f2f8c8bca42b1ed2ba800f40307618c6e89c0ea78"
+    },
+    {
+      "original": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/continuous_frontier_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\continuous_frontier_integration.json",
+      "sha256": "13e16e7c64a09bc58340ea46b3e1a4231d8e30e3ae31d5f8693e9775ee6a56fa"
+    },
+    {
+      "original": "D:/BCI/worktrees/research-director/doc/assets/research_resume_20261012/brainsync_raw_authority_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\brainsync_raw_authority_integration.json",
+      "sha256": "fe908653b82a7648a5986590973255924da3c08de27bfd606e35261ba30c3ed5"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\source_transport_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\source_transport_integration.json",
+      "sha256": "fe694b062582e80f57a2eeae5b1a97acea6f4f7bdf517c60032b6ff62edb652c"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\physical_frontier_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\physical_frontier_integration.json",
+      "sha256": "af4394ed91ede415f986b6f39b0d1e278bb48e8946258ddbb57581fada3db0f4"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\source_admission_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\source_admission_integration.json",
+      "sha256": "8b982d258469870ab6c348654d4e82a43c2da8eec55a87f534b15b68cceab946"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\target_noise_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\target_noise_integration.json",
+      "sha256": "69bb31ad6ad2d8d00e4c6cfa7c33507473a878e7e384386f6d241c1ada530c37"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\programme_admission_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\programme_admission_integration.json",
+      "sha256": "68d343d9156f84f61b67ffac9f8f2b5a14752b6d149acbbf1884d5416449ec85"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\marginal_response_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\marginal_response_integration.json",
+      "sha256": "b2215947ed471a1326cd40cec2adaf938fef30e0a29392beab513a2b4ae46385"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\complete_learner_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\complete_learner_integration.json",
+      "sha256": "871b18b3af18428d6609b961fd3ce77f58a2fcb94a5c958ffe2b109b1de82908"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\complete_learner_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\complete_learner_integration.json",
+      "sha256": "871b18b3af18428d6609b961fd3ce77f58a2fcb94a5c958ffe2b109b1de82908"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\full_task_science_direction.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\full_task_science_direction.json",
+      "sha256": "ad26771b16ac96d128c992c663b2012c1dfcdc2771aec170a62fcc427ea88e3b"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\public_evaluation_readiness.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\public_evaluation_readiness.json",
+      "sha256": "b20eb6163619b3b6c4eca75f6ca46ffca4f60db213c493e83a117ea9d36c7a43"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\physical_membership_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\physical_membership_integration.json",
+      "sha256": "3414e50ae141ea304f616a563c64b50f40caa423bf608c102b6c70edb8606e7b"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\public_native_input_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\public_native_input_integration.json",
+      "sha256": "1241edd3de508a13744e9e52d9b00a71f4183b9913fb61393bd14fa8071f0769"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\markov_prefix_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\markov_prefix_integration.json",
+      "sha256": "096543df52e57415b04da1a9c665a09e2423eb748cf861005bb7b67b0fce524c"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\native_mean_performance_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\native_mean_performance_integration.json",
+      "sha256": "286ce9c2954e54eb8c7cc5504f2f26e3e418207acb4ba290123ea7e007fbec3a"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\response_law_science_direction.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\response_law_science_direction.json",
+      "sha256": "f2b205656b5a0e090de2a8628b92e65534f9c10148518de2e14270498297dd67"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\existing_nn_public_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\existing_nn_public_integration.json",
+      "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\erp_runtime_repairs.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\erp_runtime_repairs.json",
+      "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\existing_nn_public_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\existing_nn_public_integration.json",
+      "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\existing_nn_panel_scope.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\existing_nn_panel_scope.json",
+      "sha256": "1dad84367f3726c39bff786961910b644260e5eefcb48179bccbdef117989fd6"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\existing_nn_panel_diagnostic.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\existing_nn_panel_diagnostic.json",
+      "sha256": "acaa029fe735e8fbbc1201a3b829cb63875f0092333a26c131588cfba0b8390b"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\lean_confirmed_error_resolution.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\lean_confirmed_error_resolution.json",
+      "sha256": "b425a628f98eafc14c270e2a91b883151d6965e749e5d89d5a119013c9a2c795"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\general_response_core_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\general_response_core_integration.json",
+      "sha256": "a1dfcae9112c83d10799c025e8f24da0bc874e34aee782b0f082f69391703c43"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\splitbn_mask_correspondence.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\splitbn_mask_correspondence.json",
+      "sha256": "db443b5ce6302c3f43fabb659dd4953c3517d877024ab4bd434038c1150b8b02"
+    },
+    {
+      "original": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\saved_public_noise_integration.json",
+      "current": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\saved_public_noise_integration.json",
+      "sha256": "c265e0f4ab5b3f286b69d6cddbf3f10d71104eda79a4378163d2b0c1dda1f40a"
+    }
+  ],
+  "recovery_directory_is_not_a_git_checkout": true,
+  "other_worktrees": "BI prefix and joint-flat scientific/recovery dependencies retained; huebner retained pending separate dependency review."
+}
