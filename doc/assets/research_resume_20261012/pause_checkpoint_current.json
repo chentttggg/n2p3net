@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_at_user_request",
-  "recorded_at": "2026-10-20T00:21:48.909468+08:00",
+  "recorded_at": "2026-10-20T00:35:10.165213+08:00",
   "user_request": "resume_research_then_resolve_repository_audit_before_autonomous_continuation",
   "research_worktree": "D:\\BCI\\n2p3-net",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -506,7 +506,7 @@
       },
       "candidate_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
       "execution": {
-        "state": "complete13people13folds_exit0_named_checker_accepted_unique_final_issue_waiter_live",
+        "state": "complete13people13folds_independently_accepted_actual_original_consumer_load_exit0",
         "source_product_kind": "same_fit_full_response_data_factor_v2",
         "launch": {
           "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\ROOT_LAUNCH.json",
@@ -579,8 +579,8 @@
           "sha256": "5f0aaad08de15c2c09a919cd9321f4466f6f2feb8ac4ed868ad121526fc262c4"
         },
         "scientific_checkpoint_present": true,
-        "scientific_acceptance_issued": false,
-        "next_action": "Keep the same verified waiter70204/birth1792426820.930288; it launches the final cold issuer once all actual resource gates pass. Read terminal/acceptance before target dispatch; do not restart the waiter or retrain.",
+        "scientific_acceptance_issued": true,
+        "next_action": "Bind this complete grant to the accepted target lifetime revision/new full runtime and original panel, then launch all78C/4914held under the same resource policy; no source refit.",
         "person_states": {
           "complete": 13
         },
@@ -648,20 +648,28 @@
             "sha256": "537f6a29550e5537dca83542f29f4cdc5eb284da583c71b8cc30c859e7c0dd26"
           },
           "progress": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\final-source-issue-waiter\\progress.json",
-          "terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\final-source-issue-waiter\\terminal.json",
-          "resource_ledger": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\final-source-issue-waiter\\resources.jsonl",
-          "last_root_observation": {
-            "verified_live": true,
-            "status": "waiting_resources",
-            "checker_launch_count": 0,
-            "updated_utc": "2026-10-19T16:21:22.955024+00:00",
-            "CPU_percent": 9.4,
-            "RAM_percent": 47.7,
-            "GPU_percent": 86.0,
-            "VRAM_percent": 43.84738068948595
+          "terminal": {
+            "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\final-source-issue-waiter\\terminal.json",
+            "bytes": 2520,
+            "sha256": "85db78c5047c963a4c2c513e8aa2ef8a2273bebc88b8c42193bb28f851c5233b"
           },
-          "before_checker_start_stop_request": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\final-source-issue-waiter\\stop-request.json"
-        }
+          "resource_ledger": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\final-source-issue-waiter\\resources.jsonl",
+          "before_checker_start_stop_request": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\final-source-issue-waiter\\stop-request.json",
+          "status": "checker_completed_exit0",
+          "checker_launch_count": 1,
+          "actual_owner_and_checker_retired": true
+        },
+        "independent_complete_acceptance": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_RUNTIME_ORIGIN_FULL_ACCEPTANCE.json",
+          "bytes": 6366,
+          "sha256": "d29ae9305e1d3410f5d39317d960543ddf4db7f033c7bad1dc4f724b5238046d"
+        },
+        "actual_original_consumer_load": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_RUNTIME_ORIGIN_FULL_CONSUMER_LOAD.json",
+          "bytes": 1172,
+          "sha256": "ee1e75b8b220b6d0dc2cf9182cd8648112ac133690754b34b2c07b7d3b5e791b"
+        },
+        "root_acceptance_binding": "doc/assets/research_resume_20261012/population_source_complete_acceptance.json"
       },
       "code_preparation": {
         "conditioning": "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
@@ -1314,7 +1322,7 @@
     }
   },
   "next_actions": [
-    "Follow the unique verified-live final source issue waiter to its actual terminal and accepted complete grant;13people/13folds already complete, no retraining.",
+    "Source complete acceptance and original consumer load are issued; accept target lifetime revision, freeze new execution source, bind actual grant/resources and launch the full78/4914 programme.",
     "Bind accepted source grant to fixed2d target runtime and exact original819panel, resolve actual resources and seal new v2 execution, then execute all78Cfits/4914held cells.",
     "Complete bounded C query caches and exact equivalent-state reuse, original-reader legacy exit, C save/cold/actual parent readmission, D full history and E typed new-session inference.",
     "Integrate readonly fixed-source exclusion relation for new personal queries after source/store review; preserve original producers."
@@ -1328,7 +1336,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T16:21:48.909468+00:00",
+  "last_updated_utc": "2026-10-19T16:35:10.165213+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",

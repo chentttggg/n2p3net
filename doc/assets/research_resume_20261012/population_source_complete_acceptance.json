@@ -1,0 +1,91 @@
+{
+  "schema": "complete_population_source_root_acceptance/1",
+  "status": "accepted_complete_source_execution_and_original_consumer_load",
+  "recorded_utc": "2026-10-19T16:35:10.158687+00:00",
+  "independent_complete_acceptance": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_RUNTIME_ORIGIN_FULL_ACCEPTANCE.json",
+    "bytes": 6366,
+    "sha256": "d29ae9305e1d3410f5d39317d960543ddf4db7f033c7bad1dc4f724b5238046d"
+  },
+  "actual_complete_checks": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_RUNTIME_ORIGIN_ACTUAL_COMPLETE_CHECKS.json",
+    "bytes": 448548,
+    "sha256": "d4da035e49921ac44a460f5a736d2454126722db1428e753b2837309e3bf0dfd"
+  },
+  "actual_original_consumer_load": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\RECOVERED_RUNTIME_ORIGIN_FULL_CONSUMER_LOAD.json",
+    "bytes": 1172,
+    "sha256": "ee1e75b8b220b6d0dc2cf9182cd8648112ac133690754b34b2c07b7d3b5e791b"
+  },
+  "source_execution": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\actual-compact-source-recovery-programme\\SOURCE_EXECUTION.json",
+    "bytes": 157871,
+    "sha256": "cf38f80fa83c4ced08bad216dc12dc8d231f0539b1a4f8b8fe6ad022cfe58b99"
+  },
+  "source_manifest": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\SOURCE_MANIFEST.json",
+    "bytes": 71994,
+    "sha256": "6caba8203c0e09ee7db1494ada544301c36116b6d2f1d2031f8b247aa7acbf59"
+  },
+  "source_matrix": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\SOURCE_MATRIX.json",
+    "bytes": 109900,
+    "sha256": "5ee12acb26983520839f297273e9ffc6459b0cf682987b9618c145085040d670"
+  },
+  "scientific_scope": {
+    "people": 13,
+    "LOSO_forecasts": 13,
+    "source_people_per_LOSO_forecast": 12,
+    "requested_records": 234,
+    "admitted_records": 213,
+    "excluded_records": 21,
+    "actual_labels": 101388,
+    "native_channels": 31,
+    "full_response_dimensions": 496,
+    "between_factor_columns": 496,
+    "mean_uncertainty_columns": 496,
+    "future_source_rows_used": 0,
+    "source_product_kind": "same_fit_full_response_data_factor_v2",
+    "live_target_authority": "separate_original_target_admission",
+    "preserved_recovered_person_products": 12,
+    "newly_completed_person_products": 1
+  },
+  "actual_verification": {
+    "complete_person_data_factor_cold_loads": 13,
+    "source_baseline_cold_loads": 13,
+    "source_noise_cold_loads": 13,
+    "LOSO_forecast_cold_loads": 13,
+    "baseline_SPD_checks": 13,
+    "noise_Q_SPD_checks": 13,
+    "stationary_moment_checks": 13,
+    "actual_scientific_runtime_modules": 99,
+    "new_fits": 0,
+    "new_QR": 0,
+    "raw_EEG_reads": 0,
+    "target_reads": 0,
+    "original_actor_exit_code": 0,
+    "original_live_processes": 0
+  },
+  "unique_final_issue_waiter_terminal": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\final-source-issue-waiter\\terminal.json",
+    "bytes": 2520,
+    "sha256": "85db78c5047c963a4c2c513e8aa2ef8a2273bebc88b8c42193bb28f851c5233b"
+  },
+  "root_review": {
+    "grant_evidence_references_verified": 16,
+    "source_execution_manifest_matrix_verified": 3,
+    "full_report_scope_and_original_consumer_identity_read": true,
+    "new_fits": 0,
+    "cold_checks_reexecuted": 0,
+    "actual_waiter_and_checker_retirement_verified": true
+  },
+  "original_source_and_numeric_producers_preserved": true,
+  "original_refusals_and_checker_revision_history": "retained through actual complete checks and independent checker seals",
+  "cleanup": {
+    "status": "not_applicable",
+    "reason": "Existing original source products, freezes, raw evidence and recovery lineage remain execution dependencies. Final checker adds compact evidence only; no replacement build or environment copy.",
+    "new_builds": 0,
+    "actual_deleted_files": 0
+  },
+  "active_state_owner": "pause_checkpoint_current.json"
+}
