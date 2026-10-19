@@ -1,0 +1,169 @@
+{
+  "schema": "managed_population_source_integration/1",
+  "status": "accepted_code_and_execution_preparation",
+  "recorded_utc": "2026-10-19T07:33:32.518100+00:00",
+  "canonical_repository": "D:/BCI/n2p3-net",
+  "base_commit": "13350fd",
+  "runtime_files": [
+    {
+      "relative": "experiments/run_public_population_source.py",
+      "before": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\cloud-source-closure\\preimages\\experiments\\run_public_population_source.py",
+        "bytes": 16733,
+        "sha256": "3d36829306b3a124e54eb11843c635f0a7744862e548f04e20603832d9e9ee47"
+      },
+      "after": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\cloud-source-closure\\candidate\\experiments\\run_public_population_source.py",
+        "bytes": 18500,
+        "sha256": "a856caf30cbf40da1831887ed42199cf6c9be61a612e2fd80ed4ebc179a49d70"
+      },
+      "canonical_preimage_matches": true
+    },
+    {
+      "relative": "src/research/population_source_cloud.py",
+      "before": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\cloud-source-closure\\preimages\\src\\research\\population_source_cloud.py",
+        "bytes": 9280,
+        "sha256": "b898f5bb54fd19aa35ddf964dc4a661d44ef7334f49d71999a73c9b40a88f75b"
+      },
+      "after": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\cloud-source-closure\\candidate\\src\\research\\population_source_cloud.py",
+        "bytes": 14264,
+        "sha256": "4e589513413fb95d1ccefb20fc98098654950645162cb13629552de4621adcf1"
+      },
+      "canonical_preimage_matches": true
+    },
+    {
+      "relative": "src/research/resource_scope.py",
+      "before": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\cloud-source-closure\\preimages\\src\\research\\resource_scope.py",
+        "bytes": 4392,
+        "sha256": "e348ef1304b71fa8c09544d34960aa5393286d9df59c1d0f6d16c05d4d975ccc"
+      },
+      "after": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\cloud-source-closure\\candidate\\src\\research\\resource_scope.py",
+        "bytes": 4759,
+        "sha256": "9049e2c24540cddea819575012f305dad8546d8ccee51df84feb67a0bfd0092e"
+      },
+      "canonical_preimage_matches": true
+    }
+  ],
+  "author_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\cloud-source-closure\\DELIVERY_MANIFEST.json",
+    "bytes": 6087,
+    "sha256": "4b5796e8076e2d3f4a96cfaa365f3e1e54adf6ff75a891dae902faf5d9136065"
+  },
+  "independent_complete_source_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-local-source-preparation\\REVIEW.json",
+    "bytes": 24164,
+    "sha256": "382935a9d1b4ebfedcc3526cf61e376624ac7e897c339436ca193bb7419479e9"
+  },
+  "root_install": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\cloud-source-closure\\ROOT_INSTALL.json",
+    "bytes": 2978,
+    "sha256": "da30260ea2c17c68af9089db34b282750c063e55adfc5f3972d3a02d1ada16a8"
+  },
+  "root_review": "Read entire3runtime modules, all3metadata builders, numerical-call-preserving launcher diff, resource resolver/phase/worker context and full supervisor. Exact preimages and candidate bytes installed. Root Ruff/diff checks and frozen authenticated inspect passed. Independent full161 plus3input pins and portable subject reviewed; whole-machine budget uses declared/physical80percent/effective availability minimum, outer supervision controls actual owned process tree.",
+  "frozen_manifest": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\SOURCE_MANIFEST.json",
+    "bytes": 64342,
+    "sha256": "22f148ad043536b91b4b1dd92fdb7c50669b503d5c08fc4e6393db1534776272"
+  },
+  "materialization": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\MATERIALIZATION.json",
+    "bytes": 28238,
+    "sha256": "8baa881f515ff5d92632df82b1cfadd96e01b1c835cb61616bc720c67b9c08b2"
+  },
+  "supervision_supplement": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\SUPERVISION_OWNER_SUPPLEMENT.json",
+    "bytes": 1037,
+    "sha256": "a38c6e311ac43c9ae7ffcf98f8e0b5928693170215a87e778ab96b2f8072db83"
+  },
+  "code_only_files": 165,
+  "code_only_logical_bytes": 4962282,
+  "supervisor_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\ROOT_REVIEW.json",
+    "bytes": 1877,
+    "sha256": "4b539446fd76776171bf6375a9ae17628fff9a821642bfd86935e6f62b1879e9"
+  },
+  "supervisor_source": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\local_supervisor.py",
+    "bytes": 16124,
+    "sha256": "31abdbdc11a31674af00a92229859e7ba1a1e56960889bcbdc51f2a024167454"
+  },
+  "inspect": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\INSPECT.stdout.json",
+    "bytes": 2460,
+    "sha256": "a2c921fa99456f891fa1779e0cbf940fd1dc18fdc9bb00cd805173cb7fd40432"
+  },
+  "resource_declaration": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\RESOURCES.json",
+    "bytes": 2293,
+    "sha256": "569ed0389af0f1fc2598a46d017f9eb088caa7a0a2d81f1b64be51a41d4ce1cb"
+  },
+  "new_local_launch": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\ROOT_LAUNCH2.json",
+    "bytes": 1030,
+    "sha256": "cb0ce38ed4c987a6a7161803437f34f7ff56bfd785a98a85be5dd88fd42b8718"
+  },
+  "initial_observation": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\ROOT_LIVE_OBSERVATION_01.json",
+    "bytes": 770,
+    "sha256": "173fabda5a58c8874bead7fbd414b6e2739e3b1c8d11ce23bdced1b47a08d9db"
+  },
+  "first_supervisor_import_failure": {
+    "launch": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\ROOT_LAUNCH.json",
+      "bytes": 838,
+      "sha256": "7c0781f808706bd1dae17fe36d31f5d9c05ae20a885b52ea52b169fac412acc7"
+    },
+    "stderr": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\SUPERVISOR.stderr.log",
+      "bytes": 554,
+      "sha256": "42861335cfb73ad0df44286f7c026546a2fdeec8fc7efc0b580b31be9137bc06"
+    },
+    "scientific_execution_started": false,
+    "resolution": "Added the separately pinned shared local supervision owner; scientific161-module portable subject and manifest stayed equal."
+  },
+  "scientific_scope": {
+    "people": 13,
+    "fits_per_person": 1,
+    "folds": 13,
+    "other_people_per_fold": 12,
+    "requested_source_records": 234,
+    "admitted_source_records": 213,
+    "common_labels": 101388,
+    "excluded_source_records": 21,
+    "new_score_cells_after_source": 4914,
+    "historical_baseline_diagnostic_cells": 9828
+  },
+  "scientific_acceptance_issued": false,
+  "original_stopped_attempt": "D:/BCI/artifacts/research-deliveries/source-response-states/audited-execution-source/USER_STOP.json",
+  "cleanup": {
+    "status": "not_applicable",
+    "scope": "New minimal code-only execution snapshot; old audited execution source remains required evidence for the stopped attempt. No superseded disposable build created by this slice.",
+    "new_worktrees_or_environment_copies": 0,
+    "scientific_raw_or_frozen_payloads_deleted": 0
+  },
+  "subsequent_resource_topology_attempt": {
+    "launch": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\ROOT_LAUNCH3.json",
+      "bytes": 933,
+      "sha256": "74e8e6265301d2c113135645e0371e32f9072995bcc1d6a0f634d2d776b4a419"
+    },
+    "resources": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\RESOURCES.serial.json",
+      "bytes": 2906,
+      "sha256": "155575581680d2a06aa439ba6a25d76c679e11076247bc0956531bb93353c830"
+    },
+    "prior_attempt_terminal": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision\\terminal.json",
+      "bytes": 113070,
+      "sha256": "d0aa64af2909d6e9fd1ed28ca2f9c3511fbf5749c79fefaf1cae51809bded0ae"
+    },
+    "reason": "Two concurrent fits exhausted the owned commit cap; all trees retired. A measured topology revision schedules one complete person/fold at a time with20native threads and the same scientific bytes, recipe and complete matrix.",
+    "prior_peak_host_CPU_percent": 44.8,
+    "prior_peak_host_memory_percent": 76.1,
+    "prior_completed_source_models": 0
+  }
+}

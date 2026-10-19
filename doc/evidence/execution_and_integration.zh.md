@@ -336,6 +336,10 @@ checkpoint读取安全整合（`codex/claude-improvements-20261012`，基于`ed2
 
 集成后按真实caller修复了一般opaque/registry身份误拒、数值模型codec错误强制selection字段，以及generic缓存存储类型与decoded摘要不一致。原工作站输出、R5诊断、文件读取寿命和CPU/native/inter-op测试前提分别迁移，生产准入保持。89项定向组合检查通过，源码在运行期间不变；另复用实际本地中断重放的零目标标签、完整请求分母和Job退休证据。初始全仓运行中断与本轮有效结果分别保留，见[集成后验收](../assets/research_resume_20261012/repository_audit_postintegration_integration.json)。
 
+完整source执行入口进一步完成显式local/cloud分派与全量源码绑定：161个模块、实际中央资源配置及环境输入由同一manifest核验，动态actor与两个线程operation有完整审阅关系；本地分支复用原资源owner，按整机80%剩余量准入。外层Windows监督器先加聚合commit限额再放行，实际嵌套Job、暂停/恢复及整树退出控制通过。源码接受、首轮两路并发触及commit上限的原失败，以及同科学字节下调整为逐人拟合的资源来源，分别见[受管执行整合](../assets/research_resume_20261012/source_managed_execution_integration.json)；当前进展由checkpoint维护。
+
+跨主机位置工具保原metadata和opaque叶子字节，仅迁移common记录的实际输入位置并依次重算父摘要。独审发现的新metadata目的地覆盖原图问题已在写出前拒绝，原位复用raw输入仍可用；future/排除记录不进入投影读取，原marker receipt内部历史archive位置保留。实际13人、234/213/21记录、101388标签和完整fold范围核对保持，代码与微型metadata控制的接受见[输入位置整合](../assets/research_resume_20261012/source_input_location_integration.json)。
+
 ## 文件夹清理复核
 
 主目录交付先核Git blob，随后补充核原working bytes：发现904项仅行尾差异，含624份历史/形式化记录；原科研树完整保留并用于逐字节恢复。Git改为保存实际字节，EditorConfig与工程规范约束新编辑LF；主目录2,500文件、28份原审计、329份受保护Lean输入及159件冻结source均重新核对。全新index与独立新clone通过，旧raw-blob检查由此补充，见[主目录收敛](../assets/research_resume_20261012/main_materialization_integration.json)。本机旧历史原件按精确清单保留原位，另与接受代码分开登记。

@@ -1,0 +1,39 @@
+{
+  "schema": "population_source_input_location_integration/1",
+  "status": "accepted_code_only",
+  "recorded_utc": "2026-10-19T07:37:34.709791+00:00",
+  "source": {
+    "path": "D:\\BCI\\n2p3-net\\src\\research\\population_source_inputs.py",
+    "bytes": 24458,
+    "sha256": "fe4a41dcdb3843e4ce27c75f2a29ca00464fa87515f35157db4b418ba60dcb8f"
+  },
+  "author": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\cloud-input-projection\\DELIVERY_MANIFEST.json",
+    "bytes": 9140,
+    "sha256": "9c26fde354f8147fa961dab5a5b826a0d892592f09127e41d1770a2406dc65c4"
+  },
+  "independent_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-cloud-input-projection\\REVIEW.json",
+    "bytes": 5990,
+    "sha256": "70fb09f74359d20be0c4560fbd37a9db924b6d97f7ee0a5ed0e56b72451ad071"
+  },
+  "root_review": "Read full module and final protection delta plus actual reader/caller contracts. Deep-copy graph changes only named active locators and derived parent JSON references; primitive raw bytes/digests and complete request/label/geometry/fold fields retained. Original marker receipt remains opaque. POSIX destinations retain their path flavour and physical file-name/sibling requirements. New metadata/deployment/preparation paths cannot overwrite original graph; opaque input positions may remain in place.",
+  "actual_source_scope": {
+    "people": 13,
+    "folds": 13,
+    "sources_per_fold": 12,
+    "requested": 234,
+    "admitted": 213,
+    "excluded": 21,
+    "labels": 101388,
+    "new_cells": 4914,
+    "old_baseline_cells": 9828
+  },
+  "caller": "Offline metadata preparation; original registered numerical reader and source launcher unchanged.",
+  "currently_executed_source_manifest_changed": false,
+  "actual_cloud_projection_or_training_performed_by_this_change": false,
+  "cleanup": {
+    "status": "not_applicable",
+    "scope": "One new source module; prior rejected metadata-builder version retained in tiny author recovery archive and independent red evidence. No obsolete build directory or copied environment created."
+  }
+}

@@ -51,5 +51,9 @@
     "original_baseline_diagnostic_cells": 9828
   },
   "recorded_utc": "2026-10-19T06:33:10Z",
-  "next_execution_inputs": "Explicit cloud input-path projection, actual CPU/RAM/VRAM declaration, refreshed integrated source closure/review/freeze, then complete13person+13fold execution after user supplies cloud."
+  "next_execution_inputs": "Explicit cloud input-path projection, actual CPU/RAM/VRAM declaration, refreshed integrated source closure/review/freeze, then complete13person+13fold execution after user supplies cloud.",
+  "subsequent_integrations": [
+    "doc/assets/research_resume_20261012/source_managed_execution_integration.json",
+    "doc/assets/research_resume_20261012/source_input_location_integration.json"
+  ]
 }

@@ -38,7 +38,9 @@
   "local_original_policy": "2293 exact historical originals retained in place and listed in local Git excludes, with no payload reads, deletion or reclassification as disposable. New source files and acceptance records remain visible.",
   "subsequent_intentional_code_changes": [
     "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
-    "doc/assets/research_resume_20261012/source_cloud_execution_preparation.json"
+    "doc/assets/research_resume_20261012/source_cloud_execution_preparation.json",
+    "doc/assets/research_resume_20261012/source_managed_execution_integration.json",
+    "doc/assets/research_resume_20261012/source_input_location_integration.json"
   ],
   "original_raw_inputs_results_and_paused_checkpoints": "preserved",
   "training_performed_by_materialization": 0,

@@ -222,7 +222,7 @@
     "original_joint_maximum_iterations": 2000,
     "warm_start_kind": "named numeric initialization from original returned vector; not exact BFGS resume"
   },
-  "verification": "Final seam checks below completed: 20 integrated scientific owner imports, authenticated-image codec case and Ruff passed. Mathematical evidence is reused by the recorded source/AST relations. Real source/joint/history execution awaits cloud resources.",
+  "verification": "Final seam checks completed:20integrated scientific owner imports, authenticated-image codec case and Ruff passed. Mathematical evidence is reused by recorded source/AST relations; scientific execution and independent result acceptance have their own checkpoint and bindings.",
   "root_import_classification": [
     {
       "path": "experiments/run_public_population_source.py",
@@ -267,6 +267,8 @@
   "identity_role": "Original22-file composition; subsequent intentional changes have their own exact source bindings.",
   "subsequent_integrations": [
     "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
-    "doc/assets/research_resume_20261012/source_cloud_execution_preparation.json"
+    "doc/assets/research_resume_20261012/source_cloud_execution_preparation.json",
+    "doc/assets/research_resume_20261012/source_managed_execution_integration.json",
+    "doc/assets/research_resume_20261012/source_input_location_integration.json"
   ]
 }

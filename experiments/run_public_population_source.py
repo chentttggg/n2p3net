@@ -40,22 +40,54 @@ def pinned(path, expected):
     return reference
 
 
+def verify_effective_inputs(manifest):
+    """Verify actual frozen-root bytes before any cloud owner is imported."""
+    source_root = Path(manifest["source_root"]).resolve()
+    for row in manifest["files"]:
+        actual = artifact(source_root / row["relative"])
+        if actual != {name: row[name] for name in ("path", "bytes", "sha256")}:
+            raise ValueError("an effective source file changed: " + row["module"])
+    inputs = {row["relative"]: row for row in manifest["execution_inputs"]}
+    required = {"configs/cloud_training_resources.json", "pyproject.toml", "uv.lock"}
+    if set(inputs) != required or len(inputs) != len(manifest["execution_inputs"]):
+        raise ValueError("the complete runtime policy and environment pins are required")
+    for relative, row in inputs.items():
+        if artifact(source_root / relative) != {name: row[name] for name in ("path", "bytes", "sha256")}:
+            raise ValueError("a frozen execution input changed: " + relative)
+    return source_root, inputs["configs/cloud_training_resources.json"]
+
+
+def verify_cloud_policy_owner(config_path, source_root, expected):
+    """The shared owner must consume the policy file just verified here."""
+    if (Path(config_path).resolve() != source_root / "configs/cloud_training_resources.json"
+            or artifact(config_path) != {name: expected[name] for name in ("path", "bytes", "sha256")}):
+        raise ValueError("the actual cloud owner policy is outside the pinned frozen source root")
+
+
+def verify_loaded_sources(manifest):
+    expected = {row["module"]: row for row in manifest["files"]}
+    for name, module in tuple(sys.modules.items()):
+        if name in expected and getattr(module, "__file__", None):
+            if artifact(module.__file__)["sha256"] != expected[name]["sha256"]:
+                raise ValueError("a runtime module differs from its effective source pin: " + name)
+
+
 def resolve_population_resources(resources, *, cloud_owner_resources):
     """Consume the existing cloud programme lease; never create a second ledger."""
     from research.population_source_cloud import require_programme_phase
-    from research.resource_scope import require_managed_cloud_phase
+    from research.resource_scope import require_managed_phase
 
-    managed = require_managed_cloud_phase(resources, phase="source", device="cpu")
+    managed = require_managed_phase(resources, phase="source", device="cpu")
     require_programme_phase(resources, cloud_owner_resources, managed)
     return cloud_owner_resources
 
 
 @contextmanager
-def programme_member_scope(admission, native_threads, memory_bytes, task_id):
+def programme_member_scope(admission, native_threads, memory_bytes, task_id, *, resources):
     """Members consume the held aggregate lease until the owner retires its tree."""
-    from research.resource_scope import require_managed_cloud_phase
+    from research.resource_scope import require_managed_phase
 
-    managed = require_managed_cloud_phase({"resource_scope": "cloud"}, phase="source", device="cpu")
+    managed = require_managed_phase(resources, phase="source", device="cpu")
     phase = managed.task.resources
     if (admission is not managed.admission or native_threads > phase.native_threads
             or memory_bytes > phase.memory_bytes or not task_id):
@@ -79,13 +111,10 @@ def main(argv=None, *, cloud_owner_resources=None):
     manifest_ref = pinned(args.source_manifest, args.source_manifest_sha256)
     recipe, manifest = read(recipe_ref), read(manifest_ref)
     if (recipe["schema"] != "full_original_population_source_recipe/1"
-            or manifest["schema"] != "public_population_effective_source_manifest/2"
+            or manifest["schema"] != "public_population_effective_source_manifest/3"
             or manifest["recipe"] != recipe_ref or manifest["launcher"] != artifact(__file__)):
         raise ValueError("the named source recipe/launcher manifest is required")
-    for row in manifest["files"]:
-        actual = artifact(row["path"])
-        if (actual["bytes"], actual["sha256"]) != (row["bytes"], row["sha256"]):
-            raise ValueError("an effective source file changed: "+row["module"])
+    source_root, cloud_policy_pin = verify_effective_inputs(manifest)
     matrix = read(recipe["source_matrix"])
     read(matrix["source_freeze"])
     if (len(matrix["person_programmes"]) != 13 or len(matrix["fold_programmes"]) != 13
@@ -99,9 +128,10 @@ def main(argv=None, *, cloud_owner_resources=None):
             parser.error("execution requires --resources, --resources-sha256 and a new --output")
         resources_ref = pinned(args.resources, args.resources_sha256)
         resources = read(resources_ref)
-        if (resources["schema"] != "public_population_source_resources/3"
-                or resources.get("resource_scope") != "cloud" or resources.get("device") != "cpu"):
-            raise ValueError("source computation requires its owned cloud CPU /3 declaration")
+        if (resources.get("schema"), resources.get("resource_scope"), resources.get("device")) not in {
+                ("public_population_source_resources/3", "cloud", "cpu"),
+                ("public_population_source_local_resources/1", "local_development", "cpu")}:
+            raise ValueError("source computation requires its explicit owned local or cloud CPU declaration")
         source_workers, fold_workers, native_threads, cpu_budget = (
             resources[name] for name in ("source_workers", "fold_workers", "native_threads_per_worker", "cpu_threads_total"))
         if (any(type(v) is not int or v < 1 for v in (source_workers, fold_workers, native_threads, cpu_budget))
@@ -111,10 +141,15 @@ def main(argv=None, *, cloud_owner_resources=None):
     for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
         os.environ[name] = str(native_threads)
     sys.dont_write_bytecode = True
-    sys.path[:0] = [str(Path(manifest["source_root"])/"src"), str(Path(manifest["source_root"]))]
+    sys.path[:0] = [str(source_root / "src"), str(source_root)]
+    if not args.inspect:
+        from research.source_execution import CLOUD_RESOURCE_CONFIG
+
+        verify_cloud_policy_owner(CLOUD_RESOURCE_CONFIG, source_root, cloud_policy_pin)
     if not args.inspect and cloud_owner_resources is None:
         from research.population_source_cloud import run_population_source_cloud
 
+        verify_loaded_sources(manifest)
         return run_population_source_cloud(argv=effective_argv, resources=resources, output=args.output,
             identity={"recipe": recipe_ref, "source_manifest": manifest_ref, "resource_plan": resources_ref})
     import numpy as np
@@ -125,17 +160,13 @@ def main(argv=None, *, cloud_owner_resources=None):
     from research import population_response_forecast as population
     from research import public_population_source as owner
     from research.execution import atomic_write_json
-    from research.resource_scope import require_managed_cloud_phase
+    from research.resource_scope import require_managed_phase
     from research.source_likelihood_export import SharedLikelihoodStore
     from transfer.native_response_dictionary import NativeResponseDictionary
     from transfer.response_dictionary import ResponseDictionary
     from transfer.spatial_programme import SpatialSignalProgram
 
-    expected = {row["module"]: row for row in manifest["files"]}
-    for name, module in tuple(sys.modules.items()):
-        if name in expected and getattr(module, "__file__", None):
-            if artifact(module.__file__)["sha256"] != expected[name]["sha256"]:
-                raise ValueError("a runtime module differs from its effective source pin: "+name)
+    verify_loaded_sources(manifest)
     dictionary = ResponseDictionary.from_record(read(recipe["dictionary"]))
     native_dictionary = NativeResponseDictionary.from_record(read(recipe["native_dictionary"]))
     signal = SpatialSignalProgram.from_record(recipe["signal_programme"])
@@ -154,7 +185,7 @@ def main(argv=None, *, cloud_owner_resources=None):
             "actual_EEG_reads": 0, "actual_source_fits": 0, "actual_population_hyperfits": 0}, indent=2))
         return
     owner_resources = resolve_population_resources(resources, cloud_owner_resources=cloud_owner_resources)
-    managed = require_managed_cloud_phase(resources, phase="source", device="cpu")
+    managed = require_managed_phase(resources, phase="source", device="cpu")
     admission = managed.admission
     available = owner_resources["available_host_memory_bytes"]
     args.output.mkdir(parents=True, exist_ok=False)
@@ -168,7 +199,7 @@ def main(argv=None, *, cloud_owner_resources=None):
         "persons": {row["source_person_id"]: {"status": "pending"} for row in matrix["person_programmes"]},
         "folds": {row["fold_id"]: {"status": "pending"} for row in matrix["fold_programmes"]},
         "new_score_cells_pending": 4914, "resource_owner": "source_family_CloudExecutor_owned_aggregate_CPU_programme",
-        "requested_resource_plan": resources, "resolved_resources": owner_resources, "actual_GPU_workers": 0, "ready_GPU_tasks": 0,
+        "resource_scope": resources["resource_scope"], "requested_resource_plan": resources, "resolved_resources": owner_resources, "actual_GPU_workers": 0, "ready_GPU_tasks": 0,
         "independent_acceptance_issued_here": False, "future_records_attached": False,
         "memory_available_at_launch": available}
 
@@ -184,7 +215,7 @@ def main(argv=None, *, cloud_owner_resources=None):
 
     def fit_person(row):
         with programme_member_scope(admission, native_threads, resources["source_worker_reservation_bytes"],
-                "person:"+row["source_person_id"]):
+                "person:"+row["source_person_id"], resources=resources):
             key = row["source_person_id"]
             started = time.perf_counter()
             event("persons", key, "running")
@@ -233,7 +264,7 @@ def main(argv=None, *, cloud_owner_resources=None):
 
                 def fit_fold(row):
                     with programme_member_scope(admission, native_threads, resources["fold_worker_reservation_bytes"],
-                            "fold:"+row["fold_id"]):
+                            "fold:"+row["fold_id"], resources=resources):
                         started = time.perf_counter()
                         event("folds", row["fold_id"], "running")
                         fold = population.fold_from_freeze_candidate(matrix["source_freeze"]["path"],

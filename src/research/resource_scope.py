@@ -70,6 +70,13 @@ def require_managed_cloud_phase(plan, *, phase, device):
     """Actual scientific cloud work consumes an existing source-family phase."""
     if plan.get("resource_scope") != "cloud":
         raise ValueError("this scientific programme requires its declared cloud owner")
+    return require_managed_phase(plan, phase=phase, device=device)
+
+
+def require_managed_phase(plan, *, phase, device):
+    """Local research and cloud work both consume an existing owned phase."""
+    if plan.get("resource_scope") not in {"cloud", "local_development"}:
+        raise ValueError("scientific work requires its explicit local or cloud resource scope")
     require_standalone_resource_scope(plan)
     managed = _managed_worker()
     if (managed is None or managed.task.resources.phase != phase
