@@ -1,0 +1,62 @@
+{
+  "schema": "adult_programme_input_integration/1",
+  "status": "accepted_input_code_contracts_root_generated_fixture_cleanup_incomplete",
+  "recorded_utc": "2026-10-19T13:49:00.241234+00:00",
+  "canonical_base": "6d0a971f459e8d2eb629321410e145b3728612bd",
+  "author_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\DELIVERY_MANIFEST.json",
+    "bytes": 5678,
+    "sha256": "ddb8856036417471c10de5b57ba04270edf7350f19539e4bea3db8e01c47ef31"
+  },
+  "independent_acceptance": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\independent-review\\ACCEPTANCE.json",
+    "bytes": 18474,
+    "sha256": "9fb14c63719946b0ca4f33a4b22b6d035abe88dc3444cb06798f3117a1736fe3"
+  },
+  "root_main_verification": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\root-main-verification\\ROOT_MAIN_VERIFICATION.json",
+    "bytes": 2573,
+    "sha256": "3c55f6594d530278db213ccf2c5576f365c9bf067c8900f8aac99ffcd8c15bc2"
+  },
+  "files": [
+    {
+      "relative": "src/research/adult_programme_input.py",
+      "path": "D:\\BCI\\n2p3-net\\src\\research\\adult_programme_input.py",
+      "bytes": 25752,
+      "sha256": "e13b29eee1b6e8ea80c34199867f9e2c973cc16e0e2b2ac42faa4f2baf155c72"
+    },
+    {
+      "relative": "tests/research/test_adult_programme_input.py",
+      "path": "D:\\BCI\\n2p3-net\\tests\\research\\test_adult_programme_input.py",
+      "bytes": 12580,
+      "sha256": "b34d780dbff9da6d9290f0a95548d2ef12df0ad8fb656514c171c7bcf7ad6558"
+    }
+  ],
+  "accepted_scope": {
+    "complete_declared_adult_multi_C_and_held_rosters": true,
+    "canonical_raw_labels_scope_identity_clock_and_session_target_locks": true,
+    "actual_EEG_source_exclusion_union": true,
+    "complete_failure_requested_and_actual_grant_ledger": true,
+    "save_metadata_cold_then_all_original_parents_readmission": true,
+    "software_contract_cases_passed_on_main": 7,
+    "scientific_EEG_or_model_reads": 0,
+    "source_transport_joint_history_and_personal_UI_consumers": "downstream_slices"
+  },
+  "cleanup": {
+    "author_receipt": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\cleanup.json",
+      "bytes": 3862,
+      "sha256": "c7842599436a483b6fc8dd32384b7db200a5161a0e47cc0e8164eb35d7f158be"
+    },
+    "root_receipt": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\root-main-verification\\cleanup.json",
+      "bytes": 2220,
+      "sha256": "4f7fca1b80cf7a0fa5171381b59f37e09994dd4972ea4a828e7d8c2a33d119a5"
+    },
+    "root_status": "incomplete_automatic_approval_rejected_deletion",
+    "root_remaining_generated_files": 222,
+    "root_remaining_logical_bytes": 17992647,
+    "raw_scientific_evidence_and_frozen_results_preserved": true
+  },
+  "active_state_owner": "pause_checkpoint_current.json"
+}
