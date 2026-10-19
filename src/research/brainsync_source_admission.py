@@ -408,8 +408,11 @@ def cold_numeric_transport(path, *, expected_sha256):
     template = FrozenTransportGraphModel.load(record['template']['path'], expected_sha256=record['template']['sha256'])
     target = record['new_target_contract']
     template.source.assert_target_exclusion(target, scope=record['new_target_exclusion_scope'])
-    model = FrozenTransportGraphModel(template.source, template.spatial_transport, template.completion_prior,
-        template.continuation, NoiseGeometry(**record['actual_target_geometry']), target['participant_key'])
+    # This binding was issued with the template's original numeric producers.
+    # Rebuild its actual target relation while retaining those origin identities.
+    from dataclasses import replace
+    model = replace(template, target_observation_geometry=NoiseGeometry(**record['actual_target_geometry']),
+                    target_participant_key=target['participant_key'])
     if (model.graph().digest() != record['actual_graph_identity']
             or template.source.digest != record['source_codec_sha256']
             or metadata_digest(target) != record['new_target_identity']):

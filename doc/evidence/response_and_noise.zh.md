@@ -76,6 +76,8 @@ G1的外部物理reference以原dictionary和noise定义两个独立、零漂移
 
 三个canonical数学回归通过。实际保存源的496个潜变量加48个独立条件方向，共544维；完整source/B09/completion/dictionary由同原owners构造新canonical模型，在禁止旧作者及旧源目录读取的独立进程中冷读，三组混合泛函的exact矩、数值及误差数组逐bit相同。原九候选Gaussian桥另以rank3、16行和单一analytic contrast对照独立闭式积分，最大对数似然差约`1.07e−14`。各自作用域、代码规范迁移及原producer保持在[整合绑定](../assets/research_resume_20261012/source_transport_integration.json)。
 
+零列source factor的一般边界另由独立标量反例核清：`x=5,y=1+2x+2z`，z为标准Normal，查询`x,y,2x−y`应保后两项方差4、交叉方差−4；完全确定的二维源也应返回完整3×3零covariance。旧tuple转置丢失零列矩阵的列数，返回三条空行并漏加条件创新。新查询行Gram自然保方形维数，Affine与exact-common消费者沿原数学给出一致矩。两个主树RED均复现、修复后连原三项抵消/弱方向控制共5项通过；完整transport/native及四种programme的保存、冷读、再次保存和原来源验证复用同一合法synthetic源codec，新增fit为0，18项关系反控拒绝。原producer与当前consumer分别记录，来源和清理见[零维潜变量绑定](../assets/research_resume_20261012/zero_latent_response_graph_integration.json)。
+
 participant、原EEG字节与whole-study排除现由同一source owner处理，原native几何检查继续保留。实际原保存源的12项metadata控制验证了独立target、同participant、原source字节及整库策略；fresh source-data准入和raw/C权限分别由各自live issuer提供。
 
 原Huebner participant2的C68已由原registered factory和catalog/data owner实际重新准入：20次source范围读取均在原`[0,19947)`内，68个onset/label及实际数组一致。旧ZIP中的213845字节marker与新提取文件逐byte相同；两套声明和三个实际reader/issuer关系复现原拟合prefix，唯一具名变化是声明aggregate `target_contract.source_sha256`。原source codec、模型、fit stage及原排除目标保持；新public data准入单独绑定。

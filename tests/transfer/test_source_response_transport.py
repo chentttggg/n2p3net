@@ -4,6 +4,7 @@ from fractions import Fraction as Q
 import numpy as np
 
 from research.conditional_response_graph import ExactConditionalResponseGraph
+from research.exact_common_marginal import ExactCommonMarginalSource
 from research.numeric_response_consumer import AffineResponseSource, GraphAffineResponse
 from transfer.source_response_transport import ResponseCoordinateChart
 
@@ -32,6 +33,43 @@ def _weak_source():
         ResponseCoordinateChart(((Q(1), Q(0)), (Q(0), Q(1)))), 1,
         {"role": "independent_mathematical_source_weak_difference"})
     return AffineResponseSource(graph), Q(1, 2**60)
+
+
+def test_zero_source_latents_preserve_conditional_covariance():
+    # x=5, y=1+2*x+2*z. Only y and 2*x-y vary, with opposite signs.
+    graph = ExactConditionalResponseGraph(
+        np.array([5.]), np.empty((1, 0)), ((Q(1),),),
+        (Q(0), Q(1)), ((Q(2),),), ((Q(4),),),
+        ResponseCoordinateChart(((Q(1), Q(0)),)), 1,
+        {"role": "deterministic_source_with_independent_conditional_innovation"})
+    query = ((Q(1), Q(0)), (Q(0), Q(1)), (Q(2), Q(-1)))
+    mean = (Q(5), Q(11), Q(-1))
+    covariance = ((Q(0), Q(0), Q(0)), (Q(0), Q(4), Q(-4)), (Q(0), Q(-4), Q(4)))
+    exact = graph.exact_linear_image(query)
+    assert exact.mean == mean and exact.covariance == covariance
+    reference = AffineResponseSource(graph)
+    for source in (reference, ExactCommonMarginalSource(reference)):
+        compiled = source.compile(np.array(query, dtype=object)[:, None, :],
+            query_binding={"case": "zero_source_latents_and_conditional_innovation"})
+        _compiled_moments_are_enclosed(compiled, mean, covariance)
+
+
+def test_deterministic_source_has_square_zero_query_covariance():
+    graph = ExactConditionalResponseGraph(
+        np.array([2., -3.]), np.empty((2, 0)), ((Q(1), Q(0)), (Q(0), Q(1))),
+        (Q(2), Q(-3)), (), (),
+        ResponseCoordinateChart(((Q(1), Q(0)), (Q(0), Q(1)))), 1,
+        {"role": "deterministic_two_coordinate_source"})
+    query = ((Q(1), Q(0)), (Q(0), Q(1)), (Q(1), Q(1)))
+    mean = (Q(2), Q(-3), Q(-1))
+    covariance = ((Q(0), Q(0), Q(0)),) * 3
+    exact = graph.exact_linear_image(query)
+    assert exact.mean == mean and exact.covariance == covariance
+    reference = AffineResponseSource(graph)
+    for source in (reference, ExactCommonMarginalSource(reference)):
+        compiled = source.compile(np.array(query, dtype=object)[:, None, :],
+            query_binding={"case": "zero_source_and_conditional_latents"})
+        _compiled_moments_are_enclosed(compiled, mean, covariance)
 
 
 def test_actual_functional_cancels_strong_common_before_rounding():

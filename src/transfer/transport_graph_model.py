@@ -8,11 +8,13 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from fractions import Fraction
 from pathlib import Path
 
 from research.channel_noise_mechanism import NoiseGeometry
+from research.conditional_response_graph import IMPLEMENTATION_SHA256 as GRAPH_SHA256
+from research.conditional_response_graph import require_graph_producer
 from research.numeric_response_consumer import IMPLEMENTATION_SHA256 as AFFINE_COMPILER_SHA256
 from research.numeric_response_consumer import AffineResponseSource
 from transfer.joint_flat_programme import FrozenJointFlatSource
@@ -26,6 +28,7 @@ from transfer.spatial_signal_prior import (
 )
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+LEGACY_IMPLEMENTATION_SHA256 = "5b56d8adf7f5fbb521db5f6148991b14b60c1f81e27e7ce64833d01f59f61286"
 
 
 @dataclass(frozen=True)
@@ -36,6 +39,13 @@ class FrozenTransportGraphModel:
     continuation: object
     target_observation_geometry: object
     target_participant_key: str
+    _producer_sha256: str = field(default=IMPLEMENTATION_SHA256, repr=False, kw_only=True)
+    _graph_producer_sha256: str = field(default=GRAPH_SHA256, repr=False, kw_only=True)
+
+    def __post_init__(self):
+        if self._producer_sha256 not in {IMPLEMENTATION_SHA256, LEGACY_IMPLEMENTATION_SHA256}:
+            raise ValueError("unknown transported response model producer")
+        require_graph_producer(self._graph_producer_sha256)
 
     @property
     def factory_arguments(self):
@@ -44,7 +54,12 @@ class FrozenTransportGraphModel:
             "target_participant_key": self.target_participant_key}
 
     def graph(self):
-        return transport_response_prior(self.source, **self.factory_arguments)
+        return replace(transport_response_prior(self.source, **self.factory_arguments),
+                       _producer_sha256=self._graph_producer_sha256)
+
+    def consumer_record(self):
+        return {"model_producer_sha256": self._producer_sha256,
+                "model_consumer_sha256": IMPLEMENTATION_SHA256, **self.graph().consumer_record()}
 
     def affine_source(self):
         graph = self.graph()
@@ -68,7 +83,7 @@ class FrozenTransportGraphModel:
             "target_observation_clock_hz": self.target_observation_geometry.sfreq,
             "complete_target_noise_supplied": False, "raw_or_label_authority_granted": False,
             "affine_compiler_sha256": AFFINE_COMPILER_SHA256,
-            "model_producer_sha256": IMPLEMENTATION_SHA256}
+            "model_producer_sha256": self._producer_sha256}
 
     def to_bytes(self):
         return json.dumps(self.record(), sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
@@ -98,7 +113,9 @@ class FrozenTransportGraphModel:
             raise ValueError("saved transport differs from original source/destination physical effects")
         model = cls(source, transport, SpatialSignalPrior.from_record(record["completion_prior"]),
             NativeResponseDictionary.from_record(record["continuation"]),
-            NoiseGeometry(**record["target_observation_geometry"]), record["target_participant_key"])
+            NoiseGeometry(**record["target_observation_geometry"]), record["target_participant_key"],
+            _producer_sha256=record["model_producer_sha256"],
+            _graph_producer_sha256=record["exact_graph"]["graph_implementation_sha256"])
         if metadata_digest(model.record()) != metadata_digest(record):
             raise ValueError("saved transported model differs from complete original owner relations")
         return model

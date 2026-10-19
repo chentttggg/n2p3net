@@ -6,7 +6,7 @@ The consumer requests the actual linear functional before numerical compilation.
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from fractions import Fraction
 from pathlib import Path
 
@@ -15,6 +15,13 @@ import numpy as np
 from transfer.noise_model import array_digest, freeze_metadata, frozen_array, metadata_digest
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+LEGACY_IMPLEMENTATION_SHA256 = "8d485cb3106177b7e5a078eb52bcc2571ec4bc9bc6b06e8a71b20c2dfa33c613"
+
+
+def require_graph_producer(value):
+    if value not in {IMPLEMENTATION_SHA256, LEGACY_IMPLEMENTATION_SHA256}:
+        raise ValueError("unknown exact response graph producer")
+    return value
 
 
 def exact(value):
@@ -121,8 +128,10 @@ class ExactConditionalResponseGraph:
     chart: object
     coefficient_count: int
     binding: dict
+    _producer_sha256: str = field(default=IMPLEMENTATION_SHA256, repr=False, kw_only=True)
 
     def __post_init__(self):
+        require_graph_producer(self._producer_sha256)
         object.__setattr__(self, "source_mean", frozen_array(self.source_mean))
         object.__setattr__(self, "source_factor", frozen_array(self.source_factor))
         for name in ("source_map", "conditional_gain", "conditional_covariance"):
@@ -177,7 +186,10 @@ class ExactConditionalResponseGraph:
         source_image = product(source_weights, self.source_factor)
         means = [sum((weight * exact(value) for weight, value in zip(row, self.source_mean, strict=True)), Fraction())
                  for row in source_weights]
-        covariance = product(source_image, transpose(source_image))
+        # Iterate the actual query rows: a zero-column image still has one
+        # covariance entry for every pair of queries.
+        covariance = tuple(tuple(sum((a * b for a, b in zip(left, right, strict=True)), Fraction())
+                                 for right in source_image) for left in source_image)
         if rest:
             z0 = tuple((self.reference_chart_mean[i],) for i in common)
             adjustment = product(self.conditional_gain, z0)
@@ -199,19 +211,33 @@ class ExactConditionalResponseGraph:
                 "conditional_covariance_sha256": metadata_digest(string_rows(self.conditional_covariance)),
                 "law_role": "canonical_exact_named_source_map_and_reference_conditional_graph",
                 "materialized_binary64_mean_or_factor": False,
-                "graph_implementation_sha256": IMPLEMENTATION_SHA256}
+                "graph_implementation_sha256": self._producer_sha256}
+
+    def consumer_record(self):
+        return {"graph_origin_digest": self.digest(), "graph_producer_sha256": self._producer_sha256,
+                "graph_consumer_sha256": IMPLEMENTATION_SHA256}
 
     def digest(self):
         return metadata_digest(self.record())
+
+    def verify_saved_record(self, record):
+        """Match a saved graph against this graph rebuilt by its actual owners.
+
+        Only the known origin producer may differ. This numerical relation
+        grants no source, raw observation or label authority.
+        """
+        regenerated = replace(self,
+            _producer_sha256=require_graph_producer(record["graph_implementation_sha256"]))
+        if metadata_digest(regenerated.record()) != metadata_digest(record):
+            raise ValueError("saved exact graph differs from actual source/completion/transport owners")
+        return regenerated
 
     @classmethod
     def from_record(cls, record, *, source, **factory_arguments):
         # Actual owners are required: self-consistent metadata is not origin.
         from transfer.source_response_transport import transport_response_prior
         regenerated = transport_response_prior(source, **factory_arguments)
-        if metadata_digest(regenerated.record()) != metadata_digest(record):
-            raise ValueError("saved exact graph differs from actual source/completion/transport owners")
-        return regenerated
+        return regenerated.verify_saved_record(record)
 
     def validate_origin(self, source, **factory_arguments):
         return self.from_record(self.record(), source=source, **factory_arguments)

@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_research_director_checkpoint/3",
   "status": "active_at_user_request",
-  "recorded_at": "2026-10-19T22:39:20.917468+08:00",
+  "recorded_at": "2026-10-19T22:50:33.458287+08:00",
   "user_request": "resume_research_then_resolve_repository_audit_before_autonomous_continuation",
   "research_worktree": "D:\\BCI\\n2p3-net",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
@@ -282,9 +282,9 @@
     }
   },
   "active_agents": {
-    "/root/history_slice_integration_review": "Implement complete source population transport factory and codec against accepted science.",
-    "/root/zero_latent_graph_fix": "Repair exact zero-latent covariance and verify full cold/producer chain.",
-    "/root/audit_repository_convergence": "Independently review future telemetry v2; no in-flight replacement."
+    "/root/history_slice_integration_review": "Implement complete adult source forecast and transport factory/codec.",
+    "/root/audit_disposition_refresh": "Implement actual-functional adult C/history seam and complete downstream contract.",
+    "/root/workstation_failures": "Repair reviewed telemetry terminal closure and seal revised candidate."
   },
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
@@ -580,71 +580,30 @@
         "scientific_checkpoint_present": true,
         "scientific_acceptance_issued": false,
         "last_observation": {
-          "time": 1792420760.628105,
+          "time": 1792421433.237626,
           "action": "pause_external_gpu_pressure",
-          "host_cpu_percent": 8.2,
-          "host_memory_percent": 52.7,
+          "host_cpu_percent": 9.7,
+          "host_memory_percent": 56.5,
           "owned_cpu_percent_of_host": 0.0,
           "gpu_observation": {
-            "observed_time": 1792420758.1836085,
+            "observed_time": 1792421429.9151611,
             "status": "observed",
             "devices": [
               {
                 "index": 0,
-                "utilization_percent": 79.0,
+                "utilization_percent": 1.0,
                 "memory_total_mib": 8151.0,
-                "memory_used_mib": 6850.0,
-                "memory_percent": 84.03876824929456
+                "memory_used_mib": 7243.0,
+                "memory_percent": 88.86026254447307
               }
             ]
           },
-          "verified_live_identities": [
-            {
-              "role": "scientific_process",
-              "pid": 2016,
-              "created": 1792416854.9401252,
-              "status": "stopped"
-            },
-            {
-              "role": "supervisor",
-              "pid": 35752,
-              "created": 1792416783.4605472,
-              "status": "running"
-            },
-            {
-              "role": "outer_python_launcher",
-              "pid": 72388,
-              "created": 1792416783.4304018,
-              "status": "running"
-            }
-          ],
-          "owned_processes": [
-            {
-              "pid": 66912,
-              "created": 1792416784.1609128,
-              "cpu_seconds": 0.015625
-            },
-            {
-              "pid": 44580,
-              "created": 1792416784.1805408,
-              "cpu_seconds": 0.015625
-            },
-            {
-              "pid": 71632,
-              "created": 1792416784.1989768,
-              "cpu_seconds": 3.171875
-            },
-            {
-              "pid": 71156,
-              "created": 1792416854.490964,
-              "cpu_seconds": 0.296875
-            },
-            {
-              "pid": 2016,
-              "created": 1792416854.9401252,
-              "cpu_seconds": 20.109375
-            }
-          ]
+          "verified_scientific_identity": {
+            "pid": 2016,
+            "created": 1792416854.9401252,
+            "status": "stopped",
+            "cpu_seconds": 20.109375
+          }
         },
         "next_action": "Continue the same managed recovery actor when external resource pressure releases; verify original12imports and freshperson1, then all13folds, complete exit0/tree retirement and sealed independent acceptance before target matrix.",
         "person_states": {
@@ -1104,21 +1063,26 @@
     "adult_population_transport": {
       "state": "implementation_in_progress",
       "owner": "/root/history_slice_integration_review",
-      "candidate_root": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/adult-population-source/candidate",
+      "candidate_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\candidate",
       "upstream_science_binding": "doc/assets/research_resume_20261012/adult_population_transport_science_integration.json",
       "next_exit": "complete person execution handle, new all13 source-only forecast, actual geometry plus explicit conditional policy, factory/save/cold/original-parent readmission"
     },
     "zero_latent_response_graph": {
-      "state": "candidate_codec_replay_verification_in_progress",
-      "owner": "/root/zero_latent_graph_fix",
-      "candidate_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\zero-latent-graph-fix",
-      "confirmed_issue": "zero-column source factor loses covariance shape in exact_linear_image; use exact row Gram",
-      "in_flight_source_freeze_affected": false,
+      "state": "integrated_code_and_numeric_codec_contracts_accepted_author_cleanup_incomplete",
+      "integration_binding": "doc/assets/research_resume_20261012/zero_latent_response_graph_integration.json",
+      "root_verification": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\zero-latent-graph-fix\\candidate\\root-main-verification\\ROOT_MAIN_VERIFICATION.json",
+        "bytes": 3883,
+        "sha256": "3e99b547812098d1e36fba2a03e33363d9c4df18c59735377785eaf527564530"
+      },
       "current_992_column_source_instance_affected": false,
-      "historical_source_owner_boundary": "older335c source remains rejected by current c367 owner; separately documented, no expansion"
+      "in_flight_source_freeze_affected": false,
+      "author_cleanup_remaining_files": 39,
+      "author_cleanup_remaining_bytes": 1915730,
+      "root_cleanup_status": "complete"
     },
     "future_supervision_telemetry": {
-      "state": "candidate_sealed_independent_review_in_progress_not_deployed",
+      "state": "original_candidate_terminal_closure_gap_confirmed_author_revision_in_progress_not_deployed",
       "owner": "/root/audit_repository_convergence",
       "delivery": {
         "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\DELIVERY_MANIFEST.json",
@@ -1128,14 +1092,26 @@
       "current_supervisor_replaced": false,
       "cleanup_status": "incomplete_automatic_approval_rejected_deletion",
       "remaining_generated_files": 53,
-      "remaining_generated_bytes": 2469001
+      "remaining_generated_bytes": 2469001,
+      "independent_conditional_review": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\local-supervision\\telemetry-v2\\independent-review\\CONDITIONAL_REVIEW.json",
+        "bytes": 9495,
+        "sha256": "238ee3e8a389e26ceb48243a059877065066d4df91a6b45db69a8586c086a7dd"
+      }
+    },
+    "adult_joint_history": {
+      "state": "complete_actual_caller_review_and_functional_joint_seam_implementation_in_progress",
+      "owner": "/root/audit_disposition_refresh",
+      "candidate_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\candidate",
+      "handoff": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\adult-population-source\\ADULT_JOINT_HISTORY_HANDOFF.zh.md",
+      "confirmed_seam": "existing JointCalibrationProblem assumes materialized physical source and same source/target clock; new actual-functional shared-latent compiler required",
+      "next_exit": "preserve original joint QR/score/noise/local kernel and all actual multi-C/held/session-q/clock/drift contracts; complete save/cold/parent-readmission and typed nine-choice publishing"
     }
   },
   "next_actions": [
     "Monitor the same live recovery actor and whole-host gate; reuse original12 products, complete missing1 and all13 folds.",
     "After complete13person/13fold exit0 and owned-tree retirement, issue the sealed recovered-source independent complete acceptance.",
     "Use recovered-source target metadata and original819panel; freeze complete target runtime, resolve measured resources, execute all78Cfits/4914held cells.",
-    "Review and integrate zero-latent graph repair with origin/current consumer identity and full cold replay.",
     "Complete and independently review B full-source transport factory/codec, then connect C joint, D history and E typed adult inference.",
     "Review future telemetry v2 and its checker identity seal before using it in a new execution."
   ],
@@ -1148,7 +1124,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T14:39:20.913775+00:00",
+  "last_updated_utc": "2026-10-19T14:50:33.418472+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",

@@ -10,13 +10,12 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fractions import Fraction
 from functools import cached_property
 from pathlib import Path
 
 from research.cached_response_consumer import IMPLEMENTATION_SHA256 as CACHE_SHA256
-from research.conditional_response_graph import IMPLEMENTATION_SHA256 as GRAPH_SHA256
 from research.conditional_response_graph import rows, string_rows
 from research.exact_common_marginal import IMPLEMENTATION_SHA256 as MARGINAL_SHA256
 from research.exact_common_marginal import ExactCommonMarginalSource
@@ -27,10 +26,10 @@ from research.fast_marginal_template import IMPLEMENTATION_SHA256 as FAST_TEMPLA
 from research.fast_marginal_template import IntegerSurdMarginalTemplate
 from research.numeric_response_consumer import IMPLEMENTATION_SHA256 as REFERENCE_SHA256
 from transfer.noise_model import metadata_digest, require_sha256
-from transfer.transport_graph_model import IMPLEMENTATION_SHA256 as MODEL_SHA256
 from transfer.transport_graph_model import FrozenTransportGraphModel
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+LEGACY_IMPLEMENTATION_SHA256 = 'b36ce066daf746d898a9afa975e30bdff602733a3de56e635189aef460afde74'
 ORIGINAL_SOURCE = 'original_source_standard_normals/1'
 EXACT_COMMON = 'exact_common_marginal_standard_normals/1'
 SCHEMA = 'n2p3_frozen_transport_response_programme/1'
@@ -46,8 +45,11 @@ class FrozenTransportResponseProgram:
     representation: str
     native_spatial_map: tuple | None = None
     observed_channel_ids: tuple = ()
+    _producer_sha256: str = field(default=IMPLEMENTATION_SHA256, repr=False, kw_only=True)
 
     def __post_init__(self):
+        if self._producer_sha256 not in {IMPLEMENTATION_SHA256, LEGACY_IMPLEMENTATION_SHA256}:
+            raise ValueError('unknown response programme producer')
         if not isinstance(self.model, FrozenTransportGraphModel):
             raise TypeError('the complete transported model must come from its original owner')
         if self.representation not in {ORIGINAL_SOURCE, EXACT_COMMON}:
@@ -84,8 +86,8 @@ class FrozenTransportResponseProgram:
 
     def dependency_record(self):
         source, compiler = self.affine_source, self.compiler
-        producers = {'programme': IMPLEMENTATION_SHA256, 'complete_model_codec': MODEL_SHA256,
-                     'exact_graph': GRAPH_SHA256, 'reference_functional_compiler': REFERENCE_SHA256}
+        producers = {'programme': self._producer_sha256, 'complete_model_codec': self.model._producer_sha256,
+                     'exact_graph': source.graph._producer_sha256, 'reference_functional_compiler': REFERENCE_SHA256}
         if self.representation == EXACT_COMMON:
             producers['exact_common_marginal'] = MARGINAL_SHA256
         if self.native_spatial_map is not None:
@@ -112,6 +114,11 @@ class FrozenTransportResponseProgram:
             binding['exact_common_origin_digest'] = metadata_digest(source.origin)
         return binding
 
+    def consumer_record(self):
+        return {'programme_producer_sha256': self._producer_sha256,
+                'programme_consumer_sha256': IMPLEMENTATION_SHA256,
+                'model': self.model.consumer_record()}
+
     def to_dependency_bytes(self):
         return _bytes(self.dependency_record())
 
@@ -137,7 +144,8 @@ class FrozenTransportResponseProgram:
             raise ValueError('unknown response programme schema')
         spatial = (None if record['native_spatial_map'] is None else
                    tuple(tuple(Fraction(v) for v in row) for row in record['native_spatial_map']))
-        programme = cls(model, record['representation'], spatial, tuple(record['observed_channel_ids']))
+        programme = cls(model, record['representation'], spatial, tuple(record['observed_channel_ids']),
+                        _producer_sha256=record['producer_closure']['programme'])
         if programme.complete_model_sha256 != record['complete_model_dependency']['content_sha256']:
             raise ValueError('response programme requires its actual complete model dependency')
         if metadata_digest(programme.dependency_record()) != metadata_digest(record):

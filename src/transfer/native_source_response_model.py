@@ -4,14 +4,20 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
 
 import numpy as np
 
 from research.channel_noise_mechanism import NoiseGeometry
-from research.conditional_response_graph import ExactConditionalResponseGraph, exact, identity
+from research.conditional_response_graph import IMPLEMENTATION_SHA256 as GRAPH_SHA256
+from research.conditional_response_graph import (
+    ExactConditionalResponseGraph,
+    exact,
+    identity,
+    require_graph_producer,
+)
 from research.exact_template_response_consumer import IMPLEMENTATION_SHA256 as TEMPLATE_SHA256
 from research.exact_template_response_consumer import ExactTemplateAffineSource
 from research.numeric_response_consumer import IMPLEMENTATION_SHA256 as NUMERIC_SHA256
@@ -23,6 +29,7 @@ from transfer.noise_model import array_digest, metadata_digest, require_sha256
 from transfer.source_response_transport import ResponseCoordinateChart
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+LEGACY_IMPLEMENTATION_SHA256 = 'f91f95210ff5a308deb4a040a9ac77b3bfad5432c5b347db1ec4e92b017c7cb2'
 SCHEMA = 'n2p3_full_original_native_source_response_model/1'
 
 
@@ -36,8 +43,13 @@ class NativeSourceResponseModel:
     continuation: NativeResponseDictionary
     target_observation_geometry: NoiseGeometry
     target_participant_key: str
+    _producer_sha256: str = field(default=IMPLEMENTATION_SHA256, repr=False, kw_only=True)
+    _graph_producer_sha256: str = field(default=GRAPH_SHA256, repr=False, kw_only=True)
 
     def __post_init__(self):
+        if self._producer_sha256 not in {IMPLEMENTATION_SHA256, LEGACY_IMPLEMENTATION_SHA256}:
+            raise ValueError('unknown native response model producer')
+        require_graph_producer(self._graph_producer_sha256)
         if not isinstance(self.source, FrozenJointFlatSource) or not isinstance(self.continuation, NativeResponseDictionary):
             raise TypeError('native parameters require their original complete source and dictionary owners')
         geometry = self.source.parameters.noise.geometry
@@ -73,10 +85,10 @@ class NativeSourceResponseModel:
             'coefficient_roles': {'common': [0, coefficients//2], 'target_increment': [coefficients//2, coefficients]},
             'source_prior_preserved_sha256': array_digest(prior.mean, prior.root),
             'completion_dimensions': 0, 'source_fits': 0,
-            'native_model_producer_sha256': IMPLEMENTATION_SHA256}
+            'native_model_producer_sha256': self._producer_sha256}
         return ExactConditionalResponseGraph(prior.mean, prior.root, identity(len(prior.mean)),
             tuple(exact(v) for v in prior.mean), (), (), ResponseCoordinateChart(identity(channels)),
-            coefficients, binding)
+            coefficients, binding, _producer_sha256=self._graph_producer_sha256)
 
     def graph(self):
         return self.response_graph
@@ -106,9 +118,14 @@ class NativeSourceResponseModel:
             'source_chart': engine.source_chart, 'proper_latent_dimensions': engine.rank,
             'coordinate_ids': list(engine.coordinate_ids), 'template_header': engine.header,
             'normalized_source_prior_count': 1, 'source_directions_removed': 0,
-            'producer_closure': {'native_model': IMPLEMENTATION_SHA256,
+            'producer_closure': {'native_model': self._producer_sha256,
                 'actual_functional_compiler': NUMERIC_SHA256, 'temporal_template': TEMPLATE_SHA256},
             'numeric_parameters_only': True, 'raw_C_or_source_admission_granted': False}
+
+    def consumer_record(self):
+        return {'native_model_producer_sha256': self._producer_sha256,
+                'native_model_consumer_sha256': IMPLEMENTATION_SHA256,
+                **self.response_graph.consumer_record()}
 
     def to_dependency_bytes(self):
         return _bytes(self.dependency_record())
@@ -139,7 +156,9 @@ class NativeSourceResponseModel:
             sample_rate_hz=c['sample_rate_hz'], source_basis_sha256=c['source_basis_sha256'],
             terminal_values=c['terminal_values'])
         model = cls(source, continuation, NoiseGeometry(**record['target_observation_geometry']),
-                    record['target_participant_key'])
+                    record['target_participant_key'],
+                    _producer_sha256=record['producer_closure']['native_model'],
+                    _graph_producer_sha256=record['exact_graph']['graph_implementation_sha256'])
         if metadata_digest(model.dependency_record()) != metadata_digest(record):
             raise ValueError('native response descriptor differs from the actual full parameter and compiler relation')
         return model

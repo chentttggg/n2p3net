@@ -1,0 +1,88 @@
+{
+  "schema": "zero_latent_response_graph_integration/1",
+  "status": "code_and_complete_numeric_codec_contracts_accepted_author_cleanup_incomplete",
+  "recorded_utc": "2026-10-19T14:50:33.418472+00:00",
+  "canonical_base": "fc91ed2d39bb70f2091bf9c878d859c73d4c5cb0",
+  "author_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\zero-latent-graph-fix\\candidate\\DELIVERY_MANIFEST.json",
+    "bytes": 14709,
+    "sha256": "6c141f970d573a5b955262e17c6aac2814474b3abb4553e09bbd8a029da7fb8e"
+  },
+  "author_final_verification": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\zero-latent-graph-fix\\candidate\\FINAL_GREEN_RESULT.json",
+    "bytes": 15509,
+    "sha256": "b0dcff9717c464db04040639f27c08e5f9117d80f560f28650aa757df2fda26c"
+  },
+  "root_main_verification": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\zero-latent-graph-fix\\candidate\\root-main-verification\\ROOT_MAIN_VERIFICATION.json",
+    "bytes": 3883,
+    "sha256": "3e99b547812098d1e36fba2a03e33363d9c4df18c59735377785eaf527564530"
+  },
+  "files": [
+    {
+      "path": "D:\\BCI\\n2p3-net\\src\\research\\conditional_response_graph.py",
+      "bytes": 11424,
+      "sha256": "7244d3ec228a7fdccf0f1c5d3a30ff4e2b40e8c69e183b32d38e3d358ce9561d",
+      "relative": "src/research/conditional_response_graph.py"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\src\\transfer\\transport_graph_model.py",
+      "bytes": 6704,
+      "sha256": "0c6095df5655aa0dbd7a6b68a5929f7087a47f566d010e2b9c8ec1a8bcc847cb",
+      "relative": "src/transfer/transport_graph_model.py"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\src\\transfer\\marginal_response_model.py",
+      "bytes": 10028,
+      "sha256": "7150c62b62e7ca7b3fc6d9bfae7b566f2528865995d393a34c03152899c40de3",
+      "relative": "src/transfer/marginal_response_model.py"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\src\\transfer\\native_source_response_model.py",
+      "bytes": 10754,
+      "sha256": "8ee8bf9b92a516573a208d720b86e26117ef800191b0b0d64400e7ce7d94b73a",
+      "relative": "src/transfer/native_source_response_model.py"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\src\\research\\brainsync_source_admission.py",
+      "bytes": 24502,
+      "sha256": "caf03161975948998090041e353f5111f08a8fa4b0501d285927fb7c74676beb",
+      "relative": "src/research/brainsync_source_admission.py"
+    }
+  ],
+  "regression_test": {
+    "path": "D:\\BCI\\n2p3-net\\tests\\transfer\\test_source_response_transport.py",
+    "bytes": 7206,
+    "sha256": "c31e06cd01394a2519cf963236108e5d587346386131ad993d96bd1f63a378aa"
+  },
+  "accepted_scope": {
+    "exact_zero_source_latents_with_and_without_conditional_innovation": true,
+    "complete_query_covariance_shape": true,
+    "original_and_current_graph_transport_native_programme_codec_replay": true,
+    "public_rebuilt_graph_verification_seam": true,
+    "compact_numeric_target_relation_and_exclusion": true,
+    "current_992_column_population_mathematics_unchanged": true,
+    "physical_common_rank_zero_factory": "separate_interface_scope",
+    "scientific_adult_performance": "future_execution",
+    "new_root_fits": 0
+  },
+  "cleanup": {
+    "root": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\zero-latent-graph-fix\\candidate\\root-main-verification\\cleanup.json",
+      "bytes": 1148,
+      "sha256": "6422f05da0c24e2b4aa61afac4594b63d6406eb21d6298adc3da7bab94792423"
+    },
+    "root_status": "complete",
+    "root_deleted_files": 14,
+    "root_deleted_bytes": 641517,
+    "author": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-joint-history-inference\\adult-programme-input\\zero-latent-graph-fix\\candidate\\cleanup.json",
+      "bytes": 10738,
+      "sha256": "732e799080752ab6bb74646deabfac025dea03c97ab383af2edcce66a9e360bb"
+    },
+    "author_status": "incomplete_automatic_approval_rejected_deletion",
+    "author_remaining_generated_files": 39,
+    "author_remaining_generated_bytes": 1915730
+  },
+  "active_state_owner": "pause_checkpoint_current.json"
+}
