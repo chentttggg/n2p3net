@@ -164,6 +164,13 @@
     "reason": "Two concurrent fits exhausted the owned commit cap; all trees retired. A measured topology revision schedules one complete person/fold at a time with20native threads and the same scientific bytes, recipe and complete matrix.",
     "prior_peak_host_CPU_percent": 44.8,
     "prior_peak_host_memory_percent": 76.1,
-    "prior_completed_source_models": 0
-  }
+    "prior_completed_source_models": 0,
+    "terminal": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision-serial\\terminal.json",
+      "sha256": "8b0f79956952ecd095b19b6c0775ccfb7b482528b23d7c08f19d05e5ef36e11d"
+    },
+    "peak_host_CPU_percent": 76.4,
+    "peak_host_memory_percent": 76.7
+  },
+  "source_memory_diagnosis": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\P1_OBSERVED_STACK_SCOPE.json"
 }

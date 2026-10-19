@@ -282,8 +282,10 @@
     }
   },
   "active_agents": {
-    "execution_failures": "Measured source-fit memory lifetime/allocation review; code-only optimization proposal, active frozen run unchanged.",
-    "joint_slice_integration_review": "Full population target programme driver and explicit819-request panel; code only."
+    "execution_failures": "Source QR/memory lifecycle, repeated raw prefix hash and consumed Future retention; code-only candidate.",
+    "history_slice_integration_review": "Independent mathematical/caller review of source memory QR candidate.",
+    "source_slice_integration_review": "Posterior record/hash/save memory lifecycle; code-only candidate.",
+    "joint_slice_integration_review": "Full target matrix programme and819-request panel preparation; code only."
   },
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
@@ -396,6 +398,10 @@
       "state": "external candidate in progress",
       "directory": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/population-matrix-preparation",
       "requirement": "78 genuine C fits, original63 held each, complete4914 denominator and independent complete source acceptance."
+    },
+    "source_memory_optimization": {
+      "state": "actual_memory_failure_and_read_only_profile_diagnosed_candidate_in_progress",
+      "scope": "Block augmented QR/whole-source prefix identity reuse/failed Future cleanup plus posterior canonical record/digest/save copies; no truncation or changed numerical thresholds."
     }
   },
   "confirmed_Lean_error_handoff": {
@@ -510,7 +516,7 @@
       "actual_population_complete_hyperfits": 0,
       "candidate_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
       "execution": {
-        "state": "running_supervised_serial_source_new_attempt",
+        "state": "failed_serial_job_memory_limit_all_owned_processes_retired",
         "integration_binding": "doc/assets/research_resume_20261012/source_managed_execution_integration.json",
         "launch": {
           "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\ROOT_LAUNCH3.json",
@@ -536,7 +542,14 @@
         "fold_workers": 1,
         "native_threads_per_worker": 20,
         "cpu_threads_total": 21,
-        "scientific_acceptance_issued": false
+        "scientific_acceptance_issued": false,
+        "terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\supervision-serial\\terminal.json",
+        "peak_host_CPU_percent": 76.4,
+        "peak_host_memory_percent": 76.7,
+        "completed_source_models": 0,
+        "completed_folds": 0,
+        "profile_evidence": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\local-owned-execution-source\\P1_OBSERVED_STACK_SCOPE.json",
+        "next_action": "Reduce full-record augmented QR/copy peaks and posterior record/hash duplication, retaining complete scientific dimensions and inputs; review and freeze fixes before new full execution."
       },
       "code_preparation": {
         "conditioning": "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
@@ -656,7 +669,7 @@
     }
   },
   "next_actions": [
-    "Observe actual local source progress and whole-hostCPU/RAM/GPU below80percent; adjust resource topology using measured throughput and memory, preserving completed artifacts.",
+    "Integrate independently reviewed source memory/lifecycle improvements, refresh exact scientific execution source and resume the complete local programme below80percent whole-host usage.",
     "Independently accept complete13person/13fold source execution before issuing target admission.",
     "Review and integrate full population target matrix driver, then genuine joint fit/first-held/typed replay and complete4914 new cells with original9828 baseline diagnostics.",
     "Cloud input-location code accepted; future cloud execution will bind actual roots and a newly projected recipe."
@@ -670,7 +683,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T07:37:34.730496+00:00",
+  "last_updated_utc": "2026-10-19T07:47:19.975269+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
