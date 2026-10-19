@@ -1,0 +1,224 @@
+{
+  "schema": "source_data_factor_integration/1",
+  "status": "accepted_canonical_code_mathematics_and_software_contracts",
+  "recorded_utc": "2026-10-19T12:07:48.457816+00:00",
+  "canonical_base": "900a936aba05eacb45f41c834b4b010176afd1de",
+  "author_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\DELIVERY.json",
+    "bytes": 18999,
+    "sha256": "129a7dac6c7bcb3d3a2d370977ef3e89f01d6d9274e3c067bfb3e8fa8aab0aab"
+  },
+  "candidate_manifest": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\CANDIDATE_MANIFEST.json",
+    "bytes": 7770,
+    "sha256": "8131441233ae268d721f55b40f51436c3885abfb29cef2c1616c41b71c7cedd7"
+  },
+  "independent_component_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-compact-factor\\REVIEW_RECEIPT.json",
+    "bytes": 9900,
+    "sha256": "2e3a0aa347a3fc6b642cc6161593798e1e2d9b0ae19eb1c1c59b8cc7a05360c7"
+  },
+  "complete_source_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-compact-factor-source-review\\COMPLETE_SOURCE_REVIEW.json",
+    "bytes": 32342,
+    "sha256": "ed86fbd2c0b9d05b3be96e94846fce50c66f484f44b771ee8d7b648cc89bc0b5"
+  },
+  "root_main_verification": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\ROOT_MAIN_VERIFICATION.json",
+    "bytes": 8164,
+    "sha256": "7b8a3f624f4ccd31f01fde3e57313feb7114e3054d3fe2a674e7762a38d82186"
+  },
+  "source_artifact_plan": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\SOURCE_ARTIFACT_PLAN.zh.md",
+    "bytes": 18608,
+    "sha256": "58a6615bc2153bb6c20accf465634942b0135fdc4cd48e2ae6b375a19827ee92"
+  },
+  "recipe": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\SOURCE_DATA_FACTOR_RECIPE.json",
+    "bytes": 4005,
+    "sha256": "9ba8df49a5d3e25a9c50c9b7638c199ee557a080c9b125450b64e2d0ab67afdb"
+  },
+  "files": [
+    {
+      "relative": "experiments/run_public_population_source.py",
+      "before": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\preimages\\experiments\\run_public_population_source.py",
+        "bytes": 19083,
+        "sha256": "bacfa42ef195cffa8daa5d536d9471c3172c4ae4ae074bbc2ae012cc500f2cc0"
+      },
+      "after": {
+        "path": "D:\\BCI\\n2p3-net\\experiments\\run_public_population_source.py",
+        "bytes": 20134,
+        "sha256": "edc4ebafc90a37d5b944baccff0f0eb5a2e81c66e64bc3b0fed600326104ee22"
+      }
+    },
+    {
+      "relative": "src/research/population_noise_reference.py",
+      "before": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\preimages\\src\\research\\population_noise_reference.py",
+        "bytes": 11431,
+        "sha256": "adfc95a7410acaab5ca4465c26220df8aa6d735a22ae38b05ad3ccdd6ae59d02"
+      },
+      "after": {
+        "path": "D:\\BCI\\n2p3-net\\src\\research\\population_noise_reference.py",
+        "bytes": 12397,
+        "sha256": "09c9bc331aa46ded2859dc2d5ea610bec34ed411bdecd2ee5521026a66ddef89"
+      }
+    },
+    {
+      "relative": "src/research/population_source_cloud.py",
+      "before": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\preimages\\src\\research\\population_source_cloud.py",
+        "bytes": 14264,
+        "sha256": "4e589513413fb95d1ccefb20fc98098654950645162cb13629552de4621adcf1"
+      },
+      "after": {
+        "path": "D:\\BCI\\n2p3-net\\src\\research\\population_source_cloud.py",
+        "bytes": 14635,
+        "sha256": "6cdc17f75f03d5e62edaf642d82a72593c9a0d323bd99ee7d6abb3c2143d7557"
+      }
+    },
+    {
+      "relative": "src/research/population_source_inputs.py",
+      "before": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\preimages\\src\\research\\population_source_inputs.py",
+        "bytes": 24458,
+        "sha256": "fe4a41dcdb3843e4ce27c75f2a29ca00464fa87515f35157db4b418ba60dcb8f"
+      },
+      "after": {
+        "path": "D:\\BCI\\n2p3-net\\src\\research\\population_source_inputs.py",
+        "bytes": 24821,
+        "sha256": "fe72e3bde34f8f56e8570a219cd85f169e1eb6ec917b9b4f95d4861f9508bf50"
+      }
+    },
+    {
+      "relative": "src/research/public_population_source.py",
+      "before": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\preimages\\src\\research\\public_population_source.py",
+        "bytes": 38853,
+        "sha256": "8190f7d5dcdc8e320b8edcf42db65f369f8bc3dd5b73c32d81340f219a1ed33e"
+      },
+      "after": {
+        "path": "D:\\BCI\\n2p3-net\\src\\research\\public_population_source.py",
+        "bytes": 43946,
+        "sha256": "f0891a830bbc22e0f72685829b1e26b333ae1560bf61db72fedbe717c20bd20a"
+      }
+    },
+    {
+      "relative": "src/research/source_data_factor.py",
+      "before": null,
+      "after": {
+        "path": "D:\\BCI\\n2p3-net\\src\\research\\source_data_factor.py",
+        "bytes": 28263,
+        "sha256": "1551885b9d0e3a79f059eaed139ddb1e6cce0a013134abc814c63d2cfee0cac0"
+      }
+    },
+    {
+      "relative": "src/research/source_likelihood_export.py",
+      "before": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\preimages\\src\\research\\source_likelihood_export.py",
+        "bytes": 26277,
+        "sha256": "390d8ae93aa27a51a56e828e42399133e9b09fb4b7b26ae22fd71420a1512801"
+      },
+      "after": {
+        "path": "D:\\BCI\\n2p3-net\\src\\research\\source_likelihood_export.py",
+        "bytes": 26482,
+        "sha256": "ee04c413e395a17d408f70ca63b8aabc2bd5d36925fa835f5bc2d8334bff7e25"
+      }
+    },
+    {
+      "relative": "src/transfer/spatial_signal_prior.py",
+      "before": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\preimages\\src\\transfer\\spatial_signal_prior.py",
+        "bytes": 160830,
+        "sha256": "43e3f715439d79d48ca773f5462467867de5212f0d53d03b3530a704c3e109be"
+      },
+      "after": {
+        "path": "D:\\BCI\\n2p3-net\\src\\transfer\\spatial_signal_prior.py",
+        "bytes": 161470,
+        "sha256": "4f2e1a8a95687cd1e8f6e1faea2a162732fc290a16196cf472a91de4ba0c11e3"
+      }
+    }
+  ],
+  "root_review": "Reviewed the complete original reader/compiler, noise fit, record compression, all-column A/r/c and absolute normalization, exact tensor support, immutable live issuer, acyclic binary/anchor/shared/product publication, legacy restore, all source/fold/native/target consumers and resource owner. Original compression body and old wrapper arithmetic are preserved; final owner-signature delta leaves twenty other data-factor definitions AST-identical.",
+  "preserved_scientific_contracts": [
+    "Original source-only raw/label/time/channel authority and exact213-record101388-label denominator",
+    "All31 native EEG channels and16 common/increment coefficients per channel:496 columns",
+    "Original noise programme/kernel prior and source-only scale policy",
+    "Full absolute likelihood constants, flat nuisance measure, temporal and spatial Jacobians, two residual energies",
+    "Data information independent of the auxiliary individual proper posterior; original population mean/between/mean uncertainty remains",
+    "Original v1 bytes, producer identities and explicit v1/v2 recipe and publication roles",
+    "Original target solver, requested4914 scores and78 target calibration programmes"
+  ],
+  "validation": {
+    "independent_actual_math_cases": 8,
+    "maximum_absolute_Gaussian_error": 7.105427357601002e-15,
+    "software_complete_cold_people": 13,
+    "software_complete_cold_folds": 13,
+    "software_cold_fits": 0,
+    "software_cold_new_QR": 0,
+    "software_cold_prefix_or_posterior_reconstruction": 0,
+    "original_small_noise_and_moment_checks_recorded_by_role": true,
+    "integrated_main_contract_tests_passed": 2,
+    "ruff_affected_files": "passed",
+    "git_diff_check": "passed",
+    "runtime_source_modules": 163,
+    "execution_inputs": 3,
+    "fresh_compiled_project_modules": 62,
+    "offline_preparation_modules": 22
+  },
+  "execution_code_snapshot": {
+    "materialization": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\MATERIALIZATION.json",
+      "bytes": 31952,
+      "sha256": "a91f7eaf090872d4a5466930e6190ff3dc5353b262f9b69f28930c7f2d19d22d"
+    },
+    "manifest": {
+      "bytes": 67049,
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\SOURCE_MANIFEST.json",
+      "sha256": "f2efb3179715fc72bd4559ed1bfaa60787af5105b9dd7bc0955f468b571e718d"
+    },
+    "actual_inspect": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\INSPECT.json",
+      "bytes": 7260,
+      "sha256": "9ce30ded597d3d12f00f0a45482c4d2ceddf8460e9b368846b3110215a47404b"
+    },
+    "copied_files": 166,
+    "copied_bytes": 5003231,
+    "data_models_or_venv_copied": false
+  },
+  "execution_acceptance_checker": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-compact-factor\\CHECKER_INTERFACE_SEAL.json",
+    "bytes": 3987,
+    "sha256": "d54b574b5868d4f3bcedc19f00727a3ac680a2e67cc16899c52033f42f1e63b7"
+  },
+  "scientific_execution_acceptance_issued": false,
+  "cleanup": {
+    "status": "completed",
+    "author_receipt": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\cleanup.json",
+      "bytes": 76178,
+      "sha256": "91af6d70b62b324a1880e15e6e5b92227191333840764234bff2db68ce32e244"
+    },
+    "root_receipt": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\ROOT_CLEANUP.json",
+      "bytes": 4315,
+      "sha256": "19b99df16c3e4eda5312c3acfa57178c8ca76e17af624e24b22d09d139cf1573"
+    },
+    "deleted_files": 655,
+    "deleted_logical_bytes": 21658856,
+    "method": "cmd; root recursive removal was automatically rejected, followed by five verified explicit file deletions and nonrecursive empty-directory removals, all exit0 and target absent.",
+    "scientific_raw_data_frozen_results_current_producers_and_checkpoint_dependencies_preserved": true,
+    "independent_retained_reproduction_evidence": {
+      "component_review": {
+        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-compact-factor\\REVIEW_RECEIPT.json",
+        "bytes": 9900,
+        "sha256": "2e3a0aa347a3fc6b642cc6161593798e1e2d9b0ae19eb1c1c59b8cc7a05360c7"
+      },
+      "apparent_bytes": 2570,
+      "classification": "Referenced negative-control and audit evidence; retained with original rejected-attempt record."
+    },
+    "worktrees_created": 0
+  },
+  "current_execution_and_next_steps_owner": "pause_checkpoint_current.json"
+}

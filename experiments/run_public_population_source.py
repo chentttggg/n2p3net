@@ -111,7 +111,11 @@ def main(argv=None, *, cloud_owner_resources=None):
     recipe_ref = pinned(args.recipe, args.recipe_sha256)
     manifest_ref = pinned(args.source_manifest, args.source_manifest_sha256)
     recipe, manifest = read(recipe_ref), read(manifest_ref)
-    if (recipe["schema"] != "full_original_population_source_recipe/1"
+    recipe_products = {"full_original_population_source_recipe/1": "spatial_model_v1",
+                       "full_original_population_source_recipe/2": "same_fit_full_response_data_factor_v2"}
+    source_product = recipe.get("source_product_kind", "spatial_model_v1")
+    if (recipe["schema"] not in recipe_products or source_product != recipe_products[recipe["schema"]]
+            or recipe["schema"] == "full_original_population_source_recipe/2" and "signal_programme" in recipe
             or manifest["schema"] != "public_population_effective_source_manifest/3"
             or manifest["recipe"] != recipe_ref or manifest["launcher"] != artifact(__file__)):
         raise ValueError("the named source recipe/launcher manifest is required")
@@ -167,10 +171,18 @@ def main(argv=None, *, cloud_owner_resources=None):
     from transfer.response_dictionary import ResponseDictionary
     from transfer.spatial_programme import SpatialSignalProgram
 
-    verify_loaded_sources(manifest)
     dictionary = ResponseDictionary.from_record(read(recipe["dictionary"]))
     native_dictionary = NativeResponseDictionary.from_record(read(recipe["native_dictionary"]))
-    signal = SpatialSignalProgram.from_record(recipe["signal_programme"])
+    if source_product == "spatial_model_v1":
+        signal, data_programme = SpatialSignalProgram.from_record(recipe["signal_programme"]), None
+        response_declaration = {"signal_programme": signal.record()}
+    else:
+        from research import source_data_factor
+
+        signal, data_programme = None, source_data_factor.SourceDataFactorProgram.from_record(recipe["source_data_programme"])
+        response_declaration = {"source_data_programme": data_programme.record(),
+            "source_data_factor_owner": artifact(source_data_factor.__file__)}
+    verify_loaded_sources(manifest)
     scale_record = read(recipe["scale_policy"])
     scale = population.LogScaleProgram(tuple(scale_record["prior_mean"]), tuple(scale_record["prior_sd"]),
         tuple(scale_record["initial"]), scale_record["maximum_iterations"], scale_record["gradient_tolerance"],
@@ -182,7 +194,7 @@ def main(argv=None, *, cloud_owner_resources=None):
             "manifest": manifest_ref, "people": 13, "folds": 13, "new_score_cells": 4914,
             "source_owner": artifact(owner.__file__), "population_core": artifact(population.__file__),
             "dictionary_digest": dictionary.digest(), "native_dictionary_digest": native_dictionary.digest(),
-            "signal_programme": signal.record(), "scale_programme": scale.record(),
+            "source_product_kind": source_product, **response_declaration, "scale_programme": scale.record(),
             "actual_EEG_reads": 0, "actual_source_fits": 0, "actual_population_hyperfits": 0}, indent=2))
         return
     owner_resources = resolve_population_resources(resources, cloud_owner_resources=cloud_owner_resources)
@@ -194,6 +206,7 @@ def main(argv=None, *, cloud_owner_resources=None):
     store = SharedLikelihoodStore(output/"people")
     lock = Lock()
     checkpoint = {"schema": "complete_population_source_progress/1", "status": "running", "pid": os.getpid(),
+        "source_product_kind": source_product,
         "process_create_time": psutil.Process().create_time(), "recipe": recipe_ref, "source_manifest": manifest_ref,
         "resource_plan": resources_ref, "source_requested": 13, "fold_requested": 13,
         "requested_records": 234, "common_records": 213, "common_labels": 101388,
@@ -224,6 +237,7 @@ def main(argv=None, *, cloud_owner_resources=None):
                 authorization_preprocessing=PreprocessingSpec(**recipe["authorization_preprocessing"]),
                 response_seconds=recipe["response_seconds"], pre_roll_seconds=recipe["pre_roll_seconds"])
             compact, publication = owner.fit_and_export_source_person(person, signal_programme=signal,
+                data_programme=data_programme, source_product=source_product,
                 dictionary=dictionary, noise_options=recipe["noise_options"],
                 output_directory=output/("source-"+key.rsplit("/", 1)[-1]), shared_store=store)
             event("persons", key, "complete", elapsed_seconds=time.perf_counter()-started,

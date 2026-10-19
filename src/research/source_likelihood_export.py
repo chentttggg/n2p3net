@@ -184,18 +184,23 @@ def bind_original_fit_blocks(handle, blocks):
 
 def _chart(model):
     prior = model.posterior.prior
-    p, channels = prior.mean.shape
-    if p % 2 or tuple(prior.design_binding["coefficient_groups"]) != ("common", "target_increment"):
+    return full_response_chart(prior.layout, prior.design_binding, prior.mean.shape[0])
+
+
+def full_response_chart(layout, design_binding, response_coefficients):
+    """The common physical chart, independent of an auxiliary posterior."""
+    p = response_coefficients
+    if p % 2 or tuple(design_binding["coefficient_groups"]) != ("common", "target_increment"):
         raise ValueError("the physical common/target_increment coefficient programme must be explicit")
     names = tuple(f"{group}:basis:{i}:channel:{channel}" for group in ("common", "target_increment")
-                  for i in range(p//2) for channel in prior.layout.channels)
-    layout = prior.layout.record()
+                  for i in range(p//2) for channel in layout.channels)
+    layout = layout.record()
     definition = {"schema": "native_full_response_coefficient_chart/1",
         "coefficient_order": "coefficient_major_C_order_P_by_C",
-        "channels": list(prior.layout.channels), "response_coefficients": p,
+        "channels": layout["channels"], "response_coefficients": p,
         "acquisition_reference": layout["acquisition_reference"], "signal_unit": layout["signal_unit"],
         "channel_types": layout["channel_types"],
-        "original_spatial_design_binding": json.loads(_json(prior.design_binding)),
+        "original_spatial_design_binding": json.loads(_json(design_binding)),
         "individual_prior_not_part_of_likelihood": True}
     return names, definition
 

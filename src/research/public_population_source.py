@@ -35,6 +35,7 @@ from transfer.ensemble_views import RecordSourceTrainingCompiler, calibration_pr
 from transfer.native_response_dictionary import NativeResponseDictionary
 from transfer.noise_model import array_digest, freeze_metadata, metadata_digest
 from transfer.spatial_programme import SpatialDecisionModel
+from transfer.spatial_serialization import same_record_owners
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _PERSONS, _NATIVES, _ADMISSIONS = WeakKeyDictionary(), WeakKeyDictionary(), WeakKeyDictionary()
@@ -70,6 +71,24 @@ class FullSourcePerson:
     records: tuple
     receipts: tuple
     record: dict
+
+    def __post_init__(self):
+        object.__setattr__(self, "records", tuple(self.records))
+        object.__setattr__(self, "receipts", tuple(freeze_metadata(row) for row in self.receipts))
+        object.__setattr__(self, "record", freeze_metadata(self.record))
+
+
+def _full_source_person_owners(value):
+    owners = [(getattr(value, name), None) for name in ("compiler", "prefix", "records", "receipts", "record")]
+    for record in value.records:
+        owners.append((record, None))
+        for array in (record.samples, record.onsets, record.target_mask):
+            owners.append((array, (array.shape, array.strides, array.dtype.str)))
+    return tuple(owners)
+
+
+def _remember_source_person(value):
+    _PERSONS[value] = value.record, _full_source_person_owners(value)
 
 
 def open_frozen_source_person(freeze_reference, participant_key, *, profiles,
@@ -122,20 +141,29 @@ def open_frozen_source_person(freeze_reference, participant_key, *, profiles,
             if row["participant_key"] == participant_key and not row["common_source_admission_candidate"]),
         "producer_sha256": IMPLEMENTATION_SHA256})
     value = FullSourcePerson(compiler, prefix, records, receipts, record)
-    _PERSONS[value] = record
+    _remember_source_person(value)
     return value
 
 
 def require_full_source_person(value):
-    if type(value) is not FullSourcePerson or _PERSONS.get(value) is not value.record:
+    row = _PERSONS.get(value) if type(value) is FullSourcePerson else None
+    if row is None or row[0] is not value.record or not same_record_owners(_full_source_person_owners(value), row[1]):
         raise TypeError("the live original full-source person issuer is required")
     value.compiler.assert_original_prefix(value.prefix)
     return value
 
 
-def fit_and_export_source_person(person, *, signal_programme, dictionary, noise_options,
+def fit_and_export_source_person(person, *, signal_programme=None, data_programme=None,
+                                 source_product="spatial_model_v1", dictionary, noise_options,
                                  output_directory, shared_store):
     """Fit one person once and export only the actual same-fit data factors."""
+    if source_product == "same_fit_full_response_data_factor_v2":
+        if signal_programme is not None:
+            raise ValueError("data-factor publication uses its own programme, without an auxiliary posterior declaration")
+        return _fit_and_export_data_factor(person, data_programme=data_programme, dictionary=dictionary,
+            noise_options=noise_options, output_directory=output_directory, shared_store=shared_store)
+    if source_product != "spatial_model_v1" or data_programme is not None:
+        raise ValueError("source publication needs its explicitly named v1 or v2 product programme")
     person = require_full_source_person(person)
     directory = Path(output_directory)
     directory.mkdir(parents=True, exist_ok=False)
@@ -164,6 +192,31 @@ def fit_and_export_source_person(person, *, signal_programme, dictionary, noise_
     content = (_json(receipt)+"\n").encode()
     (directory/"person_likelihood.json").write_bytes(content)
     publication = _artifact(directory/"person_likelihood.json")
+    _PERSON_PUBLICATIONS[publication["sha256"]] = freeze_metadata(receipt)
+    return compact, publication
+
+
+def _fit_and_export_data_factor(person, *, data_programme, dictionary, noise_options,
+                                output_directory, shared_store):
+    from research.source_data_factor import (
+        fit_source_data_factor,
+        require_saved_source_data_factor,
+        save_source_data_factor,
+    )
+
+    live = fit_source_data_factor(person, data_programme=data_programme, dictionary=dictionary, noise_options=noise_options)
+    compact, product = save_source_data_factor(live, output_directory, shared_store=shared_store)
+    saved = require_saved_source_data_factor(live, product)
+    receipt = {"schema": "same_fit_source_person_likelihood_publication/2", "source_person": saved.anchor["source_person"],
+        "source_product": product, "shared_likelihood": compact.record(),
+        "source_export_metadata": saved.likelihood.metadata, "stationary_moments": saved.moments.record(),
+        "noise_fit_programmes": 1, "fixed_noise_response_compression_passes": 1,
+        "auxiliary_physical_posterior_fits": 0, "same_fit_block_count": saved.product["same_fit_block_count"],
+        "individual_posterior_used_as_measurement": False, "producer_sha256": IMPLEMENTATION_SHA256}
+    path = Path(output_directory)/"person_likelihood.json"
+    with path.open("xb") as stream:
+        stream.write((_json(receipt)+"\n").encode())
+    publication = _artifact(path)
     _PERSON_PUBLICATIONS[publication["sha256"]] = freeze_metadata(receipt)
     return compact, publication
 
@@ -334,8 +387,11 @@ def publish_source_population_execution(matrix_reference, *, person_publications
         publication = json.loads(_bytes(reference))
         if metadata_digest(publication) != metadata_digest(original):
             raise ValueError("the current same-fit person publication changed")
-        persons.append({"participant_key": original["source_person"]["participant_key"], "publication": reference,
-            "shared_likelihood": publication["shared_likelihood"]})
+        entry = {"participant_key": original["source_person"]["participant_key"], "publication": reference,
+            "shared_likelihood": publication["shared_likelihood"]}
+        if original["schema"] == "same_fit_source_person_likelihood_publication/2":
+            entry["source_product"] = original["source_product"]
+        persons.append(entry)
     for entry in fold_publications:
         reference = entry["forecast"]
         original = _FOLD_PUBLICATIONS.get(reference["sha256"])
@@ -361,11 +417,17 @@ def publish_source_population_execution(matrix_reference, *, person_publications
         fold["source_likelihoods"] = [people[key]["shared_likelihood"] for key in fold["source_participant_keys"]]
     for reference in recipe_references:
         _bytes(reference)
-    record = {"schema": "complete_original_population_source_execution/1", "source_matrix": matrix_reference,
+    products = ["source_product" in row for row in persons]
+    if any(products) != all(products):
+        raise ValueError("one source execution must retain its single declared product programme")
+    version = 2 if all(products) else 1
+    record = {"schema": f"complete_original_population_source_execution/{version}", "source_matrix": matrix_reference,
         "source_freeze": matrix["source_freeze"], "programme_seed": matrix["programme_seed"],
         "persons": persons, "folds": folds, "recipes": list(recipe_references), "complete": True,
         "future_source_reads": 0, "individual_posterior_used_as_measurement": False,
         "producer_sha256": IMPLEMENTATION_SHA256}
+    if version == 2:
+        record["source_product_kind"] = "same_fit_full_response_data_factor_v2"
     with Path(output_path).open("x", encoding="utf8", newline="\n") as stream:
         stream.write(_json(record)+"\n")
     return _artifact(output_path)
@@ -392,13 +454,17 @@ def load_source_population_execution(execution_reference, *, trusted_acceptance_
     for evidence in accepted["evidence"]:
         _bytes(evidence)
     if (matrix["schema"] != "public_population_source_execution_matrix_candidate/1"
-            or execution["schema"] != "complete_original_population_source_execution/1"
+            or execution["schema"] not in {"complete_original_population_source_execution/1",
+                                            "complete_original_population_source_execution/2"}
             or execution["source_matrix"] != expected_matrix_reference
             or execution["source_freeze"] != matrix["source_freeze"]
             or execution["programme_seed"] != matrix["programme_seed"]
             or execution["complete"] is not True or execution["future_source_reads"] != 0
             or execution["individual_posterior_used_as_measurement"] is not False):
         raise ValueError("the accepted source execution differs from the complete frozen programme")
+    data_only = execution["schema"] == "complete_original_population_source_execution/2"
+    if data_only and execution["source_product_kind"] != "same_fit_full_response_data_factor_v2":
+        raise ValueError("the accepted source execution has a different data-factor programme")
     expected_people = {row["source_person_id"]: row for row in matrix["person_programmes"]}
     expected_folds = {row["fold_id"]: row for row in matrix["fold_programmes"]}
     people = {row["participant_key"]: row for row in execution["persons"]}
@@ -411,7 +477,7 @@ def load_source_population_execution(execution_reference, *, trusted_acceptance_
         receipt = json.loads(_bytes(entry["publication"]))
         source = receipt["source_person"]
         expected = expected_people[key]
-        if (receipt["schema"] != "same_fit_source_person_likelihood_publication/1"
+        if (receipt["schema"] != f"same_fit_source_person_likelihood_publication/{2 if data_only else 1}"
                 or source["participant_key"] != key or source["source_freeze"] != matrix["source_freeze"]
                 or source["source_declaration"] != expected["declaration"]
                 or set(source["source_record_ids"]) != set(expected["selected_source_records"])
@@ -421,6 +487,19 @@ def load_source_population_execution(execution_reference, *, trusted_acceptance_
                 or receipt["individual_posterior_used_as_measurement"] is not False
                 or receipt["shared_likelihood"] != entry["shared_likelihood"]):
             raise ValueError("a person publication differs from its actual complete source programme")
+        if data_only:
+            from research.source_data_factor import inspect_source_data_factor
+
+            product, anchor = inspect_source_data_factor(receipt["source_product"])
+            if (entry["source_product"] != receipt["source_product"]
+                    or product["shared_likelihood"] != entry["shared_likelihood"]
+                    or anchor["source_person"] != source
+                    or receipt["source_export_metadata"]["source_anchor"] != product["source_anchor"]
+                    or receipt["stationary_moments"] != product["stationary_moments"]
+                    or receipt["fixed_noise_response_compression_passes"] != 1
+                    or receipt["auxiliary_physical_posterior_fits"] != 0
+                    or receipt["same_fit_block_count"] != product["same_fit_block_count"]):
+                raise ValueError("accepted same-fit person data factors differ from their original source product")
     for key, entry in folds.items():
         expected = expected_folds[key]
         if (entry["target_participant_key"] != expected["target_participant_key"]

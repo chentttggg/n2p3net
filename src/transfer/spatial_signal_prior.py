@@ -1066,6 +1066,17 @@ class SpatialResponseBlock:
         object.__setattr__(self, "authorization", freeze_metadata(authorization))
 
     def _compressed(self, native_noise, native_root=None, *, return_factors=False):
+        """Original posterior/prediction protocol over the same compression."""
+        information, response, outside, *remaining = self._compressed_components(
+            native_noise, native_root, return_factors=return_factors)
+        return information, response, float(np.sum(outside**2)), *remaining
+
+    def _compressed_components(self, native_noise, native_root=None, *, return_factors=True):
+        """Expose the same-fit outside vector before scalar energy reduction.
+
+        The legacy wrapper retains its original numerical return protocol;
+        source data-factor publication consumes these actual components once.
+        """
         whitened = self.observation._whiten(self.samples, native_noise, native_root, return_factor=return_factors)
         y, mapping, logdet_noise = whitened[:3]
         design = self.design
@@ -1087,7 +1098,7 @@ class SpatialResponseBlock:
         response = q.T @ y
         outside = y - q @ response
         result = (np.kron(mapping, root), response.flatten(order="F"),
-                  float(np.sum(outside**2)), len(y) - nuisance_rank, mapping.shape[0],
+                  outside, len(y) - nuisance_rank, mapping.shape[0],
                   logdet_noise, nuisance_logdet)
         return (*result, _SpatialCompression(mapping, whitened[3], q, root, nuisance_q, nuisance_root)) if return_factors else result
 

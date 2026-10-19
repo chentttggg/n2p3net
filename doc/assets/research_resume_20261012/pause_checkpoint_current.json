@@ -281,10 +281,7 @@
       "sha256": "7f266b88f617cf1b84c96cecc251433c60750b7276cf7edc94bd2d68ae45d6aa"
     }
   },
-  "active_agents": {
-    "history_slice_integration_review": "Implement complete compact source data-factor owner and consumer chain in candidate; no main/frozen writes or training.",
-    "execution_failures": "Independent Gaussian/structure/identity and full source-to-cold-consumer review preparation."
-  },
+  "active_agents": {},
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
     "ownership": "separate_cloud_chat",
@@ -391,74 +388,7 @@
     "process_state": "parent and workers exited normally; original handle33930 exit0",
     "extra_legacy_NN_tuning_planned": false
   },
-  "pending_root_integrations": {
-    "compact_source_factor": {
-      "state": "root_compression_AST_and_full_consumer_review_complete_author_final_and_independent_closure_pending",
-      "plan": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\SOURCE_ARTIFACT_PLAN.zh.md",
-        "bytes": 18608,
-        "sha256": "58a6615bc2153bb6c20accf465634942b0135fdc4cd48e2ae6b375a19827ee92"
-      },
-      "candidate_directory": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/compact-factor-delivery/candidate",
-      "implementation_goal": "Original reader/noise/same-fit compression to explicit compact full-column data-factor publication and complete source/fold/target cold consumer chain; no auxiliary posterior or giant JSON dependency.",
-      "current_running_source_unchanged": true,
-      "interface_handoff": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\INTERFACE_HANDOFF.zh.md",
-        "bytes": 3470,
-        "sha256": "9d44f3bbdb43b9e1f7606e4cc93462b65b3131982a1662e46afeec43527112b6"
-      },
-      "independent_predeclared_math": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-compact-factor\\MATHEMATICAL_ORACLES.predeclared.json",
-        "bytes": 2642,
-        "sha256": "cdf8a0f981ef25918ae8ad1d96e2edfa5f5844ce7385cb5ccd1a0246b76d0e62"
-      },
-      "scope_note": "Native31 fixed-noise data factor remains complete; original noise-fit prior retained, auxiliary physical posterior omitted by explicit new programme. Existing v1 product and current frozen run remain their own producer.",
-      "independent_review_preparation": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-compact-factor\\PREPARATION_MANIFEST.json",
-        "bytes": 4801,
-        "sha256": "aa2922d5112668381995a663551db0182d407c351637942db46950cca6c37703"
-      },
-      "review_fixture_retention": {
-        "original_cleanup_receipt": {
-          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-compact-factor\\cleanup.json",
-          "bytes": 2332,
-          "sha256": "64356b4a4c23988ce87fd279e803da1981a60f9a8a5fb3a56314dfcd0d459287"
-        },
-        "disposition": "Retain all three current negative-control/reproduction inputs during unsealed implementation review; no deletion retried. Root will review actual references at final candidate acceptance.",
-        "retained_apparent_bytes": 2570,
-        "actual_deleted_bytes": 0
-      },
-      "root_components_review": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\ROOT_COMPONENTS_REVIEW.json",
-        "bytes": 4348,
-        "sha256": "6c9fb856c3e17c0a2a51d7f7da5770ed882292a86655b35932e91b5604adb2d5"
-      },
-      "software_vertical_progress": {
-        "actual_small_noise_fits": 13,
-        "original_block_compressions": 26,
-        "auxiliary_physical_posterior_fits": 0,
-        "source_only_fold_hyperfits": 13,
-        "native_cold_loads": 13,
-        "target_source_admissions": 1,
-        "real_EEG_reads": 0,
-        "scientific_acceptance_issued": false,
-        "result_path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\PROGRAMME_CONTROLS.json"
-      },
-      "full_response_columns": 496,
-      "remaining": "Author final controls/seal; independent mathematical/publication review and full effective-source closure; root integration and focused current-source checks before new actual v2 execution.",
-      "recipe_candidate": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\SOURCE_DATA_FACTOR_RECIPE.json",
-        "bytes": 4005,
-        "sha256": "9ba8df49a5d3e25a9c50c9b7638c199ee557a080c9b125450b64e2d0ab67afdb"
-      },
-      "recipe_scope_check": {
-        "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-factor-delivery\\ROOT_RECIPE_SCOPE_CHECK.json",
-        "bytes": 30396,
-        "sha256": "76a606ac2a511d18fa0805ab37a2d0358a894f372bf69c5c222c3b75d1a0aa14"
-      },
-      "independent_source_closure_review": "audit_repository_convergence; fresh complete v2 closure and caller/runtime source provenance; final sealed delivery pending"
-    }
-  },
+  "pending_root_integrations": {},
   "confirmed_Lean_error_handoff": {
     "input": {
       "path": "D:\\BCI\\n2p3-net\\doc\\assets\\lean_gaussian_20261016\\research_error_handoff_01.json",
@@ -608,30 +538,31 @@
         "completed_folds": 0,
         "scientific_acceptance_issued": false,
         "last_observation": {
-          "time": 1792408074.3268223,
+          "time": 1792411721.2211711,
           "action": "pause_external_gpu_pressure",
           "scientific_process_status": "stopped",
-          "host_cpu_percent": 12.0,
-          "host_memory_percent": 55.7,
+          "host_cpu_percent": 10.0,
+          "host_memory_percent": 60.3,
           "owned_cpu_percent_of_host": 0.0,
           "gpu_observation": {
-            "observed_time": 1792408073.4784236,
+            "observed_time": 1792411717.2582116,
             "status": "observed",
             "devices": [
               {
                 "index": 0,
-                "utilization_percent": 79.0,
+                "utilization_percent": 87.0,
                 "memory_total_mib": 8151.0,
-                "memory_used_mib": 5226.0,
-                "memory_percent": 64.11483253588517
+                "memory_used_mib": 5942.0,
+                "memory_percent": 72.89903079376764
               }
             ]
           },
-          "person_states": {
-            "running": 2,
-            "pending": 11
+          "scientific_and_supervisor_original_births_verified": true,
+          "persons_states": {
+            "pending": 11,
+            "running": 2
           },
-          "fold_states": {
+          "folds_states": {
             "pending": 13
           },
           "observed_source_files": [
@@ -645,7 +576,7 @@
             }
           ]
         },
-        "next_action": "Monitor actual source publications and utilisation; after complete execution and actual tree retirement run the prepared independent acceptance with this new launch/manifest pins.",
+        "next_action": "Original source run remains owned and unchanged; accepted compact-source freeze is prepared. Root will record managed supersession and actual retirement before starting its replacement.",
         "independent_static_preflight": {
           "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-execution-acceptance\\STREAMED_PREFLIGHT.json",
           "bytes": 101263,
@@ -810,6 +741,32 @@
         },
         "terminal": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\bounded-source-execution\\supervision\\terminal.json",
         "all_recorded_owned_identities_verified_absent": 5
+      },
+      "compact_data_factor_integration": "doc/assets/research_resume_20261012/source_data_factor_integration.json",
+      "compact_execution_preparation": {
+        "state": "accepted_full_source_frozen_actual_inspect_exit0_not_launched",
+        "source_root": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\checkout",
+        "source_manifest": {
+          "bytes": 67049,
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\SOURCE_MANIFEST.json",
+          "sha256": "f2efb3179715fc72bd4559ed1bfaa60787af5105b9dd7bc0955f468b571e718d"
+        },
+        "materialization": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\MATERIALIZATION.json",
+          "bytes": 31952,
+          "sha256": "a91f7eaf090872d4a5466930e6190ff3dc5353b262f9b69f28930c7f2d19d22d"
+        },
+        "inspect": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\INSPECT.json",
+          "bytes": 7260,
+          "sha256": "9ce30ded597d3d12f00f0a45482c4d2ceddf8460e9b368846b3110215a47404b"
+        },
+        "recipe": {
+          "bytes": 4005,
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\SOURCE_DATA_FACTOR_RECIPE.json",
+          "sha256": "9ba8df49a5d3e25a9c50c9b7638c199ee557a080c9b125450b64e2d0ab67afdb"
+        },
+        "next_action": "Apply performance/resource skills and actual host budget; retire the original owned streamed tree with an explicit supersession record, then launch the full13-person/13-fold compact source programme under the whole-host80percent policy."
       }
     },
     "joint_response_noise": {
@@ -911,8 +868,8 @@
     }
   },
   "next_actions": [
-    "Monitor new complete13person/13fold local source programme below80percent whole-host resources; original819panel is complete.",
-    "After actual complete source and owned-tree retirement, run prepared independent acceptance under explicit resource budget and new launch/manifest pins.",
+    "Apply the actual local resource budget to the accepted compact source freeze; retire the old owned streamed tree explicitly and launch the complete13-person/13-fold replacement under80percent whole-host resources.",
+    "After actual complete compact source and owned-tree retirement, run the separately sealed independent v2 execution acceptance checker.",
     "Freeze final target runtime and execute complete78Cfit/4914held matrix with accepted source and original819panel.",
     "Use public execution and accepted adult bridge dependency study to implement the complete native7/nine-choice vertical chain."
   ],
@@ -925,7 +882,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T11:26:31.092170+00:00",
+  "last_updated_utc": "2026-10-19T12:08:41.263183+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
@@ -946,9 +903,9 @@
     "coverage": {
       "delivery": "complete: source artifact plan and explicit implementation scope",
       "science": "complete: original A/r/c algebra, actual baseline-only moments consumer and ten independent predeclared Gaussian/Fraction controls; candidate correspondence is engineering review.",
-      "engineering": "in_progress: complete producer/save/load/cold-consumer slice",
-      "execution": "in_progress: existing complete13person/13fold frozen programme; next code version has not started training",
-      "knowledge": "in_progress: existing topic owns conclusions and this checkpoint owns state",
+      "engineering": "complete: compact source owner and full producer/save/load/cold consumer slice accepted and integrated; final163+3 source closure accepted.",
+      "execution": "in_progress: original source programme remains resource-paused; new accepted compact-source freeze and actual CLI inspect are complete, full scientific launch next.",
+      "knowledge": "complete for code integration: canonical technical guide, existing response/noise and execution topics, integration binding and this checkpoint updated.",
       "external_research": "not_applicable: current decision derives from actual source and Gaussian algebra",
       "github": "not_applicable: no remote publication requested"
     },

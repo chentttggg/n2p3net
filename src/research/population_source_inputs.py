@@ -144,7 +144,11 @@ def _validate_preparation_locations(output, original, generated):
 
 def _load_graph(recipe_reference):
     recipe, recipe_bytes = _read_metadata(recipe_reference)
-    if recipe["schema"] != RECIPE_SCHEMA:
+    products = {RECIPE_SCHEMA: "spatial_model_v1",
+                "full_original_population_source_recipe/2": "same_fit_full_response_data_factor_v2"}
+    if (recipe["schema"] not in products
+            or recipe.get("source_product_kind", "spatial_model_v1") != products[recipe["schema"]]
+            or recipe["schema"] == "full_original_population_source_recipe/2" and "signal_programme" in recipe):
         raise ValueError("the original full source recipe is required")
     matrix, matrix_bytes = _read_metadata(recipe["source_matrix"])
     if matrix["schema"] != MATRIX_SCHEMA:

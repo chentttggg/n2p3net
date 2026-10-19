@@ -107,14 +107,32 @@ def moments_from_original_spatial_model(handle, *, likelihood_reference):
     people = {row["authorization"]["original_view"]["participant_key"] for row in model.posterior.fit_records}
     if len(people) != 1:
         raise ValueError("one source moment package retains exactly one original participant")
+    return moments_from_source_baseline(baseline, layout=layout, participant_key=next(iter(people)), dependency=
+        {"original_source_file_sha256": handle.source_file_sha256,
+         "original_source_model_sha256": model.digest(), "source_likelihood": likelihood_reference.record(),
+        })
+
+
+def moments_from_source_baseline(baseline, *, layout, participant_key, dependency):
+    """Numerical moments from the original noise owner, without a posterior.
+
+    Source publication authority belongs to the calling same-fit issuer;
+    this transformation itself grants no data or live-fit permission.
+    """
+    from transfer.continuous_decision import ContinuousDecisionModel
+
+    if (type(baseline) is not ContinuousDecisionModel or baseline.noise is None
+            or baseline.noise.order != 1 or baseline.noise.startup_mode == "conditional_prefix"):
+        raise TypeError("original complete stationary AR1 baseline parameters are required")
+    baseline.assert_integrity()
+    if tuple(baseline.channels) != layout.channels:
+        raise ValueError("source moment layout differs from its actual baseline channels")
     geometry = NoiseGeometry(tuple(baseline.channels), baseline.sfreq, layout.signal_unit,
         layout.acquisition_reference, baseline.operator_identity, len(baseline.channels))
     reflections = [baseline.noise.reflection_coefficients]*len(baseline.channels)
     zero, lag = _parameter_moments(reflections, baseline.innovation_covariance)
-    return SourceStationaryMoments(next(iter(people)), geometry, zero, lag,
-        {"original_source_file_sha256": handle.source_file_sha256,
-         "original_source_model_sha256": model.digest(), "source_likelihood": likelihood_reference.record(),
-         "original_temporal_noise_sha256": baseline.noise.record()["artifact_sha256"],
+    return SourceStationaryMoments(participant_key, geometry, zero, lag,
+        {**dependency, "original_temporal_noise_sha256": baseline.noise.record()["artifact_sha256"],
          "original_full_Q_sha256": array_digest(baseline.innovation_covariance),
          "moment_producer_sha256": IMPLEMENTATION_SHA256,
          "moment_program": "exact_original_shared_PARCOR_pairwise_YW_small_Decimal96_root_and_exact_AR1_row_product"})

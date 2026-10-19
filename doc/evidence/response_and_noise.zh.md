@@ -362,6 +362,10 @@ source group以participant为单位，对效应measurement covariance与人际va
 
 在原噪声、字典、观测算子和flat测度固定时，同次压缩的全列A、响应r与完整常数c决定整条数据似然：`log L(θ)=c−||r−Aθ||²/2`。c保正交残差、nuisance体积、时间Jacobian与原物理行数；个体proper prior独立于这一数据因子。源moments实际只从原baseline的PARCOR/full Q取得，population、fold冷载及target随后消费compact因子与QR见证。因此下一版可由原reader/压缩owner直接发行这些充分状态，并为完整模型恢复任务另保具名载荷。来源链、精确结构支持、反例和完整实现切片见[源产物必要性研究](D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/SOURCE_ARTIFACT_PLAN.zh.md)；实现接受由对应代码审阅和真实运行记录给出。
 
+独立预声明参考已接到实际压缩核心：八组控制覆盖完整高斯密度、F→C全列置换、平坦nuisance测度、空间体积、正交残差、极弱非零方向、全部实际行与异构张量空间和；完整密度的最大误差为7.11e-15。2^-500弱列继续保留，实际binary64白化后的结构由实际D/Z确定，见[独立数学对应](D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/independent-compact-factor/CANDIDATE_MATH_CONTROLS.json)。
+
+在固定噪声与观测的对照中，将旧源个体后验的proper先验方差从9e-12换为1，后验随之变化，导出的A/r仍逐位相同、c差为0；新数据因子给出相同结果。该对照直接核实“数据证据与辅助个体先验分开”的实现关系，见[先验与发行权限控制](D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/compact-factor-delivery/PRIOR_AUTHORITY_CONTROLS.json)。
+
 ## B11：同记录漂移与噪声尺度
 
 同record Gamma/flat科研程序已接受并集成`dd63d32`：global proper β prior一次，每真实record一个Gamma λ和原物理flat漂移测度。有效信息量按原raw行数减漂移rank计数，同一full-record白化用于C、prefix与tail。固定noise shape与动态λ分开，proper β不随test λ缩放。source参数从原保存Continuous模型恢复，原prior因子经等价QR转换，原noise-fit保持；C-plugin与source-only权限各用真实issuer。

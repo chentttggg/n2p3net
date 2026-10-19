@@ -344,6 +344,8 @@ checkpoint读取安全整合（`codex/claude-improvements-20261012`，基于`ed2
 
 真实source采样进一步定位到大数组JSON编码；普通数值ndarray改为最多512行、16384个值的分块编码，子类、宽行与其他形状复用原迭代路径。独立协议、所有权和完整字节控制通过；本机CPython3.14.3两轮同结构的摘要、计量保存和保存后准入总中位从14.997秒降至3.665秒，约4.09倍，完整训练时长由新冻结运行继续测量。已确认的十个可再生基准输出用cmd删除，共429,930,160字节；原producer、反例及控制源码保留，实际回执一并绑定于[序列化整合](../assets/research_resume_20261012/source_serialization_integration.json)。
 
+具名recipe/2的source数据因子切片已接入主树：原噪声拟合与同次压缩直接形成全列A/r/c，再沿无环anchor、shared包与product发行；旧v1恢复保原producer。独立审阅逐读八个生产模块，并用保存的软件产物完成13人产品、13fold native及QR见证的严格冷重放；新fit、新QR和prefix/posterior重建计数均为0，原小Q正定准入和stationary moments核验按实际角色保留。整合后的原source噪声→target保存回放及原labels拒绝两项合同通过。作者用cmd退休650个旧软件fixture/cache文件，共10,977,066字节，成功产物与原证据继续保留；源码、独审、完整闭包和清理范围集中在[源数据因子整合](../assets/research_resume_20261012/source_data_factor_integration.json)。
+
 完整人群矩阵编排已按原owner链整合：13个目标各用另外12人的源预测，三档K、G0/G1共78次C programme，每次保63个原held请求。独审与root全文审阅核对source-only初值、预测无truth、逐题读入、保存后原C重新准入，以及target发布到typed重放和实际存储文件的完整关系。合同与metadata控制复用原证据，主树入口检查通过；真实科研执行沿其独立source接受与原819请求panel推进，见[矩阵整合绑定](../assets/research_resume_20261012/population_joint_matrix_integration.json)。
 
 ## 文件夹清理复核
