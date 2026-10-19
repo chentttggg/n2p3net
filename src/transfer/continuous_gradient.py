@@ -98,7 +98,7 @@ class ConditionalGaussianObjective:
             n = len(y)
             # column_stack owns its data, including caller samples/designs.
             raw.append(torch.from_numpy(np.column_stack((
-                y, design, np.ones(n), (np.arange(n) - center) / center,
+                y-y[:1], design, np.ones(n), (np.arange(n) - center) / center,
             ))))
         self._raw = tuple(raw)
         # Constant zero drift blocks are constructed once. Processing each
@@ -136,16 +136,13 @@ class ConditionalGaussianObjective:
             tail_y.append(transformed[self._prefix:, :self._channels])
         prefix_a, prefix_y, tail_a, tail_y = map(torch.cat, (prefix_a, prefix_y, tail_a, tail_y))
         prefix_q, prefix_root = torch.linalg.qr(torch.cat((prefix_a, self._prior)))
-        prefix_mean = torch.linalg.solve_triangular(
-            prefix_root, prefix_q.T @ torch.cat((prefix_y, self._prior_rhs)), upper=True
-        )
-        full_q, full_root = torch.linalg.qr(torch.cat((tail_a, prefix_root)))
-        full_mean = torch.linalg.solve_triangular(
-            full_root, full_q.T @ torch.cat((tail_y, prefix_root @ prefix_mean)), upper=True
-        )
-        residual = tail_y - tail_a @ full_mean
-        correction = prefix_root @ (full_mean - prefix_mean)
-        scatter = residual.T @ residual + correction.T @ correction
+        prefix_response = prefix_q.T @ torch.cat((prefix_y, self._prior_rhs))
+        _, joint = torch.linalg.qr(torch.cat((torch.cat((tail_a, tail_y), dim=1),
+            torch.cat((prefix_root, prefix_response), dim=1))), mode="reduced")
+        width = prefix_root.shape[1]
+        full_root = joint[:width, :width]
+        residual_root = joint[width:, width:]
+        scatter = residual_root.T @ residual_root
         logdet = 2 * (
             torch.log(torch.abs(torch.diag(full_root))).sum()
             - torch.log(torch.abs(torch.diag(prefix_root))).sum()

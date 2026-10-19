@@ -10,7 +10,6 @@ import argparse
 import gc
 import hashlib
 import json
-import multiprocessing
 import os
 import sys
 import time
@@ -41,55 +40,30 @@ def pinned(path, expected):
     return reference
 
 
-def resolve_population_resources(resources):
-    """Use the shared quota and memory owner without granting CUDA work."""
-    from research.source_execution import resolve_source_resources
-    from train.runtime import available_cpu_threads
+def resolve_population_resources(resources, *, cloud_owner_resources):
+    """Consume the existing cloud programme lease; never create a second ledger."""
+    from research.population_source_cloud import require_programme_phase
+    from research.resource_scope import require_managed_cloud_phase
 
-    scope = resources.get("resource_scope")
-    if scope not in {"local_development", "software_correctness"}:
-        raise ValueError("the CPU-only source programme requires its explicit local/software scope")
-    budget = resources["cpu_threads_total"]
-    native = resources["native_threads_per_worker"]
-    concurrency = max(resources["source_workers"], resources["fold_workers"])
-    if budget > available_cpu_threads() or concurrency*native+1 > budget:
-        raise ValueError("the effective CPU quota cannot meet the declared workers plus controller")
-    if scope == "local_development" and budget >= .8*(os.cpu_count() or 1):
-        raise ValueError("the local source programme must retain the below-80-percent whole-machine CPU preference")
-    for name in ("source_worker_reservation_bytes", "fold_worker_reservation_bytes"):
-        if type(resources[name]) is not int or resources[name] < 1:
-            raise ValueError("source/fold memory claims require positive bytes")
-    headroom = resources["memory_headroom_fraction"]
-    if isinstance(headroom, bool) or not isinstance(headroom, (float, int)) or not .05 <= headroom < 1:
-        raise ValueError("the source CPU owner requires at least five percent host headroom")
-    maximum_memory = max(resources["source_worker_reservation_bytes"], resources["fold_worker_reservation_bytes"])
-    resolved = resolve_source_resources({"resource_scope": scope, "cpu_budget": budget,
-        "source_workers": concurrency, "target_workers": concurrency,
-        "source_worker_memory_gib": maximum_memory/2**30,
-        "target_worker_memory_gib": maximum_memory/2**30,
-        "shared_staging_memory_gib": 0, "host_memory_fraction": 1-headroom}, 13, "cpu")
-    if (resolved["cpu_budget"] != budget or resolved["source_workers"] != concurrency
-            or resolved["target_workers"] != concurrency):
-        raise ValueError("shared admission cannot meet the declared source/fold capacity")
-    return resolved
+    managed = require_managed_cloud_phase(resources, phase="source", device="cpu")
+    require_programme_phase(resources, cloud_owner_resources, managed)
+    return cloud_owner_resources
 
 
 @contextmanager
-def phase_lease(admission, native_threads, memory_bytes, task_id):
-    """Both scientific stages are source learning in the same owner process."""
-    token = None
-    while token is None:
-        token = admission.reserve_phase("source", cpu_threads=native_threads,
-            memory_bytes=memory_bytes, gpu_workers=0, task_id=task_id)
-        if token is None:
-            time.sleep(.05)
-    try:
-        yield
-    finally:
-        admission.release_phase(token)
+def programme_member_scope(admission, native_threads, memory_bytes, task_id):
+    """Members consume the held aggregate lease until the owner retires its tree."""
+    from research.resource_scope import require_managed_cloud_phase
+
+    managed = require_managed_cloud_phase({"resource_scope": "cloud"}, phase="source", device="cpu")
+    phase = managed.task.resources
+    if (admission is not managed.admission or native_threads > phase.native_threads
+            or memory_bytes > phase.memory_bytes or not task_id):
+        raise ValueError("a source/fold member exceeds its actual aggregate cloud phase")
+    yield
 
 
-def main():
+def main(argv=None, *, cloud_owner_resources=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--recipe", type=Path, required=True)
     parser.add_argument("--recipe-sha256", required=True)
@@ -99,7 +73,8 @@ def main():
     parser.add_argument("--resources-sha256")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--inspect", action="store_true", help="verify code/recipe without original EEG reads or fitting")
-    args = parser.parse_args()
+    effective_argv = list(sys.argv[1:] if argv is None else argv)
+    args = parser.parse_args(effective_argv)
     recipe_ref = pinned(args.recipe, args.recipe_sha256)
     manifest_ref = pinned(args.source_manifest, args.source_manifest_sha256)
     recipe, manifest = read(recipe_ref), read(manifest_ref)
@@ -124,8 +99,9 @@ def main():
             parser.error("execution requires --resources, --resources-sha256 and a new --output")
         resources_ref = pinned(args.resources, args.resources_sha256)
         resources = read(resources_ref)
-        if resources["schema"] != "public_population_source_resources/2" or resources.get("device") != "cpu":
-            raise ValueError("the explicit CPU source programme requires a post-audit /2 resource declaration")
+        if (resources["schema"] != "public_population_source_resources/3"
+                or resources.get("resource_scope") != "cloud" or resources.get("device") != "cpu"):
+            raise ValueError("source computation requires its owned cloud CPU /3 declaration")
         source_workers, fold_workers, native_threads, cpu_budget = (
             resources[name] for name in ("source_workers", "fold_workers", "native_threads_per_worker", "cpu_threads_total"))
         if (any(type(v) is not int or v < 1 for v in (source_workers, fold_workers, native_threads, cpu_budget))
@@ -135,7 +111,12 @@ def main():
     for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
         os.environ[name] = str(native_threads)
     sys.dont_write_bytecode = True
-    sys.path.insert(0, str(Path(manifest["source_root"])/"src"))
+    sys.path[:0] = [str(Path(manifest["source_root"])/"src"), str(Path(manifest["source_root"]))]
+    if not args.inspect and cloud_owner_resources is None:
+        from research.population_source_cloud import run_population_source_cloud
+
+        return run_population_source_cloud(argv=effective_argv, resources=resources, output=args.output,
+            identity={"recipe": recipe_ref, "source_manifest": manifest_ref, "resource_plan": resources_ref})
     import numpy as np
     import psutil
     from threadpoolctl import threadpool_info, threadpool_limits
@@ -144,7 +125,7 @@ def main():
     from research import population_response_forecast as population
     from research import public_population_source as owner
     from research.execution import atomic_write_json
-    from research.source_execution import HostMemoryAdmission
+    from research.resource_scope import require_managed_cloud_phase
     from research.source_likelihood_export import SharedLikelihoodStore
     from transfer.native_response_dictionary import NativeResponseDictionary
     from transfer.response_dictionary import ResponseDictionary
@@ -172,7 +153,9 @@ def main():
             "signal_programme": signal.record(), "scale_programme": scale.record(),
             "actual_EEG_reads": 0, "actual_source_fits": 0, "actual_population_hyperfits": 0}, indent=2))
         return
-    owner_resources = resolve_population_resources(resources)
+    owner_resources = resolve_population_resources(resources, cloud_owner_resources=cloud_owner_resources)
+    managed = require_managed_cloud_phase(resources, phase="source", device="cpu")
+    admission = managed.admission
     available = owner_resources["available_host_memory_bytes"]
     args.output.mkdir(parents=True, exist_ok=False)
     output = args.output.resolve()
@@ -184,8 +167,8 @@ def main():
         "requested_records": 234, "common_records": 213, "common_labels": 101388,
         "persons": {row["source_person_id"]: {"status": "pending"} for row in matrix["person_programmes"]},
         "folds": {row["fold_id"]: {"status": "pending"} for row in matrix["fold_programmes"]},
-        "new_score_cells_pending": 4914, "resource_owner": "HostMemoryAdmission_same_process_CPU_phases",
-        "requested_resource_plan": resources, "resolved_resources": owner_resources, "actual_GPU_workers": 0,
+        "new_score_cells_pending": 4914, "resource_owner": "source_family_CloudExecutor_owned_aggregate_CPU_programme",
+        "requested_resource_plan": resources, "resolved_resources": owner_resources, "actual_GPU_workers": 0, "ready_GPU_tasks": 0,
         "independent_acceptance_issued_here": False, "future_records_attached": False,
         "memory_available_at_launch": available}
 
@@ -200,7 +183,7 @@ def main():
             print(json.dumps(row, sort_keys=True, allow_nan=False), flush=True)
 
     def fit_person(row):
-        with phase_lease(admission, native_threads, resources["source_worker_reservation_bytes"],
+        with programme_member_scope(admission, native_threads, resources["source_worker_reservation_bytes"],
                 "person:"+row["source_person_id"]):
             key = row["source_person_id"]
             started = time.perf_counter()
@@ -236,8 +219,7 @@ def main():
         return complete
 
     try:
-        with multiprocessing.get_context("spawn").Manager() as manager, threadpool_limits(limits=native_threads):
-            admission = HostMemoryAdmission(manager, owner_resources)
+        with threadpool_limits(limits=native_threads):
             try:
                 pools = threadpool_info()
                 if any(pool["num_threads"] > native_threads for pool in pools):
@@ -250,7 +232,7 @@ def main():
                 gc.collect()
 
                 def fit_fold(row):
-                    with phase_lease(admission, native_threads, resources["fold_worker_reservation_bytes"],
+                    with programme_member_scope(admission, native_threads, resources["fold_worker_reservation_bytes"],
                             "fold:"+row["fold_id"]):
                         started = time.perf_counter()
                         event("folds", row["fold_id"], "running")
@@ -281,6 +263,7 @@ def main():
         checkpoint["execution"] = execution
         event("programme", "source", checkpoint["status"], execution=execution,
             actual_person_programmes=len(publications), actual_fold_hyperfits=len(folds))
+        return execution
     except BaseException as error:
         checkpoint["status"] = "interrupted" if isinstance(error, KeyboardInterrupt) else "failed"
         for stage in ("persons", "folds"):

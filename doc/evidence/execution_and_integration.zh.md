@@ -338,6 +338,8 @@ checkpoint读取安全整合（`codex/claude-improvements-20261012`，基于`ed2
 
 ## 文件夹清理复核
 
+主目录交付先核Git blob，随后补充核原working bytes：发现904项仅行尾差异，含624份历史/形式化记录；原科研树完整保留并用于逐字节恢复。Git改为保存实际字节，EditorConfig与工程规范约束新编辑LF；主目录2,500文件、28份原审计、329份受保护Lean输入及159件冻结source均重新核对。全新index与独立新clone通过，旧raw-blob检查由此补充，见[主目录收敛](../assets/research_resume_20261012/main_materialization_integration.json)。本机旧历史原件按精确清单保留原位，另与接受代码分开登记。
+
 独立清理清单的18项已按实际内容和恢复引用逐项复核，见[文件级裁决与来源](../assets/repository_audit_20261019/folder_cleanup_review.json)。随后完成保留内容核验并用cmd精确路径删除：8,940个BI2014b重复下载分片、八个LLP坏下载、一个可再生pyc、九个原始运输包与十个prepared运输tar，共8,968个文件、28.4724 GiB逻辑字节；期间D盘空闲增加28.4555 GiB，卷增量包含并发活动。删除后逐路径确认目标均不存在，命令、退出码及首次引号错误尝试见[实际清理收据](../assets/repository_audit_20261019/folder_cleanup_execution.json)。
 
 十九个BI2014b完整ZIP、3,255个运输包对应原始实体文件、1,697个NPZ及1,697个sidecar继续保留；运输包删除时，保留内容摘要与原manifest一致，读取句柄保持到删除完成。E1与T5a是同一目录；六个导出对象在当前Git中均缺失，两份历史bundle的引用闭包均未覆盖，索引不能代替载荷。历史cache、六份结果/来源恢复包、活动BrainForm原件、Lee续传状态、工作树科研载荷、当前Lean依赖和固定setup/调度证据、local_history及两套环境继续保留。本轮无原始数据、冻结结果或暂停checkpoint删除，无训练或新构建。

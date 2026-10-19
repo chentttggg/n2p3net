@@ -1,0 +1,45 @@
+{
+  "schema": "main_materialization_integration/1",
+  "status": "accepted",
+  "canonical_repository": "D:\\BCI\\n2p3-net",
+  "initial_materialization": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\final-main-prepare\\accepted-main-with-policy\\EXECUTION_RECEIPT.json",
+    "sha256": "b507357824627021834f75071f3bef43b0f11f036694c3c6c11db129416b930b",
+    "bytes": 202585
+  },
+  "working_byte_materialization": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\final-main-prepare\\accepted-main-working-bytes\\EXECUTION_RECEIPT.json",
+    "sha256": "8f1fe00b47a1669f2f3439dd24783c799e26acb6a977855a25c63e22647b6197",
+    "bytes": 180820
+  },
+  "actual_working_byte_postcheck": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\final-main-prepare\\accepted-main-working-bytes\\POSTCHECK.json",
+    "sha256": "759918d85a32300a63215d5468f75830d578597818b2a6206ba1714a8b9028a4",
+    "bytes": 725
+  },
+  "independent_eol_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\main-eol-reconciliation\\DELIVERY_MANIFEST.json",
+    "sha256": "a2108bdd546516522bebc132ff6d63b87c7ad59e3d89058f7ddcae1de02877ea",
+    "bytes": 12534
+  },
+  "byte_policy_commit": "7ac2add12a89c731f79a8e8f3e8ffbf12e492540",
+  "root_review": "Read the exact raw-main/accepted-working/Git/frozen relationships, both EOL options and policy diff. Selected byte-preserving Git plus LF editor/writer policy. Restored actual accepted source/evidence bytes, not merely normalized blob text. A new independent index confirmed tracked clean; all protected groups matched.",
+  "verified_at_byte_restoration": {
+    "working_files": 2500,
+    "original_audits": 28,
+    "protected_Lean_inputs": 329,
+    "original_frozen_source_modules": 159
+  },
+  "historical_local_originals": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\repository-convergence\\main-eol-reconciliation\\LOCAL_RETAINED_ORIGINALS.json",
+    "sha256": "9d55cf7a2c623dfcbe0d1cf6aaa8e38d1dc78aee07bf501a33b4840f1841cd6b",
+    "bytes": 393732
+  },
+  "local_original_policy": "2293 exact historical originals retained in place and listed in local Git excludes, with no payload reads, deletion or reclassification as disposable. New source files and acceptance records remain visible.",
+  "subsequent_intentional_code_changes": [
+    "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
+    "doc/assets/research_resume_20261012/source_cloud_execution_preparation.json"
+  ],
+  "original_raw_inputs_results_and_paused_checkpoints": "preserved",
+  "training_performed_by_materialization": 0
+}

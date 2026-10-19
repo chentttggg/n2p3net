@@ -64,3 +64,15 @@ def entrypoint_resource_record(*, entrypoint, requested_device, effective_device
         "owner_cpu_budget": managed.admission.cpu_budget if managed is not None else None,
         "owner_gpu_slots": managed.admission.gpu_worker_limit if managed is not None else None,
         "observation_only_not_cloud_admission": True}
+
+
+def require_managed_cloud_phase(plan, *, phase, device):
+    """Actual scientific cloud work consumes an existing source-family phase."""
+    if plan.get("resource_scope") != "cloud":
+        raise ValueError("this scientific programme requires its declared cloud owner")
+    require_standalone_resource_scope(plan)
+    managed = _managed_worker()
+    if (managed is None or managed.task.resources.phase != phase
+            or managed.task.resources.device != device):
+        raise ValueError("the existing source-family owner must hold the actual scientific phase")
+    return managed

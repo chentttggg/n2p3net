@@ -3,7 +3,7 @@
   "status": "active_at_user_request",
   "recorded_at": "2026-10-19T10:36:19.039441+08:00",
   "user_request": "resume_research_then_resolve_repository_audit_before_autonomous_continuation",
-  "research_worktree": "D:/BCI/worktrees/research-director",
+  "research_worktree": "D:\\BCI\\n2p3-net",
   "source_venv": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
   "concurrency_limit_including_root": 10,
   "research_priority": "general_candidate_mathematics_with_final_adult_BrainSync_nine_choice_primary",
@@ -292,7 +292,7 @@
     "sha256": "0786d541be4af656a1119a20a89bbb7f7fda2978ab5e48e78835d21b0d4132b6",
     "commit": "a6f5750"
   },
-  "integration_head": "e101015b15cdd2682017756ff218d57b3f4c0cf4",
+  "integration_head": "7ac2add12a89c731f79a8e8f3e8ffbf12e492540",
   "concurrency_authorization": "later user allowed more threads after the temporary six-agent limit; seven actual parallel roles used for independent scientific slices",
   "execution_priority": "resolve_current_repository_audit_then_resume_full_population_and_joint_history_matrix",
   "accepted_native_input_source_commit": "811fb18dcbde94b9903ee8cce0df4bee16466e4a",
@@ -392,43 +392,14 @@
     "extra_legacy_NN_tuning_planned": false
   },
   "pending_root_integrations": {
-    "data": {
-      "path": "D:/BCI/artifacts/research-deliveries/repository-audit-data",
-      "state": "Reviewed fixes and scope dispositions integrated; actual postintegration failures addressed, focused composition accepted. Main materialization remains next."
+    "cloud_input_projection": {
+      "state": "code work may continue; no cloud provision or training authorization yet",
+      "requirement": "Preserve physical source bytes/identities and complete13person13fold4914cell scope while projecting explicit D-drive metadata paths to actual cloud storage."
     },
-    "transfer": {
-      "path": "D:/BCI/artifacts/research-deliveries/repository-audit-transfer",
-      "state": "Reviewed fixes and scope dispositions integrated; actual postintegration failures addressed, focused composition accepted. Main materialization remains next."
-    },
-    "workstation": {
-      "path": "D:/BCI/artifacts/research-deliveries/repository-audit-workstation",
-      "manifest": "8a46dd587a3e4cc479d3da15e143733abeac95a774186b672fce85f5b920f3b8",
-      "state": "Reviewed fixes and scope dispositions integrated; actual postintegration failures addressed, focused composition accepted. Main materialization remains next."
-    },
-    "runtime_performance": {
-      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/audit-performance",
-      "state": "Reviewed fixes and scope dispositions integrated; actual postintegration failures addressed, focused composition accepted. Main materialization remains next."
-    },
-    "run_lineage": {
-      "path": "D:/BCI/artifacts/research-deliveries/repository-audit-cli/lifecycle",
-      "manifest": "487609451d8b93ded0ed5be50c72d16952cad3f435ebb83896a1fa633716a860",
-      "state": "Reviewed fixes and scope dispositions integrated; actual postintegration failures addressed, focused composition accepted. Main materialization remains next."
-    },
-    "science_source": {
-      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source",
-      "state": "Exact reviewed slice integrated and final import/codec/Ruff checks passed; fresh executed-source freeze and full source/joint/history execution next."
-    },
-    "science_joint": {
-      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-response-noise",
-      "state": "Exact reviewed slice integrated and final import/codec/Ruff checks passed; fresh executed-source freeze and full source/joint/history execution next."
-    },
-    "science_history": {
-      "path": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference",
-      "state": "Exact reviewed slice integrated and final import/codec/Ruff checks passed; fresh executed-source freeze and full source/joint/history execution next."
-    },
-    "checkpoint_publication": {
-      "path": "D:/BCI/artifacts/research-deliveries/repository-audit-checkpoint-publication",
-      "state": "Reviewed fixes and scope dispositions integrated; actual postintegration failures addressed, focused composition accepted. Main materialization remains next."
+    "worktree_retirement": {
+      "state": "main now canonical; inspect ignored recovery payloads before retiring research tree",
+      "research_ignored_tmp_files": 1876,
+      "research_ignored_tmp_logical_bytes": 662083651
     }
   },
   "confirmed_Lean_error_handoff": {
@@ -481,7 +452,7 @@
   },
   "repository_audit": {
     "source": "D:/BCI/n2p3-net/doc/evidence/repository_audit_20261019.zh.md",
-    "state": "research_tree_source_accepted_final_commit_and_main_materialization_next",
+    "state": "main_materialized_and_accepted_working_bytes_verified",
     "history_protection": "D:/BCI/artifacts/research-deliveries/repository-preservation/HISTORY_PROTECTION.json",
     "bundle": "D:/BCI/artifacts/research-deliveries/repository-preservation/BUNDLE_RECEIPT.json",
     "code_snapshot": "D:/BCI/artifacts/research-deliveries/repository-preservation/CODE_SNAPSHOT_MANIFEST.json",
@@ -527,7 +498,8 @@
       "source_changed_during_run": [],
       "path": "D:/BCI/artifacts/research-deliveries/repository-validation/postintegration-root/focused-composition-02/execution.json"
     },
-    "main_materialization": "Prepared plan only; main source/index/ref unchanged. Refresh target after current policy/checkpoint change."
+    "main_materialization": "doc/assets/research_resume_20261012/main_materialization_integration.json",
+    "main_materialization_previous_plan_status": "superseded_by_accepted_main_working_bytes"
   },
   "active_scientific_work": {
     "population_source": {
@@ -562,6 +534,14 @@
         "all_requested_folds": 13,
         "resume_on_local": false,
         "completed_artifacts_and_failure_evidence": "retained in original attempt; not promoted to complete source execution"
+      },
+      "code_preparation": {
+        "conditioning": "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
+        "cloud_execution": "doc/assets/research_resume_20261012/source_cloud_execution_preparation.json",
+        "state": "code_integrated_cloud_inputs_resources_and_fresh_freeze_pending",
+        "local_training_allowed": false,
+        "completed_source_models_in_stopped_attempt": 0,
+        "user_cloud_response": "Code work first; cloud later."
       }
     },
     "joint_response_noise": {
@@ -634,10 +614,11 @@
     }
   },
   "next_actions": [
-    "Continue code integration, source/caller review and lightweight checks only.",
-    "Before any further training or large numerical computation, request cloud resources and wait for user authorization.",
-    "Preserve original interrupted local source attempt, investigate its reported PARCOR failure by code review, and prepare cloud execution with actual source/resource identity.",
-    "Refresh the main materialization plan after this new local-computation policy commit; the earlier accepted-main plan is now stale."
+    "Continue code review and lightweight checks only; user will provide cloud later.",
+    "Review explicit cloud input-location projection and full matrix caller readiness without reading EEG or fitting.",
+    "Preserve interrupted local attempt and original USER_STOP; no local restart.",
+    "After cloud is supplied, bind actual resources, refreshed source closure/review and explicit input projection; execute13source fits/13folds, independent acceptance, then full4914 new cells with original9828 baseline diagnostics.",
+    "Retire merged research worktree after preserving its1876 ignored recovery files; keep required joint-flat/BI prefix evidence."
   ],
   "active_local_checks": [],
   "folder_cleanup_review": {
@@ -648,11 +629,12 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T05:50:48Z",
+  "last_updated_utc": "2026-10-19T06:39:16Z",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "Training and large research computations require asking for cloud resources first. Local work is code review and lightweight verification only.",
     "local_training_allowed": false,
     "cloud_training_launch_requires_user_resource_authorization": true
-  }
+  },
+  "integration_head_role": "Accepted byte-restoration base; current follow-up code is pinned in the conditioning/cloud integration bindings."
 }

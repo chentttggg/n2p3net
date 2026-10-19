@@ -244,7 +244,10 @@ def _conditional_prediction(samples, designs, noise, prefix, prior_mean, prior_c
         # observed prefix keeps drift information well scaled on long records.
         # The same diffuse measure change cancels in the conditional density.
         drift = np.column_stack((np.ones(len(y)), (2 * np.arange(len(y)) - (prefix - 1)) / (prefix - 1)))
-        transformed = noise.whiten(np.column_stack((y, design, drift)))
+        # Given the observed prefix this is a translation of tail coordinates
+        # and of the diffuse intercept, each with Jacobian one. The proper
+        # response prior stays in its original coordinates.
+        transformed = noise.whiten(np.column_stack((y-y[:1], design, drift)))
         matrix = np.zeros((len(y), width))
         matrix[:, :kernel_width] = transformed[:, channels:channels + kernel_width]
         matrix[:, kernel_width + 2 * index:kernel_width + 2 * index + 2] = transformed[:, -2:]
@@ -265,17 +268,22 @@ def _conditional_posterior(prefix_design, prefix_y, tail_design, tail_y, prior_m
     width = A_u.shape[1]
     prior_root = (solve_triangular(np.linalg.cholesky(prior_covariance), np.eye(kernel_width), lower=True)
                   if prior_precision_root is None else prior_precision_root)
-    prefix_mean, prefix_information_root = _joint_posterior(A_u, Y_u, prior_mean, prior_root)
-    tail_q, full_information_root = np.linalg.qr(np.vstack((A_s, prefix_information_root)), mode="reduced")
-    full_mean = solve_triangular(full_information_root,
-        tail_q.T @ np.vstack((Y_s, prefix_information_root @ prefix_mean)))
-    remainder = Y_s - A_s @ full_mean
-    parameter_residual = prefix_information_root @ (full_mean - prefix_mean)
-    scatter = remainder.T @ remainder + parameter_residual.T @ parameter_residual
+    prior = np.zeros((len(prior_root), width))
+    prior[:, :kernel_width] = prior_root
+    prefix_q, prefix_information_root = np.linalg.qr(np.vstack((A_u, prior)), mode="reduced")
+    prefix_response = prefix_q.T @ np.vstack((Y_u, prior_root @ prior_mean))
+    # Keep the actual compressed response. Reconstructing it from a solved
+    # prefix mean, or subtracting two large parameter means, loses residuals.
+    joint = np.linalg.qr(np.vstack((np.column_stack((A_s, Y_s)),
+        np.column_stack((prefix_information_root, prefix_response)))), mode="r")
+    full_information_root, full_response = joint[:width, :width], joint[:width, width:]
+    residual_root = joint[width:, width:]
+    scatter = residual_root.T @ residual_root
     logdet = 2 * float(np.log(np.abs(np.diag(full_information_root))).sum()
                       - np.log(np.abs(np.diag(prefix_information_root))).sum())
     mean = covariance = None
     if posterior:
+        full_mean = solve_triangular(full_information_root, full_response)
         full_root = solve_triangular(full_information_root, np.eye(width))
         mean = full_mean[:kernel_width]
         covariance = full_root[:kernel_width] @ full_root[:kernel_width].T
@@ -291,7 +299,7 @@ class _ConditionalRecordWhitening:
         self.rank = common_design.shape[1]
         drift = np.column_stack((np.ones(len(samples)),
             (2 * np.arange(len(samples)) - (prefix - 1)) / (prefix - 1)))
-        self.common = noise.whiten(np.column_stack((samples, common_design, drift)))
+        self.common = noise.whiten(np.column_stack((samples-samples[:1], common_design, drift)))
 
     def predict(self, design, prior_mean, prior_covariance, *, prior_precision_root=None):
         # Always whiten the candidate over its complete actual record. The
@@ -339,6 +347,7 @@ def _fit_fixed_prefix(samples, designs, residuals, ids, *, order, prefix, ridge,
 
     reflections = np.asarray(initializer.reflection_coefficients)
     initial_result = evaluate(reflections)
+    accepted_result = initial_result
     initial_objective, _, objective_rows, _, _ = initial_result
     eta_max = _CONDITIONAL_SOLVER_SETTINGS["eta_max"]
     optimization = {"strategy": "burg_only" if strategy == "burg" else "conditional_profile",
@@ -374,14 +383,15 @@ def _fit_fixed_prefix(samples, designs, residuals, ids, *, order, prefix, ridge,
         reflections = np.tanh(result.x)
         evaluations += 1
         final_torch, _ = gradient_objective.value_gradient(result.x)
-        final_numpy = evaluate(reflections)[0]
+        accepted_result = evaluate(reflections)
+        final_numpy = accepted_result[0]
         if not np.isclose(final_torch * objective_rows, final_numpy, rtol=1e-11, atol=1e-8):
             raise UnidentifiableFitError("exact-gradient optimum differs from the frozen Gaussian objective")
         optimization.update(converged=bool(result.success), iterations=int(result.nit),
                             status=int(result.status), message=str(result.message))
     elif strategy == "conditional_profile":
         optimization["message"] = "no AR shape parameters"
-    objective, spatial, n_tail, _, _ = evaluate(reflections)
+    objective, spatial, n_tail, _, _ = accepted_result
     if objective > initial_objective + 1e-9 * max(1., abs(initial_objective)):
         raise UnidentifiableFitError("conditional PARCOR optimization increased the exact Gaussian objective")
     optimization.update(final_objective=objective, evaluations=evaluations)
@@ -412,7 +422,7 @@ def _kernel_fit_statistics(samples, designs, noise, prefix):
     root = np.empty((0, width + channels))
     for y, d in zip(samples, designs, strict=True):
         drift = np.column_stack((np.ones(len(y)), (2*np.arange(len(y))-(prefix-1))/(prefix-1)))
-        transformed = noise.whiten(np.column_stack((d, y, drift)))
+        transformed = noise.whiten(np.column_stack((d, y-y[:1], drift)))
         # Eliminate nuisance with orthogonal transformations and retain Q_D.T Y.
         # Forming D.T Y then solving normal equations squares the conditioning.
         quotient = np.linalg.qr(np.column_stack((transformed[:, -2:], transformed[:, :-2])), mode="r")[2:, 2:]
@@ -1014,13 +1024,14 @@ class ContinuousDecisionModel:
                 binding=binding, physical_metric=physical_metric)
 
         def solve(phi):
+            fit_samples = [x-x[:1] for x in samples] if conditioning_samples else samples
             if isinstance(phi, TemporalNoise):
                 transforms = [_stationary_transform(phi, len(x)) for x in samples]
                 D = np.vstack([transform(d) for transform, d in zip(transforms, designs, strict=True)])
-                Y = np.vstack([transform(x) for transform, x in zip(transforms, samples, strict=True)])
+                Y = np.vstack([transform(x) for transform, x in zip(transforms, fit_samples, strict=True)])
             else:
                 D = np.vstack([_whiten_and_project(d, phi) for d in designs])
-                Y = np.vstack([_whiten_and_project(x, phi) for x in samples])
+                Y = np.vstack([_whiten_and_project(x, phi) for x in fit_samples])
             statistics = _qr_fit_statistics(np.linalg.qr(np.column_stack((D, Y)), mode="r"), p,
                 _fitted_noise_digest(phi if isinstance(phi, TemporalNoise) else None,
                                      None if isinstance(phi, TemporalNoise) else phi))

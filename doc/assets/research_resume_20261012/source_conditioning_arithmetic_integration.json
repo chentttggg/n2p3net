@@ -1,0 +1,55 @@
+{
+  "schema": "conditioning_integration/1",
+  "status": "code_integrated_cloud_execution_pending",
+  "canonical": "D:\\BCI\\n2p3-net",
+  "base_before_this_change": "7ac2add12a89c731f79a8e8f3e8ffbf12e492540",
+  "reviews": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\parcor-source-review\\DELIVERY_MANIFEST.json",
+      "sha256": "d609b43a15a51f288e2ef8eab086b2b8bece8b3dc12c895e6c4255dbf91a3c3e",
+      "bytes": 4567
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-parcor-review\\REVIEW_RECEIPT.json",
+      "sha256": "48ff3e6bb988880a333812069a6732e74488df999af9f948cfa271000ff39954",
+      "bytes": 5890
+    }
+  ],
+  "files": [
+    {
+      "slice": "conditioning",
+      "path": "src/transfer/continuous_decision.py",
+      "before": "335c0a035571250d4d750cc7525b048bd3dc6f6cb7ad7219fb2a17d4552c08cb",
+      "after": "04ea5151b402ae0d79074c41579ac71761da186c294ef6377034d2f7224a29e8",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\parcor-source-review\\candidate\\src\\transfer\\continuous_decision.py"
+    },
+    {
+      "slice": "conditioning",
+      "path": "src/transfer/continuous_gradient.py",
+      "before": "f3e57c89503231641a627cb418f44603b9eb94aa601821f97602b1b2df57708a",
+      "after": "ec7060fcdb57a356bd193dfbc60464536f9b2d5184f29fd930c39c2d8698e73e",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\parcor-source-review\\candidate\\src\\transfer\\continuous_gradient.py"
+    },
+    {
+      "slice": "conditioning",
+      "path": "src/transfer/spatial_programme.py",
+      "before": "64cbe21d160ff9683a663ba6d5b6a79f0c98a7dd290b4fadab2bced19a608fa0",
+      "after": "6fff052996639ed489329a39012de9273e04f0bf4ad240431727bbd2b3a509f6",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\parcor-source-review\\candidate\\src\\transfer\\spatial_programme.py"
+    }
+  ],
+  "root_review": "Read all3-file diff and independent ratio-density/flat-measure/QR/gradient/source-export derivation. Given-prefix anchor leaves proper kernel coordinates and raw input identity unchanged; prefix RHS enters tail QR directly, full residual root forms scatter. Burg/profile retain their already evaluated tuple. Fixed source/gradient/posterior/cache/physical block callers use the same chart; all declared thresholds and objective denominator unchanged.",
+  "verification": "Root exact preimages/candidate bytes and AST checks passed; six affected runtime paths passed Ruff. Original independent fixed-operand/metadata controls are retained by their source pins. No fitting, process launch or hardware probe during integration.",
+  "actual_local_training_or_EEG_reads": 0,
+  "user_cloud_authorization": "User requested code work first and cloud later; no execution authorization/resource has been provided.",
+  "original_user_stop": "D:/BCI/artifacts/research-deliveries/source-response-states/audited-execution-source/USER_STOP.json",
+  "source_matrix": {
+    "source_people": 13,
+    "folds": 13,
+    "other_people_per_fold": 12,
+    "new_cells": 4914,
+    "original_baseline_diagnostic_cells": 9828
+  },
+  "recorded_utc": "2026-10-19T06:33:10Z",
+  "observed_failure_scope": "Original interrupted source used Burg, not L-BFGS-B; intermediate operands were not captured. The accepted general numerical counterexamples do not identify that original trial cause."
+}

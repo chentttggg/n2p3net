@@ -99,12 +99,19 @@ def _response_block(samples, design, observation, baseline, receipt, *, scope, o
     prefix = baseline.conditioning_samples
     trend = (2 * times - (prefix - 1)) / (prefix - 1) if prefix else np.linspace(-1., 1., len(times))
     nuisance = np.column_stack((np.ones(len(times)), trend))
-    transformed = baseline.noise.whiten(np.column_stack((samples, design, nuisance)))
+    numeric_samples = samples-samples[:1] if prefix else samples
+    transformed = baseline.noise.whiten(np.column_stack((numeric_samples, design, nuisance)))
     channels, width = len(observation.layout.channels), design.shape[1]
     authority = {"record_id": receipt["record_id"], "fit_scope": scope,
         "source_sha256": receipt["source_sha256"], "raw_sample_support": list(receipt["raw_scope"]),
         "dictionary_sha256": baseline.dictionary.digest(),
         "temporal_program_sha256": baseline.noise.record()["artifact_sha256"], "original_view": receipt}
+    if prefix:
+        authority["numerical_intercept_chart"] = {
+            "method": "subtract_first_observed_prefix_sample", "anchor_local_sample": 0,
+            "anchor_raw_sample": int(receipt["raw_scope"][0]),
+            "anchor_values": np.asarray(samples[0]).tolist(), "flat_parameter_jacobian": 1,
+            "conditional_tail_coordinate_jacobian": 1, "proper_response_prior_shifted": False}
     if scope != "read_only_prediction":
         if not isinstance(original_record, CalibrationRecord) or original_record.record_id != receipt["record_id"]:
             raise TypeError("physical fit whitening requires its actual original labeled record")

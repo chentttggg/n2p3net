@@ -1,6 +1,6 @@
 {
   "schema": "n2p3_repository_audit_resolution/1",
-  "status": "research_tree_implementation_accepted_main_materialization_pending",
+  "status": "main_materialized_original_audit_implementation_accepted",
   "audit": {
     "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\repository_audit_20261019.zh.md",
     "bytes": 60233,
@@ -8,9 +8,9 @@
   },
   "recorded_at": "2026-10-19T01:30:23.281270+00:00",
   "working_source": {
-    "path": "D:\\BCI\\worktrees\\research-director",
-    "base_head_before_final_commit": "11322c3b5642830a81358dcbb2acfa1b1274cb6d",
-    "identity_role": "Actual installed source is pinned by integration bindings and validation source_pins, not inferred from this base commit."
+    "path": "D:\\BCI\\n2p3-net",
+    "accepted_byte_policy_base": "7ac2add12a89c731f79a8e8f3e8ffbf12e492540",
+    "followup_code_identity": "Exact installed paths are pinned by conditioning and cloud preparation integration records."
   },
   "accepted_slices": {
     "history_protection": {
@@ -59,7 +59,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_raw_frozen_and_recovery_payloads_preserved": true
   },
-  "updated_at_utc": "2026-10-19T05:43:55Z",
+  "updated_at_utc": "2026-10-19T06:39:16Z",
   "accepted_integrations": {
     "repository_audit_checkpoint_publication_integration.json": {
       "path": "D:\\BCI\\worktrees\\research-director\\doc\\assets\\research_resume_20261012\\repository_audit_checkpoint_publication_integration.json",
@@ -135,7 +135,7 @@
   "postintegration_root_decision": {
     "binding": "doc/assets/research_resume_20261012/repository_audit_postintegration_integration.json",
     "PI1_PI2_PI3": "Installed and accepted after actual caller review and 89 passing focused composition cases; current source/codec/cache contracts preserved.",
-    "main_checkout": "Final reviewed target must still be materialized using protected preimages/index/ref."
+    "main_checkout": "Accepted working bytes restored in main; protected28/329/159 groups and fresh index verified."
   },
   "scientific_code_integration": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "validation_scope": {
@@ -151,5 +151,11 @@
     "missing_tmp_counterexample": 1,
     "Lean": "source_changed_not_revalidated; original329 proof inputs preserved; formal task remains separately paused",
     "license": "No new project-wide license grant; existing third-party/local distribution boundaries preserved."
-  }
+  },
+  "main_materialization": "doc/assets/research_resume_20261012/main_materialization_integration.json",
+  "scientific_followup_integrations": [
+    "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
+    "doc/assets/research_resume_20261012/source_cloud_execution_preparation.json"
+  ],
+  "training_state": "User stopped local source programme; code work continues, cloud later. No completed source model was produced."
 }

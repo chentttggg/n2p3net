@@ -1,0 +1,55 @@
+{
+  "schema": "cloud_preparation_integration/1",
+  "status": "code_integrated_cloud_execution_pending",
+  "canonical": "D:\\BCI\\n2p3-net",
+  "base_before_this_change": "7ac2add12a89c731f79a8e8f3e8ffbf12e492540",
+  "reviews": [
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\cloud-preparation\\DELIVERY_MANIFEST.json",
+      "sha256": "a0d878a76321bec39aa8346533fc0397639157fb9b00a5854ed6a576b188f16e",
+      "bytes": 11782
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-cloud-preparation\\REVIEW_MANIFEST.json",
+      "sha256": "3aaf39a1168f6bf7825b4ae3191787a2262537e4f7c9d46cb1c47bbe19fdd44e",
+      "bytes": 6068
+    }
+  ],
+  "files": [
+    {
+      "slice": "cloud_preparation",
+      "path": "experiments/run_public_population_source.py",
+      "before": "a26c15bf9011e836984f27f3aec0525a6d8612ab32e5212f73312d61f34099d6",
+      "after": "3d36829306b3a124e54eb11843c635f0a7744862e548f04e20603832d9e9ee47",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\cloud-preparation\\candidate\\experiments\\run_public_population_source.py"
+    },
+    {
+      "slice": "cloud_preparation",
+      "path": "src/research/resource_scope.py",
+      "before": "9b8f4ac1f02fa80ec89239407034bcc5d0129360f2c301ec4cbcdc84a568fe31",
+      "after": "e348ef1304b71fa8c09544d34960aa5393286d9df59c1d0f6d16c05d4d975ccc",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\cloud-preparation\\candidate\\src\\research\\resource_scope.py"
+    },
+    {
+      "slice": "cloud_preparation",
+      "path": "src/research/population_source_cloud.py",
+      "before": null,
+      "after": "b898f5bb54fd19aa35ddf964dc4a661d44ef7334f49d71999a73c9b40a88f75b",
+      "candidate": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-cloud-preparation\\candidate\\src\\research\\population_source_cloud.py"
+    }
+  ],
+  "root_review": "Read full adapter and managed scope/CloudExecutor actual context/lease/output paths. One CPU actor retains original in-process publisher and pools; the real central owner holds aggregateCPU/RAM until retirement. Keep25CPU/4GPU capacity and actualGPU0. Both science and controller directories are exclusive. No local fitting route remains in this programme; metadata inspection stays lightweight.",
+  "verification": "Root exact preimages/candidate bytes and AST checks passed; six affected runtime paths passed Ruff. Original independent fixed-operand/metadata controls are retained by their source pins. No fitting, process launch or hardware probe during integration.",
+  "actual_local_training_or_EEG_reads": 0,
+  "user_cloud_authorization": "User requested code work first and cloud later; no execution authorization/resource has been provided.",
+  "original_user_stop": "D:/BCI/artifacts/research-deliveries/source-response-states/audited-execution-source/USER_STOP.json",
+  "source_matrix": {
+    "source_people": 13,
+    "folds": 13,
+    "other_people_per_fold": 12,
+    "new_cells": 4914,
+    "original_baseline_diagnostic_cells": 9828
+  },
+  "recorded_utc": "2026-10-19T06:33:10Z",
+  "next_execution_inputs": "Explicit cloud input-path projection, actual CPU/RAM/VRAM declaration, refreshed integrated source closure/review/freeze, then complete13person+13fold execution after user supplies cloud."
+}

@@ -60,3 +60,6 @@ cloud_inputs/
 
 # Local research reference PDFs remain available; citation inventory stays in Git.
 /Paper/*.pdf
+
+# Machine-local settings and their backup copies stay local.
+/.claude/settings.local.json*
