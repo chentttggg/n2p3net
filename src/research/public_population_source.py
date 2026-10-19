@@ -372,7 +372,7 @@ class SourcePopulationExecution:
 
 
 def publish_source_population_execution(matrix_reference, *, person_publications, fold_publications,
-                                         recipe_references, output_path):
+                                         recipe_references, output_path, recovery=None):
     """Publish current actual source/fold outputs for independent acceptance.
 
     No live source admission is minted here. This runtime issuer accepts only
@@ -382,6 +382,10 @@ def publish_source_population_execution(matrix_reference, *, person_publications
     persons, folds = [], []
     for reference in person_publications:
         original = _PERSON_PUBLICATIONS.get(reference["sha256"])
+        if original is None and recovery is not None:
+            from research.population_source_recovery import require_recovered_person_publication
+
+            original = require_recovered_person_publication(recovery, reference)
         if original is None:
             raise TypeError("the current original-reader same-fit person publication is required")
         publication = json.loads(_bytes(reference))
@@ -420,14 +424,25 @@ def publish_source_population_execution(matrix_reference, *, person_publications
     products = ["source_product" in row for row in persons]
     if any(products) != all(products):
         raise ValueError("one source execution must retain its single declared product programme")
-    version = 2 if all(products) else 1
+    if recovery is not None and not all(products):
+        raise ValueError("accepted person recovery retains the original data-factor product programme")
+    version = 3 if recovery is not None else 2 if all(products) else 1
     record = {"schema": f"complete_original_population_source_execution/{version}", "source_matrix": matrix_reference,
         "source_freeze": matrix["source_freeze"], "programme_seed": matrix["programme_seed"],
         "persons": persons, "folds": folds, "recipes": list(recipe_references), "complete": True,
         "future_source_reads": 0, "individual_posterior_used_as_measurement": False,
         "producer_sha256": IMPLEMENTATION_SHA256}
-    if version == 2:
+    if version in {2, 3}:
         record["source_product_kind"] = "same_fit_full_response_data_factor_v2"
+    if version == 3:
+        from research.population_source_recovery import (
+            execution_recovery_lineage,
+            validate_execution_recovery,
+        )
+
+        record["person_recovery"] = execution_recovery_lineage(recovery,
+            matrix_reference=matrix_reference, persons=persons)
+        validate_execution_recovery(record)
     with Path(output_path).open("x", encoding="utf8", newline="\n") as stream:
         stream.write(_json(record)+"\n")
     return _artifact(output_path)
@@ -455,16 +470,24 @@ def load_source_population_execution(execution_reference, *, trusted_acceptance_
         _bytes(evidence)
     if (matrix["schema"] != "public_population_source_execution_matrix_candidate/1"
             or execution["schema"] not in {"complete_original_population_source_execution/1",
-                                            "complete_original_population_source_execution/2"}
+                                            "complete_original_population_source_execution/2",
+                                            "complete_original_population_source_execution/3"}
             or execution["source_matrix"] != expected_matrix_reference
             or execution["source_freeze"] != matrix["source_freeze"]
             or execution["programme_seed"] != matrix["programme_seed"]
             or execution["complete"] is not True or execution["future_source_reads"] != 0
             or execution["individual_posterior_used_as_measurement"] is not False):
         raise ValueError("the accepted source execution differs from the complete frozen programme")
-    data_only = execution["schema"] == "complete_original_population_source_execution/2"
+    data_only = execution["schema"] in {"complete_original_population_source_execution/2",
+                                       "complete_original_population_source_execution/3"}
     if data_only and execution["source_product_kind"] != "same_fit_full_response_data_factor_v2":
         raise ValueError("the accepted source execution has a different data-factor programme")
+    if execution["schema"] == "complete_original_population_source_execution/3":
+        from research.population_source_recovery import validate_execution_recovery
+
+        validate_execution_recovery(execution)
+    elif "person_recovery" in execution:
+        raise ValueError("original complete v1/v2 executions cannot claim recovered person publication rights")
     expected_people = {row["source_person_id"]: row for row in matrix["person_programmes"]}
     expected_folds = {row["fold_id"]: row for row in matrix["fold_programmes"]}
     people = {row["participant_key"]: row for row in execution["persons"]}

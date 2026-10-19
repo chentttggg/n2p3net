@@ -283,7 +283,9 @@
   },
   "active_agents": {
     "/root/history_slice_integration_review": "Missing-person recovery owner implementation and focused vertical controls.",
-    "/root/execution_failures": "Independent original12product partial acceptance and complete recovered execution checker."
+    "/root/execution_failures": "Independent original12product partial acceptance and complete recovered execution checker.",
+    "/root/audit_repository_convergence": "Independent final source/actor closure and recipe3 code-only freeze tools.",
+    "/root/joint_slice_integration_review": "Adult programme input slice A: complete multi-C/held scopes and neutral physical input owner."
   },
   "cloud": {
     "state": "cloud_later_local_computation_now_authorized",
@@ -600,7 +602,7 @@
       "code_preparation": {
         "conditioning": "doc/assets/research_resume_20261012/source_conditioning_arithmetic_integration.json",
         "cloud_execution": "doc/assets/research_resume_20261012/source_cloud_execution_preparation.json",
-        "state": "recovery_candidate_under_review_original12person_products_preserved",
+        "state": "recovery_main_integrated_final_code_only_freeze_pending",
         "local_training_allowed": true,
         "completed_source_models_in_stopped_attempt": 0,
         "user_cloud_response": "User subsequently authorized local computation first with whole-machine CPU/RAM/GPU each below80percent.",
@@ -777,7 +779,7 @@
       },
       "completed_source_products": 12,
       "recovery": {
-        "state": "candidate_and_independent_partial_acceptance_in_progress",
+        "state": "integrated_main_focused_controls_passed_independent_freeze_in_progress",
         "implementation": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/compact-source-recovery",
         "implementation_owner": "/root/history_slice_integration_review",
         "independent_acceptance_owner": "/root/execution_failures",
@@ -787,8 +789,30 @@
         "new_attempt_launched": false,
         "new_source_fits_required": 1,
         "fold_fits_required": 13,
-        "target_continuation_handoff": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/population-matrix-execution/TARGET_CONTINUATION_HANDOFF.zh.md"
-      }
+        "target_continuation_handoff": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/population-matrix-execution/TARGET_CONTINUATION_HANDOFF.zh.md",
+        "partial_acceptance": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\PARTIAL_ACCEPTANCE.json",
+          "bytes": 19831,
+          "sha256": "b8deabb86845fca2781ebcbc73aa9efb7abc5384eb97e4ca8add3e79e795b57b"
+        },
+        "recipe": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-source-recovery\\SOURCE_DATA_FACTOR_RECOVERY_RECIPE.json",
+          "bytes": 5206,
+          "sha256": "c7a71439ff3b69597f9f9870bb972f17ebc260ef44770278197ca41990b3d3c5"
+        },
+        "root_review": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-source-recovery\\ROOT_MAIN_VERIFICATION.json",
+          "bytes": 5480,
+          "sha256": "918b2d71de4e975e1b78734b960f55db067729a06a48a71ff951e79bdb2b57b0"
+        },
+        "source_review_owner": "/root/audit_repository_convergence",
+        "resource_plan": {
+          "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-recovery-execution\\RESOURCES.json",
+          "bytes": 2041,
+          "sha256": "3bc5e19252ac9a8736479ef4d86ac299d59f6cb70281c5cac2edd6438eaf2531"
+        }
+      },
+      "person_recovery_integration": "doc/assets/research_resume_20261012/source_person_recovery_integration.json"
     },
     "joint_response_noise": {
       "checkpoint": {
@@ -904,7 +928,7 @@
     "deleted_logical_bytes": 30572037269,
     "scientific_payloads_retained": true
   },
-  "last_updated_utc": "2026-10-19T12:57:33.102984+00:00",
+  "last_updated_utc": "2026-10-19T13:09:05.654632+00:00",
   "scientific_code_binding": "doc/assets/research_resume_20261012/source_joint_history_integration.json",
   "local_computation_policy": {
     "user_instruction": "2026-10-19: start local computation first; fully use resources while total CPU, RAM and GPU utilization each remain below80percent.",
@@ -926,7 +950,7 @@
       "delivery": "complete: source artifact plan and explicit implementation scope",
       "science": "complete: original A/r/c algebra, actual baseline-only moments consumer and ten independent predeclared Gaussian/Fraction controls; candidate correspondence is engineering review.",
       "engineering": "complete: compact source owner and full producer/save/load/cold consumer slice accepted and integrated; final163+3 source closure accepted.",
-      "execution": "in_progress: accepted compact-source freeze and actual inspect passed; old owned tree retired, new full programme started under measured two-worker local budget.",
+      "execution": "in_progress: original native-wait tree retired; original12person products accepted for reuse only; main recovery code integrated and final source freeze in progress; next missing1+13folds.",
       "knowledge": "complete for code integration: canonical technical guide, existing response/noise and execution topics, integration binding and this checkpoint updated.",
       "external_research": "not_applicable: current decision derives from actual source and Gaussian algebra",
       "github": "not_applicable: no remote publication requested"

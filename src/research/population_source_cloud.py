@@ -188,12 +188,18 @@ def run_population_source_cloud(*, argv, resources, output, identity):
             raise ValueError("the retired actor's actual source publication changed")
         record = json.loads(content)
         if (record['schema'] not in {'complete_original_population_source_execution/1',
-                                    'complete_original_population_source_execution/2'}
+                                    'complete_original_population_source_execution/2',
+                                    'complete_original_population_source_execution/3'}
                 or record['complete'] is not True or len(record['persons']) != 13 or len(record['folds']) != 13):
             raise ValueError('completion requires the actual complete thirteen-person/thirteen-fold publication')
-        if (record['schema'] == 'complete_original_population_source_execution/2'
+        if (record['schema'] in {'complete_original_population_source_execution/2',
+                                'complete_original_population_source_execution/3'}
                 and record['source_product_kind'] != 'same_fit_full_response_data_factor_v2'):
             raise ValueError('the retired source actor published a different data-factor programme')
+        if record['schema'] == 'complete_original_population_source_execution/3':
+            from research.population_source_recovery import validate_execution_recovery
+
+            validate_execution_recovery(record)
         return ()
 
     with get_context('spawn').Manager() as manager:

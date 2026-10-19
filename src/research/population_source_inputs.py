@@ -145,11 +145,17 @@ def _validate_preparation_locations(output, original, generated):
 def _load_graph(recipe_reference):
     recipe, recipe_bytes = _read_metadata(recipe_reference)
     products = {RECIPE_SCHEMA: "spatial_model_v1",
-                "full_original_population_source_recipe/2": "same_fit_full_response_data_factor_v2"}
+                "full_original_population_source_recipe/2": "same_fit_full_response_data_factor_v2",
+                "full_original_population_source_recipe/3": "same_fit_full_response_data_factor_v2"}
     if (recipe["schema"] not in products
             or recipe.get("source_product_kind", "spatial_model_v1") != products[recipe["schema"]]
-            or recipe["schema"] == "full_original_population_source_recipe/2" and "signal_programme" in recipe):
+            or recipe["schema"] in {"full_original_population_source_recipe/2",
+                                    "full_original_population_source_recipe/3"} and "signal_programme" in recipe):
         raise ValueError("the original full source recipe is required")
+    if recipe["schema"] == "full_original_population_source_recipe/3":
+        from research.population_source_recovery import validate_recovery_recipe
+
+        validate_recovery_recipe(recipe, trusted_acceptance_reference=recipe["partial_execution_acceptance"])
     matrix, matrix_bytes = _read_metadata(recipe["source_matrix"])
     if matrix["schema"] != MATRIX_SCHEMA:
         raise ValueError("the original source matrix is required")
@@ -321,6 +327,8 @@ def inspect_population_source_inputs(recipe_reference):
 def project_population_source_inputs(recipe_reference, location_map, output_directory):
     """Create a new immutable metadata graph; never inspect/copy opaque inputs."""
     recipe, matrix, freeze, declarations, original = _load_graph(recipe_reference)
+    if recipe["schema"] == "full_original_population_source_recipe/3":
+        raise ValueError("an accepted recovery graph keeps original locations; project original inputs before independent partial acceptance")
     selected = _validate_graph(recipe, matrix, freeze, declarations)
     projection = SourceLocationProjection(location_map,
         original_metadata=[reference for reference, _content in original.values()])

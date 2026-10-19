@@ -102,6 +102,8 @@ def main(argv=None, *, cloud_owner_resources=None):
     parser.add_argument("--recipe-sha256", required=True)
     parser.add_argument("--source-manifest", type=Path, required=True)
     parser.add_argument("--source-manifest-sha256", required=True)
+    parser.add_argument("--partial-acceptance", type=Path)
+    parser.add_argument("--partial-acceptance-sha256")
     parser.add_argument("--resources", type=Path)
     parser.add_argument("--resources-sha256")
     parser.add_argument("--output", type=Path)
@@ -112,13 +114,25 @@ def main(argv=None, *, cloud_owner_resources=None):
     manifest_ref = pinned(args.source_manifest, args.source_manifest_sha256)
     recipe, manifest = read(recipe_ref), read(manifest_ref)
     recipe_products = {"full_original_population_source_recipe/1": "spatial_model_v1",
-                       "full_original_population_source_recipe/2": "same_fit_full_response_data_factor_v2"}
+                       "full_original_population_source_recipe/2": "same_fit_full_response_data_factor_v2",
+                       "full_original_population_source_recipe/3": "same_fit_full_response_data_factor_v2"}
     source_product = recipe.get("source_product_kind", "spatial_model_v1")
     if (recipe["schema"] not in recipe_products or source_product != recipe_products[recipe["schema"]]
-            or recipe["schema"] == "full_original_population_source_recipe/2" and "signal_programme" in recipe
+            or recipe["schema"] in {"full_original_population_source_recipe/2",
+                                    "full_original_population_source_recipe/3"} and "signal_programme" in recipe
             or manifest["schema"] != "public_population_effective_source_manifest/3"
             or manifest["recipe"] != recipe_ref or manifest["launcher"] != artifact(__file__)):
         raise ValueError("the named source recipe/launcher manifest is required")
+    recovering = recipe["schema"] == "full_original_population_source_recipe/3"
+    partial_ref = None
+    if recovering:
+        if args.partial_acceptance is None or args.partial_acceptance_sha256 is None:
+            parser.error("recovery requires an explicitly caller-pinned --partial-acceptance and SHA256")
+        partial_ref = pinned(args.partial_acceptance, args.partial_acceptance_sha256)
+        if recipe["partial_execution_acceptance"] != partial_ref:
+            raise ValueError("the recovery recipe differs from the caller's external partial acceptance")
+    elif args.partial_acceptance is not None or args.partial_acceptance_sha256 is not None:
+        raise ValueError("original v1/v2 recipes do not grant accepted-person recovery")
     source_root, cloud_policy_pin = verify_effective_inputs(manifest)
     matrix = read(recipe["source_matrix"])
     read(matrix["source_freeze"])
@@ -143,6 +157,8 @@ def main(argv=None, *, cloud_owner_resources=None):
                 or max(source_workers, fold_workers) > 13
                 or max(source_workers, fold_workers)*native_threads + 1 > cpu_budget):
             raise ValueError("source/fold native concurrency plus the controller exceeds the total CPU budget")
+        if recovering and os.name == "nt" and (source_workers != 1 or fold_workers != 1):
+            raise ValueError("Windows person recovery uses one source/fold worker and its full declared native budget")
     for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
         os.environ[name] = str(native_threads)
     sys.dont_write_bytecode = True
@@ -182,6 +198,17 @@ def main(argv=None, *, cloud_owner_resources=None):
         signal, data_programme = None, source_data_factor.SourceDataFactorProgram.from_record(recipe["source_data_programme"])
         response_declaration = {"source_data_programme": data_programme.record(),
             "source_data_factor_owner": artifact(source_data_factor.__file__)}
+    recovery = None
+    if recovering:
+        from research import population_source_recovery
+
+        population_source_recovery.validate_recovery_recipe(recipe, trusted_acceptance_reference=partial_ref)
+        recovery = population_source_recovery.open_accepted_person_recovery(partial_ref,
+            expected_matrix_reference=recipe["source_matrix"], original_recipe_reference=recipe["original_recipe"])
+        response_declaration["person_recovery"] = {"partial_execution_acceptance": partial_ref,
+            "completed_people": len(recovery.record["completed_people"]),
+            "pending_participant_keys": list(recovery.record["pending_participant_keys"]),
+            "owner": artifact(population_source_recovery.__file__)}
     verify_loaded_sources(manifest)
     scale_record = read(recipe["scale_policy"])
     scale = population.LogScaleProgram(tuple(scale_record["prior_mean"]), tuple(scale_record["prior_sd"]),
@@ -216,6 +243,9 @@ def main(argv=None, *, cloud_owner_resources=None):
         "resource_scope": resources["resource_scope"], "requested_resource_plan": resources, "resolved_resources": owner_resources, "actual_GPU_workers": 0, "ready_GPU_tasks": 0,
         "independent_acceptance_issued_here": False, "future_records_attached": False,
         "memory_available_at_launch": available}
+    if recovery is not None:
+        checkpoint["person_recovery"] = response_declaration["person_recovery"]
+        checkpoint["fresh_person_fits_requested"] = len(recovery.record["pending_participant_keys"])
 
     def event(stage, key, status, **fields):
         row = {"utc": datetime.now(UTC).isoformat(), "stage": stage, "key": key, "status": status, **fields}
@@ -280,7 +310,17 @@ def main(argv=None, *, cloud_owner_resources=None):
                     raise ValueError("effective BLAS/OpenMP concurrency exceeds the declared native worker budget")
                 event("programme", "source", "launched", effective_pools=pools,
                     source_workers=source_workers, fold_workers=fold_workers, native_threads_per_worker=native_threads)
-                person_results = run_stage(matrix["person_programmes"], source_workers, fit_person)
+                restored, person_rows = (), matrix["person_programmes"]
+                if recovery is not None:
+                    restored = population_source_recovery.restore_accepted_person_products(recovery, shared_store=store)
+                    for compact, publication in restored:
+                        event("persons", compact.participant_key, "complete", publication=publication,
+                            shared_likelihood=compact.record(),
+                            fit_origin="independently_accepted_original_person_recovery",
+                            partial_execution_acceptance=partial_ref, new_noise_fits=0)
+                    person_rows = [row for row in person_rows
+                        if row["source_person_id"] in recovery.record["pending_participant_keys"]]
+                person_results = [*restored, *run_stage(person_rows, source_workers, fit_person)]
                 references = tuple(row[0] for row in person_results)
                 publications = {row[0].participant_key: row[1] for row in person_results}
                 gc.collect()
@@ -310,7 +350,7 @@ def main(argv=None, *, cloud_owner_resources=None):
                 execution = owner.publish_source_population_execution(recipe["source_matrix"],
                     person_publications=[publications[row["source_person_id"]] for row in matrix["person_programmes"]],
                     fold_publications=folds, recipe_references=(recipe_ref, manifest_ref, resources_ref),
-                    output_path=output/"SOURCE_EXECUTION.json")
+                    output_path=output/"SOURCE_EXECUTION.json", recovery=recovery)
             finally:
                 checkpoint["resource_observation"] = admission.record()
         checkpoint["status"] = "complete_pending_independent_acceptance"

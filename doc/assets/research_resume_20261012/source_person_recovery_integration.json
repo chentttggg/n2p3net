@@ -1,0 +1,81 @@
+{
+  "schema": "source_person_recovery_integration/1",
+  "status": "integrated_code_and_focused_contracts_pending_frozen_source_review",
+  "recorded_utc": "2026-10-19T13:09:05.649287+00:00",
+  "canonical_base": "ef8fa972b0982b4a07e64a3ebc538f5df63cbabc",
+  "candidate_manifest": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-source-recovery\\CANDIDATE_MANIFEST.json",
+    "bytes": 2838,
+    "sha256": "59a7120f7622bd2d6eba8459c17564e9c02aa166e3ad80b4f6c583f0283d1fd6"
+  },
+  "root_main_review": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-source-recovery\\ROOT_MAIN_VERIFICATION.json",
+    "bytes": 5480,
+    "sha256": "918b2d71de4e975e1b78734b960f55db067729a06a48a71ff951e79bdb2b57b0"
+  },
+  "software_vertical_controls": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-source-recovery\\RECOVERY_CONTROLS.json",
+    "bytes": 3009,
+    "sha256": "21d398cea0f68a4a9404795d8c7b1654b19e20f30b2d7e08cff9d48b326c39b0"
+  },
+  "software_CLI_controls": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-source-recovery\\CLI_CONTROLS.json",
+    "bytes": 32921,
+    "sha256": "59edea43328cc9d86732e3c596b3c75af64ff3ea40db69414fb87025cd1de40b"
+  },
+  "independent_original_person_product_acceptance": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\independent-partial-source-acceptance\\PARTIAL_ACCEPTANCE.json",
+    "bytes": 19831,
+    "sha256": "b8deabb86845fca2781ebcbc73aa9efb7abc5384eb97e4ca8add3e79e795b57b"
+  },
+  "original_attempt_retirement": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\compact-source-execution\\INCOMPLETE_RETIREMENT.json",
+    "bytes": 5235,
+    "sha256": "d647e0deb5c2d8bcfec20b7401cc7e0dcfc4b1dc187a1092adb4d1de8ef4cc9e"
+  },
+  "recovery_recipe": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-source-recovery\\SOURCE_DATA_FACTOR_RECOVERY_RECIPE.json",
+    "bytes": 5206,
+    "sha256": "c7a71439ff3b69597f9f9870bb972f17ebc260ef44770278197ca41990b3d3c5"
+  },
+  "scope": {
+    "reused_original_people": 12,
+    "new_source_person_required": 1,
+    "complete_source_folds_required": 13,
+    "other_people_per_fold": 12,
+    "requested_records": 234,
+    "common_records": 213,
+    "common_labels": 101388,
+    "subsequent_target_C_programmes": 78,
+    "subsequent_held_cells": 4914
+  },
+  "scientific_programme": {
+    "same_original_source_math_and_complete_496_columns": true,
+    "same_original_noise_and_scale_policies": true,
+    "original_12_person_publication_product_anchor_baseline_shared_and_moments_bytes_retained": true,
+    "recovery_issues_only_person_reuse_handle": true,
+    "fresh_fit_registry_not_populated_from_cold_products": true,
+    "recipe_schema": "full_original_population_source_recipe/3",
+    "execution_schema": "complete_original_population_source_execution/3",
+    "person_publication_schema": "same_fit_source_person_likelihood_publication/2"
+  },
+  "scientific_execution_acceptance_issued": false,
+  "current_execution_and_next_steps_owner": "pause_checkpoint_current.json",
+  "author_delivery": {
+    "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-source-recovery\\DELIVERY.json",
+    "bytes": 12746,
+    "sha256": "7340d9015c33cc92babf12a168be69004e696651c0db4261ef3b91a31aba1215"
+  },
+  "cleanup": {
+    "status": "completed",
+    "receipt": {
+      "path": "D:\\BCI\\artifacts\\research-deliveries\\source-response-states\\public-population-source\\compact-source-recovery\\cleanup.json",
+      "bytes": 47331,
+      "sha256": "d688306f4bbdee69d22092cace3a8e5c4fd427ae124f8aa902457636f69bc931"
+    },
+    "deleted_generated_software_fixture_files": 179,
+    "deleted_logical_bytes": 2520379,
+    "actual_original_person_products_and_source_producers_preserved": true,
+    "worktrees_created": 0
+  }
+}

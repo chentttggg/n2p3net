@@ -348,6 +348,8 @@ checkpoint读取安全整合（`codex/claude-improvements-20261012`，基于`ed2
 
 完整人群矩阵编排已按原owner链整合：13个目标各用另外12人的源预测，三档K、G0/G1共78次C programme，每次保63个原held请求。独审与root全文审阅核对source-only初值、预测无truth、逐题读入、保存后原C重新准入，以及target发布到typed重放和实际存储文件的完整关系。合同与metadata控制复用原证据，主树入口检查通过；真实科研执行沿其独立source接受与原819请求panel推进，见[矩阵整合绑定](../assets/research_resume_20261012/population_joint_matrix_integration.json)。
 
+个人源恢复已接入独立的部分执行接受：真实原树退休后，12份已发行个人产物逐一核原publication、完整A/r/c、噪声、矩、记录/标签和producer，再由具名恢复handle复用；原科学配方及数值核心保持原字节。小型完整链完成12份冷恢复、1次实际合成输入拟合、13折新fit、13折冷重载与目标准入；权限反例和七项CLI控制通过。恢复配置只补实际缺失者，完整科研执行仍沿原13人、13折和4,914格目标分母验收。代码及独立原产品核验见[个人源恢复整合](../assets/research_resume_20261012/source_person_recovery_integration.json)，当前运行身份与进度由checkpoint维护。
+
 ## 文件夹清理复核
 
 主目录交付先核Git blob，随后补充核原working bytes：发现904项仅行尾差异，含624份历史/形式化记录；原科研树完整保留并用于逐字节恢复。Git改为保存实际字节，EditorConfig与工程规范约束新编辑LF；主目录2,500文件、28份原审计、329份受保护Lean输入及159件冻结source均重新核对。全新index与独立新clone通过，旧raw-blob检查由此补充，见[主目录收敛](../assets/research_resume_20261012/main_materialization_integration.json)。本机旧历史原件按精确清单保留原位，另与接受代码分开登记。
