@@ -1,0 +1,11 @@
+{
+    "schema": "n2p3_source_freeze/1",
+    "archive": "active_source_a21266e.source-only.tar.gz",
+    "archive_sha256": "d0f3d5f384477b54118f85c5a85f370b4dedc5ed9396d3c7ab9a080806a05d90",
+    "source_commit": "a21266e789f4c98b953727ca40ef005ff521bac5",
+    "member_count": 193,
+    "byte_size": 983392,
+    "scope": "Active source tree at a21266e (vectorized decision scoring; supersedes 161fcbf archive): src, experiments, configs, tests, doc, and build/env files; excludes Paper PDFs, frozen historical archives, and all data/caches",
+    "contains_raw_eeg_cache_or_model_checkpoint": false,
+    "replacement_policy": "executed-source identity anchor for cloud runs of commit a21266e; a new commit requires a new archive+manifest pair, never overwrite"
+}

@@ -1,0 +1,568 @@
+{
+  "schema": "n2p3_research_source_delivery/1",
+  "models": [
+    {
+      "id": "A_GTN_s20260909",
+      "pool": "GTN",
+      "seed": 20260909,
+      "checkpoint": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\source_models\\A_GTN_s20260909\\source.u4000.pt",
+      "sha256": "9810432c948c780a0b97852285e53bb0cf1405d7a561a4288e6a782de36e3745",
+      "bytes": 6082681,
+      "channels": [
+        "FZ",
+        "PZ"
+      ],
+      "reference": "measured_channel:CZ",
+      "preprocessing": {
+        "name": "brainsync_causal_notch_v1",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "notch_freqs_hz": [
+          50.0
+        ],
+        "notch_quality_factor": 30.0,
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      },
+      "source_snapshot": {
+        "archive_sha256": "44113eb62431b4cba85cc6661f1e9185f86f9a151f6e26b353bfd0102d548e61",
+        "manifest_sha256": "3985708bec3ac9b3d53b09b9ec0f532b26696e485629d43a0cf4db1f38c675b1",
+        "source_commit": "f1a303c42c68173e8b1452ceb26bd84923b8a6aa",
+        "byte_size": 1221470,
+        "member_count": 289,
+        "working_tree_snapshot": true,
+        "source_commit_role": "base_commit_only",
+        "executed_files_verified": 289
+      },
+      "training_signature": "3cc0a410606ca2f270d17d1e442ffc2a299ed31be24cba173f60a9223d6e3b12",
+      "origin_checkpoints": {
+        "4000": {
+          "path": "/root/autodl-tmp/n2p3-runs/source_eog_20260909/sources/A_GTN_s20260909/source.u4000.pt",
+          "sha256": "b2733173656356c284189bd79a5f3793ac90da1d0fb20911ade36490680f22a0",
+          "training_contract_digest": "7f9b8953511a31bdc0f1e182b6ee68ac89542d06ebdb4167e37ea21970fd58f6",
+          "source_snapshot_sha256": "44113eb62431b4cba85cc6661f1e9185f86f9a151f6e26b353bfd0102d548e61"
+        }
+      },
+      "status": "verified_research_source",
+      "promoted": false
+    },
+    {
+      "id": "A_GTN_s20260910",
+      "pool": "GTN",
+      "seed": 20260910,
+      "checkpoint": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\source_models\\A_GTN_s20260910\\source.u4000.pt",
+      "sha256": "7c8cbcd2d57a16372e7ddc9d777a79045712196cc1afe8382a64e0c6c64b4651",
+      "bytes": 6082681,
+      "channels": [
+        "FZ",
+        "PZ"
+      ],
+      "reference": "measured_channel:CZ",
+      "preprocessing": {
+        "name": "brainsync_causal_notch_v1",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "notch_freqs_hz": [
+          50.0
+        ],
+        "notch_quality_factor": 30.0,
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      },
+      "source_snapshot": {
+        "archive_sha256": "44113eb62431b4cba85cc6661f1e9185f86f9a151f6e26b353bfd0102d548e61",
+        "manifest_sha256": "3985708bec3ac9b3d53b09b9ec0f532b26696e485629d43a0cf4db1f38c675b1",
+        "source_commit": "f1a303c42c68173e8b1452ceb26bd84923b8a6aa",
+        "byte_size": 1221470,
+        "member_count": 289,
+        "working_tree_snapshot": true,
+        "source_commit_role": "base_commit_only",
+        "executed_files_verified": 289
+      },
+      "training_signature": "ff06fe5ed06682574cf2d07c35199c8c800240fc89a83b96873ae3ef7c5e964b",
+      "origin_checkpoints": {
+        "4000": {
+          "path": "/root/autodl-tmp/n2p3-runs/source_eog_20260909/sources/A_GTN_s20260910/source.u4000.pt",
+          "sha256": "7da36c9ce67c96676b3b706a9210e2f6d53e100a7eba975d7b8aacc52b51b792",
+          "training_contract_digest": "991cc069b0d2e8ad575bc1b6488cdb65b078ac524e652d309cf339b6309db2c6",
+          "source_snapshot_sha256": "44113eb62431b4cba85cc6661f1e9185f86f9a151f6e26b353bfd0102d548e61"
+        }
+      },
+      "status": "verified_research_source",
+      "promoted": false
+    },
+    {
+      "id": "A_GTN_s20260911",
+      "pool": "GTN",
+      "seed": 20260911,
+      "checkpoint": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\source_models\\A_GTN_s20260911\\source.u4000.pt",
+      "sha256": "6a64fcff58a36619a308ab825629a1aa84079e4c6eb6d4cb545b8623d8d91193",
+      "bytes": 6082681,
+      "channels": [
+        "FZ",
+        "PZ"
+      ],
+      "reference": "measured_channel:CZ",
+      "preprocessing": {
+        "name": "brainsync_causal_notch_v1",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "notch_freqs_hz": [
+          50.0
+        ],
+        "notch_quality_factor": 30.0,
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      },
+      "source_snapshot": {
+        "archive_sha256": "44113eb62431b4cba85cc6661f1e9185f86f9a151f6e26b353bfd0102d548e61",
+        "manifest_sha256": "3985708bec3ac9b3d53b09b9ec0f532b26696e485629d43a0cf4db1f38c675b1",
+        "source_commit": "f1a303c42c68173e8b1452ceb26bd84923b8a6aa",
+        "byte_size": 1221470,
+        "member_count": 289,
+        "working_tree_snapshot": true,
+        "source_commit_role": "base_commit_only",
+        "executed_files_verified": 289
+      },
+      "training_signature": "d8dac2c51653f597548fe15441080a41a4e3631db96aea6e26bb70c9a40b852e",
+      "origin_checkpoints": {
+        "4000": {
+          "path": "/root/autodl-tmp/n2p3-runs/source_eog_20260909/sources/A_GTN_s20260911/source.u4000.pt",
+          "sha256": "d07c1476efad35d6475392ee7001303232c4d1d410e8d7824d17c2afdfc458a8",
+          "training_contract_digest": "a235ff28cbeaf188f6bc95aef9d3d72c7b27dd9576353bee0eefd7afc2572705",
+          "source_snapshot_sha256": "44113eb62431b4cba85cc6661f1e9185f86f9a151f6e26b353bfd0102d548e61"
+        }
+      },
+      "status": "verified_research_source",
+      "promoted": false
+    },
+    {
+      "id": "Bproduct_B0_s20260909",
+      "pool": "B0",
+      "seed": 20260909,
+      "checkpoint": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\source_models\\Bproduct_B0_s20260909\\source.u4000.pt",
+      "sha256": "ad2c1e0bdb6d2ec6e189cb3ff4790a39ee3b95847c4fc19f4dd3c457aa95d64c",
+      "bytes": 61354361,
+      "channels": [
+        "FZ",
+        "P3",
+        "PZ",
+        "P4",
+        "PO8",
+        "OZ"
+      ],
+      "reference": "measured_channel:CZ",
+      "preprocessing": {
+        "name": "brainsync_causal_notch_v1",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "notch_freqs_hz": [
+          50.0
+        ],
+        "notch_quality_factor": 30.0,
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      },
+      "source_snapshot": {
+        "archive_sha256": "44113eb62431b4cba85cc6661f1e9185f86f9a151f6e26b353bfd0102d548e61",
+        "manifest_sha256": "3985708bec3ac9b3d53b09b9ec0f532b26696e485629d43a0cf4db1f38c675b1",
+        "source_commit": "f1a303c42c68173e8b1452ceb26bd84923b8a6aa",
+        "byte_size": 1221470,
+        "member_count": 289,
+        "working_tree_snapshot": true,
+        "source_commit_role": "base_commit_only",
+        "executed_files_verified": 289
+      },
+      "training_signature": "6d24e26f6d31da51e1cded2e9c1060364e0fb3ba863c78ef789ac1c60acb9715",
+      "origin_checkpoints": {
+        "4000": {
+          "path": "/root/autodl-tmp/n2p3-runs/source_eog_20260909/sources/Bproduct_B0_s20260909/source.u4000.pt",
+          "sha256": "1d367f0d815c05da204a1f351e2da0f94099d3e71e21f1d3cc6fb27a9aa3475c",
+          "training_contract_digest": "fc74857b7ee2a9e8297e32ac83306e5206ec64e43386f4a48671667d6b269990",
+          "source_snapshot_sha256": "44113eb62431b4cba85cc6661f1e9185f86f9a151f6e26b353bfd0102d548e61"
+        }
+      },
+      "status": "verified_research_source",
+      "promoted": false
+    },
+    {
+      "id": "Bproduct_B0_s20260910",
+      "pool": "B0",
+      "seed": 20260910,
+      "checkpoint": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\source_models\\Bproduct_B0_s20260910\\source.u4000.pt",
+      "sha256": "7621755811f733461b4e65a3a5bd556c8894335446b363c7da4caa64d94a7c74",
+      "bytes": 61354361,
+      "channels": [
+        "FZ",
+        "P3",
+        "PZ",
+        "P4",
+        "PO8",
+        "OZ"
+      ],
+      "reference": "measured_channel:CZ",
+      "preprocessing": {
+        "name": "brainsync_causal_notch_v1",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "notch_freqs_hz": [
+          50.0
+        ],
+        "notch_quality_factor": 30.0,
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      },
+      "source_snapshot": {
+        "archive_sha256": "44113eb62431b4cba85cc6661f1e9185f86f9a151f6e26b353bfd0102d548e61",
+        "manifest_sha256": "3985708bec3ac9b3d53b09b9ec0f532b26696e485629d43a0cf4db1f38c675b1",
+        "source_commit": "f1a303c42c68173e8b1452ceb26bd84923b8a6aa",
+        "byte_size": 1221470,
+        "member_count": 289,
+        "working_tree_snapshot": true,
+        "source_commit_role": "base_commit_only",
+        "executed_files_verified": 289
+      },
+      "training_signature": "b7e671b467551d2e5afadc15be63adc5b92c919fa7bd0b2298aa40a02e22d355",
+      "origin_checkpoints": {
+        "4000": {
+          "path": "/root/autodl-tmp/n2p3-runs/source_eog_20260909/sources/Bproduct_B0_s20260910/source.u4000.pt",
+          "sha256": "2f8ad64ffa62e69582c5ed1b71c210d79268717127d347b7fe9472d83cb5eca4",
+          "training_contract_digest": "1062bf565709b614a590f7c3c29ccdcb9a6fbf6bea5fa0556c650499a7460f20",
+          "source_snapshot_sha256": "44113eb62431b4cba85cc6661f1e9185f86f9a151f6e26b353bfd0102d548e61"
+        }
+      },
+      "status": "verified_research_source",
+      "promoted": false
+    },
+    {
+      "id": "Bproduct_B0_s20260911",
+      "pool": "B0",
+      "seed": 20260911,
+      "checkpoint": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\source_models\\Bproduct_B0_s20260911\\source.u4000.pt",
+      "sha256": "9fdfbb2eecfa97302b288545c9d3a25ac06396ddbb4cd85cf424138ff4357c56",
+      "bytes": 61354361,
+      "channels": [
+        "FZ",
+        "P3",
+        "PZ",
+        "P4",
+        "PO8",
+        "OZ"
+      ],
+      "reference": "measured_channel:CZ",
+      "preprocessing": {
+        "name": "brainsync_causal_notch_v1",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "notch_freqs_hz": [
+          50.0
+        ],
+        "notch_quality_factor": 30.0,
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      },
+      "source_snapshot": {
+        "archive_sha256": "44113eb62431b4cba85cc6661f1e9185f86f9a151f6e26b353bfd0102d548e61",
+        "manifest_sha256": "3985708bec3ac9b3d53b09b9ec0f532b26696e485629d43a0cf4db1f38c675b1",
+        "source_commit": "f1a303c42c68173e8b1452ceb26bd84923b8a6aa",
+        "byte_size": 1221470,
+        "member_count": 289,
+        "working_tree_snapshot": true,
+        "source_commit_role": "base_commit_only",
+        "executed_files_verified": 289
+      },
+      "training_signature": "8d42b910cb802448d29cc32d2b01ff5de8840bc1d459b94ae45a9d46dc7dba4d",
+      "origin_checkpoints": {
+        "4000": {
+          "path": "/root/autodl-tmp/n2p3-runs/source_eog_20260909/sources/Bproduct_B0_s20260911/source.u4000.pt",
+          "sha256": "a501e4facf75dcdcaf9d7a86f2cbec4844f0a0a1287eb0031f9be0ca8c3dba7f",
+          "training_contract_digest": "bf7df22ffc518351177879e4c4918eb88654ce37d2cf66bc7a43b983fd701c9c",
+          "source_snapshot_sha256": "44113eb62431b4cba85cc6661f1e9185f86f9a151f6e26b353bfd0102d548e61"
+        }
+      },
+      "status": "verified_research_source",
+      "promoted": false
+    },
+    {
+      "id": "Bproduct_B7_s20260909",
+      "pool": "B7",
+      "seed": 20260909,
+      "checkpoint": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\source_models\\Bproduct_B7_s20260909\\source.u4000.pt",
+      "sha256": "106944a02e26bd612ebb26da8783b76b8c4d588d3975035e44f64f5871ba8872",
+      "bytes": 275693433,
+      "channels": [
+        "FZ",
+        "P3",
+        "PZ",
+        "P4",
+        "PO8",
+        "OZ"
+      ],
+      "reference": "measured_channel:CZ",
+      "preprocessing": {
+        "name": "brainsync_causal_notch_v1",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "notch_freqs_hz": [
+          50.0
+        ],
+        "notch_quality_factor": 30.0,
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      },
+      "source_snapshot": {
+        "archive_sha256": "44113eb62431b4cba85cc6661f1e9185f86f9a151f6e26b353bfd0102d548e61",
+        "manifest_sha256": "3985708bec3ac9b3d53b09b9ec0f532b26696e485629d43a0cf4db1f38c675b1",
+        "source_commit": "f1a303c42c68173e8b1452ceb26bd84923b8a6aa",
+        "byte_size": 1221470,
+        "member_count": 289,
+        "working_tree_snapshot": true,
+        "source_commit_role": "base_commit_only",
+        "executed_files_verified": 289
+      },
+      "training_signature": "865ff1d63f5ddbd458e3f565a27ac2b4c2742870ec074567e755e1f27eec49e7",
+      "origin_checkpoints": {},
+      "status": "verified_research_source",
+      "promoted": false
+    },
+    {
+      "id": "Bproduct_B7_s20260910",
+      "pool": "B7",
+      "seed": 20260910,
+      "checkpoint": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\source_models\\Bproduct_B7_s20260910\\source.u4000.pt",
+      "sha256": "abb5ef4df3945b07977b6ae71ec7ef190d313a7111f9dbc470a108faabbc934a",
+      "bytes": 20365369,
+      "channels": [
+        "FZ",
+        "P3",
+        "PZ",
+        "P4",
+        "PO8",
+        "OZ"
+      ],
+      "reference": "measured_channel:CZ",
+      "preprocessing": {
+        "name": "brainsync_causal_notch_v1",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "notch_freqs_hz": [
+          50.0
+        ],
+        "notch_quality_factor": 30.0,
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      },
+      "source_snapshot": {
+        "archive_sha256": "3492cea7ee9930940365c830f986a612de1e966c208004cc0d4104f28afd0fb2",
+        "manifest_sha256": "1c2f5ffb89d581686a12fa0d7790313e33a58b872de2349f04debf05ff131ab0",
+        "source_commit": "f1a303c42c68173e8b1452ceb26bd84923b8a6aa",
+        "byte_size": 1275124,
+        "member_count": 324,
+        "working_tree_snapshot": true,
+        "source_commit_role": "base_commit_only",
+        "executed_files_verified": 324
+      },
+      "training_signature": "e5d9dc358bba7ab6b0413c2790a6ab4cbc9c135916bd40b063c4f5f65b558ae6",
+      "origin_checkpoints": {},
+      "status": "verified_research_source",
+      "promoted": false
+    },
+    {
+      "id": "Bproduct_B7_s20260911",
+      "pool": "B7",
+      "seed": 20260911,
+      "checkpoint": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\source_models\\Bproduct_B7_s20260911\\source.u4000.pt",
+      "sha256": "f7a3522372623a7dcce0851f36e3e29dfcdae5bc6cae74fce5884312861dd5ac",
+      "bytes": 20365369,
+      "channels": [
+        "FZ",
+        "P3",
+        "PZ",
+        "P4",
+        "PO8",
+        "OZ"
+      ],
+      "reference": "measured_channel:CZ",
+      "preprocessing": {
+        "name": "brainsync_causal_notch_v1",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "notch_freqs_hz": [
+          50.0
+        ],
+        "notch_quality_factor": 30.0,
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      },
+      "source_snapshot": {
+        "archive_sha256": "3492cea7ee9930940365c830f986a612de1e966c208004cc0d4104f28afd0fb2",
+        "manifest_sha256": "1c2f5ffb89d581686a12fa0d7790313e33a58b872de2349f04debf05ff131ab0",
+        "source_commit": "f1a303c42c68173e8b1452ceb26bd84923b8a6aa",
+        "byte_size": 1275124,
+        "member_count": 324,
+        "working_tree_snapshot": true,
+        "source_commit_role": "base_commit_only",
+        "executed_files_verified": 324
+      },
+      "training_signature": "0815969fd8bf67e0ec568867a486064de11f80153fa2250e6a2bdb870ec1f443",
+      "origin_checkpoints": {},
+      "status": "verified_research_source",
+      "promoted": false
+    }
+  ],
+  "results_archive_sha256": "405baaa34f22576d750f43f8639d6975d4c42ff550fa8595fd0516d7fae491f0",
+  "boundary": "Development source models; forward 50 Hz notch; require matching personal calibration. Not promoted to workstation."
+}

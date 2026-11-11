@@ -1,0 +1,23 @@
+{
+  "schema": "research_topic_documents_history/1",
+  "source_commit": "18c1294785f63c1535c3d8b502c41be29446e06c",
+  "payload": "frozen/local_history/research-documents-before-topics.tar.gz",
+  "archive_sha256": "3771b258ec42213cbc75db66b64a51d7a11963cec60d63c7e62440832e95df63",
+  "archive_bytes": 30371,
+  "members": {
+    "doc/evidence/research_resume_20261011.zh.md": {
+      "sha256": "9972f9ce165833e7e5e6ac2784fdfd992accfcfb4b33b8bff8666a297f7972ce",
+      "bytes": 28517
+    },
+    "doc/evidence/cloud_candidate_analysis_20261011.zh.md": {
+      "sha256": "811801b41ae46653e98f1d324f09dddab3611e1f843b7334cd357487245fb168",
+      "bytes": 5407
+    },
+    "doc/evidence/README.md": {
+      "sha256": "7f47383a18dd0c0610459af13542705ed81052530cfd1f3150fd340554473dc3",
+      "bytes": 32897
+    }
+  },
+  "verification": "all recovered members exactly equal original working bytes before retirement",
+  "scope": "research documents and index; original EEG, models, results and producer bindings stay in place"
+}

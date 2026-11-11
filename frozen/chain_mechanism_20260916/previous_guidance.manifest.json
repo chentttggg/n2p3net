@@ -1,0 +1,33 @@
+{
+  "scope": "Previous active guidance before independent mechanism audit; no production source changes",
+  "archive": "previous_guidance.zip",
+  "sha256": "cfc14cbb57245774756adb09e1dadfebfa582cdc108f12db6a4b0ce9b30f4d67",
+  "members": [
+    {
+      "path": "doc/README.md",
+      "bytes": 10496,
+      "sha256": "16d268092cdc11dbbd485cf2ff61bcdd2179ed5ddef923d22be2509d698014ef"
+    },
+    {
+      "path": "doc/roadmap.zh.md",
+      "bytes": 66963,
+      "sha256": "da02aa7f4e4b034b3b453512f8cfaaef419593b45471f4f706993a8c418e1af3"
+    },
+    {
+      "path": "doc/research_program.zh.md",
+      "bytes": 28914,
+      "sha256": "f534238c41a92c26c55e76370e0ff703139cd6ce8ee18000d580216bd12f8546"
+    },
+    {
+      "path": "doc/input_contract_math.zh.md",
+      "bytes": 26267,
+      "sha256": "fdefef1abc2fd38904de95ca1802d33158cd371c594e5d0fdfc006d081bfe969"
+    },
+    {
+      "path": "doc/evidence/README.md",
+      "bytes": 18203,
+      "sha256": "e200e68ef3570e5b6a7a24681aecee65fde3bd86f9c5d3dcc25e099a85d9d9a9"
+    }
+  ],
+  "verified": true
+}

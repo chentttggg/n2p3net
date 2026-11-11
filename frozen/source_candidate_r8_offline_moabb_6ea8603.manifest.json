@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "source_candidate_r8_offline_moabb_6ea8603.source-only.tar.gz",
+  "archive_sha256": "4d1005fdb707f888c53b8f1b6ca72f9dc0a97bcd84d0b159c180855be70e9b9c",
+  "source_commit": "6ea8603b06652cd5097a0e6f18f853a6a80fb1df",
+  "member_count": 166,
+  "byte_size": 758640,
+  "scope": "Git-tracked candidate promotion source, immutable raw snapshots, offline MOABB 1.6.1 resolver, tests, documentation, and validated CUDA 12.8 dependency lock",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "cache and GPU training runs must verify this archive and may parse MOABB data only through the attested offline snapshot resolver"
+}

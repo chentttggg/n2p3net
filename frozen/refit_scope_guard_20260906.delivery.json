@@ -1,0 +1,26 @@
+{
+  "schema": "n2p3_refit_scope_delivery/1",
+  "stage": "software_fix_and_public_development",
+  "guard_source_manifest": "frozen/refit_scope_guard_20260906.manifest.json",
+  "guard_source_archive_sha256": "0271ec2f3feff762fa6b14e85c05e61b3bcb00f808642f65d9fb3c32b0e9374c",
+  "audit_archive": "frozen/refit_scope_audit_20260906.zip",
+  "audit_archive_sha256": "226b190aed5b904d76a25673dfe23f6b1267e2be5832e164bd1eff60a5fe4b41",
+  "prior_review_archive": "frozen/finetune_leakage_review_before_refit_fix_20260906.zip",
+  "prior_review_archive_sha256": "60698eee789e943724256b48e2c2a5b7b12ef72260d4ceeee2dd431272945b29",
+  "strict_results_archive": "experiments/runs/bnci_unseen_target_20260906.results.tar.gz",
+  "strict_results_archive_sha256": "118b04e5bae762b97e527665c6de9771d7771cd72959d75bfea103fca47fb855",
+  "verified_result_files": 554,
+  "cpu_tests": {
+    "passed": 208,
+    "skipped": 1,
+    "failed": 0
+  },
+  "gpu_cells": 504,
+  "verified_gpu_inner_refit_scopes": 144,
+  "historical_fits_verified_without_refit": 1434,
+  "report": "doc/finetune_leakage_review_20260906.zh.md",
+  "strict_result_report": "doc/bnci_unseen_target_results_20260906.zh.md",
+  "source_checkpoint_dependency": "frozen/p300_execution_delivery_20260906.manifest.json",
+  "product_confirmation": false,
+  "git_commit_created": false
+}

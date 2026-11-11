@@ -1,0 +1,26 @@
+{
+  "schema": "brainsync_diagnostic_retirement/1",
+  "original_directory": "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\p300_quality_report",
+  "archive": "brainsync_retired_diagnostics_20260906.zip",
+  "archive_sha256": "6f2aa45c9cc4ea0f3b01caf3adfc1fc415362687811c19fb28e61d1597c3d107",
+  "member_count": 15,
+  "files": {
+    "channel_scan.json": "7256bac2e9ffb199ce63da73516f5442cb96c5fb17f6849a3126c71d28e06e4f",
+    "digit_decode_p001_p003.json": "d4ce43f272ea07a0bd1fb6e03f6dbd48403dc8ec0955397abf7adaafee0a875f",
+    "digit_decode.json": "71f007083d1630569d995788872dee7b7036b39a581a8d2ba2368c9f3045f453",
+    "fig_channels_lda.png": "9ab94814b6d44193d8e17ebfafe18959a9300da33165f56318d607fa89d9fb35",
+    "fig_diff_pz.png": "069157a3f0748ef7db9d7f23b16154aa016e26f23a1d21924df1fb7dd052870f",
+    "fig_digit_decode.png": "6a8e973ee3a4c2f1f81131d7872b170ef28127fa438111c47da83eb3bc36b203",
+    "fig_digits_p001.png": "ec69344a9ec2708b9cce6ce3fc5596b19bd4073a8f970cc6df5b54316ed6d1a1",
+    "fig_erp_cz_p4.png": "f081244994c4ce10965b340080018c2378b882095d7217b559d26b1b02b4c67e",
+    "fig_erp_pz.png": "fec500db0129d32e6ea16f6873bd9556dd0ec47d1d28098f52aba43a2efa7522",
+    "fig_noise.png": "5dd8f1b77ad1e7aa7e401245e0969e551cad5f2ba188f6075e5006c21d1b8caf",
+    "fig_p004_1_verdict.png": "3d43cda2ec0a2f15737b2089deaf039b0a47f42002673a8814367e925c888c65",
+    "fig_p004_p006_coverage.png": "e692a9b97aad12b23e5a8db920f29d9c3432299df5c363b32af5f858e95f315c",
+    "fig_per_block.png": "324e97c0bca0f36bb01eb6c23a61ef308734530657d8a29a8b1aa614e170922b",
+    "P300_DATA_QUALITY_REPORT.html": "742bbd6462076365047fafa92c7a6f6c7eafb0dbc18e233ab4fc547bfd531e1e",
+    "summary.json": "7b32bdce8c0e2ba3a88a2c5c4fb764d2cd2b36f9afbf5f18b0bba14c6a20e31e"
+  },
+  "scientific_role": "Historical offline LOBO/quality diagnostics with known baseline/denominator errors; not online model evidence",
+  "source_archive": "brainsync_newest_before_integration_20260906.zip"
+}

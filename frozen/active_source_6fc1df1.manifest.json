@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "active_source_6fc1df1.source-only.tar.gz",
+  "archive_sha256": "4ad1aee5d26bba6a92fb74710bbc83532240f62a962fb3b1ca99fda1aa54b3de",
+  "source_commit": "6fc1df1df7b6fbb1fe5216b6e872c4cb5732b444",
+  "member_count": 209,
+  "byte_size": 1029318,
+  "scope": "Integrated main at 6fc1df1: domain-transfer-v2 P3 chain (feature lift, GALIA Fast Alignment, conditional RBF-MMD inactive policy, checkpoint batching, PDS selection, valid-subject hit@R primary metric) merged with result-optimization (partition-level result batching, zero-shot feature memo, CPU result-phase budgets). Excludes Paper PDFs, frozen archives, and all data/caches.",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "integrated-workspace source anchor; do not overwrite; E1 execution freezes b96a6af/b86d558 remain unchanged"
+}

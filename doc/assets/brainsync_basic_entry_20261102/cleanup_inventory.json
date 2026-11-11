@@ -1,0 +1,61 @@
+{
+  "verified_targets": [
+    {
+      "path": "D:\\BCI\\artifacts\\apps\\BrainSync_Release_20260920\\_internal",
+      "files": 486,
+      "logical_bytes": 308676124,
+      "reparse_points": 0
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\apps\\BrainSync_Release_20260920\\BrainSync_Standalone.exe",
+      "files": 1,
+      "logical_bytes": 120236664,
+      "reparse_points": 0
+    },
+    {
+      "path": "D:\\BCI\\tmp\\brainsync_basic_entry_20261102",
+      "files": 1136,
+      "logical_bytes": 717280797,
+      "reparse_points": 0
+    }
+  ],
+  "release_exe_before_sha256": "de74a5386d929ab2b696ef7f9d7a0686c34062f1d77a836cfe789b5b1e8e8aac",
+  "protected": {
+    "data": [],
+    "config": [],
+    "logs": [],
+    "models": [
+      [
+        "models\\acquisition_reference.json",
+        145,
+        1788832741656373100
+      ],
+      [
+        "models\\epoch_support.json",
+        132,
+        1788791508030992200
+      ],
+      [
+        "models\\model_manifest.example.json",
+        1468,
+        1788315960000000000
+      ],
+      [
+        "models\\README.md",
+        9677,
+        1788406906000000000
+      ],
+      [
+        "models\\source\\bnci_cz6_seed20260906_A01.pt",
+        29461,
+        1788648009000000000
+      ],
+      [
+        "models\\source\\README.md",
+        1018,
+        1788687299251566700
+      ]
+    ]
+  },
+  "scope": "Physical BrainSync release root D:/BCI/artifacts/apps/BrainSync_Release_20260920; D:/BCI/BrainSync_Release_20260920 is its existing junction alias. Operate on physical absolute targets only; preserve alias and user folders."
+}

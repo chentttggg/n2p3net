@@ -1,0 +1,43 @@
+{
+  "schema": "guidance_research_snapshot/1",
+  "archive": "guidance.zip",
+  "sha256": "531f75896dcf0b8f229243bc87fa07ba245ab044eabc3f6ea3469ad048724cdc",
+  "entries": [
+    {
+      "path": "doc/README.md",
+      "sha256": "6e1a7cd0555caec3d3b50390d75d277aba15227ad3da1256b5c1e42d2864be96"
+    },
+    {
+      "path": "doc/research_program.zh.md",
+      "sha256": "d27df7d6960fca08a36a85b8c92b0f3ee7fb09d94b80bedaab0ce56d8b9c4363"
+    },
+    {
+      "path": "doc/technical_structure.zh.md",
+      "sha256": "0b044a91054626053f169da172d7b50dd5264045571e096c6fee3c06483e1a50"
+    },
+    {
+      "path": "doc/input_contract_math.zh.md",
+      "sha256": "07628d88febef2e73dda0df62b62bbc0a76366c5d4ac1548cf1105adc73e1c62"
+    },
+    {
+      "path": "doc/roadmap.zh.md",
+      "sha256": "034b3e13cd18337179770fa339354ad08de05cf2e347d4d97fdfb36773df7906"
+    },
+    {
+      "path": "doc/engineering.zh.md",
+      "sha256": "107d7192b6fbe8aa862a795c7207af63bbdac17aaeacb640857205e5e0b3d3c0"
+    },
+    {
+      "path": "doc/workstation.zh.md",
+      "sha256": "cf531603990d526064b49861f9c60f9e062abc825a662c58d3996e8aa4ece9a9"
+    },
+    {
+      "path": "doc/evidence/README.md",
+      "sha256": "f7aa4a87836bf81ad997ee82c90db7424550637972441ce3cb50b923b61f320f"
+    },
+    {
+      "path": "doc/evidence/chain_implementation_20260930.zh.md",
+      "sha256": "d551676846adca0b1dae0ffee5934bd3d04b3e12349a95150fa3e7bb38fa63ac"
+    }
+  ]
+}

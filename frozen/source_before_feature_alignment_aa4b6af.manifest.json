@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "source_before_feature_alignment_aa4b6af.source-only.tar.gz",
+  "archive_sha256": "860c60dcf0659d41cecb16d5588f8318f64206336efaa0e8667074a4626b75f2",
+  "source_commit": "aa4b6af17f2c26f966a17eb4187b014ee99823b7",
+  "member_count": 178,
+  "byte_size": 843514,
+  "scope": "Git-tracked source, experiment CLIs, tests, documentation, configuration templates, and locked dependency records immediately before the feature-alignment and domain-adapter research mechanism; excludes frozen archives and Paper references",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "the pre-adapter shared-trunk behavior is reproducible from this archive; any rollback of the adapter/alignment mechanism must restore this commit or verify this archive before binding its SHA-256"
+}

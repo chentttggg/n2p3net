@@ -1,0 +1,230 @@
+{
+  "schema": "n2p3_temp_retirement_operations/1",
+  "operations": [
+    {
+      "target": "D:\\Temp\\n2p3-net",
+      "cmd": "rmdir /s /q \"D:\\Temp\\n2p3-net\"",
+      "chunk_id": "26c053",
+      "wall_time_seconds": 8.8876643,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3-archive-check",
+      "cmd": "cmd.exe /d /c 'rmdir /s /q \"D:\\Temp\\n2p3-archive-check\"'",
+      "chunk_id": "47c3ad",
+      "wall_time_seconds": 0.25692,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3net-patch-staging-20260827",
+      "cmd": "cmd.exe /d /c 'rmdir /s /q \"D:\\Temp\\n2p3net-patch-staging-20260827\"'",
+      "chunk_id": "0cdd6b",
+      "wall_time_seconds": 0.2601028,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\Paper",
+      "cmd": "cmd.exe /d /c 'rmdir /s /q \"D:\\Temp\\Paper\"'",
+      "chunk_id": "64aa7e",
+      "wall_time_seconds": 0.2572884,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\tmp",
+      "cmd": "cmd.exe /d /c 'rmdir /s /q \"D:\\Temp\\tmp\"'",
+      "chunk_id": "4e4574",
+      "wall_time_seconds": 0.2607041,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\braininvaders_official_downloader.err.log",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\braininvaders_official_downloader.err.log\"'",
+      "chunk_id": "c49492",
+      "wall_time_seconds": 0.2296248,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\braininvaders_official_downloader.log",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\braininvaders_official_downloader.log\"'",
+      "chunk_id": "1bb393",
+      "wall_time_seconds": 0.2465757,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\braininvaders_official_downloader.py",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\braininvaders_official_downloader.py\"'",
+      "chunk_id": "6d904f",
+      "wall_time_seconds": 0.239893,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\cnp.pdf",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\cnp.pdf\"'",
+      "chunk_id": "ae8f47",
+      "wall_time_seconds": 0.2348061,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\gtn_update.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\gtn_update.tar.gz\"'",
+      "chunk_id": "e3ba03",
+      "wall_time_seconds": 0.2324894,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\gtn_watch.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\gtn_watch.tar.gz\"'",
+      "chunk_id": "f14d80",
+      "wall_time_seconds": 0.2761272,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3-code-sync.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\n2p3-code-sync.tar.gz\"'",
+      "chunk_id": "ef0a21",
+      "wall_time_seconds": 0.2346112,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3net-bi2014-component-ablation-20260827-r1.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\n2p3net-bi2014-component-ablation-20260827-r1.tar.gz\"'",
+      "chunk_id": "a86553",
+      "wall_time_seconds": 0.2712793,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3net-bi2014-runner-patch-20260827-r1.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\n2p3net-bi2014-runner-patch-20260827-r1.tar.gz\"'",
+      "chunk_id": "dd5f70",
+      "wall_time_seconds": 0.2939428,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3net-chart-state.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\n2p3net-chart-state.tar.gz\"'",
+      "chunk_id": "a911e5",
+      "wall_time_seconds": 0.2641926,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3net-component-ablation-20260827-r1.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\n2p3net-component-ablation-20260827-r1.tar.gz\"'",
+      "chunk_id": "671e94",
+      "wall_time_seconds": 0.2630321,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3net-component-ablation-20260827-r2.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\n2p3net-component-ablation-20260827-r2.tar.gz\"'",
+      "chunk_id": "8e4874",
+      "wall_time_seconds": 0.2496402,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3net-component-ablation-20260827-r3.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\n2p3net-component-ablation-20260827-r3.tar.gz\"'",
+      "chunk_id": "ed2bc2",
+      "wall_time_seconds": 0.2414257,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3net-dashboard-fold-patch-20260827.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\n2p3net-dashboard-fold-patch-20260827.tar.gz\"'",
+      "chunk_id": "4ea2f9",
+      "wall_time_seconds": 0.2454241,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3net-finalfold-dashboard-v2.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\n2p3net-finalfold-dashboard-v2.tar.gz\"'",
+      "chunk_id": "8766a4",
+      "wall_time_seconds": 0.2484465,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3net-finalfold-dashboard.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\n2p3net-finalfold-dashboard.tar.gz\"'",
+      "chunk_id": "3c7f71",
+      "wall_time_seconds": 0.2400575,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3net-gtn-cache-v3-20260827-r1.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\n2p3net-gtn-cache-v3-20260827-r1.tar.gz\"'",
+      "chunk_id": "79c486",
+      "wall_time_seconds": 0.2456724,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3net-queued-run-accumulate.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\n2p3net-queued-run-accumulate.tar.gz\"'",
+      "chunk_id": "edd818",
+      "wall_time_seconds": 0.2592023,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\n2p3net-source-dep56.tar.gz",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\n2p3net-source-dep56.tar.gz\"'",
+      "chunk_id": "fe5f9a",
+      "wall_time_seconds": 0.2401487,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "target": "D:\\Temp\\zenodo_huebner_search.json",
+      "cmd": "cmd.exe /d /c 'del /f /q \"D:\\Temp\\zenodo_huebner_search.json\"'",
+      "chunk_id": "2c5599",
+      "wall_time_seconds": 0.2602935,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    }
+  ]
+}

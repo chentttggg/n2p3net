@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "active_source_a102467.source-only.tar.gz",
+  "archive_sha256": "ec9b4c31f4f1f570d5c20876db58f58a9c600fef7d6de1d2d0065b62e0a90421",
+  "source_commit": "a102467a03355dcf22274fe189d75626cbaef223",
+  "member_count": 206,
+  "byte_size": 1018431,
+  "scope": "Main branch domain-transfer-v2 at a102467: P3 full chain (prepare_domain_features, fit_galia_alignment target Fast Alignment, conditional RBF-MMD inactive policy, checkpoint batch chunking, prepare_source_selection + run_pretrain_supervised binding, scalable PDS sampler). Excludes Paper PDFs, frozen archives, and all data/caches.",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "executed-source identity anchor for v2 P3/G-series experiments; E1 native/CAR continues to use frozen/active_source_b96a6af and must never be overwritten"
+}

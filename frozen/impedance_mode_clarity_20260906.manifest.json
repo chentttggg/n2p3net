@@ -1,0 +1,14 @@
+{
+  "schema": "brainsync_ui_fix/1",
+  "archive": "impedance_mode_clarity_20260906.zip",
+  "archive_sha256": "b767054b4ee18aaf9d25367e437c67ed2e9cab5b6625b710d2d34151d1f2d4f1",
+  "base_frontend_archive_sha256": "a5ed34a182df295f45081f022e4c048cfaa2afbe1e58498ffa4161d007f9ce49",
+  "files": {
+    "frontend/gtn_workstation/ui.py": "64ad940761e690c1a82e9d8801b6357b011e5df9a1c3eddfb7cecedf9b1971d2",
+    "frontend/tests/test_impedance_display.py": "6de0a657e2f1bc597ed923ebd41f979a668a633655b27ade2b97af7dc8c56799",
+    "frontend/RUN_GTN_WORKSTATION.md": "648e488b29abb0b583eb675c6d597c4de716365e53d51b00ca10db55b5140c70",
+    "backend/doc/impedance_display_review_20260906.zh.md": "676b845b3e1c21f4384a0fc87f115d9eb098558c26941ceca5cb2dc963b02d84"
+  },
+  "tests_passed": 60,
+  "hardware_issue_status": "user mode unconfirmed; mock range reproduced; no hardware measurement performed"
+}

@@ -1,0 +1,207 @@
+--- D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\backend.py
++++ D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\backend.py
+@@ -27,8 +27,14 @@
+     epoch_qc: bool = False
+     epoch_qc_model: str = ""
+     continuous_qc_model: str = ""
++    calibration_profile: str = ""
+ 
+     def arguments(self) -> list[str]:
++        if self.calibration_profile:
++            if self.calibration_profile != 'old_basic_nn_source':
++                raise ValueError('未知的校准方案')
++            return ['--calibration-profile', self.calibration_profile,
++                    '--source-checkpoint', str(_file(self.source_checkpoint))]
+         arguments = []
+         for option, value in (("--source-checkpoint", self.source_checkpoint),
+                               ("--epoch-qc-model", self.epoch_qc_model),
+--- D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\decoding.py
++++ D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\decoding.py
+@@ -149,7 +149,7 @@
+         self._model_simulation_status: str | None = None
+         self._browse_buttons: list[QtWidgets.QToolButton] = []
+         self._settings = self._load_settings()
+-        self._bundled_source = app_root / "models" / "source" / "bnci_cz6_seed20260906_A01.pt"
++        self._bundled_source = app_root / "models" / "source" / "basic12_r1s0m0_u27950.pt"
+         self._build()
+         self.runner.progress_changed.connect(self.progress.setValue)
+         self.runner.output_line.connect(self._output_line)
+@@ -268,11 +268,12 @@
+         options.addWidget(self.subject)
+         self.method = QtWidgets.QComboBox()
+         self.method.addItem("本人 LDA", "lda")
+-        self.method.addItem("源模型微调", "source")
++        self.method.addItem("源模型微调（旧 basic）", "source")
+         default_method = "lda"
+         self.method.setCurrentIndex(max(0, self.method.findData(self._settings.get("method", default_method))))
+         self.method.currentIndexChanged.connect(self.sync_buttons)
+         research_form = QtWidgets.QFormLayout()
++        self._signal_settings_form = research_form
+         research_form.addRow("校准方法", self.method)
+         self.compute_device = QtWidgets.QComboBox()
+         self.compute_device.addItem("CPU", "cpu")
+@@ -290,7 +291,8 @@
+                                              if k in self._reference_by_method and v in {"", "Cz"}})
+         if not saved_references and self._settings.get("reference_channel") in {"", "Cz"}:
+             self._reference_by_method[self.method.currentData()] = self._settings["reference_channel"]
+-        self.reference.setCurrentIndex(max(0, self.reference.findData(self._reference_by_method[self.method.currentData()])))
++        selected_reference = 'Cz' if self.method.currentData() == 'source' else self._reference_by_method['lda']
++        self.reference.setCurrentIndex(max(0, self.reference.findData(selected_reference)))
+         self.reference.currentIndexChanged.connect(self._remember_reference)
+         self.method.currentIndexChanged.connect(self._restore_method_reference)
+         research_form.addRow("信号参考", self.reference)
+@@ -312,6 +314,9 @@
+         self.source_filter.currentIndexChanged.connect(self._render_sessions)
+         research_form.addRow("记录来源", self.source_filter)
+         settings_layout.addLayout(research_form)
++        self.basic_processing_info = QtWidgets.QLabel('旧 basic：Cz六导，眼电回归和额外QC关闭；使用完整本人记录校准。')
++        self.basic_processing_info.setWordWrap(True)
++        settings_layout.addWidget(self.basic_processing_info)
+         self.recipe_info = QtWidgets.QLabel()
+         self.recipe_info.setObjectName("muted")
+         self.recipe_info.setWordWrap(True)
+@@ -328,7 +333,10 @@
+         source_row = QtWidgets.QHBoxLayout(self.source_settings)
+         source_row.setContentsMargins(0, 0, 0, 0)
+         source_row.addWidget(QtWidgets.QLabel("公开源模型"))
+-        self.source_path = QtWidgets.QLineEdit(str(self._settings.get("source_checkpoint", self._bundled_source if self._bundled_source.is_file() else "")))
++        saved_source = self._settings.get("source_checkpoint", "")
++        if not saved_source or Path(saved_source).name == 'bnci_cz6_seed20260906_A01.pt':
++            saved_source = str(self._bundled_source) if self._bundled_source.is_file() else ''
++        self.source_path = QtWidgets.QLineEdit(str(saved_source))
+         source_row.addWidget(self.source_path, 1)
+         self.source_browse = self._file_button(self._choose_source, "选择公开 ERP 源模型")
+         source_row.addWidget(self.source_browse)
+@@ -344,18 +352,21 @@
+         continuous_row.addWidget(QtWidgets.QLabel("连续 QC 模型"))
+         self.continuous_qc = QtWidgets.QLineEdit(str(self._settings.get("continuous_qc_model", "")))
+         continuous_row.addWidget(self.continuous_qc, 1)
+-        continuous_row.addWidget(self._file_button(self._choose_continuous_qc, "选择已拟合的连续 QC 模型"))
++        self.continuous_qc_browse = self._file_button(self._choose_continuous_qc, "选择已拟合的连续 QC 模型")
++        continuous_row.addWidget(self.continuous_qc_browse)
+         settings_layout.addLayout(continuous_row)
+ 
+         frozen_quality_row = QtWidgets.QHBoxLayout()
+         frozen_quality_row.addWidget(QtWidgets.QLabel("冻结 epoch QC 模型"))
+         self.epoch_qc_model = QtWidgets.QLineEdit(str(self._settings.get("epoch_qc_model", "")))
+         frozen_quality_row.addWidget(self.epoch_qc_model, 1)
+-        frozen_quality_row.addWidget(self._file_button(self._choose_epoch_qc_model, "选择已拟合的 epoch QC 模型"))
++        self.epoch_qc_browse = self._file_button(self._choose_epoch_qc_model, "选择已拟合的 epoch QC 模型")
++        frozen_quality_row.addWidget(self.epoch_qc_browse)
+         self.epoch_qc_model.textChanged.connect(self._sync_epoch_qc_mode)
+         self.epoch_qc.toggled.connect(lambda checked: self.epoch_qc_model.clear() if checked else None)
+         self._sync_epoch_qc_mode(self.epoch_qc_model.text())
+         settings_layout.addLayout(frozen_quality_row)
++        self._lda_quality_rows = (quality_row, continuous_row, frozen_quality_row)
+         settings_layout.addStretch()
+         close_settings = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Close)
+         close_settings.button(QtWidgets.QDialogButtonBox.StandardButton.Close).setText("关闭")
+@@ -699,7 +710,7 @@
+         self._reference_by_method[self.method.currentData()] = self.reference.currentData()
+ 
+     def _restore_method_reference(self) -> None:
+-        selected = self._reference_by_method[self.method.currentData()]
++        selected = 'Cz' if self.method.currentData() == 'source' else self._reference_by_method['lda']
+         self.reference.setCurrentIndex(max(0, self.reference.findData(selected)))
+ 
+     def sync_buttons(self) -> None:
+@@ -709,15 +720,24 @@
+         allowed = self._allowed and not busy and self._job is None
+         has_model = Path(self.model_path.text().strip()).is_file()
+         source = self.method.currentData() == "source"
++        self.basic_processing_info.setVisible(source)
++        for widget in (self.reference, self.ocular, self.eog_reference):
++            self._signal_settings_form.setRowVisible(widget, not source)
++        for row in self._lda_quality_rows:
++            for index in range(row.count()):
++                widget = row.itemAt(index).widget()
++                if widget is not None:
++                    widget.setVisible(not source)
+         self.source_settings.setVisible(source)
+-        recipe = "源模型微调" if source else "本人 LDA"
++        recipe = "源模型微调（旧 basic） · 十二库源 · 全量校准90轮 · Cz六导" if source else "本人 LDA"
+         quality = " · 冻结质量模型" if self.epoch_qc_model.text().strip() or self.continuous_qc.text().strip() else " · 局部 QC" if self.epoch_qc.isChecked() else ""
+-        self.recipe_info.setText(recipe + " · 双向滤波" + quality)
+-        self.recipe_info.setToolTip(f"{self.reference.currentText()} · 眼电回归{'开启' if self.ocular.isChecked() else '关闭'}")
++        self.recipe_info.setText(recipe + " · 双向滤波" + (" · EOG/QC关闭" if source else quality))
++        self.recipe_info.setToolTip("旧 basic 固定方案；推理使用加载模型内的冻结处理" if source else
++                                   f"{self.reference.currentText()} · 眼电回归{'开启' if self.ocular.isChecked() else '关闭'}")
+         self.source_path.setEnabled(allowed and source)
+         self.source_browse.setEnabled(allowed and source)
+         count = len(self.selected_calibration())
+-        required = 2 if source else 1
++        required = 1
+         source_ready = not source or Path(self.source_path.text().strip()).is_file()
+         self.calibrate.setEnabled(allowed and count >= required and source_ready)
+         hint = "" if count >= required else f"尚需选择 {required - count} 份已确认校准记录"
+@@ -746,7 +766,10 @@
+                        self.backend_root, self.data_root, self.model_path, self.source_filter,
+                        self.epoch_qc, self.epoch_qc_model, self.continuous_qc, self.calibration_target, self.test_session):
+             widget.setEnabled(allowed)
+-        self.eog_reference.setEnabled(allowed and self.ocular.isChecked())
++        for widget in (self.reference, self.ocular, self.epoch_qc, self.epoch_qc_model, self.continuous_qc,
++                       self.continuous_qc_browse, self.epoch_qc_browse):
++            widget.setEnabled(allowed and not source)
++        self.eog_reference.setEnabled(allowed and not source and self.ocular.isChecked())
+ 
+     def start_calibration(self) -> None:
+         entries = self.selected_calibration()
+@@ -760,6 +783,7 @@
+             epoch_qc=self.epoch_qc.isChecked(),
+             epoch_qc_model=self.epoch_qc_model.text().strip(),
+             continuous_qc_model=self.continuous_qc.text().strip(),
++            calibration_profile='old_basic_nn_source' if self.method.currentData() == 'source' else '',
+         )
+         if self.method.currentData() == "source" and not settings.source_checkpoint:
+             self.state.setText("请先选择源模型")
+--- D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\decoding_results.py
++++ D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\decoding_results.py
+@@ -140,6 +140,7 @@
+         self.record = record
+         selection = record.get("internal_validation") or {}
+         selected = selection.get("selected") or {}
++        selected = selected if isinstance(selected, dict) else {}
+         history = selection.get("refit_history") or {}
+         recipes = [item for item in selection.get("recipes", []) if isinstance(item, dict)]
+         auc = finite_number(selected.get("validation_auc", selection.get("validation_auc")))
+@@ -151,7 +152,7 @@
+         self.metrics["training"].setText(f"{n_training if n_training is not None else '--'} / {n_input if n_input is not None else '--'}")
+         sessions = record.get("calibration_sessions")
+         self.metrics["sessions"].setText(str(len(sessions)) if isinstance(sessions, list) else "--")
+-        epochs = len(history.get("train_losses") or []) or selected.get("selected_epochs")
++        epochs = len(history.get("train_losses") or []) or selected.get("selected_epochs", selection.get("selected_epochs"))
+         self.metrics["epochs"].setText(str(epochs) if epochs else "不适用" if "lda" in record.get("model_kind", "") else "未记录")
+         method = {"target_only_shrinkage_lda": "本人 LDA", "source_initialized_n2p3": "源模型微调",
+                   "scratch_n2p3": "本人神经网络"}.get(record.get("model_kind"), record.get("model_kind", "个体模型"))
+@@ -159,6 +160,8 @@
+         self.status.setToolTip(str(record.get("model_artifact") or ""))
+         validation_sessions = selection.get("validation_sessions") or []
+         validation_text = f"内部验证 {len(validation_sessions)} 份记录" if validation_sessions else "内部校准验证" if auc is not None else "无独立内部验证"
++        if selection.get('scoring_protocol') == 'fixed_full_calibration':
++            validation_text = '固定方案 · 全量校准'
+         source = " · 模拟数据" if record.get("simulation_status") == "declared_mock" else ""
+         criterion = {"legacy_epoch_validation_cross_entropy": " · 按内部验证损失选方",
+                      "binary_auc": " · 按内部验证 AUC 选方",
+--- D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\RUN_GTN_WORKSTATION.md
++++ D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\RUN_GTN_WORKSTATION.md
+@@ -46,13 +46,13 @@
+ 2. 在“校准与推理”的“本人校准”选择受试者和目标数字。“采集校准”设置10block×45闪烁，
+    每份session只有一个目标；九个数字分别采集可得到4050trial，其中450target。
+    目标在录制结束后确认，晚确认时间真实保存。
+-3. 选择同一人的已确认记录，点击“校准并保存”。源模型微调需要至少两份独立session，
+-   固定本人LDA可以使用一份含两类的session。被排除或缺文件的记录不会作为可用校准输入。
+-4. 默认源模型为`models/source/bnci_cz6_seed20260906_A01.pt`，是公开ERP研究初始化，
+-   配套显式Cz共同参考。它不是已验证的BrainSync冠军或某人的个体模型；
+-   不兼容的源checkpoint会明确报错，不静默降级为LDA。
+-5. 眼电回归复用n2p3模块。神经网络只在内部训练session拟合EOG并冻结，
+-   贯穿配方选择和完整校准重训；固定LDA可用全部授权校准session拟合。
++3. 选择同一人的已确认记录，点击“校准并保存”。两种日常方法均可从一份含两类的完整合法session开始。
++   被排除或缺文件的记录不会作为可用校准输入。
++4. “源模型微调（旧 basic）”使用`models/source/basic12_r1s0m0_u27950.pt`十二库源，
++   自动执行Cz六导、固定90轮完整校准；EOG和额外QC关闭。其他源权重不能冒充该方案。
++   配置与输入合同由后端`doc/workstation.zh.md`和`configs/brainsync_old_basic_nn_source.json`维护。
++5. 本人LDA仍可设置眼电回归和QC；这些设置在旧basic模式下不可编辑，不进入该模式的任务。
++   旧basic不做内部选方，报告中的内部验证AUC显示“未验证”；新测试命中另行计算。
+ 6. 保存的个体模型自包含权重、输入统计、EOG、参考、通道、participant和校准范围。
+    “加载模型”通过`inspect`核验后恢复所属受试者与校准报告，保存图标可另存完整模型。
+ 7. 在“猜数字”点击“开始新测试”。新session固定1block×45闪烁，完成并保存raw后，

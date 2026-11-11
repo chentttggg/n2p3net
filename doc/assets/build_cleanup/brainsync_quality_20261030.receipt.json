@@ -1,0 +1,39 @@
+{
+  "schema": "brainsync_quality_cleanup/1",
+  "status": "blocked_by_policy",
+  "replacement_profile_sha256": "c52a6acaf0f18b090960056a38fd54f81b4c438876bab00192b1668535cba665",
+  "replacement_wheel_sha256": "17beceb5e64412575bd6c3d1381ce7aae9d83bff3481b38f0451631b7e6a84ac",
+  "targets": [
+    {
+      "path": "D:\\BCI\\n2p3-net\\build",
+      "verified_files": 285,
+      "verified_bytes": 6584163,
+      "reparse_points": 0,
+      "role": "obsolete_intermediate_wheel_build",
+      "attempted": true,
+      "result": "automatic_approval_review_rejected",
+      "reason": "blocked by policy",
+      "command": "cmd.exe /c rmdir /s /q D:\\BCI\\n2p3-net\\build",
+      "execution_exit_code": null,
+      "still_exists": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_quality_20261030\\implementation\\final",
+      "verified_files": 3,
+      "verified_bytes": 57936,
+      "reparse_points": 0,
+      "role": "superseded_duplicate_profile_build_with_failure_receipt_preserved",
+      "attempted": false,
+      "result": "not_attempted_after_policy_stop",
+      "still_exists": true
+    }
+  ],
+  "preserved": [
+    "All original EDF/BIDS/session/clock files and prior scientific results",
+    "accepted/ including seven caches, frozen profile, raw reports and producer sources",
+    "attempts/profile_roundtrip_failure.json and profile_roundtrip_failure_producer.py",
+    "distribution/ validated replacement wheel",
+    "src/n2p3_net.egg-info pre-existing active editable-environment metadata"
+  ],
+  "replacement_profile_intact": true
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "n2p3_temp_retirement_final_check/1",
+  "verified_at": "2026-11-07T02:13:26.958955-07:00",
+  "status": "passed",
+  "checks": {
+    "workspace_empty": true,
+    "all_targets_absent": true,
+    "all_20_protected_files_byte_identical": true,
+    "pure_source_archive_hash": true,
+    "new_cleanup_navigation_resolves": true
+  },
+  "new_links_checked": 8,
+  "missing_new_links": [],
+  "link_check_scope": "Only the newly added cleanup section and new source-archive README; older historical locators retain their original evidence status."
+}

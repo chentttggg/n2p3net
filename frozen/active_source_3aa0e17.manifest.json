@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "active_source_3aa0e17.source-only.tar.gz",
+  "archive_sha256": "8733fed7cdcf3352e01b34ca6919424db3f926800b14acfcbf9483358412a1a5",
+  "source_commit": "3aa0e170c425bc2b764af3e247df286af0d4bffd",
+  "member_count": 187,
+  "byte_size": 947751,
+  "scope": "Active source tree at 3aa0e17 (C1-C4 contract closures, P2-free checkpoint fixes, tests, cloud run plan): src, experiments, configs, tests, doc, and build/env files; excludes Paper PDFs, frozen historical archives, and all data/caches",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "executed-source identity anchor for cloud runs of commit 3aa0e17; a new commit requires a new archive+manifest pair, never overwrite"
+}

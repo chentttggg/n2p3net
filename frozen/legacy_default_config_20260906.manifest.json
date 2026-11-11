@@ -1,0 +1,7 @@
+{
+  "archive": "legacy_default_config_20260906.zip",
+  "archive_sha256": "958aa38260a6f2dcc2977ebd18359e0cf7345a06a12bb3eb73b6270c2a6a05af",
+  "retired_file": "configs/default.yaml",
+  "file_sha256": "87841c7e948d271b4d1180cc5c8fd80aeb04fd17bb89343da1bf75c09754bcff",
+  "reason": "non-executable obsolete v2 defaults; active dataclass/CLI contracts replace them"
+}

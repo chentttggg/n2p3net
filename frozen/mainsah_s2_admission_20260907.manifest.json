@@ -1,0 +1,16 @@
+{
+  "archive": "mainsah_s2_admission_20260907.zip",
+  "sha256": "587f7fddc125ef8a4937034485eae6812f382f0ae5249574c9908d8416e26ee8",
+  "files": {
+    "doc/evidence/mainsah_s2_admission_20260907.md": "3516bd3c7e384472aeef9de2d59f0da51687155559fb56112c1190abdcbe0144",
+    "doc/evidence/mainsah_s2_metadata_20260907.json": "b17871e3d33453ece39d535986d38fc9e55c2dd6658bcb9ff49c756453c05ae9",
+    "experiments/audit_mainsah_s2.py": "10272bb6053039f601a5312e5137c40f03128b2f5e8599239279e090254ed195",
+    "experiments/runs/four_dataset_20260907/fetch_mainsah_methods.py": "d90ab3a358d6a2062b634c6c29aff4f9968b6ab0b9353dff90e226b7ec040ddf",
+    "experiments/runs/four_dataset_20260907/mainsah_integrity.json": "b2ee59f150f9fbc085ed10272b2854cc2d4a9d718f22e90a793906f285a437f9",
+    "experiments/runs/four_dataset_20260907/mainsah_sources/Jones_2017_ETSU_thesis_archived_20240414.pdf": "ff3e62c3964238ca87317f1212523c8363f61512071e0a792423316f76a99222",
+    "experiments/runs/four_dataset_20260907/mainsah_sources/methods_pages.json": "165fcea7f95559f0b300356dd7ba390587e12bd9f47f3d1c7b34c1a69c958170",
+    "experiments/runs/four_dataset_20260907/mainsah_sources/SHA256SUMS.txt": "75ce052ae8626a73b43887c994c4c0d17e5b0d775ad3083f759af20028e32fbb",
+    "tests/test_mainsah_audit.py": "85aa62d02a08f6e0e3da5476b611ef687dd0f7961998fb30f01ac0b86e476499"
+  },
+  "external_model_evaluation_started": false
+}

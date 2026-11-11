@@ -1,0 +1,87 @@
+{
+  "schema": "brainsync_integrated_app_delivery/1",
+  "generated_utc": "2026-09-06T19:00:37.846363+08:00",
+  "application_root": "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool",
+  "backend_root": "D:\\BCI\\n2p3-net",
+  "launch_device": "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\Launch_BrainSync.cmd",
+  "launch_mock": "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\Launch_Mock.cmd",
+  "frontend": {
+    "manifest": "brainsync_integrated_app_20260906.manifest.json",
+    "archive": "brainsync_integrated_app_20260906.zip",
+    "sha256": "a5ed34a182df295f45081f022e4c048cfaa2afbe1e58498ffa4161d007f9ce49",
+    "files": 79
+  },
+  "backend": {
+    "manifest": "n2p3_integrated_app_20260906.manifest.json",
+    "archive": "n2p3_integrated_app_20260906.zip",
+    "sha256": "66a7e0bb8d835405a695a5c0850171c1ab9d737a9e22af878a559c130bdc761b",
+    "files": 224
+  },
+  "verification": {
+    "manifest": "brainsync_app_verification_20260906.manifest.json",
+    "archive": "brainsync_app_verification_20260906.zip",
+    "sha256": "dd8379e68484bd0d4b5cf6cd5bcbc70da1a006c38b0b0c6336d7c70d34d3d620",
+    "files": 87
+  },
+  "tests": {
+    "frontend": {
+      "passed": 118,
+      "failed": 0
+    },
+    "backend": {
+      "passed": 440,
+      "failed": 0
+    },
+    "gui_e2e": "source_initialized_n2p3 + frozen EOG + persisted model + pending-target R5 + postprediction feedback"
+  },
+  "evidence_scope": "declared_mock_and_software; real device and human accuracy unverified",
+  "retired_n2p3_files": {
+    "configs/domain_transfer_v2_ablation.example.json": "e3206a33bfbe04e9988c33a54669ca40a75f4b5c93116e3513d17d684a7517b8",
+    "configs/feature_transfer_cloud_20260902.example.json": "e6e93257c02001db86aa44c313011c4b6f223e6723ae9f75fd0fa3d061a230f5",
+    "doc/architecture_decision_20260902.zh.md": "f48232cf5b3a1332beb11d930719de35db4012693c5f6a0c300e0470074ec9c7",
+    "doc/bi2015b_l0_build_plan_20260904.zh.md": "6f6ab2d61b4924f71cb2846b00d527dc2bad0e6ca5a82d5ad463245e48deaf06",
+    "doc/cloud_ablation_plan_20260904.zh.md": "03d311e2f936c84cdafa017374b86f8f21034e112bf059675f0b2a59498ff41e",
+    "doc/cloud_ablation_v2_relaxed_rerun_plan_20260904.zh.md": "86a78b929ac8e16f87edf1a15b5c3ebf04dc8858fd59f4e7eb0fff13f29f63c6",
+    "doc/cloud_run_plan_20260903.zh.md": "04c0036e7042c9638e93bcf54f53802c64808b5aed3dce4d5bbb9cc396224e7e",
+    "doc/dev_round2_plan_20260904.zh.md": "99e5ad1a0c5064303109da2a80a9f96c3dba5a75ec7721d28061d843a4633a1c",
+    "doc/domain_alignment_replacement_20260904.zh.md": "261a7a3ba65fb1f509e7a253afaea7a946df3d1f354a9e0d6a6931a86aca1bbe",
+    "doc/domain_transfer_mainline_v2_plan_20260904.zh.md": "ac2eb4a4520c65dd156f57d6630300396ef2eb730b0d8181e85c9ef126d52690",
+    "doc/domain_transfer_revision_20260904.zh.md": "fcec41414e8236e1fc9905c8e4ef9159b5d273f8557838c80523642b98d25292",
+    "doc/framework_acceptance_20260903.zh.md": "3a1e7d1efd5c5c536d83ccc2cc4976fd9543145a57029d8f71e72b27dc0904a2",
+    "doc/implementation_plan_20260902.zh.md": "db05529788a816e656e7c23e7b7e86e90eb54a3c6c36d8713074ff54a5b3c7ef",
+    "doc/math_verification_20260902.zh.md": "6985c5d95f460116ae7bf44ea9cbb6d487d38ee9cbbaca42d6ca3b6298e8aa90",
+    "doc/research_evidence_ledger_20260903.zh.md": "77244e1bd44e3364300c61d4b84da07c5d2710dbd871bda5ea32d6c6742512f2",
+    "patch.sh": "742f033b48231f6c5e593324b6bee1fda9bea906723a8f7cbc9ecbe81ef1b792"
+  },
+  "retirement_source_manifest": "technical_audit_before_20260906.manifest.json",
+  "deduplicated_file": {
+    "removed": "tmp/l0_bi2014a_causal_v3_64subj.npz",
+    "retained": "cloud_inputs/l0_bi2014a_causal_v3_64subj.npz",
+    "sha256": "842466e45d63e017704a2fe4ebc1ee550c54eff7b400bdd27c7454bb4ae69fff",
+    "bytes": 659577127
+  },
+  "mock_cleanup_roots": [
+    "D:\\BCI\\n2p3-net\\tmp\\brainsync_gui_e2e_20260906",
+    "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\models\\runs\\20260906_095907_calibrate_5aef4a5b",
+    "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\models\\runs\\20260906_095916_inspect_1b1391d4",
+    "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\models\\runs\\20260906_095931_infer_8f320254"
+  ],
+  "remaining": [
+    "real device sample/marker clock mapping",
+    "real human decoding validation",
+    "per-SDK-chunk model inference",
+    "explicit historical recording admission"
+  ],
+  "mock_cleanup_completed": true,
+  "current_source_files_verified": {
+    "backend": 224,
+    "frontend": 79
+  },
+  "running_preview": {
+    "mode": "mock",
+    "real_hardware_connected": false,
+    "window_pid": 20304,
+    "window_title": "BrainSync GTN Workstation",
+    "launcher_pid": 52896
+  }
+}

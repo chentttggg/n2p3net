@@ -1,0 +1,70 @@
+{
+  "schema": "n2p3_workspace_cleanup/1",
+  "completed_utc": "2026-09-08T01:43:48.0372106Z",
+  "repo": "D:\\BCI\\n2p3-net",
+  "source_commit": "f54e45c48014d05a71d9644b0cecd7aa041f873f",
+  "archive_groups": [
+    {
+      "name": "tmp_history",
+      "files": 4751,
+      "original_bytes": 1456977918.0,
+      "archive": "frozen/local_history/workspace_cleanup_20260908/tmp_history.zip",
+      "archive_bytes": 1407268931,
+      "archive_sha256": "e5951175ba58af44f2ce7c7ed796689bc1793dd5f570f753c5a2401b97a06414",
+      "inventory": "frozen/local_history/workspace_cleanup_20260908/tmp_history.inventory.json",
+      "inventory_sha256": "f15ed0e9913db28676bb96f36209128e6b5e5b509c88df27bec8e0582e1ed25c"
+    },
+    {
+      "name": "tool_caches",
+      "files": 65,
+      "original_bytes": 213610.0,
+      "archive": "frozen/local_history/workspace_cleanup_20260908/tool_caches.zip",
+      "archive_bytes": 113574,
+      "archive_sha256": "4cdbab98cf00266be6fac2d6803f9e2965c93f0ae2e9a96db35dff9e9e163a67",
+      "inventory": "frozen/local_history/workspace_cleanup_20260908/tool_caches.inventory.json",
+      "inventory_sha256": "09efc73a36d578f23e56a33316483b6dfd903ee90d12fe17c78aea226d4ed1ad"
+    }
+  ],
+  "relocated_files": 16,
+  "relocated_bytes": 366835164.0,
+  "transfer_directory": "D:\\BCI\\n2p3-audit-archive\\transfers_20260831_20260901",
+  "transfer_manifest_sha256": "6244eba33e10204f5a23e10faaf36a2fd8d30ae06b934d009dabf14732d16ad1",
+  "total_preserved_files": 4832,
+  "inventory": "frozen/local_history/workspace_cleanup_20260908/inventory.json",
+  "inventory_sha256": "be1e13a02f060409914a262001b67ce23a1f3d1a42acfd025b469d6b7e584d58",
+  "execution_script_sha256": "3fd0d3b7e21912d6f3bfa914659530bfef0ab6096579fbdcde1103874d0a1ae8",
+  "source_files_checked": 750,
+  "source_files_changed_during_cleanup": [],
+  "git_index_unchanged": true,
+  "retained_tmp_entries": [
+    "cloud_ssh",
+    "data_export",
+    "audit_es_full_20260908.py",
+    "brainsync_s1_cloud_launcher_20260908.py",
+    "brainsync_s1_cloud_prepare_20260908.py",
+    "brainsync_s1_local_20260908.py",
+    "freeze_epoch90_overlay_20260908.py",
+    "package_epoch90_20260908.py",
+    "plot_es_full_20260908.py",
+    "read_es_full_results_20260908.py",
+    "run_cloud_epoch90_20260908.py",
+    "ssh_p001.py",
+    "summarize_epoch90_results_20260908.py",
+    "verify_epoch90_archive_20260908.py"
+  ],
+  "retained_worktrees": [
+    "worktree D:/BCI/n2p3-net",
+    "HEAD f54e45c48014d05a71d9644b0cecd7aa041f873f",
+    "branch refs/heads/main",
+    "",
+    "worktree D:/BCI/n2p3-net-perf",
+    "HEAD b86d5584dc4b0e5e638f4d1ba63cea4e7f75dfab",
+    "branch refs/heads/perf/domain-transfer-20260904",
+    "",
+    "worktree D:/BCI/n2p3-net-result",
+    "HEAD 4fbf650953cd6c8aa6f55fd5c53a6f220cf9413d",
+    "branch refs/heads/result-optimization",
+    ""
+  ],
+  "scope": "Local filesystem organization only; no source edits, commits, training, remote cleanup or rewriting historical artifacts."
+}

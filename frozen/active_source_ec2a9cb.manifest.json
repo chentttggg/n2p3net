@@ -1,0 +1,11 @@
+{
+    "schema":  "n2p3_source_freeze/1",
+    "archive":  "active_source_ec2a9cb.source-only.tar.gz",
+    "archive_sha256":  "7900582da556c3caf1eff359245702713c422bdabc511a63d18ba8a4dcebbe76",
+    "source_commit":  "ec2a9cbe1de4a4bb430979f7fc9312d99823ec2d",
+    "member_count":  223,
+    "byte_size":  1099512,
+    "scope":  "Integrated main at ec2a9cb: WP0-WP4 + GPU Dense PDS backend + manifest builder sys.path fix; cloud L1b smoke completed.",
+    "contains_raw_eeg_cache_or_model_checkpoint":  false,
+    "replacement_policy":  "v2 mainline cloud training source anchor; do not overwrite; E1 freezes and prior freezes unchanged"
+}

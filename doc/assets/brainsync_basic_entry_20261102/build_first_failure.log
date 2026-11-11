@@ -1,0 +1,17 @@
+417 INFO: PyInstaller: 6.22.3, contrib hooks: 2026.7
+417 INFO: Python: 3.10.20
+434 INFO: Platform: Windows-10-10.0.26300-SP0
+434 INFO: Python environment: D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\.venv
+435 INFO: wrote D:/BCI/tmp/brainsync_basic_entry_20261102\BrainSync.spec
+399 INFO: brainsync-sdk version: 0.3.0
+2586 INFO: Module search paths (PYTHONPATH):
+['D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool',
+ 'C:\\Users\\chent\\AppData\\Roaming\\uv\\python\\cpython-3.10-windows-x86_64-none\\python310.zip',
+ 'C:\\Users\\chent\\AppData\\Roaming\\uv\\python\\cpython-3.10-windows-x86_64-none\\DLLs',
+ 'C:\\Users\\chent\\AppData\\Roaming\\uv\\python\\cpython-3.10-windows-x86_64-none\\lib',
+ 'C:\\Users\\chent\\AppData\\Roaming\\uv\\python\\cpython-3.10-windows-x86_64-none',
+ 'D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\.venv',
+ 'D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\.venv\\lib\\site-packages',
+ 'D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool']
+3703 INFO: Appending 'binaries' from .spec
+ERROR: Unable to find 'D:\\BCI\\tmp\\brainsync_basic_entry_20261102\\libusb-1.0.dll' when adding binary and data files.

@@ -1,0 +1,37 @@
+{
+  "schema": "n2p3_resource_controller_archive/1",
+  "created_utc": "2026-10-08T04:23:46.115717+00:00",
+  "scope": "B08 resource-only controller; no numerical model source change or refit",
+  "archive": "controller.tar.gz",
+  "archive_sha256": "a6259e60d1e87ffea3d87cf8236b71088a778a358546226c8cc4e7169fa3c28d",
+  "members": [
+    {
+      "path": "cpu_watchdog_v3.py",
+      "bytes": 9340,
+      "sha256": "b003cc0c51854824ac2b5896ea75f3d2f2c99953cc787e6eadd6124d305fb0e4"
+    },
+    {
+      "path": "cpu_job_handles.py",
+      "bytes": 4442,
+      "sha256": "07c90b9d43dfa290a81058d841c50b07ef9f2e5feadc60aa75ca238f513afb97"
+    },
+    {
+      "path": "cpu_watchdog_v3.task.xml",
+      "bytes": 1747,
+      "sha256": "3fe75a2f25a59ff13bb51111368671474972ca557d0d8efb5d7731e7af559dc8"
+    },
+    {
+      "path": "cpu_watchdog_v3_handoff.json",
+      "bytes": 1028,
+      "sha256": "5eb62f0cf6f8fd9fc29d0601fa3668714c142ca3bbce3a177af76d9b6d629d32"
+    },
+    {
+      "path": "cpu_margin_v3_receipt.json",
+      "bytes": 2492,
+      "sha256": "4981168af8bf229ba2cbf53850ee13cab744f6bc29e5106c89e9e4c71701582f"
+    }
+  ],
+  "members_verified": true,
+  "local_mirror_verified": true,
+  "original_files_retained": true
+}

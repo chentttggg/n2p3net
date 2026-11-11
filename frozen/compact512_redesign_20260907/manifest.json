@@ -1,0 +1,77 @@
+{
+  "schema": "n2p3_retired_guidance_archive/1",
+  "created_utc": "2026-09-07T06:27:23.5062489Z",
+  "source_commit": "f54e45c48014d05a71d9644b0cecd7aa041f873f",
+  "source_worktree_dirty": true,
+  "reason": "User narrowed the authorized cloud run to compact512 baselines and component ablations; the previous B0/E1/S1/E2/S2/E3 queue is paused and no longer scheduled.",
+  "archive_path": "frozen/compact512_redesign_20260907/active_documents_before_compact512.zip",
+  "archive_sha256": "0c590d5ec82ecf8a95f453c26ec0ea5eafbf2113e86b8494d5f289da3317d426",
+  "archive_size_bytes": 65495,
+  "archive_distribution": "local_only",
+  "integrity_verification": "All 9 archive members reopened and SHA-256 matched against both pre-archive records and unchanged source files.",
+  "files": [
+    {
+      "original_path": "doc/README.md",
+      "sha256": "706876e1cac48c37f0141e1d1c4d093c1963bd557d465f960107be379edde58f",
+      "size_bytes": 2738,
+      "replacement": "doc/README.md",
+      "disposition": "Active guidance updated in place for compact512; original bytes preserved here."
+    },
+    {
+      "original_path": "doc/research_program.zh.md",
+      "sha256": "a131dc0c33eae5b6f1795a5c5e6621febe8c8340fd7d80140a3c78be3ae96256",
+      "size_bytes": 17661,
+      "replacement": "doc/research_program.zh.md",
+      "disposition": "Active guidance updated in place for compact512; original bytes preserved here."
+    },
+    {
+      "original_path": "doc/technical_structure.zh.md",
+      "sha256": "2fdfb469f5e7be43c5b71a8dfe0534aaa5c5a13c8999ae2fd2a8ab4bf931a015",
+      "size_bytes": 11850,
+      "replacement": "doc/technical_structure.zh.md",
+      "disposition": "Active guidance updated in place for compact512; original bytes preserved here."
+    },
+    {
+      "original_path": "doc/input_contract_math.zh.md",
+      "sha256": "f0f7dbc5d72ba0422016d07381cd41588edfd9de5cc74394370089bbb1b761ca",
+      "size_bytes": 10277,
+      "replacement": "doc/input_contract_math.zh.md",
+      "disposition": "Active guidance updated in place for compact512; original bytes preserved here."
+    },
+    {
+      "original_path": "doc/roadmap.zh.md",
+      "sha256": "2527ce92df344a46dceba164852bf4b05b848c178ca6228d058fd13d4e8a27ba",
+      "size_bytes": 43541,
+      "replacement": "doc/roadmap.zh.md",
+      "disposition": "Active guidance updated in place for compact512; original bytes preserved here."
+    },
+    {
+      "original_path": "doc/engineering.zh.md",
+      "sha256": "65f9406f558686d3c12ffbe3c72cccc66c4c77e72c282e0a3a959552dfaa5ce6",
+      "size_bytes": 9336,
+      "replacement": "doc/engineering.zh.md",
+      "disposition": "Active guidance updated in place for compact512; original bytes preserved here."
+    },
+    {
+      "original_path": "doc/workstation.zh.md",
+      "sha256": "3a57ac8152df57ba05b3184f5887c69bd0f1a7909a7755c6bf5969b0bc7ba8cd",
+      "size_bytes": 6337,
+      "replacement": "doc/workstation.zh.md",
+      "disposition": "Active guidance updated in place for compact512; original bytes preserved here."
+    },
+    {
+      "original_path": "doc/evidence/README.md",
+      "sha256": "1cc01e032bd8b8076d62b918b5b80b52dfa809755fbf4a0eef86635de840a46a",
+      "size_bytes": 7919,
+      "replacement": "doc/evidence/README.md",
+      "disposition": "Active guidance updated in place for compact512; original bytes preserved here."
+    },
+    {
+      "original_path": "doc/evidence/training_chain_implementation_20260907.zh.md",
+      "sha256": "ca95b1aecd2de0940afb934a972de1a2b496a919d8affb9f538eb0813ddca5d1",
+      "size_bytes": 10539,
+      "replacement": "doc/evidence/training_chain_implementation_20260907.zh.md",
+      "disposition": "Active guidance updated in place for compact512; original bytes preserved here."
+    }
+  ]
+}

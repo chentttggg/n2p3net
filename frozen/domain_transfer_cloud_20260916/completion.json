@@ -1,0 +1,71 @@
+{
+  "status": "completed",
+  "source_models": 45,
+  "target_jobs": 288,
+  "counts": {
+    "ordinary_P1": {
+      "cells": 8604,
+      "failed": 0,
+      "physical_nn_fits": 7320,
+      "physical_lda_fits": 915,
+      "reused_fits": 0,
+      "zero_shot": 369
+    },
+    "family_P1": {
+      "cells": 6840,
+      "failed": 0,
+      "physical_nn_fits": 5082,
+      "physical_lda_fits": 0,
+      "reused_fits": 1452,
+      "zero_shot": 306
+    },
+    "ordinary_P2": {
+      "cells": 9342,
+      "failed": 0,
+      "physical_nn_fits": 1830,
+      "physical_lda_fits": 0,
+      "reused_fits": 6405,
+      "zero_shot": 1107
+    },
+    "family_P2": {
+      "cells": 7452,
+      "failed": 0,
+      "physical_nn_fits": 1452,
+      "physical_lda_fits": 0,
+      "reused_fits": 5082,
+      "zero_shot": 918
+    }
+  },
+  "verification": {
+    "status": "passed",
+    "records": 288,
+    "maximum_prediction_difference": 0.0003366299858384991
+  },
+  "analyses": [
+    {
+      "family": false,
+      "stage": "P1",
+      "records": 48
+    },
+    {
+      "family": true,
+      "stage": "P1",
+      "records": 24
+    },
+    {
+      "family": false,
+      "stage": "P2",
+      "records": 144
+    },
+    {
+      "family": true,
+      "stage": "P2",
+      "records": 72
+    }
+  ],
+  "postprocessing_seconds": 24.922823429107666,
+  "model_replay_seconds": 86.71692609786987,
+  "finished_unix": 1789539865.0441492,
+  "finalization_seconds": 453.618417263031,
+  "product_confirmation": false
+}

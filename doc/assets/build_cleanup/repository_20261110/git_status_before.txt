@@ -1,0 +1,230 @@
+ M .gitignore
+ M doc/README.md
+ M doc/engineering.zh.md
+ M doc/evidence/README.md
+ M doc/evidence/calibration_and_selection.zh.md
+ M doc/evidence/execution_and_integration.zh.md
+ M doc/evidence/response_and_noise.zh.md
+ M doc/input_contract_math.zh.md
+ M doc/research_program.zh.md
+ M doc/technical_structure.zh.md
+ M doc/workstation.zh.md
+ M experiments/brainsync_model_task.py
+ M experiments/fit_brainsync_continuous_qc.py
+ M experiments/fit_brainsync_eog.py
+ M experiments/prepare_multidomain_source.py
+ M experiments/prepare_source_records.py
+ M pyproject.toml
+ M src/data/bidirectional.py
+ M src/data/bnci2014_008_candidate.py
+ M src/data/brainsync.py
+ M src/data/brainsync_contract.py
+ M src/data/brainsync_raw_authority.py
+ M src/data/continuous_qc.py
+ M src/data/domain.py
+ M src/data/epochs.py
+ M src/data/gtn.py
+ M src/data/ocular.py
+ M src/data/source_parsers.py
+ M src/data/source_records.py
+ M src/research/adult_programme_input.py
+ M src/research/candidate_metrics.py
+ M src/research/collapsed_continuous_prediction.py
+ M src/research/grouped_physical_prediction.py
+ M src/research/recording_quality.py
+ M src/research/source_selection.py
+ M src/transfer/calibrated.py
+ M src/transfer/checkpoint.py
+ M src/transfer/quality.py
+ M tests/brainsync/test_calibrated_predictor.py
+ M tests/data/test_gtn.py
+ M tests/data/test_source_parsers.py
+ M tests/research/test_adult_programme_input.py
+ M tests/transfer/test_prepared_checkpoint.py
+?? .agents/skills/eeg-p300-research/SKILL.md
+?? .claude/skills/eeg-p300-research/SKILL.md
+?? configs/brainsync_old_basic_nn_source.json
+?? doc/assets/brainsync_basic_entry_20261102/BrainSync.spec
+?? doc/assets/brainsync_basic_entry_20261102/acceptance.json
+?? doc/assets/brainsync_basic_entry_20261102/backend_tests.log
+?? doc/assets/brainsync_basic_entry_20261102/backend_tests.xml
+?? doc/assets/brainsync_basic_entry_20261102/before/RELEASE.md
+?? doc/assets/brainsync_basic_entry_20261102/before/backend_task.py
+?? doc/assets/brainsync_basic_entry_20261102/before/frontend_backend.py
+?? doc/assets/brainsync_basic_entry_20261102/before/frontend_decoding.py
+?? doc/assets/brainsync_basic_entry_20261102/before/frontend_guide.md
+?? doc/assets/brainsync_basic_entry_20261102/before/frontend_results.py
+?? doc/assets/brainsync_basic_entry_20261102/before/release-manifest.json
+?? doc/assets/brainsync_basic_entry_20261102/before/workstation.md
+?? doc/assets/brainsync_basic_entry_20261102/build.log
+?? doc/assets/brainsync_basic_entry_20261102/build_current.log
+?? doc/assets/brainsync_basic_entry_20261102/build_first_failure.log
+?? doc/assets/brainsync_basic_entry_20261102/cleanup_inventory.json
+?? doc/assets/brainsync_basic_entry_20261102/dry_run/summary.json
+?? doc/assets/brainsync_basic_entry_20261102/executed_source.json
+?? doc/assets/brainsync_basic_entry_20261102/frontend.patch
+?? doc/assets/brainsync_basic_entry_20261102/frontend_final.log
+?? doc/assets/brainsync_basic_entry_20261102/frontend_targeted.log
+?? doc/assets/brainsync_basic_entry_20261102/frontend_test_old_basic_entry.py
+?? doc/assets/brainsync_basic_entry_20261102/frontend_tests.log
+?? doc/assets/brainsync_basic_entry_20261102/packaged_code_verification.json
+?? doc/assets/brainsync_basic_entry_20261102/profile_final.xml
+?? doc/assets/brainsync_basic_entry_20261102/profile_page.png
+?? doc/assets/brainsync_basic_entry_20261102/profile_settings.png
+?? doc/assets/brainsync_basic_entry_20261102/profile_ui_verification.json
+?? doc/assets/brainsync_basic_entry_20261102/release_delivery.json
+?? doc/assets/brainsync_basic_entry_20261102/release_smoke.json
+?? doc/assets/brainsync_basic_entry_20261102/stage_smoke.json
+?? doc/assets/brainsync_basic_entry_20261102/ui/abstained_1440.png
+?? doc/assets/brainsync_basic_entry_20261102/ui/calibration_1440.png
+?? doc/assets/brainsync_basic_entry_20261102/ui/inference_1440.png
+?? doc/assets/brainsync_basic_entry_20261102/ui/records_1160.png
+?? doc/assets/brainsync_basic_entry_20261102/ui/records_1440.png
+?? doc/assets/brainsync_basic_entry_20261102/ui_baseline/abstained_1440.png
+?? doc/assets/brainsync_basic_entry_20261102/ui_baseline/calibration_1440.png
+?? doc/assets/brainsync_basic_entry_20261102/ui_baseline/inference_1440.png
+?? doc/assets/brainsync_basic_entry_20261102/ui_baseline/records_1160.png
+?? doc/assets/brainsync_basic_entry_20261102/ui_baseline/records_1440.png
+?? doc/assets/brainsync_basic_entry_20261102/ui_baseline_result.txt
+?? doc/assets/brainsync_basic_entry_20261102/ui_verification.log
+?? doc/assets/brainsync_basic_entry_20261102/verify_workflow.py
+?? doc/assets/brainsync_basic_entry_20261102/workflow.log
+?? doc/assets/brainsync_basic_entry_20261102/workflow/cal/dataset_description.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow/cal/session.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_coordsystem.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_electrodes.tsv
+?? doc/assets/brainsync_basic_entry_20261102/workflow/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_channels.tsv
+?? doc/assets/brainsync_basic_entry_20261102/workflow/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.edf
+?? doc/assets/brainsync_basic_entry_20261102/workflow/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_events.tsv
+?? doc/assets/brainsync_basic_entry_20261102/workflow/calibrate/summary.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow/held/dataset_description.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow/held/session.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow/held/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_coordsystem.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow/held/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_electrodes.tsv
+?? doc/assets/brainsync_basic_entry_20261102/workflow/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_channels.tsv
+?? doc/assets/brainsync_basic_entry_20261102/workflow/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.edf
+?? doc/assets/brainsync_basic_entry_20261102/workflow/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_events.tsv
+?? doc/assets/brainsync_basic_entry_20261102/workflow/infer/summary.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow/inspect/summary.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current.log
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/.target-confirmation.lock
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/dataset_description.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/session.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_coordsystem.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_electrodes.tsv
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_channels.tsv
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.edf
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_events.tsv
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/calibrate/summary.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/held/dataset_description.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/held/session.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/held/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_coordsystem.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/held/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_electrodes.tsv
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_channels.tsv
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.edf
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_events.tsv
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/infer/summary.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow_current/inspect/summary.json
+?? doc/assets/brainsync_basic_entry_20261102/workflow_verification.json
+?? doc/assets/brainsync_matrix/QC_chain_scope.json
+?? doc/assets/brainsync_matrix/acceptance.json
+?? doc/assets/brainsync_matrix/block_reviewed_acceptance.json
+?? doc/assets/brainsync_matrix/single_round_acceptance.json
+?? doc/assets/brainsync_matrix/source_QC_disposition_binding.json
+?? doc/assets/brainsync_quality/acceptance.json
+?? doc/assets/brainsync_quality/post_cut_amplitude_acceptance.json
+?? doc/assets/brainsync_quality/startup_cut_acceptance.json
+?? doc/assets/build_cleanup/brainsync_basic_entry_20261102.receipt.json
+?? doc/assets/build_cleanup/brainsync_quality_20261030.receipt.json
+?? doc/assets/build_cleanup/repository_20261110/plan.md
+?? doc/assets/build_cleanup/repository_20261110/protected_files.json
+?? doc/assets/build_cleanup/retry_20261103/after.json
+?? doc/assets/build_cleanup/retry_20261103/before.json
+?? doc/assets/build_cleanup/retry_20261103/inventory.py
+?? doc/assets/build_cleanup/retry_20261103/operations.json
+?? doc/assets/build_cleanup/retry_20261103/receipt.json
+?? doc/assets/build_cleanup/retry_20261103/stage_comparison.json
+?? doc/assets/build_cleanup/retry_20261103/staged_decoding.json
+?? doc/assets/build_cleanup/temp_retirement_20261107/before.json
+?? doc/assets/build_cleanup/temp_retirement_20261107/before_expanded.json
+?? doc/assets/build_cleanup/temp_retirement_20261107/duplicate_candidates.json
+?? doc/assets/build_cleanup/temp_retirement_20261107/operations.json
+?? doc/assets/build_cleanup/temp_retirement_20261107/receipt.json
+?? doc/assets/build_cleanup/temp_retirement_20261107/source_freeze_binding.json
+?? doc/assets/build_cleanup/temp_retirement_20261107/verification.json
+?? doc/assets/handover_20261107/source_inventory.json
+?? doc/assets/handover_20261107/verification.json
+?? doc/build_cleanup_maintenance.zh.md
+?? doc/evidence/early_exploration_20260826/README.zh.md
+?? doc/evidence/early_exploration_20260826/documents/PROJECT_ENGINEERING_JOURNEY.zh.md
+?? doc/evidence/early_exploration_20260826/documents/README.md
+?? doc/evidence/early_exploration_20260826/documents/blueprint.md
+?? doc/evidence/early_exploration_20260826/documents/constitution.md
+?? doc/evidence/early_exploration_20260826/documents/datasets.md
+?? doc/evidence/early_exploration_20260826/documents/evaluation_protocol.md
+?? doc/evidence/early_exploration_20260826/documents/mission.md
+?? doc/evidence/early_exploration_20260826/documents/neural_ride_recipe.md
+?? doc/evidence/early_exploration_20260826/documents/pcw_shift_equivariance_research.zh.md
+?? doc/evidence/early_exploration_20260826/documents/performance_lessons.md
+?? doc/evidence/early_exploration_20260826/documents/roadmap.md
+?? doc/evidence/early_exploration_20260826/documents/routes.md
+?? doc/evidence/early_exploration_20260826/manifest.json
+?? doc/evidence/early_exploration_20260826/run_records.md
+?? doc/project_handover_20261107.zh.md
+?? experiments/admit_source_qc_outcomes.py
+?? experiments/analyze_brainsync_block_qc.py
+?? experiments/analyze_brainsync_consistent.py
+?? experiments/analyze_brainsync_post_cut_amplitude.py
+?? experiments/analyze_brainsync_single_round.py
+?? experiments/analyze_brainsync_trial_matrix.py
+?? experiments/audit_consistent_eog_inputs.py
+?? experiments/audit_post_cut_eog_amplification.py
+?? experiments/cut_brainsync_startup.py
+?? experiments/declare_brainsync_eog_derivation.py
+?? experiments/evaluate_brainsync_remaining.py
+?? experiments/fit_consistent_analytic_controls.py
+?? experiments/merge_consistent_source_pools.py
+?? experiments/prepare_brainsync_consistent_eog.py
+?? experiments/prepare_brainsync_matrix.py
+?? experiments/prepare_brainsync_matrix_raw.py
+?? experiments/prepare_brainsync_remaining.py
+?? experiments/prepare_consistent_source_cohorts.py
+?? experiments/project_brainsync_nominal_inputs.py
+?? experiments/run_brainsync_real_matrix.py
+?? experiments/verify_brainsync_startup_cut.py
+?? frozen/early_source_retirement_20261107/README.zh.md
+?? frozen/early_source_retirement_20261107/manifest.json
+?? scripts/analyze_brainsync_artifact_remedies.py
+?? scripts/analyze_brainsync_batch_quality.py
+?? scripts/analyze_brainsync_channel_similarity.py
+?? scripts/apply_brainsync_reviewed_quality.py
+?? scripts/audit_brainsync_polarity.py
+?? scripts/compare_brainsync_months.py
+?? scripts/replay_brainsync_segment_masks.py
+?? src/data/brainsync_startup.py
+?? src/data/brainsync_startup_cuts.json
+?? src/data/eog_preprocessing.py
+?? src/data/recording_review.py
+?? src/data/recording_reviews.json
+?? src/data/reviewed_intervals.py
+?? src/data/source_qc.py
+?? src/research/target_recognition.py
+?? src/transfer/workstation_profiles.py
+?? tests/brainsync/test_consistent_recognition_analysis.py
+?? tests/brainsync/test_consistent_source_pools.py
+?? tests/brainsync/test_consistent_source_storage.py
+?? tests/brainsync/test_old_basic_profile.py
+?? tests/brainsync/test_real_matrix_driver.py
+?? tests/brainsync/test_recording_review.py
+?? tests/brainsync/test_remaining_recognition.py
+?? tests/brainsync/test_source_qc_outcomes.py
+?? tests/brainsync/test_startup_cut.py
+?? tests/data/test_eog_preprocessing.py
+?? tests/data/test_ocular_fit_domain.py
+?? tests/data/test_reviewed_continuous_quality.py
+?? tests/research/test_scored_target_accuracy.py
+?? tests/research/test_target_recognition.py

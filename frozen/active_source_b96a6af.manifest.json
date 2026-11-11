@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "active_source_b96a6af.source-only.tar.gz",
+  "archive_sha256": "ce55f690bf8d18ccb899e642112f205a82a8d82b4f83f81875f1d22516585bf2",
+  "source_commit": "b96a6af0d4dc4d9691590cbd148f0774c60231b5",
+  "member_count": 199,
+  "byte_size": 1002227,
+  "scope": "Performance-only branch perf/domain-transfer-20260904 at b96a6af: reference-aware cache derivation, candidate-ranking adapter ablation, and chunked checkpoint batches (checkpoint_batch_size) so one-seed 64-fold training can use all orchestrator workers; excludes unfinished GALIA/MMD/source-sampling work, Paper PDFs, frozen archives, and all data/caches",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "executed-source identity anchor for E=32 E1 native/CAR runs; a new commit requires a new archive+manifest pair, never overwrite"
+}

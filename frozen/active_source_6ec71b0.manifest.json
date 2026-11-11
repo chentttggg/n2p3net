@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "active_source_6ec71b0.source-only.tar.gz",
+  "archive_sha256": "1e66cf2cdfddad18b4ed999dc113578b653b75a08ccc4d26a0ce1dc837c15005",
+  "source_commit": "6ec71b01fa23d8d950e7942f1f3d017e2ffc540a",
+  "member_count": 206,
+  "byte_size": 1020671,
+  "scope": "Main branch domain-transfer-v2 at 6ec71b0: adds plan-selectable metric_name with valid_subject_operational_hit_rate as primary, requested operational as diagnostic, and moves adaptation epoch_selection out of target protocol. Excludes Paper PDFs, frozen archives, and all data/caches.",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "analysis-source anchor for regenerating E1 manifests/analysis under valid-subject hit@R; E1 native execution remains b96a6af and E1 car execution b86d558, neither is overwritten"
+}

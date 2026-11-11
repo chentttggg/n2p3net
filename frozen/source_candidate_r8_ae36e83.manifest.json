@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "source_candidate_r8_ae36e83.source-only.tar.gz",
+  "archive_sha256": "469cce132571d559bd1404dfaa18802a7e5dd7b8b94d618ba0c149e0e0ddaed2",
+  "source_commit": "ae36e83a1037fc835f0d9557e97bce078515ab3b",
+  "member_count": 164,
+  "byte_size": 746980,
+  "scope": "Git-tracked source, experiment CLIs, tests, documentation, configuration templates, and locked dependency records for attested candidate hit-at-R promotion",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "training and evaluation must verify this physical archive through the current source-freeze contract before binding its SHA-256"
+}

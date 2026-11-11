@@ -1,0 +1,29 @@
+{
+  "schema": "p300_execution_delivery/1",
+  "scope": "public development and software integration only",
+  "workspace": "D:\\BCI\\n2p3-net",
+  "git_state": "uncommitted working-tree snapshot; unrelated user document preserved",
+  "final_source_manifest": "frozen/binary_transfer_20260906f.manifest.json",
+  "final_source_archive_sha256": "d7eb716caa4d1e23f688e5ad0a9c8d4007fce8ad85753e9356982e91c730af8d",
+  "semantic_code_deltas_from_execution_E": [
+    "experiments/run_brainsync_cross_decision.py"
+  ],
+  "source_training_archives": [
+    "frozen/binary_transfer_20260906a.manifest.json",
+    "frozen/binary_transfer_20260906b.manifest.json",
+    "frozen/binary_transfer_20260906c.manifest.json",
+    "frozen/binary_transfer_20260906d.manifest.json",
+    "frozen/binary_transfer_20260906e.manifest.json"
+  ],
+  "public_results_archive": "experiments/runs/p300_mainline_20260906_results_final.tar.gz",
+  "public_results_archive_sha256": "23c368de44a54dbf9534c0e5655f663774438f9f8a7dbd3666f713e0badff1b3",
+  "public_results_bytes": 33908966,
+  "analysis_archive": "frozen/p300_execution_analysis_20260906.zip",
+  "analysis_archive_sha256": "4b1025ad5e4e79cc342e4369033859a536435fa276e0c7ea91afdf332ae25ab5",
+  "producer_archive": "frozen/brainsync_producer_final_20260906.zip",
+  "producer_archive_sha256": "2094be4b47f0e47b4527072da80dfb5f3f5bc3c3038354050cd57cf779310774",
+  "results_report": "doc/p300_transfer_results_20260906.zh.md",
+  "collection_plan": "configs/brainsync_collection_plan.json",
+  "remote_runs_root": "/root/autodl-tmp/n2p3-runs/p300_mainline_20260906",
+  "raw_and_cache_excluded_from_delivery": true
+}

@@ -1,0 +1,11 @@
+{
+    "schema": "n2p3_source_freeze/1",
+    "archive": "active_source_8ddab10.source-only.tar.gz",
+    "archive_sha256": "fcbc6c11bced1271ca6235348c83b142c63eb4c540af6fbf6d2f6458b360d698",
+    "source_commit": "8ddab103d93e913628026f57b526eba7f225b960",
+    "member_count": 225,
+    "byte_size": 1106798,
+    "scope": "v2.1 mainline at 8ddab10: adds mixed-depth failure-ledger analysis fix on top of e3a9a33.",
+    "contains_raw_eeg_cache_or_model_checkpoint": false,
+    "replacement_policy": "v2.1 cloud training source anchor (final for this batch); do not overwrite; prior freezes unchanged"
+}

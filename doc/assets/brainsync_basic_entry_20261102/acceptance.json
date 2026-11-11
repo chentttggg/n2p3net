@@ -1,0 +1,24 @@
+{
+  "schema": "n2p3_workstation_old_basic_entry_acceptance/1",
+  "status": "software_entry_accepted_cleanup_blocked",
+  "release": "D:/BCI/artifacts/apps/BrainSync_Release_20261102/BrainSync.exe",
+  "profile": "old_basic_nn_source",
+  "source_sha256": "935ee55de598256ca9299595ec899359751b1ebbf5fa0bb15af0f0fbb8bda3bd",
+  "validation": {
+    "backend_related_tests": 83,
+    "profile_final_tests": 8,
+    "frontend_full_tests": 358,
+    "frontend_final_related_tests": 43,
+    "workflow": "workflow_verification.json",
+    "actual_historical_C_preflight": "dry_run/summary.json",
+    "packaged_code": "packaged_code_verification.json",
+    "stage_smoke": "stage_smoke.json",
+    "release_smoke": "release_smoke.json",
+    "UI_small_window_baseline": "ui_baseline_result.txt",
+    "profile_UI": "profile_ui_verification.json"
+  },
+  "independent_code_review": "passed after source-byte binding and source-mode UI fixes",
+  "scientific_scope": "actual frozen public source; synthetic raw C and R5 validate software only; no new human efficacy claim",
+  "cleanup_receipt": "../build_cleanup/brainsync_basic_entry_20261102.receipt.json",
+  "fresh_EOG_QC_neural_training_started": false
+}

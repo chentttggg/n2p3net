@@ -1,0 +1,69 @@
+[
+  {
+    "id": "BCI-001",
+    "command": "rmdir /s /q \"D:\\BCI\\n2p3-net\\build\"",
+    "shell": "C:\\Windows\\System32\\cmd.exe",
+    "result": {
+      "chunk_id": "98cb90",
+      "wall_time_seconds": 0.0000137,
+      "exit_code": 123,
+      "original_token_count": 17,
+      "output": "The filename, directory name, or volume label syntax is incorrect.\r\n"
+    }
+  },
+  {
+    "id": "BCI-001",
+    "command": "cmd.exe /d /c 'rmdir /s /q \"D:\\BCI\\n2p3-net\\build\"'",
+    "result": {
+      "chunk_id": "333a8c",
+      "wall_time_seconds": 0.657456,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    }
+  },
+  {
+    "id": "BCI-002",
+    "command": "cmd.exe /d /c 'rmdir /s /q \"D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_quality_20261030\\implementation\\final\"'",
+    "result": {
+      "chunk_id": "f3556c",
+      "wall_time_seconds": 0.5546962,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    }
+  },
+  {
+    "id": "BCI-003",
+    "command": "cmd.exe /d /c 'rmdir /s /q \"D:\\BCI\\artifacts\\apps\\BrainSync_Release_20260920\\_internal\"'",
+    "result": {
+      "chunk_id": "ca1fc7",
+      "wall_time_seconds": 0.7622032,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    }
+  },
+  {
+    "id": "BCI-004",
+    "command": "cmd.exe /d /c 'del /f /q \"D:\\BCI\\artifacts\\apps\\BrainSync_Release_20260920\\BrainSync_Standalone.exe\"'",
+    "result": {
+      "chunk_id": "a96b5e",
+      "wall_time_seconds": 0.5518412,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    }
+  },
+  {
+    "id": "BCI-005",
+    "command": "cmd.exe /d /c 'rmdir /s /q \"D:\\BCI\\tmp\\brainsync_basic_entry_20261102\"'",
+    "result": {
+      "chunk_id": "378306",
+      "wall_time_seconds": 0.9067156,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    }
+  }
+]

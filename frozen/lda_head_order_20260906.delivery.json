@@ -1,0 +1,32 @@
+{
+  "schema": "n2p3_lda_head_order_delivery/1",
+  "status": "complete_development_experiment",
+  "source_snapshot_manifest": "frozen/lda_head_order_20260906.manifest.json",
+  "result_archive": "experiments/runs/lda_head_order_20260906/lda_head_order_20260906.results.tar.gz",
+  "result_archive_sha256": "302a81f317f93f337b10474b9ddcffe53ad88a46861aee276f07475373bd79a8",
+  "result_archive_bytes": 8087171,
+  "evidence_archive": "frozen/lda_head_order_20260906.evidence.zip",
+  "evidence_archive_sha256": "7d174c279e789f94661b51d95d0604229f3b1299d991684e1b5f387318eeccf8",
+  "members": {
+    "doc/evidence/lda_head_order_20260906.zh.md": "5815d3c929ae87e9c177c6e2fa477bd538ba697d33a58284eed80b35d6aae43f",
+    "experiments/runs/lda_head_order_20260906/analyze_run.py": "d5ef31bf1eb4ab6c23836f1ed681d3597a7cd714210e720e3c0391c5976a7de3",
+    "experiments/runs/lda_head_order_20260906/batch_driver.py": "91ef6c9bebae62b7890cb6dbbf478693c45002c1d4b88e1f8d636cd91e9dc39b",
+    "experiments/runs/lda_head_order_20260906/large_budget_plan.py": "9a74c3f91e8da25e8e3c86921a3dd3e3b89052513a8145b34df896da2dcfdd24",
+    "experiments/runs/lda_head_order_20260906/prepare_run.py": "db186bd95967fdc07d66226d7c0568a828d7eb6a38b5a4f204de51a4489f2b49",
+    "experiments/runs/lda_head_order_20260906/replay_probe.py": "12b8d5fd3661f24c8d5befcd51f1561308031a9dfd88b7f2004d0cbbcd6690ff",
+    "experiments/runs/lda_head_order_20260906/retrieved/lda_head_order_20260906/analysis.json": "62f460600d00babbc142ced9674c2d2fa2581c73eff00bb57273f21112adb5d7",
+    "experiments/runs/lda_head_order_20260906/retrieved/lda_head_order_20260906/integrity.json": "ba2e9378178b3d271dfd18e6ea44761ec244dcf258017f4eeafe7f5f4c4d37e0",
+    "experiments/runs/lda_head_order_20260906/retrieved/lda_head_order_20260906/plan.journal.json": "dd10a0ce4fd58642290176f3d1b9d04a737e2087afbee9e15b3d637b576e5f6b",
+    "experiments/runs/lda_head_order_20260906/retrieved/lda_head_order_20260906/plan.json": "61bdd9a363c512f9629652f5e716623710d0c237b1bd4aa7b6f2b12043c5ae46",
+    "experiments/runs/lda_head_order_20260906/retrieved/lda_head_order_20260906/saved_model_replay.json": "59d7dd2b947481b8882c6b5c36ed1876ddbafabb9032f0a094d523b135ab66f2",
+    "experiments/runs/lda_head_order_20260906/run_worker.py": "638316ade32e26dd1c2f53f94a3325305e78f2ce430f88e8e2bd380ab3f9a712",
+    "experiments/runs/lda_head_order_20260906/seal_results.py": "1b22811ae7dcf1b836dd12de3924e87b65ea6fd2929df2fd0595cd2ad93ca2b0"
+  },
+  "validation": {
+    "paired_models": 216,
+    "prediction_arrays": 648,
+    "focused_tests_passed": 93,
+    "model_and_prediction_files_retained": true
+  },
+  "data_policy": "prior data/results/source checkpoints retained; no adult performance confirmation"
+}

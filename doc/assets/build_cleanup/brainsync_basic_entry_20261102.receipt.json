@@ -1,0 +1,32 @@
+{
+  "schema": "n2p3_build_cleanup_receipt/1",
+  "status": "incomplete",
+  "attempted_target": {
+    "path": "D:\\BCI\\artifacts\\apps\\BrainSync_Release_20260920\\_internal",
+    "files": 486,
+    "logical_bytes": 308676124,
+    "reparse_points": 0
+  },
+  "command": "rmdir /s /q \"D:\\BCI\\artifacts\\apps\\BrainSync_Release_20260920\\_internal\"",
+  "result": "rejected: blocked by policy",
+  "process_started": false,
+  "shell_exit_code": null,
+  "not_attempted": [
+    {
+      "path": "D:\\BCI\\artifacts\\apps\\BrainSync_Release_20260920\\BrainSync_Standalone.exe",
+      "files": 1,
+      "logical_bytes": 120236664,
+      "reparse_points": 0
+    },
+    {
+      "path": "D:\\BCI\\tmp\\brainsync_basic_entry_20261102",
+      "files": 1136,
+      "logical_bytes": 717280797,
+      "reparse_points": 0
+    }
+  ],
+  "all_targets_still_exist": true,
+  "old_release_unchanged": true,
+  "new_release": "D:/BCI/artifacts/apps/BrainSync_Release_20261102",
+  "logical_bytes_removed": 0
+}

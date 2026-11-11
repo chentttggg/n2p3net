@@ -1,0 +1,11 @@
+{
+    "schema": "n2p3_source_freeze/1",
+    "archive": "active_source_2a75407.source-only.tar.gz",
+    "archive_sha256": "4f3ad1bbbe1f7b9fa33db2654201bebf8631743cfdbdeead320055b93fcb610d",
+    "source_commit": "2a75407ca8055f831233f75b1ffe983080d8ccd1",
+    "member_count": 225,
+    "byte_size": 1106909,
+    "scope": "v2.1 scheduler fix at 2a75407: result-phase CPU threads auto-sized from cgroup quota and plan result_max_workers; plans use checkpoint_batch_size=16 and result_max_workers=8.",
+    "contains_raw_eeg_cache_or_model_checkpoint": false,
+    "replacement_policy": "v2.1 cloud training anchor for CAR16 control; native relaxed run used 8ddab10 and is reported as such. Do not overwrite."
+}

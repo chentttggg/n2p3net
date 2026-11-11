@@ -1,0 +1,36 @@
+{
+  "schema": "n2p3_lda_head_order_delivery/1",
+  "status": "complete_development_experiment",
+  "source_snapshot_manifest": "frozen/lda_head_bi61_20260906.manifest.json",
+  "result_archive": "experiments/runs/lda_head_bi61_20260906/lda_head_bi61_20260906.results.tar.gz",
+  "result_archive_sha256": "be4483e6d25ac06e4960167eaebc5be723a73e2ae4f9e328783cffbbc7b7c011",
+  "result_archive_bytes": 2903731,
+  "evidence_archive": "frozen/lda_head_bi61_20260906.evidence.zip",
+  "evidence_archive_sha256": "2090f770a578a3c01f66007189450a7be84fc54b7950574f944c9d7d12491acb",
+  "members": {
+    "doc/evidence/lda_head_order_20260906.zh.md": "1cf5fa2850471a9c847114af13c1e50b5ce807c4c88cb3a57d7cfa4487fae19e",
+    "experiments/runs/lda_head_bi61_20260906/retrieved/lda_head_bi61_20260906/analysis.json": "1d1f9cc52d76056d8cc90fa7d044735bf86c1a003f8cd9468846ca25f8fa8317",
+    "experiments/runs/lda_head_bi61_20260906/retrieved/lda_head_bi61_20260906/integrity.json": "5e009cf20e1c7668986f5333a393835b952a77b3e763a06264a8c1af92399621",
+    "experiments/runs/lda_head_bi61_20260906/retrieved/lda_head_bi61_20260906/plan.journal.json": "9724f9c5677f84ae65a456608a82755a1abe81ded388ec5ce81aa9a71016de6c",
+    "experiments/runs/lda_head_bi61_20260906/retrieved/lda_head_bi61_20260906/plan.json": "72db27597f472ccc47189fd4288af38f2d038fa653de62288aea3df25099e86a",
+    "experiments/runs/lda_head_bi61_20260906/retrieved/lda_head_bi61_20260906/preflight.json": "eeb8afbc1d0f152e9695c1c8bfb90407112f4e83825aae8a9515bce805a414c4",
+    "experiments/runs/lda_head_bi61_20260906/retrieved/lda_head_bi61_20260906/saved_model_replay.json": "0c3e412b726b219931fcb1c16100a174646919d8a168c636f895fe1b950c733a",
+    "experiments/runs/lda_head_bi61_20260906/retrieved/lda_head_bi61_20260906/source_admission_check.json": "a5d0ac850289172bac05ce28cc599aa9b52aa117fcd7e332083918aedb53998f",
+    "experiments/runs/lda_head_bi61_20260906/retrieved/lda_head_bi61_20260906/source_train_command.json": "17f8e59860c4babf0f065ca71ddf320d6a4385e5e1f6e99508c912f89ed0fb39",
+    "experiments/runs/lda_head_order_20260906/analyze_run.py": "58e7728356308cbed82c6333a68cec5d041f3edc7eb937a0da651648a4e3b593",
+    "experiments/runs/lda_head_order_20260906/batch_driver.py": "91ef6c9bebae62b7890cb6dbbf478693c45002c1d4b88e1f8d636cd91e9dc39b",
+    "experiments/runs/lda_head_order_20260906/large_budget_plan.py": "9a74c3f91e8da25e8e3c86921a3dd3e3b89052513a8145b34df896da2dcfdd24",
+    "experiments/runs/lda_head_order_20260906/prepare_run.py": "db186bd95967fdc07d66226d7c0568a828d7eb6a38b5a4f204de51a4489f2b49",
+    "experiments/runs/lda_head_order_20260906/replay_probe.py": "9e26e3b43f29dd631326aac58c87cdd7a053906aa2bffffd8d9efc42fa794c59",
+    "experiments/runs/lda_head_order_20260906/resume_bi61.py": "014ff444ec36d25d781f485a993048a5243c6a3e995188350d2f710d33e45082",
+    "experiments/runs/lda_head_order_20260906/run_worker.py": "638316ade32e26dd1c2f53f94a3325305e78f2ce430f88e8e2bd380ab3f9a712",
+    "experiments/runs/lda_head_order_20260906/seal_results.py": "1b22811ae7dcf1b836dd12de3924e87b65ea6fd2929df2fd0595cd2ad93ca2b0"
+  },
+  "validation": {
+    "paired_models": 77,
+    "prediction_arrays": 231,
+    "focused_tests_passed": 93,
+    "model_and_prediction_files_retained": true
+  },
+  "data_policy": "prior data/results/source checkpoints retained; no adult performance confirmation"
+}

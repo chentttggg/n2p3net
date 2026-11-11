@@ -1,0 +1,13 @@
+{
+  "schema": "n2p3_untrimmed_omitted_data_only/1",
+  "purpose": "Only scientific and machine-local payloads are omitted from the primary untrimmed information delivery.",
+  "omitted": [
+    "mne_data/：原始 EEG、BrainSync 录制和派生数据",
+    "cloud_inputs/：云端训练输入",
+    "experiments/cache/、experiments/runs/、experiments/results_history/：缓存、运行和结果载荷",
+    "models/：模型权重",
+    ".venv/、.venv-gpu/、.git/、tmp/、artifacts/：本机环境、历史和临时状态",
+    "ZIP/GZ/TAR/7Z 及其它模型或数组载荷"
+  ],
+  "retained": "源码、测试、配置、完整文档、图表、日志、manifest 和小型 metadata 保留。"
+}

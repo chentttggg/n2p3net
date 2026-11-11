@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "active_source_92bf814.source-only.tar.gz",
+  "archive_sha256": "f4697fbb6f4b0a05d6076e50354e754bfd4efcb4a90679a7ebb607394f1cf979",
+  "source_commit": "92bf8141bd730b6f4555d6eaff34dddc87baf5d1",
+  "member_count": 199,
+  "byte_size": 1001841,
+  "scope": "Performance-only branch perf/domain-transfer-20260904 at 92bf814: reference-aware cache derivation (native_preserve/common_average), target adapter candidate-ranking loss and plan/runner ablation interface; excludes the unfinished GALIA/MMD/source-sampling work and Paper PDFs, frozen archives, and all data/caches",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "executed-source identity anchor for the next E=32 experiment; a new commit requires a new archive+manifest pair, never overwrite"
+}

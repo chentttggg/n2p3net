@@ -1,0 +1,36 @@
+{
+  "schema": "n2p3_cleanup_verification_sources/1",
+  "files": [
+    {
+      "path": "doc/assets/build_cleanup/repository_20261110/producer/inventory.py",
+      "sha256": "0d5420e79f419aa6c4654b4167b7d8746322a26ef3be8a0f6bbdd04457b8efc7",
+      "bytes": 1798
+    },
+    {
+      "path": "doc/assets/build_cleanup/repository_20261110/producer/prepare.py",
+      "sha256": "9fe1cac9792a0657f8b0752cb7e39aadf43dc19a6c9d673aeb0af34907e7d19b",
+      "bytes": 2139
+    },
+    {
+      "path": "doc/assets/build_cleanup/repository_20261110/producer/archive.py",
+      "sha256": "f87f3bdb40aebd902e49c5bcf81d2b38735bef3e8e8132af6296c27c8e1da05e",
+      "bytes": 2863
+    },
+    {
+      "path": "doc/assets/build_cleanup/repository_20261110/producer/preflight.py",
+      "sha256": "e240456fcfe780069a096463fefc0e71387ee0d99bde123d1db0dabfbce86c93",
+      "bytes": 4057
+    },
+    {
+      "path": "doc/assets/build_cleanup/repository_20261110/producer/verify.py",
+      "sha256": "e75bfe3957fa61a35fe8512301f88ac70ae04ca312d1c39f0e92ff0e0c0b3205",
+      "bytes": 5582
+    },
+    {
+      "path": "doc/assets/build_cleanup/repository_20261110/inventory_before.files.json.gz",
+      "sha256": "ef982bd4d161a17c1570059134f36974c91519ce98d17d2a82e07502facc1848",
+      "bytes": 2744596
+    }
+  ],
+  "note": "Exact one-off inspection/archiving/verification producers and compressed pre-cleanup metadata inventory. Historical staging paths in these producer scripts are not maintained CLIs."
+}

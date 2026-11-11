@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "source_candidate_r8_cuda128_80e3c79.source-only.tar.gz",
+  "archive_sha256": "ca3daae0655dce881025c5bc90d78bd9c6d1a2c192a25ab91cf5003866f902e2",
+  "source_commit": "80e3c797a8291e662e2e89678682742b1cbacdb8",
+  "member_count": 165,
+  "byte_size": 753069,
+  "scope": "Git-tracked candidate promotion source, immutable raw-data loaders, tests, documentation, configuration templates, and the validated Linux CUDA 12.8 dependency lock",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "GPU training must verify this archive and resolve the validated Linux x86_64 Python 3.11-3.13 Torch 2.8.0 dependency branch"
+}

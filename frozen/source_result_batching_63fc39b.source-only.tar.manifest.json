@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "source_result_batching_63fc39b.source-only.tar.gz",
+  "archive_sha256": "d3c468ce2795c76cc81255dd680debdb3cb98ea3b62baf50223aace4cf684b31",
+  "source_commit": "63fc39b4d04871b8f604ef24803f9f996d518d59",
+  "member_count": 189,
+  "byte_size": 1007310,
+  "scope": "Active source tree at 63fc39b4d04871b8f604ef24803f9f996d518d59 (result-phase batching, per-worker thread pinning, phase-specific worker budgets, and zero-shot feature memo): src, experiments, configs, tests, doc, and build/env files; excludes Paper PDFs, frozen historical archives, and all data/caches",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "executed-source identity anchor for cloud runs of commit 63fc39b4d04871b8f604ef24803f9f996d518d59; a new commit requires a new archive+manifest pair, never overwrite"
+}

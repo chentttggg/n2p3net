@@ -1,0 +1,17 @@
+{
+  "archive": "verification.local.zip",
+  "archive_sha256": "10c9053d386c153325a9da338de1da75d2f1cf9d96c5da65cf11b8140f7b4e19",
+  "member_count": 9,
+  "files": {
+    "doc/evidence/brainsync_quality_implementation_20260907.zh.md": "5a61bd254cb9dbea16f7d5bc793822e74bd11be3280e151c4d7f5bfff70ba5b7",
+    "experiments/runs/brainsync_quality_implementation_20260907/backend_full.xml": "4fe8ce8af7798c0f395f79cb10e482b7111c129637d8aec8d6912b06bb637447",
+    "experiments/runs/brainsync_quality_implementation_20260907/backend_full_final.xml": "bb3fd42e4e0b290f4556841358f76c843b8903f26ed06543ff4c8667c1fec4fe",
+    "experiments/runs/brainsync_quality_implementation_20260907/backend_verification.json": "41f7f8af0eb9bf658c4a0398db677a54970593fa1c33dc6f69b93f653438e775",
+    "experiments/runs/brainsync_quality_implementation_20260907/development_replay.json": "f6c254c61391f407853c11a70dee2ae975637e42282f3538bccd2fbeadcbf290",
+    "experiments/runs/brainsync_quality_implementation_20260907/quality_controls.png": "beaf2512c0f99e5f5afcbfe586c79036750f36a1dbe38503c028bb443304a9d1",
+    "tmp/freeze_quality_implementation.py": "44e7504d6a9eee891354e533d9bacf7b10a26ded3791be550f953e5e748ccd3c",
+    "tmp/run_quality_verification.py": "efe876225ad22506bab0525df7f769249e827f032e95aa4d56ec61ac9bd158c0",
+    "tmp/verify_brainsync_quality_implementation.py": "d0d2bb9736f8abb4398b397516536c210cc372a4a43e77722a387c9bbcf3f70c"
+  },
+  "all_members_verified": true
+}

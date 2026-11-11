@@ -1,0 +1,45 @@
+{
+  "schema": "n2p3_workspace_cleanup_evidence/1",
+  "archive": "frozen/local_history/tmp_20260906_cleanup_evidence.zip",
+  "archive_sha256": "76c08b743a356c7d47132778b0ba6a0b6da7730a2e2649d7fd8d58e2d2cb2d2b",
+  "members": [
+    {
+      "member": "tools/n2p3_workspace_cleanup_20260906.py",
+      "bytes": 14748,
+      "sha256": "236509ea532b98442d246b77c216257e6f60c5a0b4d732e506979a535aa000f9"
+    },
+    {
+      "member": "tools/n2p3_cleanup_finalize_20260906.py",
+      "bytes": 3455,
+      "sha256": "c53b4ddc64f527225261fb47fabea37bc96a5e58149574a38981b2214c8111df"
+    },
+    {
+      "member": "inventory.jsonl",
+      "bytes": 11725046,
+      "sha256": "9df7fed4b9d8c4fee94271f265aba62a4187baf78ee36555d02e47bc17638545"
+    },
+    {
+      "member": "inspection.json",
+      "bytes": 28748,
+      "sha256": "d9b262c86ede559b7ebe11294ef1c7b9eb68f4ff50ce24c953830eec8bfc92b2"
+    },
+    {
+      "member": "cleanup.manifest.json",
+      "bytes": 28955,
+      "sha256": "e531d913d53180eec50cc173ebacf4248b70a77a1161b0c7c536142b32f81d36"
+    },
+    {
+      "member": "workspace_cleanup_20260906.zh.md",
+      "bytes": 6091,
+      "sha256": "b296471c3ac45bd2264bcb5b1079d26e9c72f0b9b0f11bff06ea790f4fc0572b"
+    }
+  ],
+  "validation": {
+    "documents_checked": 37,
+    "local_links_checked": 122,
+    "broken_local_paths": 0,
+    "git_diff_check": "passed",
+    "preservation_verify_files": 16389,
+    "scratch_files_after_cleanup": 0
+  }
+}

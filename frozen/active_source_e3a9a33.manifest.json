@@ -1,0 +1,11 @@
+{
+    "schema": "n2p3_source_freeze/1",
+    "archive": "active_source_e3a9a33.source-only.tar.gz",
+    "archive_sha256": "2794c8fd5e1869676720ae7f4a4c2cee6173fb3b7349be252362f111da19363a",
+    "source_commit": "e3a9a336d2e1ea52cef83c1d4ff9580671a8088d",
+    "member_count": 225,
+    "byte_size": 1106315,
+    "scope": "v2.1 mainline: relaxed candidate gate + per-R valid_hit_rate + EA-target-cal arm + uniform-pretrain then selected fine-tune for TSD/Dense PDS.",
+    "contains_raw_eeg_cache_or_model_checkpoint": false,
+    "replacement_policy": "v2.1 cloud training source anchor; do not overwrite; prior freezes unchanged"
+}

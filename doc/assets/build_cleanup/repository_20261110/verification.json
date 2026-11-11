@@ -1,0 +1,224 @@
+{
+  "schema": "n2p3_cleanup_verification/1",
+  "protected_files_checked": 1311,
+  "protected_files_unchanged": 1310,
+  "intentional_document_updates": [
+    "formal/lean/README.md"
+  ],
+  "protected_file_errors": [],
+  "archives": [
+    {
+      "archive": "frozen/repository_consolidation_20261110/documents.zip",
+      "verified_members": 146,
+      "member_errors": [],
+      "bytes": 1204450
+    },
+    {
+      "archive": "frozen/repository_consolidation_20261110/training_inputs.zip",
+      "verified_members": 55,
+      "member_errors": [],
+      "bytes": 2583081719
+    },
+    {
+      "archive": "frozen/repository_consolidation_20261110/research_records.zip",
+      "verified_members": 2753,
+      "member_errors": [],
+      "bytes": 35672738
+    }
+  ],
+  "remaining_retirement_targets": [],
+  "retained_lineage_inputs": [
+    "tmp/audit/scratch/g8_decl.json",
+    "tmp/audit/scratch/g8_inventory.json"
+  ],
+  "preserved_file_metadata_checked": 74536,
+  "preserved_file_metadata_errors": [],
+  "document_links": {
+    "schema": "n2p3_active_document_links/1",
+    "documents": 21,
+    "repository_links_checked": 652,
+    "missing": [],
+    "private_retrieval_pointers": [
+      {
+        "source": "doc/evidence/response_and_noise.zh.md",
+        "target": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/lambda_support.png"
+      },
+      {
+        "source": "doc/evidence/response_and_noise.zh.md",
+        "target": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/ADULT_BRIDGE_HANDOFF.zh.md"
+      },
+      {
+        "source": "doc/evidence/response_and_noise.zh.md",
+        "target": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/SOURCE_ARTIFACT_PLAN.zh.md"
+      },
+      {
+        "source": "doc/evidence/response_and_noise.zh.md",
+        "target": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/independent-compact-factor/CANDIDATE_MATH_CONTROLS.json"
+      },
+      {
+        "source": "doc/evidence/response_and_noise.zh.md",
+        "target": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/compact-factor-delivery/PRIOR_AUTHORITY_CONTROLS.json"
+      },
+      {
+        "source": "doc/evidence/execution_and_integration.zh.md",
+        "target": "D:/BCI/artifacts/source-response-generic/recovery/INDEPENDENT_WRAPPER_RESULT_REVIEW.json"
+      },
+      {
+        "source": "doc/evidence/execution_and_integration.zh.md",
+        "target": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/adult-programme-input/test-fixture-convergence/DELIVERY_MANIFEST.json"
+      },
+      {
+        "source": "doc/build_cleanup_maintenance.zh.md",
+        "target": "/D:/BCI/n2p3-net/experiments/runs/brainsync_quality_20261030/implementation/index.html"
+      },
+      {
+        "source": "doc/build_cleanup_maintenance.zh.md",
+        "target": "/D:/BCI/n2p3-net/experiments/runs/brainsync_quality_20261030/implementation/accepted/continuous_reviewed_native7.json"
+      },
+      {
+        "source": "doc/build_cleanup_maintenance.zh.md",
+        "target": "/D:/BCI/n2p3-net/experiments/runs/brainsync_quality_20261030/implementation/distribution/n2p3_net-0.1.0-py3-none-any.whl"
+      }
+    ],
+    "passed": true
+  },
+  "reparse_points_unchanged": true,
+  "inventory_after": {
+    "groups": {
+      ".editorconfig": {
+        "files": 1,
+        "bytes": 375
+      },
+      ".gitattributes": {
+        "files": 1,
+        "bytes": 481
+      },
+      ".gitignore": {
+        "files": 1,
+        "bytes": 1446
+      },
+      "AGENTS.md": {
+        "files": 1,
+        "bytes": 1551
+      },
+      "conftest.py": {
+        "files": 1,
+        "bytes": 404
+      },
+      "open_dashboard.cmd": {
+        "files": 1,
+        "bytes": 129
+      },
+      "open_dashboard.ps1": {
+        "files": 1,
+        "bytes": 7011
+      },
+      "pyproject.toml": {
+        "files": 1,
+        "bytes": 2256
+      },
+      "README.md": {
+        "files": 1,
+        "bytes": 3740
+      },
+      "requirements.txt": {
+        "files": 1,
+        "bytes": 185
+      },
+      "uv.lock": {
+        "files": 1,
+        "bytes": 726207
+      },
+      "tmp": {
+        "files": 2,
+        "bytes": 2697330
+      },
+      "tests": {
+        "files": 445,
+        "bytes": 4514671
+      },
+      "src": {
+        "files": 297,
+        "bytes": 6669872
+      },
+      "scripts": {
+        "files": 9,
+        "bytes": 131880
+      },
+      "Paper": {
+        "files": 59,
+        "bytes": 200735384
+      },
+      "models": {
+        "files": 1,
+        "bytes": 36347053
+      },
+      "mne_data": {
+        "files": 67123,
+        "bytes": 59232954909
+      },
+      "frozen": {
+        "files": 1611,
+        "bytes": 6166519649
+      },
+      "formal": {
+        "files": 10991,
+        "bytes": 134529069
+      },
+      "experiments": {
+        "files": 112,
+        "bytes": 2423917
+      },
+      "doc": {
+        "files": 3942,
+        "bytes": 249894917
+      },
+      "configs": {
+        "files": 10,
+        "bytes": 12062
+      },
+      "cloud_inputs": {
+        "files": 21,
+        "bytes": 2129932259
+      },
+      "artifacts": {
+        "files": 2,
+        "bytes": 707
+      },
+      ".venv-gpu": {
+        "files": 31721,
+        "bytes": 3399707146
+      },
+      ".venv": {
+        "files": 34129,
+        "bytes": 1053285348
+      },
+      ".mne_home": {
+        "files": 1,
+        "bytes": 285
+      },
+      ".github": {
+        "files": 1,
+        "bytes": 1288
+      },
+      ".git": {
+        "files": 1110,
+        "bytes": 655228490
+      },
+      ".claude": {
+        "files": 3,
+        "bytes": 662
+      },
+      ".agents": {
+        "files": 1,
+        "bytes": 4886
+      }
+    },
+    "files": 151602,
+    "bytes": 73276335569
+  },
+  "inventory_before_bytes": 77535914661,
+  "logical_reduction_bytes_at_verification": 4259579092,
+  "note": "Metadata checks compare size and mtime, not full-byte hashes. Source/model/checkpoint protection and all archive members have SHA-256 checks. Logical reduction is not measured physical disk release.",
+  "passed": true
+}

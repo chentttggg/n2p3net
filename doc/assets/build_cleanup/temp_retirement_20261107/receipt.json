@@ -1,0 +1,112 @@
+{
+  "schema": "n2p3_temp_retirement_receipt/1",
+  "status": "completed",
+  "verified_at": "2026-11-07T02:12:04.555943-07:00",
+  "authorization": "User clarified all listed staging materials are very old; preserve a pure-source freeze, then remove the old materials. This supersedes the earlier conservative plan to retain old data and results.",
+  "targets_deleted": 25,
+  "files_deleted": 31725,
+  "logical_bytes_removed": 3426238928,
+  "physical_bytes_reclaimed": null,
+  "physical_space_note": "Not measured; logical file sizes are reported, not physical free-space change.",
+  "all_25_CMD_operations_exit0": true,
+  "all_targets_absent": true,
+  "workspace_root_retained": true,
+  "remaining_items": [],
+  "source_freeze": {
+    "path": "frozen/early_source_retirement_20261107/source_only.zip",
+    "bytes": 6308680,
+    "sha256": "f4cd38c1228d0722df6401fd503cf3cc9fef728eb14c36eba00bdf1af04cda1c"
+  },
+  "source_members_verified_after_deletion": 1643,
+  "uncommitted_working_source_preserved": true,
+  "protected_files_verified_unchanged": 20,
+  "protected_results": [
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\project_handover_20261107.zh.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\handover_20261107\\source_inventory.json",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\manifest.json",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\README.zh.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\run_records.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\blueprint.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\constitution.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\datasets.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\evaluation_protocol.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\mission.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\neural_ride_recipe.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\pcw_shift_equivariance_research.zh.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\performance_lessons.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\PROJECT_ENGINEERING_JOURNEY.zh.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\README.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\roadmap.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\routes.md",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\frozen\\early_exploration_reference_20260826\\source_texts.zip",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\frozen\\early_source_retirement_20261107\\source_only.zip",
+      "unchanged": true
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\frozen\\early_source_retirement_20261107\\manifest.json",
+      "unchanged": true
+    }
+  ],
+  "old_data_and_results_retirement": "Old staging data, caches, results, PDFs, environment, Git database and intermediate packages removed under the expanded user instruction; pure source and the already collected handover texts are retained.",
+  "current_project_data_touched": false,
+  "initial_plan_superseded": "before.json is the initial conservative inventory; before_expanded.json records the later user-authorized final scope.",
+  "execution": "operations.json",
+  "preflight": "before_expanded.json",
+  "approval_or_policy_rejections": [],
+  "remaining_blockers": []
+}

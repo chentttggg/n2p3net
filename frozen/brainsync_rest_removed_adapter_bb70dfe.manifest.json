@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "brainsync_rest_removed_adapter_bb70dfe.source-only.tar.gz",
+  "archive_sha256": "d813caa36660be14016076c53233c9fe2b5697d067347effc705fb2c96e94529",
+  "source_commit": "bb70dfee2a0a9afe21f4fe0d780f1f1abe2559b6",
+  "member_count": 6,
+  "byte_size": 25689,
+  "scope": "BrainSync rest-removed v2 adapter, cache CLI, tests, README, and mathematical input-contract documentation",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "the obsolete v2 executable contract is absent from the active source tree; historical source is available only inside this compressed archive"
+}

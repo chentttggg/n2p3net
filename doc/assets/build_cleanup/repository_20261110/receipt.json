@@ -1,0 +1,72 @@
+{
+  "schema": "n2p3_repository_cleanup_receipt/1",
+  "status": "completed",
+  "recorded_at_utc": "2026-11-10T15:09:50.793212+00:00",
+  "scope": "D:/BCI/n2p3-net",
+  "authority": "User requested complete project file consolidation on 2026-11-10; AGENTS.md requires raw data, original scientific evidence, paused checkpoints and recovery dependencies to be preserved. Verified originals retained in lossless archives before loose-file retirement.",
+  "commands": {
+    "main": "retirement_commands.json",
+    "supplementary": "empty_cache_parent_retirement.json",
+    "total": 168,
+    "all_exit_codes": 0,
+    "policy_blocks": 0,
+    "approval_denials": 0
+  },
+  "archived_historical_documents": 130,
+  "archive_members_verified": 2954,
+  "archives": [
+    {
+      "archive": "frozen/repository_consolidation_20261110/documents.zip",
+      "verified_members": 146,
+      "member_errors": [],
+      "bytes": 1204450
+    },
+    {
+      "archive": "frozen/repository_consolidation_20261110/training_inputs.zip",
+      "verified_members": 55,
+      "member_errors": [],
+      "bytes": 2583081719
+    },
+    {
+      "archive": "frozen/repository_consolidation_20261110/research_records.zip",
+      "verified_members": 2753,
+      "member_errors": [],
+      "bytes": 35672738
+    }
+  ],
+  "preservation": {
+    "protected_sha256_unchanged": 1310,
+    "intentional_document_update": [
+      "formal/lean/README.md"
+    ],
+    "original_asset_size_and_mtime_unchanged": 74536,
+    "metadata_check_is_not_full_raw_sha256": true,
+    "lineage_inputs_restored": [
+      "tmp/audit/scratch/g8_decl.json",
+      "tmp/audit/scratch/g8_inventory.json"
+    ],
+    "reparse_points_unchanged": true
+  },
+  "remaining_targets": [],
+  "validation": {
+    "pytest_before": "16 passed; pytest.log",
+    "pytest_after": "16 passed; pytest_after.log",
+    "lean_before_build_cache_retirement": "N2P3Pilot build completed successfully (2406 jobs); lean_pilot_build.log",
+    "lean_after_retirement": "Sources, accepted proof evidence and fixed dependency metadata retained. Build caches must be reacquired before another Lean compile. No claim of post-retirement recompilation.",
+    "verification": "verification.json",
+    "git_diff_check": "passed"
+  },
+  "space": {
+    "inventory_before_bytes": 77535914661,
+    "inventory_after_bytes_at_verification": 73276335569,
+    "net_logical_reduction_bytes_at_verification": 4259579092,
+    "approximate_net_logical_reduction_GB": 4.26,
+    "physical_disk_release_measured": false,
+    "note": "Final receipt and compressed verification inventory were added after this measured snapshot; values are snapshot measurements, not filesystem allocated-block counts."
+  },
+  "known_preexisting_limitations": [
+    "experiments/runs was already missing before cleanup; 17 broken documentation links now point to existing bindings with explicit missing-payload notes.",
+    "Raw scientific data and separately useful CPU/GPU environments remain; original acquisitions cannot be replaced by text summaries."
+  ],
+  "no_retraining_or_reprocessing": true
+}

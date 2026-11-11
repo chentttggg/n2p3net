@@ -1,0 +1,98 @@
+[
+  {
+    "target": "D:\\Temp\\Paper\\102482.pdf",
+    "bytes": 1269798,
+    "sha256": "315d34612c6b5430da6d998fb4aeb93d38cde8118b1b3cc0ad9c744721c9e6ca",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\102482.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\BLPM_Continuous_Latent_Predictive_Modeling_arXiv_2608.11656.pdf",
+    "bytes": 5044947,
+    "sha256": "916695243a1dbf3ca4e4ad4b4422c523afef9c73ae11b0cf459f097335f8e633",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\BLPM_Continuous_Latent_Predictive_Modeling_arXiv_2608.11656.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\EEG_FM_Compass_arXiv_2601.17883.pdf",
+    "bytes": 11317806,
+    "sha256": "57966927ca446a85b52b4cbd354fdb5844febe5d266f09418c1a5bbd006896d6",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\EEG_FM_Compass_arXiv_2601.17883.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\EEG_FM_Generalization_Framework_arXiv_2605.28563.pdf",
+    "bytes": 2180466,
+    "sha256": "8e4e49b23220d74385c242bd0a52ce16744f74949990e5c70612d38ef04f5273",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\EEG_FM_Generalization_Framework_arXiv_2605.28563.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\EEG_PRISM_arXiv_2608.13676.pdf",
+    "bytes": 3504516,
+    "sha256": "d62a0d988a96e0ff78df52152740fddcb1a5f9e1ad9bd5d1e63321ed34bc8505",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\EEG_PRISM_arXiv_2608.13676.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\ERP_XTTN_arXiv_2606.02939.pdf",
+    "bytes": 7045544,
+    "sha256": "023d501937949029f9f707d0c102780d312337626dbb464233ed02ba026abb5a",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\ERP_XTTN_arXiv_2606.02939.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\Estimating_Event_Related_Potential_from_Few_EEG_Trials_arXiv_2511.23162.pdf",
+    "bytes": 13043179,
+    "sha256": "c9b43e8a50a566aebb29e22409712f93dce27b8e6b549252d0f5911c81edd748",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\Estimating_Event_Related_Potential_from_Few_EEG_Trials_arXiv_2511.23162.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\gtn_unet_2023.pdf",
+    "bytes": 179954,
+    "sha256": "e228734a877c856cfccb11ddd48eb66697793a60b197b948ae2836bac372c43e",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\gtn_unet_2023.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\Identity_Trap_in_EEG_Foundation_Models_arXiv_2606.06647.pdf",
+    "bytes": 1286567,
+    "sha256": "5eaf70bfad8eb7f645a8b4a3db6addb7e56985ee66dd2ae5e5f950f2d67572a1",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\Identity_Trap_in_EEG_Foundation_Models_arXiv_2606.06647.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\Improving_P300_Morphology_Single_Trial_Latency_Realignment_JNE_2026.pdf",
+    "bytes": 1385414,
+    "sha256": "adb8adb9f42001952f4a073e24485f1b414adc2503af8a57c61c4fa7eca6e76a",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\Improving_P300_Morphology_Single_Trial_Latency_Realignment_JNE_2026.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\NeuralBench_arXiv_2605.08495.pdf",
+    "bytes": 1377201,
+    "sha256": "fcabbb2666ed3dfb43fb6d3fbba96c5062d92343f77f7ad1d29dc78e7cce063c",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\NeuralBench_arXiv_2605.08495.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\OmniEEG_Bench_arXiv_2606.00815.pdf",
+    "bytes": 6355799,
+    "sha256": "3c704afc0efaf9b1d74d6504401af6c628e1395a3d2fd67eabb33fd17a812ccf",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\OmniEEG_Bench_arXiv_2606.00815.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\SHTI-292-SHTI220333.pdf",
+    "bytes": 761979,
+    "sha256": "bcf929fd1fac4d24e9b60c1eab075028ccff5fb53e2fdda99a02c14b7ca49cee",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\SHTI-292-SHTI220333.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\Spectral_Audit_Task_Dependent_Aperiodic_Reliance_arXiv_2606.08583.pdf",
+    "bytes": 740615,
+    "sha256": "f576392918f8e1d7f378ce8e9f317d678ee6686b8322bcfce7ca225afa402883",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\Spectral_Audit_Task_Dependent_Aperiodic_Reliance_arXiv_2606.08583.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\SpellerSSL_arXiv_2509.19401.pdf",
+    "bytes": 13527174,
+    "sha256": "3e3cf87e3d5d8662f74ef4b8a048a9aab3cdf9a7c68e8e292b4741cccf3316cb",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\SpellerSSL_arXiv_2509.19401.pdf"
+  },
+  {
+    "target": "D:\\Temp\\Paper\\Understanding_and_Correcting_Low-Frequency_Bias_in_EEG_Foundation_Models_arXiv_2608.01898.pdf",
+    "bytes": 4315407,
+    "sha256": "fd696adef5b32508e6a9178d7a5ca77c4b4eee49faab5caf750f49239bf8bb2b",
+    "preserved_duplicate": "D:\\BCI\\n2p3-net\\Paper\\Understanding_and_Correcting_Low-Frequency_Bias_in_EEG_Foundation_Models_arXiv_2608.01898.pdf"
+  }
+]
