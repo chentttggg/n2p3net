@@ -4,8 +4,8 @@
   "timezone": "America/Denver",
   "base_commit": "4f02707",
   "purpose": "Current main working-tree information version with complete source/document/evidence material and scientific payloads omitted.",
-  "file_count_excluding_manifest": 7238,
-  "bytes_excluding_manifest": 137643559,
+  "file_count_excluding_manifest": 7237,
+  "bytes_excluding_manifest": 137643501,
   "groups": {
     ".agents": {
       "files": 1,
@@ -14,10 +14,6 @@
     ".editorconfig": {
       "files": 1,
       "bytes": 375
-    },
-    ".git": {
-      "files": 1,
-      "bytes": 58
     },
     ".gitattributes": {
       "files": 1,
@@ -134,11 +130,6 @@
       "path": ".editorconfig",
       "bytes": 375,
       "sha256": "153b7d17708133689ac83aeb2f9d2585c11b553cfd4f6643294263942c6e255d"
-    },
-    {
-      "path": ".git",
-      "bytes": 58,
-      "sha256": "ef0da97cb34cf39e5fdb2722eb7a7d97c71b0adee72685efef6acda35acf2f07"
     },
     {
       "path": ".gitattributes",
