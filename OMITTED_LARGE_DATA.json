@@ -1,6 +1,6 @@
 {
   "schema": "n2p3_full_no_large_data_omissions/2",
-  "generated_at": "2026-11-11T03:21:47-07:00",
+  "generated_at": "2026-11-11T03:26:40-07:00",
   "purpose": "Catalog of excluded scientific data, runtime payloads, large binary files, local environments, Git history, literature library and historical frozen material.",
   "excluded_count": 101,
   "excluded_entries": [
