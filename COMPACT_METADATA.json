@@ -1,0 +1,41 @@
+{
+  "schema": "n2p3_full_no_large_data_compact_metadata/1",
+  "files": [
+    {
+      "path": "frozen/major_domain_transfer_20260920/README.zh.md",
+      "bytes": 2191,
+      "sha256": "11b858e068c4a122d03dbc69d7e9e80774888c232ecd8e898bc41cecbb3f142d"
+    },
+    {
+      "path": "frozen/major_domain_transfer_20260920/manifest.json",
+      "bytes": 21212,
+      "sha256": "0196d5c2c7f8073baa4ca4eb613406e914e347d2b22b40d4c8b821ace2b707b0"
+    },
+    {
+      "path": "frozen/guidance_consolidation.manifest.json",
+      "bytes": 6949,
+      "sha256": "ab8bfa21ae3577059e8d99a15393fd5f4203b2c3dffebc6f3c2dda610925fce6"
+    },
+    {
+      "path": "frozen/brainsync_reference_20260908/metadata/manifest.json",
+      "bytes": 16456,
+      "sha256": "393a9c7b2b7891b007d1ae8b1af88121f971dce853a5cf64a109a17670bbf3d2"
+    },
+    {
+      "path": "frozen/research_topic_documents_history.manifest.json",
+      "bytes": 1039,
+      "sha256": "d1a77d7b0259a6a887b09007ea3ed4122853c6ef3566472955e4abe9c79ebcd5"
+    },
+    {
+      "path": "mne_data/BrainSync_startup_cut_4s/index.html",
+      "bytes": 2072,
+      "sha256": "37f5bed7cc98635afb250fa49606340519572198e02fd2bdfc66a0b649af12c4"
+    },
+    {
+      "path": "mne_data/BrainSync_startup_cut_4s/manifest.json",
+      "bytes": 89756,
+      "sha256": "36a058d1c78ed1dc7d6ec8bc0c6f16ea7666b8f0cb10b3993beeb7c09fb880ed"
+    }
+  ],
+  "note": "Metadata and index files only; no raw data or archive payloads."
+}
