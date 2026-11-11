@@ -1,0 +1,2351 @@
+{
+  "schema": "n2p3_cleanup_commands/1",
+  "records": [
+    {
+      "path": ".pytest_cache",
+      "absolute_path": "D:\\BCI\\n2p3-net\\.pytest_cache",
+      "kind": "directory",
+      "bytes": 67026,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\.pytest_cache\"",
+      "result": {
+        "chunk_id": "e9318b",
+        "wall_time_seconds": 0.3878572,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "experiments/cache/four_dataset_20260907",
+      "absolute_path": "D:\\BCI\\n2p3-net\\experiments\\cache\\four_dataset_20260907",
+      "kind": "directory",
+      "bytes": 2480523547,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\experiments\\cache\\four_dataset_20260907\"",
+      "result": {
+        "chunk_id": "dd78ba",
+        "wall_time_seconds": 0.5231954,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "experiments/cache/history",
+      "absolute_path": "D:\\BCI\\n2p3-net\\experiments\\cache\\history",
+      "kind": "directory",
+      "bytes": 1378316938,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\experiments\\cache\\history\"",
+      "result": {
+        "chunk_id": "af9141",
+        "wall_time_seconds": 0.4760748,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "experiments/cache/legacy",
+      "absolute_path": "D:\\BCI\\n2p3-net\\experiments\\cache\\legacy",
+      "kind": "directory",
+      "bytes": 211525936,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\experiments\\cache\\legacy\"",
+      "result": {
+        "chunk_id": "55ac5e",
+        "wall_time_seconds": 0.3974715,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "experiments/results_history",
+      "absolute_path": "D:\\BCI\\n2p3-net\\experiments\\results_history",
+      "kind": "directory",
+      "bytes": 204607617,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\experiments\\results_history\"",
+      "result": {
+        "chunk_id": "22e5da",
+        "wall_time_seconds": 0.5394872,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "tmp/audit",
+      "absolute_path": "D:\\BCI\\n2p3-net\\tmp\\audit",
+      "kind": "directory",
+      "bytes": 40351495,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\tmp\\audit\"",
+      "result": {
+        "chunk_id": "5129e0",
+        "wall_time_seconds": 1.6787329,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "tmp/worktree_retirement_20261016",
+      "absolute_path": "D:\\BCI\\n2p3-net\\tmp\\worktree_retirement_20261016",
+      "kind": "directory",
+      "bytes": 244398,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\tmp\\worktree_retirement_20261016\"",
+      "result": {
+        "chunk_id": "44daea",
+        "wall_time_seconds": 0.4023665,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": ".ruff_cache",
+      "absolute_path": "D:\\BCI\\n2p3-net\\.ruff_cache",
+      "kind": "directory",
+      "bytes": 86742,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\.ruff_cache\"",
+      "result": {
+        "chunk_id": "62a9e6",
+        "wall_time_seconds": 0.4237842,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\__pycache__",
+      "kind": "directory",
+      "bytes": 908,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\__pycache__\"",
+      "result": {
+        "chunk_id": "44d9f7",
+        "wall_time_seconds": 0.387609,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "tmp/cloud_ssh",
+      "absolute_path": "D:\\BCI\\n2p3-net\\tmp\\cloud_ssh",
+      "kind": "directory",
+      "bytes": 13685694,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\tmp\\cloud_ssh\"",
+      "result": {
+        "chunk_id": "599937",
+        "wall_time_seconds": 0.5294775,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "tmp/data_export",
+      "absolute_path": "D:\\BCI\\n2p3-net\\tmp\\data_export",
+      "kind": "directory",
+      "bytes": 117844,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\tmp\\data_export\"",
+      "result": {
+        "chunk_id": "34ec22",
+        "wall_time_seconds": 0.3792104,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "formal/lean/.lake/build",
+      "absolute_path": "D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\build",
+      "kind": "directory",
+      "bytes": 258457245,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\build\"",
+      "result": {
+        "chunk_id": "b7c8df",
+        "wall_time_seconds": 0.9821852,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "formal/lean/.lake/packages/aesop/.lake/build",
+      "absolute_path": "D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\aesop\\.lake\\build",
+      "kind": "directory",
+      "bytes": 102157608,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\aesop\\.lake\\build\"",
+      "result": {
+        "chunk_id": "d245eb",
+        "wall_time_seconds": 0.7098938,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "formal/lean/.lake/packages/batteries/.lake/build",
+      "absolute_path": "D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\batteries\\.lake\\build",
+      "kind": "directory",
+      "bytes": 50183877,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\batteries\\.lake\\build\"",
+      "result": {
+        "chunk_id": "aeae60",
+        "wall_time_seconds": 0.6278902,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "formal/lean/.lake/packages/importGraph/.lake/build",
+      "absolute_path": "D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\importGraph\\.lake\\build",
+      "kind": "directory",
+      "bytes": 3052083,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\importGraph\\.lake\\build\"",
+      "result": {
+        "chunk_id": "138f48",
+        "wall_time_seconds": 0.3996466,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "formal/lean/.lake/packages/LeanSearchClient/.lake/build",
+      "absolute_path": "D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\LeanSearchClient\\.lake\\build",
+      "kind": "directory",
+      "bytes": 3424386,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\"",
+      "result": {
+        "chunk_id": "4c5e4f",
+        "wall_time_seconds": 0.428587,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "formal/lean/.lake/packages/mathlib/.lake/build",
+      "absolute_path": "D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\mathlib\\.lake\\build",
+      "kind": "directory",
+      "bytes": 2066998689,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\mathlib\\.lake\\build\"",
+      "result": {
+        "chunk_id": "7bf10e",
+        "wall_time_seconds": 7.7238747,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "formal/lean/.lake/packages/plausible/.lake/build",
+      "absolute_path": "D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\plausible\\.lake\\build",
+      "kind": "directory",
+      "bytes": 5494595,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\plausible\\.lake\\build\"",
+      "result": {
+        "chunk_id": "75d0dc",
+        "wall_time_seconds": 0.4498936,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "formal/lean/.lake/packages/proofwidgets/.lake/build",
+      "absolute_path": "D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\proofwidgets\\.lake\\build",
+      "kind": "directory",
+      "bytes": 40078839,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\proofwidgets\\.lake\\build\"",
+      "result": {
+        "chunk_id": "fa1b13",
+        "wall_time_seconds": 0.5087157,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "formal/lean/.lake/packages/Qq/.lake/build",
+      "absolute_path": "D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\Qq\\.lake\\build",
+      "kind": "directory",
+      "bytes": 17636445,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\formal\\lean\\.lake\\packages\\Qq\\.lake\\build\"",
+      "result": {
+        "chunk_id": "fadb33",
+        "wall_time_seconds": 0.4898023,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "src/baselines/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\src\\baselines\\__pycache__",
+      "kind": "directory",
+      "bytes": 269009,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\src\\baselines\\__pycache__\"",
+      "result": {
+        "chunk_id": "ca059b",
+        "wall_time_seconds": 0.4486169,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "src/data/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\src\\data\\__pycache__",
+      "kind": "directory",
+      "bytes": 1450500,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\src\\data\\__pycache__\"",
+      "result": {
+        "chunk_id": "581bd0",
+        "wall_time_seconds": 0.4096335,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "src/models/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\src\\models\\__pycache__",
+      "kind": "directory",
+      "bytes": 252055,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\src\\models\\__pycache__\"",
+      "result": {
+        "chunk_id": "646c1f",
+        "wall_time_seconds": 0.4223855,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "src/research/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\src\\research\\__pycache__",
+      "kind": "directory",
+      "bytes": 3120291,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\src\\research\\__pycache__\"",
+      "result": {
+        "chunk_id": "bf7200",
+        "wall_time_seconds": 0.4364135,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "src/stats/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\src\\stats\\__pycache__",
+      "kind": "directory",
+      "bytes": 76346,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\src\\stats\\__pycache__\"",
+      "result": {
+        "chunk_id": "0e0163",
+        "wall_time_seconds": 0.3796503,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "src/train/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\src\\train\\__pycache__",
+      "kind": "directory",
+      "bytes": 158258,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\src\\train\\__pycache__\"",
+      "result": {
+        "chunk_id": "2b3822",
+        "wall_time_seconds": 0.4556587,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "src/transfer/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\src\\transfer\\__pycache__",
+      "kind": "directory",
+      "bytes": 2198667,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\src\\transfer\\__pycache__\"",
+      "result": {
+        "chunk_id": "17f52f",
+        "wall_time_seconds": 0.412347,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "tests/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\tests\\__pycache__",
+      "kind": "directory",
+      "bytes": 378,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\tests\\__pycache__\"",
+      "result": {
+        "chunk_id": "7b0762",
+        "wall_time_seconds": 0.3965562,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "tests/brainsync/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\tests\\brainsync\\__pycache__",
+      "kind": "directory",
+      "bytes": 636732,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\tests\\brainsync\\__pycache__\"",
+      "result": {
+        "chunk_id": "4f7720",
+        "wall_time_seconds": 0.4291568,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "tests/data/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\tests\\data\\__pycache__",
+      "kind": "directory",
+      "bytes": 610746,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\tests\\data\\__pycache__\"",
+      "result": {
+        "chunk_id": "becb8b",
+        "wall_time_seconds": 0.4129675,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "tests/research/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\tests\\research\\__pycache__",
+      "kind": "directory",
+      "bytes": 78304,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\tests\\research\\__pycache__\"",
+      "result": {
+        "chunk_id": "cf3c81",
+        "wall_time_seconds": 0.4036052,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "tests/support/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\tests\\support\\__pycache__",
+      "kind": "directory",
+      "bytes": 80621,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\tests\\support\\__pycache__\"",
+      "result": {
+        "chunk_id": "3b1a6a",
+        "wall_time_seconds": 0.4080026,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "tests/train/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\tests\\train\\__pycache__",
+      "kind": "directory",
+      "bytes": 55339,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\tests\\train\\__pycache__\"",
+      "result": {
+        "chunk_id": "672cbe",
+        "wall_time_seconds": 0.4102992,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "tests/transfer/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\tests\\transfer\\__pycache__",
+      "kind": "directory",
+      "bytes": 217634,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\tests\\transfer\\__pycache__\"",
+      "result": {
+        "chunk_id": "4fd9f9",
+        "wall_time_seconds": 0.4097899,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "experiments/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\experiments\\__pycache__",
+      "kind": "directory",
+      "bytes": 1252357,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\experiments\\__pycache__\"",
+      "result": {
+        "chunk_id": "a1bc85",
+        "wall_time_seconds": 0.4119101,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "scripts/__pycache__",
+      "absolute_path": "D:\\BCI\\n2p3-net\\scripts\\__pycache__",
+      "kind": "directory",
+      "bytes": 137402,
+      "command": "cmd.exe /d /c rmdir /s /q \"D:\\BCI\\n2p3-net\\scripts\\__pycache__\"",
+      "result": {
+        "chunk_id": "39eb49",
+        "wall_time_seconds": 0.44579,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "tmp/retire_worktrees_20261016.py",
+      "absolute_path": "D:\\BCI\\n2p3-net\\tmp\\retire_worktrees_20261016.py",
+      "kind": "file",
+      "bytes": 7578,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\tmp\\retire_worktrees_20261016.py\"",
+      "result": {
+        "chunk_id": "10f227",
+        "wall_time_seconds": 0.3875256,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/algorithm_chain_repairs_20260916.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\algorithm_chain_repairs_20260916.zh.md",
+      "kind": "file",
+      "bytes": 10017,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\algorithm_chain_repairs_20260916.zh.md\"",
+      "result": {
+        "chunk_id": "283435",
+        "wall_time_seconds": 0.385982,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/architecture_decision_cross_dataset_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\architecture_decision_cross_dataset_20260906.zh.md",
+      "kind": "file",
+      "bytes": 20749,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\architecture_decision_cross_dataset_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "c43d5b",
+        "wall_time_seconds": 0.4008548,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/bi61_author_exclusion_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\bi61_author_exclusion_20260906.zh.md",
+      "kind": "file",
+      "bytes": 5364,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\bi61_author_exclusion_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "e28baa",
+        "wall_time_seconds": 0.4002146,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/bi64_protocol_factorial_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\bi64_protocol_factorial_20260906.zh.md",
+      "kind": "file",
+      "bytes": 5980,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\bi64_protocol_factorial_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "d2a0e6",
+        "wall_time_seconds": 0.4064047,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/bi64_protocol_factorial_results_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\bi64_protocol_factorial_results_20260906.zh.md",
+      "kind": "file",
+      "bytes": 9415,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\bi64_protocol_factorial_results_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "4d9535",
+        "wall_time_seconds": 0.404286,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/bi_family_transfer_census_20260904.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\bi_family_transfer_census_20260904.zh.md",
+      "kind": "file",
+      "bytes": 12879,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\bi_family_transfer_census_20260904.zh.md\"",
+      "result": {
+        "chunk_id": "350097",
+        "wall_time_seconds": 0.4076001,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/bidirectional_qc_20260909.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\bidirectional_qc_20260909.zh.md",
+      "kind": "file",
+      "bytes": 11070,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\bidirectional_qc_20260909.zh.md\"",
+      "result": {
+        "chunk_id": "f8921e",
+        "wall_time_seconds": 0.3890155,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/biot_applicability_assessment_20260904.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\biot_applicability_assessment_20260904.zh.md",
+      "kind": "file",
+      "bytes": 10379,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\biot_applicability_assessment_20260904.zh.md\"",
+      "result": {
+        "chunk_id": "7f7235",
+        "wall_time_seconds": 0.3989394,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/bnci_unseen_target_plan_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\bnci_unseen_target_plan_20260906.zh.md",
+      "kind": "file",
+      "bytes": 3163,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\bnci_unseen_target_plan_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "276ef3",
+        "wall_time_seconds": 0.3888733,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/bnci_unseen_target_results_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\bnci_unseen_target_results_20260906.zh.md",
+      "kind": "file",
+      "bytes": 5523,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\bnci_unseen_target_results_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "99156f",
+        "wall_time_seconds": 0.3995826,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/boundary_state_redesign_20261005.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\boundary_state_redesign_20261005.zh.md",
+      "kind": "file",
+      "bytes": 19982,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\boundary_state_redesign_20261005.zh.md\"",
+      "result": {
+        "chunk_id": "d45ea1",
+        "wall_time_seconds": 0.4112902,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_app_integration_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_app_integration_20260906.zh.md",
+      "kind": "file",
+      "bytes": 7116,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_app_integration_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "b6c64d",
+        "wall_time_seconds": 0.4143851,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_architecture_20260915.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_architecture_20260915.zh.md",
+      "kind": "file",
+      "bytes": 5505,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_architecture_20260915.zh.md\"",
+      "result": {
+        "chunk_id": "8c78c4",
+        "wall_time_seconds": 0.390046,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_auc_cause_audit_20260908.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_auc_cause_audit_20260908.zh.md",
+      "kind": "file",
+      "bytes": 18736,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_auc_cause_audit_20260908.zh.md\"",
+      "result": {
+        "chunk_id": "d920ad",
+        "wall_time_seconds": 0.4336038,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_epoch_timing_audit_20260907.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_epoch_timing_audit_20260907.zh.md",
+      "kind": "file",
+      "bytes": 8553,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_epoch_timing_audit_20260907.zh.md\"",
+      "result": {
+        "chunk_id": "6c74ca",
+        "wall_time_seconds": 0.4155809,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_frontend_logic_20260916.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_frontend_logic_20260916.zh.md",
+      "kind": "file",
+      "bytes": 6253,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_frontend_logic_20260916.zh.md\"",
+      "result": {
+        "chunk_id": "891cd4",
+        "wall_time_seconds": 0.3893644,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_input_replay_20260909.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_input_replay_20260909.zh.md",
+      "kind": "file",
+      "bytes": 5776,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_input_replay_20260909.zh.md\"",
+      "result": {
+        "chunk_id": "8f23f2",
+        "wall_time_seconds": 0.3740131,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_notch_20260909.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_notch_20260909.zh.md",
+      "kind": "file",
+      "bytes": 6935,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_notch_20260909.zh.md\"",
+      "result": {
+        "chunk_id": "c4eccf",
+        "wall_time_seconds": 0.3942267,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_p001_pilot_20260907.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_p001_pilot_20260907.zh.md",
+      "kind": "file",
+      "bytes": 8331,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_p001_pilot_20260907.zh.md\"",
+      "result": {
+        "chunk_id": "b511b5",
+        "wall_time_seconds": 0.384792,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_p001_quality_20260909.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_p001_quality_20260909.zh.md",
+      "kind": "file",
+      "bytes": 8958,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_p001_quality_20260909.zh.md\"",
+      "result": {
+        "chunk_id": "d6b939",
+        "wall_time_seconds": 0.4077608,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_qc_redesign_20260908.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_qc_redesign_20260908.zh.md",
+      "kind": "file",
+      "bytes": 16207,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_qc_redesign_20260908.zh.md\"",
+      "result": {
+        "chunk_id": "b2d679",
+        "wall_time_seconds": 0.3834378,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_qc_remaining_20260908.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_qc_remaining_20260908.zh.md",
+      "kind": "file",
+      "bytes": 15186,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_qc_remaining_20260908.zh.md\"",
+      "result": {
+        "chunk_id": "5bcd60",
+        "wall_time_seconds": 0.4104895,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_quality_implementation_20260907.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_quality_implementation_20260907.zh.md",
+      "kind": "file",
+      "bytes": 8907,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_quality_implementation_20260907.zh.md\"",
+      "result": {
+        "chunk_id": "bcd394",
+        "wall_time_seconds": 0.3907573,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_recovery_20260908.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_recovery_20260908.zh.md",
+      "kind": "file",
+      "bytes": 15516,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_recovery_20260908.zh.md\"",
+      "result": {
+        "chunk_id": "0d4423",
+        "wall_time_seconds": 0.4067565,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_reference_20260908.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_reference_20260908.zh.md",
+      "kind": "file",
+      "bytes": 9017,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_reference_20260908.zh.md\"",
+      "result": {
+        "chunk_id": "eca30e",
+        "wall_time_seconds": 0.4028181,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_release_20260920.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_release_20260920.zh.md",
+      "kind": "file",
+      "bytes": 3695,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_release_20260920.zh.md\"",
+      "result": {
+        "chunk_id": "0cf0ab",
+        "wall_time_seconds": 0.3981758,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_s1_calibration_20260908.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_s1_calibration_20260908.zh.md",
+      "kind": "file",
+      "bytes": 5383,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_s1_calibration_20260908.zh.md\"",
+      "result": {
+        "chunk_id": "2a23f3",
+        "wall_time_seconds": 0.3963949,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_signal_quality_design_20260907.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_signal_quality_design_20260907.zh.md",
+      "kind": "file",
+      "bytes": 20934,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_signal_quality_design_20260907.zh.md\"",
+      "result": {
+        "chunk_id": "84e97c",
+        "wall_time_seconds": 0.4247934,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_transient_quality_20260907.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_transient_quality_20260907.zh.md",
+      "kind": "file",
+      "bytes": 7504,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_transient_quality_20260907.zh.md\"",
+      "result": {
+        "chunk_id": "976a18",
+        "wall_time_seconds": 0.4015366,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_transport_unification_20260917.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_transport_unification_20260917.zh.md",
+      "kind": "file",
+      "bytes": 5729,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_transport_unification_20260917.zh.md\"",
+      "result": {
+        "chunk_id": "b5d1e7",
+        "wall_time_seconds": 0.4332157,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/brainsync_versions_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_versions_20260906.zh.md",
+      "kind": "file",
+      "bytes": 9086,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_versions_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "76ad3c",
+        "wall_time_seconds": 0.4091654,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/calibration_g_prior_20261006.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\calibration_g_prior_20261006.zh.md",
+      "kind": "file",
+      "bytes": 6435,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\calibration_g_prior_20261006.zh.md\"",
+      "result": {
+        "chunk_id": "7ab3d6",
+        "wall_time_seconds": 0.380372,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/calibration_trace_control_20261006.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\calibration_trace_control_20261006.zh.md",
+      "kind": "file",
+      "bytes": 3880,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\calibration_trace_control_20261006.zh.md\"",
+      "result": {
+        "chunk_id": "8a27de",
+        "wall_time_seconds": 0.3878874,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/car_math_audit_20260904.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\car_math_audit_20260904.zh.md",
+      "kind": "file",
+      "bytes": 10446,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\car_math_audit_20260904.zh.md\"",
+      "result": {
+        "chunk_id": "eb4e24",
+        "wall_time_seconds": 0.4189276,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/chain_implementation_20260930.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\chain_implementation_20260930.zh.md",
+      "kind": "file",
+      "bytes": 4114,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\chain_implementation_20260930.zh.md\"",
+      "result": {
+        "chunk_id": "22f776",
+        "wall_time_seconds": 0.3914802,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/chain_mechanism_20260916.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\chain_mechanism_20260916.zh.md",
+      "kind": "file",
+      "bytes": 21895,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\chain_mechanism_20260916.zh.md\"",
+      "result": {
+        "chunk_id": "835bcd",
+        "wall_time_seconds": 0.4014743,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/cloud_ablation_v2_results_20260904.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\cloud_ablation_v2_results_20260904.zh.md",
+      "kind": "file",
+      "bytes": 6669,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\cloud_ablation_v2_results_20260904.zh.md\"",
+      "result": {
+        "chunk_id": "83e5ba",
+        "wall_time_seconds": 0.4069222,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/cloud_delivery_20260918.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\cloud_delivery_20260918.zh.md",
+      "kind": "file",
+      "bytes": 3869,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\cloud_delivery_20260918.zh.md\"",
+      "result": {
+        "chunk_id": "e6b073",
+        "wall_time_seconds": 0.4046746,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/cloud_disk_cleanup_20260908.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\cloud_disk_cleanup_20260908.zh.md",
+      "kind": "file",
+      "bytes": 4150,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\cloud_disk_cleanup_20260908.zh.md\"",
+      "result": {
+        "chunk_id": "344519",
+        "wall_time_seconds": 0.3978518,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/code_quality_audit_20260908.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\code_quality_audit_20260908.zh.md",
+      "kind": "file",
+      "bytes": 18687,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\code_quality_audit_20260908.zh.md\"",
+      "result": {
+        "chunk_id": "dc88bc",
+        "wall_time_seconds": 0.4006737,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/completed_result_admission_20260909.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\completed_result_admission_20260909.zh.md",
+      "kind": "file",
+      "bytes": 5515,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\completed_result_admission_20260909.zh.md\"",
+      "result": {
+        "chunk_id": "805971",
+        "wall_time_seconds": 0.3991924,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/conditional_state_20261006.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\conditional_state_20261006.zh.md",
+      "kind": "file",
+      "bytes": 5609,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\conditional_state_20261006.zh.md\"",
+      "result": {
+        "chunk_id": "682920",
+        "wall_time_seconds": 0.3971116,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/continuous_fixed_prefix_20261005.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\continuous_fixed_prefix_20261005.zh.md",
+      "kind": "file",
+      "bytes": 18666,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\continuous_fixed_prefix_20261005.zh.md\"",
+      "result": {
+        "chunk_id": "1e269e",
+        "wall_time_seconds": 0.3859958,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/cross_dataset_input_alignment_audit_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\cross_dataset_input_alignment_audit_20260906.zh.md",
+      "kind": "file",
+      "bytes": 7896,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\cross_dataset_input_alignment_audit_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "eb160b",
+        "wall_time_seconds": 0.4028974,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/cross_dataset_start_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\cross_dataset_start_20260906.zh.md",
+      "kind": "file",
+      "bytes": 6764,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\cross_dataset_start_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "b86957",
+        "wall_time_seconds": 0.4129585,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/current_public_consumers_20261008.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\current_public_consumers_20261008.zh.md",
+      "kind": "file",
+      "bytes": 4861,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\current_public_consumers_20261008.zh.md\"",
+      "result": {
+        "chunk_id": "a2b3db",
+        "wall_time_seconds": 0.4304347,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/dataset_expansion_audit_20260908.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\dataset_expansion_audit_20260908.zh.md",
+      "kind": "file",
+      "bytes": 24411,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\dataset_expansion_audit_20260908.zh.md\"",
+      "result": {
+        "chunk_id": "657767",
+        "wall_time_seconds": 0.3952963,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/deep_chain_audit_20260929.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\deep_chain_audit_20260929.zh.md",
+      "kind": "file",
+      "bytes": 33458,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\deep_chain_audit_20260929.zh.md\"",
+      "result": {
+        "chunk_id": "58e6f6",
+        "wall_time_seconds": 0.3989813,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/deep_research_plan_20261005.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\deep_research_plan_20261005.zh.md",
+      "kind": "file",
+      "bytes": 33804,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\deep_research_plan_20261005.zh.md\"",
+      "result": {
+        "chunk_id": "af4858",
+        "wall_time_seconds": 0.4235099,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/device-portability.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\device-portability.md",
+      "kind": "file",
+      "bytes": 7325,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\device-portability.md\"",
+      "result": {
+        "chunk_id": "a52227",
+        "wall_time_seconds": 0.3823697,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/domain_transfer_chain_primary_source_audit_20260904.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\domain_transfer_chain_primary_source_audit_20260904.zh.md",
+      "kind": "file",
+      "bytes": 30521,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\domain_transfer_chain_primary_source_audit_20260904.zh.md\"",
+      "result": {
+        "chunk_id": "e12cb8",
+        "wall_time_seconds": 0.3816194,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/domain_transfer_cloud_20260916.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\domain_transfer_cloud_20260916.zh.md",
+      "kind": "file",
+      "bytes": 13260,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\domain_transfer_cloud_20260916.zh.md\"",
+      "result": {
+        "chunk_id": "fbcf0c",
+        "wall_time_seconds": 0.4073456,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/domain_transfer_implementation_20260916.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\domain_transfer_implementation_20260916.zh.md",
+      "kind": "file",
+      "bytes": 9334,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\domain_transfer_implementation_20260916.zh.md\"",
+      "result": {
+        "chunk_id": "d470ee",
+        "wall_time_seconds": 0.3916866,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/domain_transfer_major_20260920.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\domain_transfer_major_20260920.zh.md",
+      "kind": "file",
+      "bytes": 4753,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\domain_transfer_major_20260920.zh.md\"",
+      "result": {
+        "chunk_id": "63ab48",
+        "wall_time_seconds": 0.4163106,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/domain_transfer_plan_20260915.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\domain_transfer_plan_20260915.zh.md",
+      "kind": "file",
+      "bytes": 34387,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\domain_transfer_plan_20260915.zh.md\"",
+      "result": {
+        "chunk_id": "68c8f9",
+        "wall_time_seconds": 0.3882348,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/e2_prior_scale_20261006.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\e2_prior_scale_20261006.zh.md",
+      "kind": "file",
+      "bytes": 11600,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\e2_prior_scale_20261006.zh.md\"",
+      "result": {
+        "chunk_id": "d49ba2",
+        "wall_time_seconds": 0.3907182,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/ensemble_implementation_20261005.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\ensemble_implementation_20261005.zh.md",
+      "kind": "file",
+      "bytes": 8004,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\ensemble_implementation_20261005.zh.md\"",
+      "result": {
+        "chunk_id": "1374aa",
+        "wall_time_seconds": 0.40146,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/ensemble_quality_20261005.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\ensemble_quality_20261005.zh.md",
+      "kind": "file",
+      "bytes": 6395,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\ensemble_quality_20261005.zh.md\"",
+      "result": {
+        "chunk_id": "24dfae",
+        "wall_time_seconds": 0.3974055,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/erp_dictionary_20261006.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\erp_dictionary_20261006.zh.md",
+      "kind": "file",
+      "bytes": 7432,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\erp_dictionary_20261006.zh.md\"",
+      "result": {
+        "chunk_id": "4e3392",
+        "wall_time_seconds": 0.397379,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/filter_phase_20260909.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\filter_phase_20260909.zh.md",
+      "kind": "file",
+      "bytes": 11225,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\filter_phase_20260909.zh.md\"",
+      "result": {
+        "chunk_id": "b040a6",
+        "wall_time_seconds": 0.403154,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/finetune_leakage_review_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\finetune_leakage_review_20260906.zh.md",
+      "kind": "file",
+      "bytes": 7223,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\finetune_leakage_review_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "9fa4e1",
+        "wall_time_seconds": 0.4034691,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/four_study_launch_20260907.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\four_study_launch_20260907.zh.md",
+      "kind": "file",
+      "bytes": 5198,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\four_study_launch_20260907.zh.md\"",
+      "result": {
+        "chunk_id": "cdbaba",
+        "wall_time_seconds": 0.4027912,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/four_study_results_20260907.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\four_study_results_20260907.zh.md",
+      "kind": "file",
+      "bytes": 8434,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\four_study_results_20260907.zh.md\"",
+      "result": {
+        "chunk_id": "00ddca",
+        "wall_time_seconds": 0.3956,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/four_study_standard_budgets_20260907.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\four_study_standard_budgets_20260907.zh.md",
+      "kind": "file",
+      "bytes": 6563,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\four_study_standard_budgets_20260907.zh.md\"",
+      "result": {
+        "chunk_id": "b425f2",
+        "wall_time_seconds": 0.4034754,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/full_chain_audit_20260922.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\full_chain_audit_20260922.zh.md",
+      "kind": "file",
+      "bytes": 13533,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\full_chain_audit_20260922.zh.md\"",
+      "result": {
+        "chunk_id": "addf2e",
+        "wall_time_seconds": 0.4066265,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/hit_at_r_valid_denominator_20260904.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\hit_at_r_valid_denominator_20260904.zh.md",
+      "kind": "file",
+      "bytes": 13980,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\hit_at_r_valid_denominator_20260904.zh.md\"",
+      "result": {
+        "chunk_id": "5c8c91",
+        "wall_time_seconds": 0.3872247,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/impedance_display_review_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\impedance_display_review_20260906.zh.md",
+      "kind": "file",
+      "bytes": 2397,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\impedance_display_review_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "6c9904",
+        "wall_time_seconds": 0.3901885,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/implementation_plan_cross_dataset_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\implementation_plan_cross_dataset_20260906.zh.md",
+      "kind": "file",
+      "bytes": 10992,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\implementation_plan_cross_dataset_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "8fa038",
+        "wall_time_seconds": 0.3996156,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/independent_prefix_20261008.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\independent_prefix_20261008.zh.md",
+      "kind": "file",
+      "bytes": 3456,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\independent_prefix_20261008.zh.md\"",
+      "result": {
+        "chunk_id": "3eac08",
+        "wall_time_seconds": 0.4076062,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/input_contract_review_20260922.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\input_contract_review_20260922.zh.md",
+      "kind": "file",
+      "bytes": 9243,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\input_contract_review_20260922.zh.md\"",
+      "result": {
+        "chunk_id": "8df49b",
+        "wall_time_seconds": 0.3875256,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lda_head_order_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lda_head_order_20260906.zh.md",
+      "kind": "file",
+      "bytes": 11176,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lda_head_order_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "61b2ef",
+        "wall_time_seconds": 0.3919421,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lean_erp_20261018.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lean_erp_20261018.zh.md",
+      "kind": "file",
+      "bytes": 6577,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lean_erp_20261018.zh.md\"",
+      "result": {
+        "chunk_id": "88061f",
+        "wall_time_seconds": 0.4255151,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lean_erp_continuation_20261018.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lean_erp_continuation_20261018.zh.md",
+      "kind": "file",
+      "bytes": 10597,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lean_erp_continuation_20261018.zh.md\"",
+      "result": {
+        "chunk_id": "e0d000",
+        "wall_time_seconds": 0.4005829,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lean_execution_performance_20261016.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lean_execution_performance_20261016.zh.md",
+      "kind": "file",
+      "bytes": 6722,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lean_execution_performance_20261016.zh.md\"",
+      "result": {
+        "chunk_id": "d4c1a5",
+        "wall_time_seconds": 0.3971275,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lean_first_slice_20261016.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lean_first_slice_20261016.zh.md",
+      "kind": "file",
+      "bytes": 7630,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lean_first_slice_20261016.zh.md\"",
+      "result": {
+        "chunk_id": "1e288c",
+        "wall_time_seconds": 0.38658,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lean_first_slice_source_review_20261016.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lean_first_slice_source_review_20261016.zh.md",
+      "kind": "file",
+      "bytes": 11450,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lean_first_slice_source_review_20261016.zh.md\"",
+      "result": {
+        "chunk_id": "76c74f",
+        "wall_time_seconds": 0.3973155,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lean_full_recipe_20261018.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lean_full_recipe_20261018.zh.md",
+      "kind": "file",
+      "bytes": 6999,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lean_full_recipe_20261018.zh.md\"",
+      "result": {
+        "chunk_id": "d4e411",
+        "wall_time_seconds": 0.4070963,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lean_gaussian_20261016.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lean_gaussian_20261016.zh.md",
+      "kind": "file",
+      "bytes": 44719,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lean_gaussian_20261016.zh.md\"",
+      "result": {
+        "chunk_id": "1808d6",
+        "wall_time_seconds": 0.4093032,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lean_loss_20261018.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lean_loss_20261018.zh.md",
+      "kind": "file",
+      "bytes": 4957,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lean_loss_20261018.zh.md\"",
+      "result": {
+        "chunk_id": "41f5c1",
+        "wall_time_seconds": 0.405815,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lean_network_preprocessing_20261018.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lean_network_preprocessing_20261018.zh.md",
+      "kind": "file",
+      "bytes": 13060,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lean_network_preprocessing_20261018.zh.md\"",
+      "result": {
+        "chunk_id": "3476f5",
+        "wall_time_seconds": 0.4188261,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lean_outcomes_20261018.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lean_outcomes_20261018.zh.md",
+      "kind": "file",
+      "bytes": 32866,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lean_outcomes_20261018.zh.md\"",
+      "result": {
+        "chunk_id": "4041c7",
+        "wall_time_seconds": 0.4077795,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lean_personal_erp_20261018.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lean_personal_erp_20261018.zh.md",
+      "kind": "file",
+      "bytes": 5323,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lean_personal_erp_20261018.zh.md\"",
+      "result": {
+        "chunk_id": "939dff",
+        "wall_time_seconds": 0.4015452,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lean_personal_erp_source_20261018.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lean_personal_erp_source_20261018.zh.md",
+      "kind": "file",
+      "bytes": 4955,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lean_personal_erp_source_20261018.zh.md\"",
+      "result": {
+        "chunk_id": "812c16",
+        "wall_time_seconds": 0.3886778,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lean_pilot_20261016.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lean_pilot_20261016.zh.md",
+      "kind": "file",
+      "bytes": 6603,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lean_pilot_20261016.zh.md\"",
+      "result": {
+        "chunk_id": "001056",
+        "wall_time_seconds": 0.4131473,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/lean_temporal_operator_20261018.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\lean_temporal_operator_20261018.zh.md",
+      "kind": "file",
+      "bytes": 7031,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\lean_temporal_operator_20261018.zh.md\"",
+      "result": {
+        "chunk_id": "d6a916",
+        "wall_time_seconds": 0.3972765,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/mainsah_s2_admission_20260907.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\mainsah_s2_admission_20260907.md",
+      "kind": "file",
+      "bytes": 7523,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\mainsah_s2_admission_20260907.md\"",
+      "result": {
+        "chunk_id": "c6cfdd",
+        "wall_time_seconds": 0.3991187,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/math_verification_cross_dataset_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\math_verification_cross_dataset_20260906.zh.md",
+      "kind": "file",
+      "bytes": 5990,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\math_verification_cross_dataset_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "894d99",
+        "wall_time_seconds": 0.4320263,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/operator_research_20261004.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\operator_research_20261004.zh.md",
+      "kind": "file",
+      "bytes": 7654,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\operator_research_20261004.zh.md\"",
+      "result": {
+        "chunk_id": "8a1b4f",
+        "wall_time_seconds": 0.4019896,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/other_agent_audit_20261005.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\other_agent_audit_20261005.zh.md",
+      "kind": "file",
+      "bytes": 3783,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\other_agent_audit_20261005.zh.md\"",
+      "result": {
+        "chunk_id": "ee5c7b",
+        "wall_time_seconds": 0.4023881,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/p300_auc_leakage_audit_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\p300_auc_leakage_audit_20260906.zh.md",
+      "kind": "file",
+      "bytes": 6585,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\p300_auc_leakage_audit_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "09250a",
+        "wall_time_seconds": 0.4012339,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/p300_transfer_execution_plan_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\p300_transfer_execution_plan_20260906.zh.md",
+      "kind": "file",
+      "bytes": 18979,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\p300_transfer_execution_plan_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "f3c462",
+        "wall_time_seconds": 0.405656,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/p300_transfer_results_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\p300_transfer_results_20260906.zh.md",
+      "kind": "file",
+      "bytes": 15780,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\p300_transfer_results_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "d28417",
+        "wall_time_seconds": 0.4111825,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/preprocessing_contract_research_20260915.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\preprocessing_contract_research_20260915.zh.md",
+      "kind": "file",
+      "bytes": 20001,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\preprocessing_contract_research_20260915.zh.md\"",
+      "result": {
+        "chunk_id": "42b642",
+        "wall_time_seconds": 0.4371606,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/preprocessing_execution_20260915.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\preprocessing_execution_20260915.zh.md",
+      "kind": "file",
+      "bytes": 6409,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\preprocessing_execution_20260915.zh.md\"",
+      "result": {
+        "chunk_id": "4002b0",
+        "wall_time_seconds": 0.3929409,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/prior_control_20261006.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\prior_control_20261006.zh.md",
+      "kind": "file",
+      "bytes": 11406,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\prior_control_20261006.zh.md\"",
+      "result": {
+        "chunk_id": "037078",
+        "wall_time_seconds": 0.4002293,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/public_source_pipeline_20261008.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\public_source_pipeline_20261008.zh.md",
+      "kind": "file",
+      "bytes": 5790,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\public_source_pipeline_20261008.zh.md\"",
+      "result": {
+        "chunk_id": "db14c1",
+        "wall_time_seconds": 0.3835568,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/public_source_throughput_20261008.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\public_source_throughput_20261008.zh.md",
+      "kind": "file",
+      "bytes": 12913,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\public_source_throughput_20261008.zh.md\"",
+      "result": {
+        "chunk_id": "6fe6bb",
+        "wall_time_seconds": 0.3935936,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/redundancy_cleanup_20261008.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\redundancy_cleanup_20261008.zh.md",
+      "kind": "file",
+      "bytes": 5313,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\redundancy_cleanup_20261008.zh.md\"",
+      "result": {
+        "chunk_id": "25257f",
+        "wall_time_seconds": 0.3976461,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/repository_audit_20261019.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\repository_audit_20261019.zh.md",
+      "kind": "file",
+      "bytes": 60233,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\repository_audit_20261019.zh.md\"",
+      "result": {
+        "chunk_id": "130b0e",
+        "wall_time_seconds": 0.3995711,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/research_evidence_audit_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\research_evidence_audit_20260906.zh.md",
+      "kind": "file",
+      "bytes": 21342,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\research_evidence_audit_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "cbdd22",
+        "wall_time_seconds": 0.4118549,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/research_experiment_catalog_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\research_experiment_catalog_20260906.zh.md",
+      "kind": "file",
+      "bytes": 39524,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\research_experiment_catalog_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "581823",
+        "wall_time_seconds": 0.3851072,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/research_integration_20261008.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\research_integration_20261008.zh.md",
+      "kind": "file",
+      "bytes": 8689,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\research_integration_20261008.zh.md\"",
+      "result": {
+        "chunk_id": "1f96a1",
+        "wall_time_seconds": 0.4102921,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/research_mechanisms_20261009.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\research_mechanisms_20261009.zh.md",
+      "kind": "file",
+      "bytes": 43649,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\research_mechanisms_20261009.zh.md\"",
+      "result": {
+        "chunk_id": "37b469",
+        "wall_time_seconds": 0.3888461,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/source_eog_training_20260909.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\source_eog_training_20260909.zh.md",
+      "kind": "file",
+      "bytes": 18353,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\source_eog_training_20260909.zh.md\"",
+      "result": {
+        "chunk_id": "ecccc2",
+        "wall_time_seconds": 0.3930619,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/source_modules_20260918.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\source_modules_20260918.zh.md",
+      "kind": "file",
+      "bytes": 6512,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\source_modules_20260918.zh.md\"",
+      "result": {
+        "chunk_id": "43c6f0",
+        "wall_time_seconds": 0.4093711,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/system_implementation_20261004.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\system_implementation_20261004.zh.md",
+      "kind": "file",
+      "bytes": 19342,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\system_implementation_20261004.zh.md\"",
+      "result": {
+        "chunk_id": "19f153",
+        "wall_time_seconds": 0.3997904,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/system_research_20261004.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\system_research_20261004.zh.md",
+      "kind": "file",
+      "bytes": 25454,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\system_research_20261004.zh.md\"",
+      "result": {
+        "chunk_id": "8eef69",
+        "wall_time_seconds": 0.3862974,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/target_early_stopping_20260907.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\target_early_stopping_20260907.zh.md",
+      "kind": "file",
+      "bytes": 8515,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\target_early_stopping_20260907.zh.md\"",
+      "result": {
+        "chunk_id": "f9f7c3",
+        "wall_time_seconds": 0.4003281,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/target_early_stopping_results_20260908.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\target_early_stopping_results_20260908.zh.md",
+      "kind": "file",
+      "bytes": 8371,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\target_early_stopping_results_20260908.zh.md\"",
+      "result": {
+        "chunk_id": "549d16",
+        "wall_time_seconds": 0.4144335,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/target_epoch90_20260908.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\target_epoch90_20260908.zh.md",
+      "kind": "file",
+      "bytes": 6173,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\target_epoch90_20260908.zh.md\"",
+      "result": {
+        "chunk_id": "7e43d0",
+        "wall_time_seconds": 0.3916309,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/technical_audit_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\technical_audit_20260906.zh.md",
+      "kind": "file",
+      "bytes": 10823,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\technical_audit_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "b43f25",
+        "wall_time_seconds": 0.3933444,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/training_chain_implementation_20260907.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\training_chain_implementation_20260907.zh.md",
+      "kind": "file",
+      "bytes": 27910,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\training_chain_implementation_20260907.zh.md\"",
+      "result": {
+        "chunk_id": "ce1491",
+        "wall_time_seconds": 0.3906874,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/training_chain_results_20260907.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\training_chain_results_20260907.zh.md",
+      "kind": "file",
+      "bytes": 12556,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\training_chain_results_20260907.zh.md\"",
+      "result": {
+        "chunk_id": "c3a8e2",
+        "wall_time_seconds": 0.3990294,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/unified12_analysis_critique_20260918.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\unified12_analysis_critique_20260918.zh.md",
+      "kind": "file",
+      "bytes": 9492,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\unified12_analysis_critique_20260918.zh.md\"",
+      "result": {
+        "chunk_id": "edb7ed",
+        "wall_time_seconds": 0.4018788,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/unified12_performance_20260918.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\unified12_performance_20260918.zh.md",
+      "kind": "file",
+      "bytes": 4957,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\unified12_performance_20260918.zh.md\"",
+      "result": {
+        "chunk_id": "f9c933",
+        "wall_time_seconds": 0.4059187,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/unified12_results_20260918.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\unified12_results_20260918.zh.md",
+      "kind": "file",
+      "bytes": 5649,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\unified12_results_20260918.zh.md\"",
+      "result": {
+        "chunk_id": "fe2410",
+        "wall_time_seconds": 0.4042256,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/unified_budget_execution_20260916.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\unified_budget_execution_20260916.zh.md",
+      "kind": "file",
+      "bytes": 7457,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\unified_budget_execution_20260916.zh.md\"",
+      "result": {
+        "chunk_id": "1dce51",
+        "wall_time_seconds": 0.4068919,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/unified_cloud_20260916.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\unified_cloud_20260916.zh.md",
+      "kind": "file",
+      "bytes": 8681,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\unified_cloud_20260916.zh.md\"",
+      "result": {
+        "chunk_id": "351596",
+        "wall_time_seconds": 0.4240952,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/unified_compact_training_20260916.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\unified_compact_training_20260916.zh.md",
+      "kind": "file",
+      "bytes": 19171,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\unified_compact_training_20260916.zh.md\"",
+      "result": {
+        "chunk_id": "412f8a",
+        "wall_time_seconds": 0.3963555,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/unified_model_implementation_20260916.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\unified_model_implementation_20260916.zh.md",
+      "kind": "file",
+      "bytes": 14982,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\unified_model_implementation_20260916.zh.md\"",
+      "result": {
+        "chunk_id": "5629d7",
+        "wall_time_seconds": 0.3960277,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/unified_model_plan_20260916.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\unified_model_plan_20260916.zh.md",
+      "kind": "file",
+      "bytes": 51833,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\unified_model_plan_20260916.zh.md\"",
+      "result": {
+        "chunk_id": "727a36",
+        "wall_time_seconds": 0.4078316,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/unified_optimization_20260929.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\unified_optimization_20260929.zh.md",
+      "kind": "file",
+      "bytes": 24531,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\unified_optimization_20260929.zh.md\"",
+      "result": {
+        "chunk_id": "b34218",
+        "wall_time_seconds": 0.3956526,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/unified_results_20260916.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\unified_results_20260916.zh.md",
+      "kind": "file",
+      "bytes": 12336,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\unified_results_20260916.zh.md\"",
+      "result": {
+        "chunk_id": "b5cb3c",
+        "wall_time_seconds": 0.3933237,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/wishlist_progress_20261010.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\wishlist_progress_20261010.zh.md",
+      "kind": "file",
+      "bytes": 10376,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\wishlist_progress_20261010.zh.md\"",
+      "result": {
+        "chunk_id": "4ff84a",
+        "wall_time_seconds": 0.4254896,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/workspace_cleanup_20260906.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\workspace_cleanup_20260906.zh.md",
+      "kind": "file",
+      "bytes": 6426,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\workspace_cleanup_20260906.zh.md\"",
+      "result": {
+        "chunk_id": "aa4046",
+        "wall_time_seconds": 0.3962294,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/workspace_cleanup_20260908.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\workspace_cleanup_20260908.zh.md",
+      "kind": "file",
+      "bytes": 4106,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\workspace_cleanup_20260908.zh.md\"",
+      "result": {
+        "chunk_id": "fbeed5",
+        "wall_time_seconds": 0.3980932,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/workspace_cleanup_20261016.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\workspace_cleanup_20261016.zh.md",
+      "kind": "file",
+      "bytes": 1958,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\workspace_cleanup_20261016.zh.md\"",
+      "result": {
+        "chunk_id": "ac2319",
+        "wall_time_seconds": 0.3900442,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/workspace_folder_management_20261019.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\workspace_folder_management_20261019.zh.md",
+      "kind": "file",
+      "bytes": 18799,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\workspace_folder_management_20261019.zh.md\"",
+      "result": {
+        "chunk_id": "2f14fa",
+        "wall_time_seconds": 0.4056781,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/evidence/zero_shot_transfer_routes_20260920.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\evidence\\zero_shot_transfer_routes_20260920.zh.md",
+      "kind": "file",
+      "bytes": 16956,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\evidence\\zero_shot_transfer_routes_20260920.zh.md\"",
+      "result": {
+        "chunk_id": "92ad20",
+        "wall_time_seconds": 0.392476,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "path": "doc/progress_report_20260929.zh.md",
+      "absolute_path": "D:\\BCI\\n2p3-net\\doc\\progress_report_20260929.zh.md",
+      "kind": "file",
+      "bytes": 21546,
+      "command": "cmd.exe /d /c del /f /q \"D:\\BCI\\n2p3-net\\doc\\progress_report_20260929.zh.md\"",
+      "result": {
+        "chunk_id": "0dc7b9",
+        "wall_time_seconds": 0.3979199,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    }
+  ],
+  "lineage_restore": {
+    "chunk_id": "f5a4c3",
+    "wall_time_seconds": 0.6202928,
+    "exit_code": 0,
+    "original_token_count": 9,
+    "output": "Restored 2 original lineage inputs\r\n"
+  }
+}
+

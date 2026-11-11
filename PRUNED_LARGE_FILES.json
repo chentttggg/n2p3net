@@ -1,0 +1,141 @@
+{
+  "schema": "n2p3_full_no_large_data_pruned_files/1",
+  "max_file_bytes": 5242880,
+  "removed": [
+    {
+      "path": "doc/assets/brainsync_recovery_20260908/event_channel_availability.png",
+      "bytes": 90941,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/brainsync_recovery_20260908/matched_event_erp.png",
+      "bytes": 679077,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/continuous_fixed_prefix_20261005/m1_ar_orders.pdf",
+      "bytes": 39835,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/continuous_fixed_prefix_20261005/m1_ar_orders.png",
+      "bytes": 218447,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/deep_chain_audit_20260929/bi_quality/bi61_c200_quality.png",
+      "bytes": 134099,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/deep_chain_audit_20260929/input/bi01_raw_extreme_anchor.png",
+      "bytes": 909643,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/early_stopping_full_20260908/quality_and_cost.png",
+      "bytes": 117271,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/epoch_timing_audit_20260907/erp.png",
+      "bytes": 621617,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/p300_transfer_20260906/calibration_curves.pdf",
+      "bytes": 23886,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/p300_transfer_20260906/calibration_curves.png",
+      "bytes": 149489,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/analysis_1280x800.png",
+      "bytes": 39653,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/analysis_1440x900.png",
+      "bytes": 41068,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/device_1280x800.png",
+      "bytes": 97090,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/device_1440x900.png",
+      "bytes": 100296,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/experiment_1280x800.png",
+      "bytes": 103494,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/experiment_1440x900.png",
+      "bytes": 107869,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/model_1280x800.png",
+      "bytes": 74472,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/model_1440x900.png",
+      "bytes": 105514,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/overview_1280x800.png",
+      "bytes": 75039,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/overview_1440x900.png",
+      "bytes": 76809,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/r5_result_1440x900.png",
+      "bytes": 89187,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/result_layout_1280x800.png",
+      "bytes": 74472,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/result_layout_1440x900.png",
+      "bytes": 76006,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/training_chain_results_20260907/paired_effects.png",
+      "bytes": 131015,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/unified_cloud_20260916/bnci_decision_results.png",
+      "bytes": 84785,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/unified_cloud_20260916/paired_participant_differences.png",
+      "bytes": 89877,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/unified_cloud_20260916/results_overview.png",
+      "bytes": 79003,
+      "reason": "excluded_suffix"
+    }
+  ]
+}

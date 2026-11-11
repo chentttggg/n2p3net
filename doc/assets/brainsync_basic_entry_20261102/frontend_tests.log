@@ -1,0 +1,603 @@
+test_acquisition_fault_cannot_finish_as_completed (test_acquisition_clock.AdapterClockTests) ... ok
+test_callback_fault_is_recorded_and_published (test_acquisition_clock.AdapterClockTests) ... ok
+test_readiness_uses_buffered_sample_anchor_instead_of_sdk_counter (test_acquisition_clock.AdapterClockTests) ... ok
+test_tail_cannot_be_satisfied_by_samples_after_a_pause (test_acquisition_clock.AdapterClockTests) ... ok
+test_pause_in_last_response_retries_the_same_final_trial (test_acquisition_clock.EpochSupportSchedulingTests) ... Executing <Task pending name='Task-13' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:101> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 5.604 seconds
+Executing <Task pending name='Task-13' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 84514.474 seconds
+ok
+test_post_rest_first_flash_has_complete_baseline (test_acquisition_clock.EpochSupportSchedulingTests) ... Executing <Task pending name='Task-20' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:101> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 2.004 seconds
+Executing <Task pending name='Task-20' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:101> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 1.204 seconds
+Executing <Task pending name='Task-20' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:101> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 2.004 seconds
+Executing <Task pending name='Task-20' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:101> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 1.204 seconds
+Executing <Task pending name='Task-20' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:101> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 2.004 seconds
+Executing <Task pending name='Task-20' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 84511.970 seconds
+ok
+test_rest_waits_for_last_flash_response (test_acquisition_clock.EpochSupportSchedulingTests) ... Executing <Task pending name='Task-35' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:101> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 2.004 seconds
+Executing <Task pending name='Task-35' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:101> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 1.204 seconds
+Executing <Task pending name='Task-35' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:101> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 2.004 seconds
+Executing <Task pending name='Task-35' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:101> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 1.204 seconds
+Executing <Task pending name='Task-35' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:101> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 2.004 seconds
+Executing <Task pending name='Task-35' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 84512.361 seconds
+ok
+test_clock_journal_and_voltage_checkpoint_have_matching_stored_rows (test_acquisition_clock.RecorderClockTests) ... ok
+test_gap_fails_recording_without_appending_a_compacted_batch (test_acquisition_clock.RecorderClockTests) ... ok
+test_joint_commit_failure_rolls_back_both_streams_and_can_retry (test_acquisition_clock.RecorderClockTests) ... ok
+test_partial_voltage_write_cannot_advance_the_joint_checkpoint (test_acquisition_clock.RecorderClockTests) ... ok
+test_recovery_ignores_complete_voltage_records_after_joint_commit_boundary (test_acquisition_clock.RecorderClockTests) ... ok
+test_recovery_rejects_missing_committed_clock_rows (test_acquisition_clock.RecorderClockTests) ... ok
+test_batch_anchor_refers_to_first_sample_estimate_not_callback (test_acquisition_clock.SampleClockTests) ... ok
+test_known_gap_is_recorded_and_never_committed_as_contiguous_samples (test_acquisition_clock.SampleClockTests) ... ok
+test_paused_batches_remain_in_received_ledger_without_stored_indices (test_acquisition_clock.SampleClockTests) ... ok
+test_wrap_is_valid_but_duplicate_and_backward_sequence_are_not (test_acquisition_clock.SampleClockTests) ... ok
+test_app_quit_reaps_inspection_before_closing_qasync (test_application_shutdown.ApplicationShutdownTests) ... ok
+test_queued_startup_callback_is_ignored_after_shutdown_begins (test_application_shutdown.ApplicationShutdownTests) ... ok
+test_explicit_backend_isolates_frontend_python_environment (test_backend_jobs.BackendJobTests) ... ok
+test_missing_program_and_busy_launch_are_rejected (test_backend_jobs.BackendJobTests) ... ok
+test_shutdown_reaps_process_and_rejects_late_jobs (test_backend_jobs.BackendJobTests) ... ok
+test_stop_before_launch_does_not_spawn_child (test_backend_jobs.BackendJobTests) ... ok
+test_stop_reaps_running_child_and_reports_stopped (test_backend_jobs.BackendJobTests) ... ok
+test_structured_arguments_progress_and_pending_label_inputs (test_backend_jobs.BackendJobTests) ... ok
+test_events_reject_duplicate_or_unpaired_markers (test_bids.BidsRawExportTests) ... ok
+test_events_reject_wrong_time_base_and_out_of_recording_marker (test_bids.BidsRawExportTests) ... ok
+test_export_preserves_raw_samples_and_marks_rest_in_events_tsv (test_bids.BidsRawExportTests) ... ok
+test_export_uses_bound_source_sample_instead_of_legacy_wall_origin (test_bids.BidsRawExportTests) ... ok
+test_abstention_and_missing_scores_are_not_zero_or_a_prediction (test_decoding.DecodingResultTests) ... ok
+test_internal_and_full_training_curves_remain_separate (test_decoding.DecodingResultTests) ... ok
+test_lda_and_old_models_do_not_invent_history_or_validation (test_decoding.DecodingResultTests) ... ok
+test_zero_phase_round_scores_are_described_as_completed_recording_review (test_decoding.DecodingResultTests) ... ok
+test_busy_inference_does_not_erase_visible_result (test_decoding.DecodingWorkflowTests) ... ok
+test_calibration_command_binds_selected_sessions_and_new_artifact (test_decoding.DecodingWorkflowTests) ... ok
+test_calibration_transmits_selected_eog_policy_only_when_correction_enabled (test_decoding.DecodingWorkflowTests) ... ok
+test_changed_model_clears_report_prediction_and_feedback (test_decoding.DecodingWorkflowTests) ... ok
+test_compute_device_is_persisted_and_passed_to_backend (test_decoding.DecodingWorkflowTests) ... ok
+test_daily_view_hides_paths_research_options_and_logs (test_decoding.DecodingWorkflowTests) ... ok
+test_eog_reference_policy_is_disabled_when_correction_off_or_runtime_busy (test_decoding.DecodingWorkflowTests) ... ok
+test_eog_reference_policy_persists_and_restores_without_changing_default (test_decoding.DecodingWorkflowTests) ... ok
+test_existing_configured_record_directory_is_used (test_decoding.DecodingWorkflowTests) ... ok
+test_failed_inspection_does_not_allow_capture_using_unverified_model (test_decoding.DecodingWorkflowTests) ... ok
+test_frozen_epoch_quality_is_mutually_exclusive_and_used_only_for_calibration (test_decoding.DecodingWorkflowTests) ... ok
+test_frozen_personal_epoch_quality_requires_a_continuous_profile_before_start (test_decoding.DecodingWorkflowTests) ... ok
+test_inference_list_matches_model_owner_time_and_one_block (test_decoding.DecodingWorkflowTests) ... ok
+test_inference_rejects_result_from_another_session (test_decoding.DecodingWorkflowTests) ... ok
+test_inference_uses_r5_and_never_sends_target (test_decoding.DecodingWorkflowTests) ... ok
+test_inspect_restores_subject_from_self_contained_backend_metadata (test_decoding.DecodingWorkflowTests) ... ok
+test_invalid_completed_report_does_not_leave_training_state (test_decoding.DecodingWorkflowTests) ... ok
+test_malformed_nested_metadata_is_displayed_as_unavailable (test_decoding.DecodingWorkflowTests) ... ok
+test_missing_frozen_epoch_quality_file_cannot_start_calibration (test_decoding.DecodingWorkflowTests) ... ok
+test_missing_recording_is_not_presented_as_ready (test_decoding.DecodingWorkflowTests) ... ok
+test_model_summary_displays_actual_quality_admitted_training_count (test_decoding.DecodingWorkflowTests) ... ok
+test_model_summary_distinguishes_personal_and_historical_epoch_quality (test_decoding.DecodingWorkflowTests) ... ok
+test_native_personal_reference_is_not_inherited_from_source_method (test_decoding.DecodingWorkflowTests) ... ok
+test_pending_or_malformed_label_does_not_hide_inference_record (test_decoding.DecodingWorkflowTests) ... ok
+test_personal_epoch_quality_requires_a_continuous_profile_before_start (test_decoding.DecodingWorkflowTests) ... ok
+test_quality_controls_bind_frozen_model_and_persist (test_decoding.DecodingWorkflowTests) ... ok
+test_refresh_preserves_explicit_calibration_selection (test_decoding.DecodingWorkflowTests) ... ok
+test_runtime_busy_prevents_commands_and_disables_controls (test_decoding.DecodingWorkflowTests) ... ok
+test_source_filter_does_not_select_simulated_and_other_records_together (test_decoding.DecodingWorkflowTests) ... ok
+test_source_mode_requires_existing_source_and_does_not_fall_back (test_decoding.DecodingWorkflowTests) ... ok
+test_stale_results_clear_before_new_inference (test_decoding.DecodingWorkflowTests) ... ok
+test_target_confirmation_blocks_practice_before_controller_access (test_decoding.DecodingWorkflowTests) ... ok
+test_unknown_saved_eog_policy_falls_back_to_shared_reference (test_decoding.DecodingWorkflowTests) ... ok
+test_abstention_feedback_does_not_claim_a_wrong_prediction (test_decoding_logic_regressions.DecodingLogicRegressionTests) ... ok
+test_failed_inference_launch_does_not_leave_running_status (test_decoding_logic_regressions.DecodingLogicRegressionTests) ... ok
+test_feedback_for_a_copied_session_id_cannot_overwrite_original_feedback (test_decoding_logic_regressions.DecodingLogicRegressionTests) ... ok
+test_invalid_calibration_display_cannot_make_a_model_available (test_decoding_logic_regressions.DecodingLogicRegressionTests) ... ok
+test_invalid_evidence_cannot_leave_a_prediction_or_feedback_eligible_result (test_decoding_logic_regressions.DecodingLogicRegressionTests) ... ok
+test_rejected_receipt_still_requests_target_for_an_unpredicted_outcome (test_decoding_logic_regressions.DecodingLogicRegressionTests) ... ok
+test_saved_feedback_requires_the_persisted_confirmation (test_decoding_logic_regressions.DecodingLogicRegressionTests) ... ok
+test_valid_prediction_feedback_preserves_request_identity (test_decoding_logic_regressions.DecodingLogicRegressionTests) ... ok
+test_corrupt_saved_request_does_not_fall_back_to_current_settings (test_decoding_logic_regressions.QualityLogicRegressionTests) ... ok
+test_legacy_report_retry_recovers_the_original_frozen_model_request (test_decoding_logic_regressions.QualityLogicRegressionTests) ... ok
+test_malformed_request_does_not_block_the_following_report (test_decoding_logic_regressions.QualityLogicRegressionTests) ... ok
+test_malformed_saved_report_is_displayed_as_failure (test_decoding_logic_regressions.QualityLogicRegressionTests) ... ok
+test_queued_cancel_write_failure_cannot_skip_running_process_shutdown (test_decoding_logic_regressions.QualityLogicRegressionTests) ... ok
+test_relative_path_cancel_removes_the_queued_job (test_decoding_logic_regressions.QualityLogicRegressionTests) ... ok
+test_report_from_a_replaced_session_directory_is_rejected (test_decoding_logic_regressions.QualityLogicRegressionTests) ... ok
+test_report_retry_preserves_frozen_model_request (test_decoding_logic_regressions.QualityLogicRegressionTests) ... ok
+test_request_factory_failure_is_visible_and_following_request_can_run (test_decoding_logic_regressions.QualityLogicRegressionTests) ... ok
+test_request_preparation_failures_are_visible_and_do_not_occupy_queue (test_decoding_logic_regressions.QualityLogicRegressionTests) ... ok
+test_invalid_transition_is_rejected (test_device_state.DeviceLifecycleTests) ... ok
+test_normal_preview_recording_and_impedance_paths_return_to_ready (test_device_state.DeviceLifecycleTests) ... ok
+test_recovery_blocks_new_work_until_cleaned_or_disconnected (test_device_state.DeviceLifecycleTests) ... ok
+test_default_startup_uses_only_the_selected_interpreter_environment (test_environment.EnvironmentTests) ... ok
+test_default_records_left_corner_single_heog_and_declared_reference (test_eog_derivation.EOGDerivationTests) ... ok
+test_legacy_montage_does_not_gain_unobserved_sensor_placement (test_eog_derivation.EOGDerivationTests) ... ok
+test_pause_replays_interrupted_trial_after_countdown (test_experiment_pause.PauseTests) ... ok
+test_paused_recorder_drops_samples_and_does_not_backfill (test_experiment_pause.PauseTests) ... ok
+test_two_pause_intervals_map_to_written_sample_axis (test_experiment_pause.PauseTests) ... ok
+test_device_callback_values_are_displayed_in_sdk_kohm_without_rescaling (test_impedance_display.ImpedanceDisplayTests) ... ok
+test_failure_shows_cause_and_keeps_disconnect_available (test_impedance_display.ImpedanceDisplayTests) ... ok
+test_mock_values_do_not_certify_electrode_contact (test_impedance_display.ImpedanceDisplayTests) ... ok
+test_qt_timer_and_disconnect_work_after_native_failure (test_impedance_display.ImpedanceDisplayTests) ... Impedance command failed: \u542f\u7528\u68c0\u6d4b\u6a21\u5f0f
+Traceback (most recent call last):
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1746, in _impedance_sdk_operation
+    await asyncio.shield(operation)
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1933, in _run_sdk_cleanup_operation
+    await asyncio.wait_for(future, timeout=timeout)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\tasks.py", line 445, in wait_for
+    return fut.result()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1910, in worker
+    result = asyncio.run(drive())
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1908, in drive
+    return await outcome
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1732, in invoke
+    await self._maybe_await(request())
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 2240, in _maybe_await
+    return await value if inspect.isawaitable(value) else value
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\tests\test_impedance_display.py", line 101, in enable_impedance_detection_mode
+    raise RuntimeError("native setup failure")
+RuntimeError: native setup failure
+Impedance command failed: \u6e05\u7406\u68c0\u6d4b\u8d44\u6e90
+Traceback (most recent call last):
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1746, in _impedance_sdk_operation
+    await asyncio.shield(operation)
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1933, in _run_sdk_cleanup_operation
+    await asyncio.wait_for(future, timeout=timeout)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\tasks.py", line 445, in wait_for
+    return fut.result()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1910, in worker
+    result = asyncio.run(drive())
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1908, in drive
+    return await outcome
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1732, in invoke
+    await self._maybe_await(request())
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 2240, in _maybe_await
+    return await value if inspect.isawaitable(value) else value
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\tests\test_impedance_display.py", line 104, in disable_impedance_detection_mode
+    raise RuntimeError("native cleanup failure")
+RuntimeError: native cleanup failure
+Impedance command failed: \u6e05\u7406\u68c0\u6d4b\u8d44\u6e90
+Traceback (most recent call last):
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1746, in _impedance_sdk_operation
+    await asyncio.shield(operation)
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1933, in _run_sdk_cleanup_operation
+    await asyncio.wait_for(future, timeout=timeout)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\tasks.py", line 445, in wait_for
+    return fut.result()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1910, in worker
+    result = asyncio.run(drive())
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1908, in drive
+    return await outcome
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1732, in invoke
+    await self._maybe_await(request())
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 2240, in _maybe_await
+    return await value if inspect.isawaitable(value) else value
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\tests\test_impedance_display.py", line 104, in disable_impedance_detection_mode
+    raise RuntimeError("native cleanup failure")
+RuntimeError: native cleanup failure
+Impedance command failed: \u6e05\u7406\u68c0\u6d4b\u8d44\u6e90
+Traceback (most recent call last):
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1746, in _impedance_sdk_operation
+    await asyncio.shield(operation)
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1933, in _run_sdk_cleanup_operation
+    await asyncio.wait_for(future, timeout=timeout)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\tasks.py", line 445, in wait_for
+    return fut.result()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1910, in worker
+    result = asyncio.run(drive())
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1908, in drive
+    return await outcome
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1732, in invoke
+    await self._maybe_await(request())
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 2240, in _maybe_await
+    return await value if inspect.isawaitable(value) else value
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\tests\test_impedance_display.py", line 104, in disable_impedance_detection_mode
+    raise RuntimeError("native cleanup failure")
+RuntimeError: native cleanup failure
+ok
+test_ui_log_is_persisted_without_an_active_recording (test_impedance_display.ImpedanceDisplayTests) ... ok
+test_actual_mock_loop_generates_the_reported_low_range (test_impedance_display.MockImpedanceTests) ... ok
+test_cancel_waits_for_setup_before_cleanup (test_impedance_responsiveness.ImpedanceResponsivenessTests) ... ok
+test_continuous_detection_does_not_restart_transfer_each_cycle (test_impedance_responsiveness.ImpedanceResponsivenessTests) ... ok
+test_missing_data_returns_failure_with_cleanup (test_impedance_responsiveness.ImpedanceResponsivenessTests) ... ok
+test_native_cleanup_block_times_out_and_retains_recovery (test_impedance_responsiveness.ImpedanceResponsivenessTests) ... Impedance command failed: \u6e05\u7406\u68c0\u6d4b\u8d44\u6e90
+Traceback (most recent call last):
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\tasks.py", line 456, in wait_for
+    return fut.result()
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1933, in _run_sdk_cleanup_operation
+    await asyncio.wait_for(future, timeout=timeout)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\tasks.py", line 458, in wait_for
+    raise exceptions.TimeoutError() from exc
+asyncio.exceptions.TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1746, in _impedance_sdk_operation
+    await asyncio.shield(operation)
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1936, in _run_sdk_cleanup_operation
+    raise TimeoutError(
+TimeoutError: \u963b\u6297\u6e05\u7406\u68c0\u6d4b\u8d44\u6e90\u8d85\u65f6\uff08>0.0 \u79d2\uff09
+ok
+test_native_setup_block_does_not_block_event_loop (test_impedance_responsiveness.ImpedanceResponsivenessTests) ... Impedance command failed: \u542f\u7528\u68c0\u6d4b\u6a21\u5f0f
+Traceback (most recent call last):
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1746, in _impedance_sdk_operation
+    await asyncio.shield(operation)
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1933, in _run_sdk_cleanup_operation
+    await asyncio.wait_for(future, timeout=timeout)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\tasks.py", line 445, in wait_for
+    return fut.result()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1910, in worker
+    result = asyncio.run(drive())
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1908, in drive
+    return await outcome
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1732, in invoke
+    await self._maybe_await(request())
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 2240, in _maybe_await
+    return await value if inspect.isawaitable(value) else value
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\tests\test_impedance_responsiveness.py", line 21, in enable_impedance_detection_mode
+    raise RuntimeError("native setup failure")
+RuntimeError: native setup failure
+ok
+test_setup_timeout_blocks_retry_until_native_command_returns (test_impedance_responsiveness.ImpedanceResponsivenessTests) ... Impedance command failed: \u542f\u7528\u68c0\u6d4b\u6a21\u5f0f
+Traceback (most recent call last):
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\tasks.py", line 456, in wait_for
+    return fut.result()
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1933, in _run_sdk_cleanup_operation
+    await asyncio.wait_for(future, timeout=timeout)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\tasks.py", line 458, in wait_for
+    raise exceptions.TimeoutError() from exc
+asyncio.exceptions.TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1746, in _impedance_sdk_operation
+    await asyncio.shield(operation)
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1936, in _run_sdk_cleanup_operation
+    raise TimeoutError(
+TimeoutError: \u963b\u6297\u542f\u7528\u68c0\u6d4b\u6a21\u5f0f\u8d85\u65f6\uff08>0.0 \u79d2\uff09
+ok
+test_matching_receipt_and_explicit_abstention_are_accepted (test_model_task_contract.ModelReceiptTests) ... ok
+test_model_replacement_cannot_be_hidden_by_rewriting_receipt_hash (test_model_task_contract.ModelReceiptTests) ... ok
+test_receipt_rejects_independent_identity_and_status_mutations (test_model_task_contract.ModelReceiptTests) ... ok
+test_rejected_receipt_cannot_predict (test_model_task_contract.ModelReceiptTests) ... ok
+test_birthdate_rejects_non_text_values (test_models.ModelBoundaryTests) ... ok
+test_channel_config_rejects_boolean_active_mask (test_models.ModelBoundaryTests) ... ok
+test_channel_config_rejects_non_object_payloads (test_models.ModelBoundaryTests) ... ok
+test_channel_montage_round_trips_head_frame_metre_positions (test_models.ModelBoundaryTests) ... ok
+test_eog_only_activation_and_implicit_slot_roles_are_rejected (test_models.ModelBoundaryTests) ... ok
+test_experiment_config_rejects_unbalanced_candidate_count (test_models.ModelBoundaryTests) ... ok
+test_experiment_config_uses_digits_per_block_without_fixation_fields (test_models.ModelBoundaryTests) ... ok
+test_model_parameter_options_parse_manifest_values (test_models.ModelBoundaryTests) ... ok
+test_model_task_options_keep_ui_labels_and_runner_keys (test_models.ModelBoundaryTests) ... ok
+test_production_channel_config_matches_zero_based_hardware_wiring (test_models.ModelBoundaryTests) ... ok
+test_active_configuration_records_the_confirmed_single_heog (test_montage_eog_save.MontageEOGSaveTests) ... ok
+test_editing_legacy_unknown_derivation_does_not_invent_placement (test_montage_eog_save.MontageEOGSaveTests) ... ok
+test_reference_edit_preserves_bipolar_second_electrode (test_montage_eog_save.MontageEOGSaveTests) ... ok
+test_reference_edit_updates_only_the_bound_single_ended_reference (test_montage_eog_save.MontageEOGSaveTests) ... ok
+test_busy_inference_does_not_erase_visible_result (test_decoding.DecodingWorkflowTests) ... ok
+test_calibration_command_binds_selected_sessions_and_new_artifact (test_decoding.DecodingWorkflowTests) ... ok
+test_calibration_transmits_selected_eog_policy_only_when_correction_enabled (test_decoding.DecodingWorkflowTests) ... ok
+test_changed_model_clears_report_prediction_and_feedback (test_decoding.DecodingWorkflowTests) ... ok
+test_compute_device_is_persisted_and_passed_to_backend (test_decoding.DecodingWorkflowTests) ... ok
+test_daily_view_hides_paths_research_options_and_logs (test_decoding.DecodingWorkflowTests) ... ok
+test_eog_reference_policy_is_disabled_when_correction_off_or_runtime_busy (test_decoding.DecodingWorkflowTests) ... ok
+test_eog_reference_policy_persists_and_restores_without_changing_default (test_decoding.DecodingWorkflowTests) ... ok
+test_existing_configured_record_directory_is_used (test_decoding.DecodingWorkflowTests) ... ok
+test_failed_inspection_does_not_allow_capture_using_unverified_model (test_decoding.DecodingWorkflowTests) ... ok
+test_frozen_epoch_quality_is_mutually_exclusive_and_used_only_for_calibration (test_decoding.DecodingWorkflowTests) ... ok
+test_frozen_personal_epoch_quality_requires_a_continuous_profile_before_start (test_decoding.DecodingWorkflowTests) ... ok
+test_inference_list_matches_model_owner_time_and_one_block (test_decoding.DecodingWorkflowTests) ... ok
+test_inference_rejects_result_from_another_session (test_decoding.DecodingWorkflowTests) ... ok
+test_inference_uses_r5_and_never_sends_target (test_decoding.DecodingWorkflowTests) ... ok
+test_inspect_restores_subject_from_self_contained_backend_metadata (test_decoding.DecodingWorkflowTests) ... ok
+test_invalid_completed_report_does_not_leave_training_state (test_decoding.DecodingWorkflowTests) ... ok
+test_malformed_nested_metadata_is_displayed_as_unavailable (test_decoding.DecodingWorkflowTests) ... ok
+test_missing_frozen_epoch_quality_file_cannot_start_calibration (test_decoding.DecodingWorkflowTests) ... ok
+test_missing_recording_is_not_presented_as_ready (test_decoding.DecodingWorkflowTests) ... ok
+test_model_summary_displays_actual_quality_admitted_training_count (test_decoding.DecodingWorkflowTests) ... ok
+test_model_summary_distinguishes_personal_and_historical_epoch_quality (test_decoding.DecodingWorkflowTests) ... ok
+test_native_personal_reference_is_not_inherited_from_source_method (test_decoding.DecodingWorkflowTests) ... ok
+test_pending_or_malformed_label_does_not_hide_inference_record (test_decoding.DecodingWorkflowTests) ... ok
+test_personal_epoch_quality_requires_a_continuous_profile_before_start (test_decoding.DecodingWorkflowTests) ... ok
+test_quality_controls_bind_frozen_model_and_persist (test_decoding.DecodingWorkflowTests) ... ok
+test_refresh_preserves_explicit_calibration_selection (test_decoding.DecodingWorkflowTests) ... ok
+test_runtime_busy_prevents_commands_and_disables_controls (test_decoding.DecodingWorkflowTests) ... ok
+test_source_filter_does_not_select_simulated_and_other_records_together (test_decoding.DecodingWorkflowTests) ... ok
+test_source_mode_requires_existing_source_and_does_not_fall_back (test_decoding.DecodingWorkflowTests) ... ok
+test_stale_results_clear_before_new_inference (test_decoding.DecodingWorkflowTests) ... ok
+test_target_confirmation_blocks_practice_before_controller_access (test_decoding.DecodingWorkflowTests) ... ok
+test_unknown_saved_eog_policy_falls_back_to_shared_reference (test_decoding.DecodingWorkflowTests) ... ok
+test_busy_inference_does_not_erase_visible_result (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_calibration_command_binds_selected_sessions_and_new_artifact (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_calibration_transmits_selected_eog_policy_only_when_correction_enabled (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_changed_model_clears_report_prediction_and_feedback (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_compute_device_is_persisted_and_passed_to_backend (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_daily_view_hides_paths_research_options_and_logs (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_eog_reference_policy_is_disabled_when_correction_off_or_runtime_busy (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_eog_reference_policy_persists_and_restores_without_changing_default (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_existing_configured_record_directory_is_used (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_failed_inspection_does_not_allow_capture_using_unverified_model (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_frozen_epoch_quality_is_mutually_exclusive_and_used_only_for_calibration (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_frozen_personal_epoch_quality_requires_a_continuous_profile_before_start (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_inference_list_matches_model_owner_time_and_one_block (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_inference_rejects_result_from_another_session (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_inference_uses_r5_and_never_sends_target (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_inspect_restores_subject_from_self_contained_backend_metadata (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_invalid_completed_report_does_not_leave_training_state (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_malformed_nested_metadata_is_displayed_as_unavailable (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_missing_frozen_epoch_quality_file_cannot_start_calibration (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_missing_recording_is_not_presented_as_ready (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_model_summary_displays_actual_quality_admitted_training_count (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_model_summary_distinguishes_personal_and_historical_epoch_quality (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_native_personal_reference_is_not_inherited_from_source_method (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_pending_or_malformed_label_does_not_hide_inference_record (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_personal_epoch_quality_requires_a_continuous_profile_before_start (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_quality_controls_bind_frozen_model_and_persist (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_refresh_preserves_explicit_calibration_selection (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_runtime_busy_prevents_commands_and_disables_controls (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_source_entry_accepts_one_session_and_emits_fixed_basic_profile (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_source_filter_does_not_select_simulated_and_other_records_together (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_source_mode_requires_existing_source_and_does_not_fall_back (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_stale_results_clear_before_new_inference (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_target_confirmation_blocks_practice_before_controller_access (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_unknown_saved_eog_policy_falls_back_to_shared_reference (test_old_basic_entry.OldBasicEntryTests) ... ok
+test_cancelled_queue_and_lost_process_can_be_retried (test_quality_reports.QualityReportWorkflowTests) ... ok
+test_jobs_wait_for_acquisition_and_run_serially (test_quality_reports.QualityReportWorkflowTests) ... ok
+test_missing_backend_records_failure_and_path_escape_is_rejected (test_quality_reports.QualityReportWorkflowTests) ... ok
+test_refresh_deduplicates_and_retry_creates_a_new_report_version (test_quality_reports.QualityReportWorkflowTests) ... ok
+test_regeneration_clears_the_previous_visible_report (test_quality_reports.QualityReportWorkflowTests) ... ok
+test_report_for_other_session_is_never_published_as_success (test_quality_reports.QualityReportWorkflowTests) ... ok
+test_annotation_write_failure_cannot_finish_as_healthy (test_recording_boundaries.RecordingBoundaryTests) ... ok
+test_failed_recording_end_event_still_releases_session_for_recovery (test_recording_boundaries.RecordingBoundaryTests) ... ok
+test_missing_mock_source_is_a_recording_error (test_recording_boundaries.RecordingBoundaryTests) ... ok
+test_new_prepare_cannot_finalize_a_foreign_active_session (test_recording_boundaries.RecordingBoundaryTests) ... ok
+test_pending_confirmation_failure_can_recover_after_session_cleanup (test_recording_boundaries.RecordingBoundaryTests) ... ok
+test_repeated_pause_has_one_boundary_and_one_resume (test_recording_boundaries.RecordingBoundaryTests) ... ok
+test_stop_during_block_rest_exports_the_matching_rest_end (test_recording_boundaries.RecordingBoundaryTests) ... ok
+test_stop_failure_with_live_recording_cannot_report_completion (test_recording_boundaries.RecordingBoundaryTests) ... ok
+test_concurrent_finalizers_wait_without_blocking_writer (test_recording_lifecycle.RecorderFinalizationTests) ... ok
+test_failed_export_preserves_all_samples_and_can_retry (test_recording_lifecycle.RecorderFinalizationTests) ... ok
+test_wait_timeout_is_explicit_and_emergency_save_does_not_wait_again (test_recording_lifecycle.RecorderFinalizationTests) ... ok
+test_emergency_export_does_not_turn_ble_cleanup_into_serial_edf_stop (test_recording_lifecycle.RecordingRecoveryTests) ... ok
+test_export_failure_preserves_recorder_for_stop_retry (test_recording_lifecycle.RecordingRecoveryTests) ... ok
+test_mock_recording_uses_configured_rate_labels_and_real_edf (test_recording_lifecycle.RecordingRecoveryTests) ... ok
+test_recovery_never_duplicates_a_subscription_after_unsubscribe_failure (test_recording_lifecycle.RecordingRecoveryTests) ... ok
+test_recovery_requested_during_stop_does_not_restart_stopped_recording (test_recording_lifecycle.RecordingRecoveryTests) ... ok
+test_late_acquisition_faults_override_completion_at_every_finish_stage (test_recording_session.RecordingSessionTests) ... ok
+test_marker_cleanup_failure_still_stops_and_exports_recording (test_recording_session.RecordingSessionTests) ... ok
+test_saved_recording_keeps_completion_after_sdk_cleanup_warning (test_recording_session.RecordingSessionTests) ... ok
+test_session_finishes_and_exports_without_a_main_window (test_recording_session.RecordingSessionTests) ... ok
+test_cancel_after_samples_preserves_edf_before_releasing_recorder (test_recording_start_cancellation.RecordingStartCancellationTests) ... ok
+test_cancel_during_settle_releases_empty_recorder (test_recording_start_cancellation.RecordingStartCancellationTests) ... ok
+test_cancel_pending_transfer_waits_before_stopping_recording (test_recording_start_cancellation.RecordingStartCancellationTests) ... ok
+test_cancel_waits_for_native_subscription_before_unsubscribing (test_recording_start_cancellation.RecordingStartCancellationTests) ... ok
+test_sdk_cancelled_receipt_still_allows_cleanup_and_disconnect (test_recording_start_cancellation.RecordingStartCancellationTests) ... ok
+test_unsettled_native_request_blocks_disconnect_and_later_recovers (test_recording_start_cancellation.RecordingStartCancellationTests) ... ok
+test_default_ref_is_left_earlobe_clip_and_eog_has_same_reference (test_reference_contract.ReferenceContractTests) ... ok
+test_reference_details_cannot_claim_a_different_location (test_reference_contract.ReferenceContractTests) ... ok
+test_absolute_deadline_sleep_does_not_add_delay_when_late (test_runtime_contracts.RuntimeContractTests) ... ok
+test_argument_replacement_preserves_paths_with_spaces (test_runtime_contracts.RuntimeContractTests) ... ok
+test_ble_false_handle_is_rejected_after_disconnected_callback (test_runtime_contracts.RuntimeContractTests) ... ok
+test_ble_readback_timeout_preserves_live_connection (test_runtime_contracts.RuntimeContractTests) ... ok
+test_block_digit_sampling_balances_every_complete_cycle (test_runtime_contracts.RuntimeContractTests) ... ok
+test_block_digit_sampling_rejects_incomplete_candidate_cycles (test_runtime_contracts.RuntimeContractTests) ... ok
+test_cancelled_visible_stimulus_is_closed_with_an_interrupted_offset (test_runtime_contracts.RuntimeContractTests) ... ok
+test_close_event_marks_shutdown_before_scheduling_cleanup (test_runtime_contracts.RuntimeContractTests) ... ok
+test_connection_button_cancels_an_active_connect_task (test_runtime_contracts.RuntimeContractTests) ... ok
+test_connection_is_preserved_when_automatic_configuration_fails (test_runtime_contracts.RuntimeContractTests) ... ok
+test_device_configuration_fails_when_sample_rate_readback_conflicts (test_runtime_contracts.RuntimeContractTests) ... ok
+test_device_transition_blocks_experiment_start (test_runtime_contracts.RuntimeContractTests) ... ok
+test_dry_electrode_impedance_threshold_includes_boundary (test_runtime_contracts.RuntimeContractTests) ... ok
+test_eeg_batch_with_wrong_channel_count_is_rejected (test_runtime_contracts.RuntimeContractTests) ... ok
+test_eeg_delay_monitor_is_quiet_during_recording_cleanup (test_runtime_contracts.RuntimeContractTests) ... ok
+test_eeg_raw_adc_is_converted_to_microvolts (test_runtime_contracts.RuntimeContractTests) ... ok
+test_eeg_raw_adc_value_returned_as_microvolts_is_corrected (test_runtime_contracts.RuntimeContractTests) ... ok
+test_eeg_sdk_conversion_is_guarded_against_thousand_fold_units (test_runtime_contracts.RuntimeContractTests) ... ok
+test_eeg_unit_guard_corrects_only_miscaled_channels (test_runtime_contracts.RuntimeContractTests) ... ok
+test_experiment_controller_defers_target_label_until_confirmation (test_runtime_contracts.RuntimeContractTests) ... ok
+test_experiment_finish_schedules_nonblocking_recording_cleanup (test_runtime_contracts.RuntimeContractTests) ... ok
+test_failed_preview_stop_preserves_state_for_retry (test_runtime_contracts.RuntimeContractTests) ... ok
+test_impedance_accepts_non_coroutine_sdk_awaitable (test_runtime_contracts.RuntimeContractTests) ... ok
+test_impedance_cleanup_disables_mode_before_clearing_callback (test_runtime_contracts.RuntimeContractTests) ... Impedance command failed: \u6e05\u7406\u68c0\u6d4b\u8d44\u6e90
+Traceback (most recent call last):
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1746, in _impedance_sdk_operation
+    await asyncio.shield(operation)
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1933, in _run_sdk_cleanup_operation
+    await asyncio.wait_for(future, timeout=timeout)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\tasks.py", line 445, in wait_for
+    return fut.result()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1910, in worker
+    result = asyncio.run(drive())
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1908, in drive
+    return await outcome
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1732, in invoke
+    await self._maybe_await(request())
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 2240, in _maybe_await
+    return await value if inspect.isawaitable(value) else value
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\tests\test_runtime_contracts.py", line 143, in disable_impedance_detection_mode
+    raise RuntimeError("detector already disabled")
+RuntimeError: detector already disabled
+ok
+test_impedance_mode_failure_preserves_resources_for_recovery_retry (test_runtime_contracts.RuntimeContractTests) ... Impedance command failed: \u6e05\u7406\u68c0\u6d4b\u8d44\u6e90
+Traceback (most recent call last):
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1746, in _impedance_sdk_operation
+    await asyncio.shield(operation)
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1933, in _run_sdk_cleanup_operation
+    await asyncio.wait_for(future, timeout=timeout)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\tasks.py", line 445, in wait_for
+    return fut.result()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1910, in worker
+    result = asyncio.run(drive())
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1908, in drive
+    return await outcome
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 1732, in invoke
+    await self._maybe_await(request())
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\runtime.py", line 2240, in _maybe_await
+    return await value if inspect.isawaitable(value) else value
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\tests\test_runtime_contracts.py", line 141, in disable_impedance_detection_mode
+    raise RuntimeError("simulated impedance mode close failure")
+RuntimeError: simulated impedance mode close failure
+ok
+test_impedance_without_callback_data_is_reported (test_runtime_contracts.RuntimeContractTests) ... ok
+test_impedance_without_duration_runs_until_cancelled (test_runtime_contracts.RuntimeContractTests) ... ok
+test_local_edf_finalize_timeout_preserves_recording_for_retry (test_runtime_contracts.RuntimeContractTests) ... ok
+test_manual_stop_schedules_the_same_edf_cleanup_path (test_runtime_contracts.RuntimeContractTests) ... ok
+test_model_runner_passes_bids_raw_contract (test_runtime_contracts.RuntimeContractTests) ... ok
+test_model_runner_rejects_non_ready_session_before_dry_run (test_runtime_contracts.RuntimeContractTests) ... ok
+test_multi_block_experiment_writes_every_block_before_finishing (test_runtime_contracts.RuntimeContractTests) ... ok
+test_opening_impedance_dialog_starts_detection (test_runtime_contracts.RuntimeContractTests) ... ok
+test_preview_stop_forces_transfer_off_when_snapshot_is_stale (test_runtime_contracts.RuntimeContractTests) ... ok
+test_preview_stop_retries_transient_sdk_cleanup_failure (test_runtime_contracts.RuntimeContractTests) ... ok
+test_recording_clears_receive_buffer_and_loss_before_subscribing (test_runtime_contracts.RuntimeContractTests) ... ok
+test_recording_finalizes_buffer_before_reporting_cleanup_error (test_runtime_contracts.RuntimeContractTests) ... ok
+test_recording_saves_callback_samples_and_annotations_for_both_transports (test_runtime_contracts.RuntimeContractTests) ... Executing <Task pending name='Task-1013' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:101> wait_for=<Future pending cb=[shield.<locals>._outer_done_callback() at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\tasks.py:864, Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.110 seconds
+ok
+test_recording_start_fails_cleanly_without_first_eeg_packet (test_runtime_contracts.RuntimeContractTests) ... ok
+test_recording_stop_returns_to_ready_when_transfer_retry_succeeds (test_runtime_contracts.RuntimeContractTests) ... ok
+test_recording_transfer_stop_timeout_preserves_recovery_state (test_runtime_contracts.RuntimeContractTests) ... ok
+test_sdk_counter_reset_does_not_erase_received_callback_packets (test_runtime_contracts.RuntimeContractTests) ... ok
+test_serial_readback_timeout_remains_a_configuration_error (test_runtime_contracts.RuntimeContractTests) ... ok
+test_shutdown_cancels_stuck_finish_before_owning_recording_cleanup (test_runtime_contracts.RuntimeContractTests) ... ok
+test_starting_a_new_transfer_clears_previous_data_timestamp (test_runtime_contracts.RuntimeContractTests) ... ok
+test_startup_connection_uses_selected_serial_transport (test_runtime_contracts.RuntimeContractTests) ... ok
+test_stopping_preview_clears_displayed_waveforms (test_runtime_contracts.RuntimeContractTests) ... ok
+test_stream_start_does_not_wait_for_loss_stats_reset (test_runtime_contracts.RuntimeContractTests) ... ok
+test_unexpected_ble_disconnect_updates_device_lifecycle (test_runtime_contracts.RuntimeContractTests) ... ok
+test_wave_preview_appends_latest_batch_without_replay_queue (test_runtime_contracts.RuntimeContractTests) ... ok
+test_windows_argument_parser_removes_quotes (test_runtime_contracts.RuntimeContractTests) ... ok
+test_disconnect_during_settle_does_not_subscribe_a_dead_handle (test_runtime_races.AcquisitionRaceTests) ... ok
+test_disconnect_during_start_cannot_return_recording_success (test_runtime_races.AcquisitionRaceTests) ... ok
+test_failed_disconnect_export_blocks_recording_replacement (test_runtime_races.AcquisitionRaceTests) ... ok
+test_parallel_starts_cannot_replace_the_first_recorder (test_runtime_races.AcquisitionRaceTests) ... ok
+test_stop_during_start_settle_cancels_owned_start (test_runtime_races.AcquisitionRaceTests) ... ok
+test_timed_out_cleanup_cannot_stop_a_new_preview_later (test_runtime_races.AcquisitionRaceTests) ... ok
+test_unexpected_disconnect_persists_current_samples (test_runtime_races.AcquisitionRaceTests) ... ok
+test_finished_runner_can_immediately_start_next_job (test_runtime_races.CompletionSignalTests) ... ok
+test_practice_completion_observes_idle_controller (test_runtime_races.CompletionSignalTests) ... ok
+test_practice_stopped_before_first_loop_tick_emits_completion (test_runtime_races.CompletionSignalTests) ... ok
+test_baseline_cannot_be_completed_using_a_replacement_segment (test_sample_support.BaselineSupportTests) ... ok
+test_baseline_timeout_does_not_create_or_relabel_samples (test_sample_support.BaselineSupportTests) ... ok
+test_checkpoint_failure_prevents_baseline_readiness (test_sample_support.BaselineSupportTests) ... ok
+test_initial_short_buffer_waits_for_baseline_and_persists_it (test_sample_support.BaselineSupportTests) ... ok
+test_post_rest_baseline_requires_new_samples_after_the_rest_boundary (test_sample_support.BaselineSupportTests) ... ok
+test_resume_waits_for_a_new_segment_and_ignores_uncertain_first_batch (test_sample_support.BaselineSupportTests) ... ok
+test_baseline_and_response_timeouts_terminate_recording (test_sample_support.ControllerSupportTests) ... ok
+test_every_block_confirms_baseline_and_response_before_rest (test_sample_support.ControllerSupportTests) ... ok
+test_pause_cancels_support_wait_then_requests_new_baseline (test_sample_support.ControllerSupportTests) ... ok
+test_practice_does_not_require_or_claim_recorded_sample_support (test_sample_support.ControllerSupportTests) ... ok
+test_stop_cancels_support_wait_without_leaking_tasks (test_sample_support.ControllerSupportTests) ... ok
+test_unconfigured_recording_cannot_emit_a_stimulus (test_sample_support.ControllerSupportTests) ... ok
+test_disabled_filter_returns_a_copy_without_modifying_input (test_signal_processing.RealtimeFilterTests) ... ok
+test_eog_regression_removes_artifact_and_keeps_raw_eog (test_signal_processing.RealtimeFilterTests) ... ok
+test_filter_cutoffs_must_fit_the_sample_rate (test_signal_processing.RealtimeFilterTests) ... ok
+test_filter_rejects_non_finite_parameters (test_signal_processing.RealtimeFilterTests) ... ok
+test_filter_state_is_continuous_across_batches (test_signal_processing.RealtimeFilterTests) ... ok
+test_high_rate_eog_preview_does_not_amplify_bounded_noise (test_signal_processing.RealtimeFilterTests) ... ok
+test_preprocess_filters_eeg_but_retains_unfiltered_eog (test_signal_processing.RealtimeFilterTests) ... ok
+test_realtime_filter_uses_a_separate_eog_band (test_signal_processing.RealtimeFilterTests) ... ok
+test_aborted_session_is_not_an_algorithm_input (test_storage.SessionStorageBoundaryTests) ... ok
+test_active_confirmation_preserves_journal_when_recording_continues (test_storage.SessionStorageBoundaryTests) ... ok
+test_confirmation_recovers_each_publication_stage_without_duplicate_events (test_storage.SessionStorageBoundaryTests) ... ok
+test_discard_is_bound_to_the_explicit_active_save_directory (test_storage.SessionStorageBoundaryTests) ... ok
+test_failed_confirmation_journal_never_publishes_a_new_label (test_storage.SessionStorageBoundaryTests) ... ok
+test_incomplete_session_scan_ignores_non_object_json (test_storage.SessionStorageBoundaryTests) ... ok
+test_inference_readiness_ignores_pending_or_invalid_target_values (test_storage.SessionStorageBoundaryTests) ... ok
+test_late_thought_digit_confirmation_updates_finished_session (test_storage.SessionStorageBoundaryTests) ... ok
+test_latest_model_input_session_selects_newest_valid_bids_raw (test_storage.SessionStorageBoundaryTests) ... ok
+test_manifest_uses_device_readback_sample_rate (test_storage.SessionStorageBoundaryTests) ... ok
+test_model_input_rejects_bids_path_escape (test_storage.SessionStorageBoundaryTests) ... ok
+test_model_input_rejects_v2_instead_of_keeping_a_compatibility_alias (test_storage.SessionStorageBoundaryTests) ... ok
+test_model_input_requires_bids_raw_and_retained_rest (test_storage.SessionStorageBoundaryTests) ... ok
+test_session_finish_clears_active_context_and_keeps_posthoc_label (test_storage.SessionStorageBoundaryTests) ... ok
+test_shared_readiness_checks_files_quality_and_declared_source_paths (test_storage.SessionStorageBoundaryTests) ... ok
+test_close_failure_still_releases_active_ownership (test_storage_transactions.SessionTransactionTests) ... ok
+test_crashed_process_releases_active_lease_for_recovery (test_storage_transactions.SessionTransactionTests) ... ok
+test_failed_discard_does_not_publish_a_success_tombstone (test_storage_transactions.SessionTransactionTests) ... ok
+test_failed_manifest_update_does_not_leak_into_the_next_save (test_storage_transactions.SessionTransactionTests) ... ok
+test_other_store_cannot_overwrite_an_active_session_confirmation (test_storage_transactions.SessionTransactionTests) ... ok
+test_reader_cannot_cross_an_in_progress_confirmation (test_storage_transactions.SessionTransactionTests) ... ok
+test_recovery_cannot_abort_a_session_still_owned_by_acquisition (test_storage_transactions.SessionTransactionTests) ... ok
+test_bdf_normalization_preserves_data_and_annotations (test_timeline.RecordingTimelineTests) ... ok
+test_malformed_sdk_edf_is_repaired_without_removing_samples (test_timeline.RecordingTimelineTests) ... D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\.venv\lib\site-packages\pyedflib\edfwriter.py:613: UserWarning: Forcing a specific record_duration might alter calculated sample_frequencies when reading the file
+  warnings.warn('Forcing a specific record_duration might alter calculated sample_frequencies when reading the file')
+ok
+test_cancelled_open_keeps_receipt_and_closes_late_handle (test_transport_connection.ConnectionLifecycleTests) ... ok
+test_disconnect_during_firmware_read_cannot_publish_ready (test_transport_connection.ConnectionLifecycleTests) ... ok
+test_disconnect_failure_keeps_handle_until_successful_retry (test_transport_connection.ConnectionLifecycleTests) ... ok
+test_failed_connection_cleanup_retains_handle_for_disconnect_retry (test_transport_connection.ConnectionLifecycleTests) ... ok
+test_impedance_defaults_are_restored_before_preview_or_recording (test_transport_connection.ConnectionLifecycleTests) ... ok
+test_old_ble_disconnect_callback_cannot_invalidate_new_connection (test_transport_connection.ConnectionLifecycleTests) ... ok
+test_serial_requires_readback_and_retries_before_preview (test_transport_connection.ConnectionLifecycleTests) ... ok
+test_both_recording_sessions_export_250_hz_bids_clock_and_pause_boundary (test_transport_sample_contract.TransportSampleContractTests) ... ok
+test_both_transports_recover_with_250_sample_batches (test_transport_sample_contract.TransportSampleContractTests) ... ok
+test_non_250_rates_are_rejected_before_any_sdk_configuration_write (test_transport_sample_contract.TransportSampleContractTests) ... ok
+test_transports_keep_wrapped_packets_and_paused_segments_on_one_sample_axis (test_transport_sample_contract.TransportSampleContractTests) ... ok
+test_connection_fields_lock_during_connect_and_while_connected (test_transport_ui.TransportUITests) ... Executing <Task pending name='Task-1734' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:101> wait_for=<_GatheringFuture pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\tasks.py:665> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.391 seconds
+ok
+test_explicit_serial_launch_and_invalid_saved_settings (test_transport_ui.TransportUITests) ... Executing <Task pending name='Task-1741' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.359 seconds
+ok
+test_shutdown_waits_for_late_connection_cleanup (test_transport_ui.TransportUITests) ... Executing <Task pending name='Task-1747' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:101> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.360 seconds
+ok
+test_switch_preserves_each_address_and_supported_configuration (test_transport_ui.TransportUITests) ... Executing <Task pending name='Task-1761' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.625 seconds
+ok
+test_both_transports_use_one_pausable_edf_and_sample_clock (test_transport_unification.TransportRecordingTests) ... ok
+test_serial_stall_recovers_the_existing_recorder (test_transport_unification.TransportRecordingTests) ... ok
+test_experiment_rechecks_state_after_modal_confirmation (test_ui_logic.UILogicTests) ... Executing <Task pending name='Task-1833' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.391 seconds
+ok
+test_failed_preparation_does_not_leak_calibration_target (test_ui_logic.UILogicTests) ... Executing <Task pending name='Task-1840' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.328 seconds
+ok
+test_fixed_acquisition_rate_is_used_for_preview_filter (test_ui_logic.UILogicTests) ... Executing <Task pending name='Task-1846' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.281 seconds
+ok
+test_immediate_stop_releases_preparation_ownership (test_ui_logic.UILogicTests) ... Executing <Task pending name='Task-1853' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.531 seconds
+ok
+test_missing_analysis_path_clears_previous_recovery_action (test_ui_logic.UILogicTests) ... Executing <Task pending name='Task-1860' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.266 seconds
+ok
+test_montage_dialog_rechecks_device_state_before_saving (test_ui_logic.UILogicTests) ... Executing <Task pending name='Task-1866' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.313 seconds
+ok
+test_negative_impedance_is_never_contact_pass (test_ui_logic.UILogicTests) ... Executing <Task pending name='Task-1872' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.359 seconds
+ok
+test_pending_configuration_blocks_disconnect_and_impedance (test_ui_logic.UILogicTests) ... Executing <Task pending name='Task-1878' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.281 seconds
+ok
+test_pending_preview_transition_blocks_conflicting_actions (test_ui_logic.UILogicTests) ... Executing <Task pending name='Task-1885' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.328 seconds
+ok
+test_preview_start_synchronizes_device_readback_rate (test_ui_logic.UILogicTests) ... Executing <Task pending name='Task-1892' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.297 seconds
+ok
+test_stale_discard_click_after_resume_cannot_discard_active_recording (test_ui_logic.UILogicTests) ... Executing <Task pending name='Task-1899' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.312 seconds
+ok
+test_stop_can_cancel_preparation_before_stimuli_begin (test_ui_logic.UILogicTests) ... Executing <Task pending name='Task-1905' coro=<IsolatedAsyncioTestCase._asyncioLoopRunner() running at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:95> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\asyncio\base_events.py:429> created at C:\Users\chent\AppData\Roaming\uv\python\cpython-3.10-windows-x86_64-none\lib\unittest\async_case.py:117> took 0.281 seconds
+ok
+
+----------------------------------------------------------------------
+Ran 358 tests in 168.787s
+
+OK

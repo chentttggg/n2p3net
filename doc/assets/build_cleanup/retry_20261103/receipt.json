@@ -1,0 +1,118 @@
+{
+  "schema": "bci_cleanup_retry_receipt/1",
+  "status": "completed",
+  "authorization": "User explicitly requested retry of pending BCI-001 to BCI-005 from doc/build_cleanup_maintenance.zh.md in this chat; each deletion was approved through require_escalated.",
+  "verification_timestamp_utc": "2026-11-03T07:26:59.993773+00:00",
+  "verification_timestamp_local": "2026-11-03T00:26:59.993773-07:00",
+  "local_timezone": "America/Denver",
+  "preflight": {
+    "absolute_physical_targets_and_ancestors_checked": true,
+    "all_target_reparse_points": 0,
+    "all_counts_and_bytes_match_original_inventory": true,
+    "running_dependency_query": "Approved read-only non-elevated Get-CimInstance Win32_Process query returned no matching executable or Python/PyInstaller command line.",
+    "resume_and_delivery_reference_search": "No target dependency found in current pause checkpoint, handoff, quality delivery index, or accepted execution receipt.",
+    "git_tracked_target_files": 0,
+    "build_spec_preserved": true,
+    "staged_payload_matches_with_reviewed_release_additions_and_configuration": true
+  },
+  "targets": [
+    {
+      "id": "BCI-001",
+      "path": "D:\\BCI\\n2p3-net\\build",
+      "status": "completed",
+      "files_before": 285,
+      "logical_bytes_before": 6584163,
+      "reparse_points_before": 0,
+      "exists_after": false,
+      "final_exit_code": 0
+    },
+    {
+      "id": "BCI-002",
+      "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_quality_20261030\\implementation\\final",
+      "status": "completed",
+      "files_before": 3,
+      "logical_bytes_before": 57936,
+      "reparse_points_before": 0,
+      "exists_after": false,
+      "final_exit_code": 0
+    },
+    {
+      "id": "BCI-003",
+      "path": "D:\\BCI\\artifacts\\apps\\BrainSync_Release_20260920\\_internal",
+      "status": "completed",
+      "files_before": 486,
+      "logical_bytes_before": 308676124,
+      "reparse_points_before": 0,
+      "exists_after": false,
+      "final_exit_code": 0
+    },
+    {
+      "id": "BCI-004",
+      "path": "D:\\BCI\\artifacts\\apps\\BrainSync_Release_20260920\\BrainSync_Standalone.exe",
+      "status": "completed",
+      "files_before": 1,
+      "logical_bytes_before": 120236664,
+      "reparse_points_before": 0,
+      "exists_after": false,
+      "final_exit_code": 0
+    },
+    {
+      "id": "BCI-005",
+      "path": "D:\\BCI\\tmp\\brainsync_basic_entry_20261102",
+      "status": "completed",
+      "files_before": 1136,
+      "logical_bytes_before": 717280797,
+      "reparse_points_before": 0,
+      "exists_after": false,
+      "final_exit_code": 0
+    }
+  ],
+  "execution_operations": "operations.json",
+  "execution_operation_count": 6,
+  "diagnostics": [
+    "Initial direct-CMD-shell BCI-001 call returned exit code 123 (path syntax error); read-only quoted dir reproduced the harness quoting problem and confirmed target still existed. Explicit cmd.exe /d /c invocation was read-only verified, then used successfully for all five individual targets.",
+    "Initial sandbox read access to the wheel and CIM process query was denied; approved unsandboxed read-only checks succeeded.",
+    "Initial verification comparison decoded UTF-8 inventory using Windows locale cp1252, garbling the Chinese manual filename. Explicit UTF-8 read produced exact equality of all saved protected entries; complete corrected verification returned exit code 0."
+  ],
+  "policy_or_approval_rejections_this_retry": [],
+  "all_targets_absent": true,
+  "logical_files_removed": 1911,
+  "logical_bytes_removed": 1152835684,
+  "physical_bytes_freed": null,
+  "physical_space_note": "Not measured; logical file bytes do not establish actual reclaimed filesystem space.",
+  "protected_groups": 11,
+  "protected_files": 799,
+  "all_protected_byte_for_byte_unchanged": true,
+  "preservation_checks": {
+    "accepted_quality": true,
+    "first_failure_evidence": true,
+    "validated_wheel_distribution": true,
+    "quality_delivery_index": true,
+    "editable_metadata": true,
+    "paused_checkpoint": true,
+    "basic_entry_evidence": true,
+    "quality_original_receipt": true,
+    "basic_original_receipt": true,
+    "replacement_release": true,
+    "old_release_retained": true
+  },
+  "replacement_checks": {
+    "profile_sha256_matches": true,
+    "wheel_sha256_matches": true,
+    "wheel_zip_integrity": true,
+    "replacement_exe_sha256_matches": true,
+    "original_quality_receipt_sha256_matches": true,
+    "replacement_manifest_files_verified": 555
+  },
+  "historical_smoke": "Existing successful release_smoke.json reused; no GUI or research process launched during cleanup.",
+  "preserved_scope": "Accepted quality profile, seven caches and producers, first-failure evidence, validated wheel, delivery index, editable metadata, paused checkpoint, basic-entry delivery evidence, complete new release, and all old-release contents outside BCI-003/004. Raw data and frozen research results are outside deletion scope. Old junction alias retained.",
+  "remaining_targets_or_blockers": [],
+  "evidence_sha256": {
+    "inventory.py": "1750f96597158d4cf0e2dd16b269ce1a90490281204856b9c2f4bfdf6826463f",
+    "before.json": "87f3ecf7036f33d960055c0072896db84ffba10b93a3997fbcaf2e77a182ce36",
+    "after.json": "a966c5559afad8f8ec93a381088fef9fdb1c7e7e5359056b58e8b62da4c67008",
+    "operations.json": "0d353e4a02e14e504ecebf9ce3d7c3387503a8cefc8cd6dae47734e16bd97428",
+    "stage_comparison.json": "3aba0d378c44cd0cab396091510e00521a230f40fd1fc574f40631c5ab0e01bf",
+    "staged_decoding.json": "6d43682e72f3eab9720738205917a97b8115a44e4406a7dcb5afc8bb99ed2eef"
+  }
+}

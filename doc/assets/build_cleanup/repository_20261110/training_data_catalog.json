@@ -1,0 +1,486 @@
+{
+  "schema": "n2p3_compact_training_data_catalog/1",
+  "created_utc": "2026-11-10T14:54:54.101471+00:00",
+  "scope": "local metadata and existing result pointers; zero training, array rewrites or model prediction calls",
+  "inventory_basis": {
+    "artifact_key": "repository_20261110_private_full_inventory",
+    "sha256": "7dd5bb18d9f30c6b3f8ebeb8720844d9fe8d4526a36d8a5631439534b0e36bf7",
+    "junction_targets_excluded": true,
+    "bytes_are": "logical file sizes before this cleanup; not allocation or current checkpoint state"
+  },
+  "directories": [
+    {
+      "path": "mne_data",
+      "category": "original_acquisitions_and_named_derivations",
+      "baseline_file_count": 67123,
+      "baseline_logical_bytes": 59232954909,
+      "retention": "keep_in_place"
+    },
+    {
+      "path": "cloud_inputs",
+      "category": "attested_native_EA_and_source_selection_inputs",
+      "baseline_file_count": 21,
+      "baseline_logical_bytes": 2129932259,
+      "retention": "keep_in_place_with_sidecars",
+      "npz_compression": {
+        "npz_files": 5,
+        "files_by_zip_method": {
+          "deflate": 5
+        },
+        "array_member_bytes": 2668465087,
+        "zip_member_payload_bytes": 2128328864,
+        "inspection": "ZIP central-directory metadata only; no arrays loaded or rewritten"
+      }
+    },
+    {
+      "path": "experiments/cache/four_dataset_20260907",
+      "category": "historical_derived_training_inputs",
+      "baseline_file_count": 30,
+      "baseline_logical_bytes": 2480523547,
+      "retention": "eligible_for_lossless_cold_archive_with_all_shards_and_sidecars",
+      "npz_compression": {
+        "npz_files": 15,
+        "files_by_zip_method": {
+          "stored": 15
+        },
+        "array_member_bytes": 2477873398,
+        "zip_member_payload_bytes": 2477873398,
+        "inspection": "ZIP central-directory metadata only; no arrays loaded or rewritten"
+      },
+      "verified_cold_archive": "frozen/repository_consolidation_20261110/training_inputs.zip"
+    },
+    {
+      "path": "experiments/cache/history",
+      "category": "historical_derived_inputs_and_attestations",
+      "baseline_file_count": 12,
+      "baseline_logical_bytes": 1378316938,
+      "retention": "eligible_for_lossless_cold_archive_with_sidecars",
+      "npz_compression": {
+        "npz_files": 4,
+        "files_by_zip_method": {
+          "deflate": 4
+        },
+        "array_member_bytes": 1727594816,
+        "zip_member_payload_bytes": 1377671265,
+        "inspection": "ZIP central-directory metadata only; no arrays loaded or rewritten"
+      },
+      "verified_cold_archive": "frozen/repository_consolidation_20261110/training_inputs.zip"
+    },
+    {
+      "path": "experiments/cache/legacy",
+      "category": "legacy_derived_inputs_and_attestations",
+      "baseline_file_count": 13,
+      "baseline_logical_bytes": 211525936,
+      "retention": "eligible_for_lossless_cold_archive_with_sidecars",
+      "npz_compression": {
+        "npz_files": 2,
+        "files_by_zip_method": {
+          "deflate": 2
+        },
+        "array_member_bytes": 311191163,
+        "zip_member_payload_bytes": 211432323,
+        "inspection": "ZIP central-directory metadata only; no arrays loaded or rewritten"
+      },
+      "verified_cold_archive": "frozen/repository_consolidation_20261110/training_inputs.zip"
+    },
+    {
+      "path": "experiments/results_history",
+      "category": "historical_results_predictions_and_producers",
+      "baseline_file_count": 369,
+      "baseline_logical_bytes": 204607617,
+      "retention": "lossless_cold_archive_preserving_original_relative_paths",
+      "verified_cold_archive": "frozen/repository_consolidation_20261110/research_records.zip"
+    },
+    {
+      "path": "experiments/results",
+      "category": "retained_research_analysis",
+      "baseline_file_count": 1,
+      "baseline_logical_bytes": 110120,
+      "retention": "keep_in_place"
+    },
+    {
+      "path": "models/source",
+      "category": "current_workstation_source_weight",
+      "baseline_file_count": 1,
+      "baseline_logical_bytes": 36347053,
+      "retention": "keep_directly_readable"
+    },
+    {
+      "path": "frozen",
+      "category": "original_source_freezes_evidence_and_recovery_archives",
+      "baseline_file_count": 1607,
+      "baseline_logical_bytes": 3546558604,
+      "retention": "preserve_original_bytes_and_manifests"
+    }
+  ],
+  "original_data_groups": [
+    {
+      "path": "mne_data/BrainSync_startup_cut_4s",
+      "baseline_file_count": 44,
+      "baseline_logical_bytes": 454955719
+    },
+    {
+      "path": "mne_data/Brainsync1",
+      "baseline_file_count": 87,
+      "baseline_logical_bytes": 29084255
+    },
+    {
+      "path": "mne_data/Brainsync2",
+      "baseline_file_count": 140,
+      "baseline_logical_bytes": 79056692
+    },
+    {
+      "path": "mne_data/MNE-Cattan2019_VR-data",
+      "baseline_file_count": 48,
+      "baseline_logical_bytes": 661196378
+    },
+    {
+      "path": "mne_data/MNE-Chailloux2020-data",
+      "baseline_file_count": 2364,
+      "baseline_logical_bytes": 1361816229
+    },
+    {
+      "path": "mne_data/MNE-P3-data",
+      "baseline_file_count": 751,
+      "baseline_logical_bytes": 2234420229
+    },
+    {
+      "path": "mne_data/MNE-RomaniBF2025ERP-data",
+      "baseline_file_count": 176,
+      "baseline_logical_bytes": 306970985
+    },
+    {
+      "path": "mne_data/MNE-bnci-data",
+      "baseline_file_count": 8,
+      "baseline_logical_bytes": 172688772
+    },
+    {
+      "path": "mne_data/MNE-braininvaders2012-data",
+      "baseline_file_count": 1730,
+      "baseline_logical_bytes": 1328730792
+    },
+    {
+      "path": "mne_data/MNE-braininvaders2013-data",
+      "baseline_file_count": 36533,
+      "baseline_logical_bytes": 19290524444
+    },
+    {
+      "path": "mne_data/MNE-braininvaders2014a-data",
+      "baseline_file_count": 183,
+      "baseline_logical_bytes": 8141361249
+    },
+    {
+      "path": "mne_data/MNE-braininvaders2014b-data",
+      "baseline_file_count": 19,
+      "baseline_logical_bytes": 2341134811
+    },
+    {
+      "path": "mne_data/MNE-braininvaders2015a-data",
+      "baseline_file_count": 20224,
+      "baseline_logical_bytes": 10568295850
+    },
+    {
+      "path": "mne_data/MNE-epflp300-data",
+      "baseline_file_count": 8,
+      "baseline_logical_bytes": 2208626585
+    },
+    {
+      "path": "mne_data/huebner2017_nemar_nm000199_v1.0.2",
+      "baseline_file_count": 2595,
+      "baseline_logical_bytes": 5528956671
+    },
+    {
+      "path": "mne_data/mainsah2025_s2_nemar_v1.0.3",
+      "baseline_file_count": 2147,
+      "baseline_logical_bytes": 4018255723
+    },
+    {
+      "path": "mne_data/speier2017_nemar_nm000259_v1.0.4",
+      "baseline_file_count": 66,
+      "baseline_logical_bytes": 506879525
+    }
+  ],
+  "current_basic_source": {
+    "profile": {
+      "path": "configs/brainsync_old_basic_nn_source.json",
+      "bytes": 703,
+      "sha256": "f991fe799af2e6c554b49120a19b20a712e6da9620f8a3f4a6fb19ad6d24ccf0"
+    },
+    "profile_id": "old_basic_nn_source",
+    "model": {
+      "path": "models/source/basic12_r1s0m0_u27950.pt",
+      "bytes": 36347053,
+      "sha256": "935ee55de598256ca9299595ec899359751b1ebbf5fa0bb15af0f0fbb8bda3bd",
+      "matches_profile_source_sha256": true
+    },
+    "recipe_owner": "configs/brainsync_old_basic_nn_source.json#recipe"
+  },
+  "results": {
+    "public_unified_20260916": {
+      "summary": {
+        "path": "doc/assets/unified_cloud_20260916/results_summary.json",
+        "bytes": 566625,
+        "sha256": "4d63d367775152cf71e2915bed8211b5992a2f3c28dbb06ab9b0a43cab48e398"
+      },
+      "compact_table": {
+        "path": "doc/assets/unified_cloud_20260916/mean_auc.csv",
+        "bytes": 1371,
+        "sha256": "eabba7a99afa59ce3305067749c04ad0f89bca2a13a9fa6ec5c8939e3c394cf8"
+      },
+      "field_pointers": [
+        "means.<arm>.<K>.mean_auc",
+        "means.<arm>.<K>.n_requested_participants",
+        "integrity.logical_cells",
+        "integrity.fits",
+        "replay",
+        "primary_tests.scope"
+      ],
+      "existing_summary_values": {
+        "logical_cells": 12150,
+        "fits": {
+          "neural": 6138,
+          "lda": 246,
+          "reused": 4416,
+          "zero_shot": 1350
+        }
+      },
+      "scope": "four-study public development; distinct from the 20260918 twelve-library major archive"
+    },
+    "brainsync_old_20261031": {
+      "accepted_scope": "accepted_single_person_retrospective_development",
+      "requested_cells": 150,
+      "completed_cells": 150,
+      "R1_requested_rounds_per_seed": 100,
+      "R1_new_fits_in_original_analysis": 0,
+      "original_source_archive_sha256": "c71a4d2109eaed23bea734c76845940bcf05d51a3af4478ac3c1db54fe75fd24",
+      "expected_original_payloads": [
+        {
+          "path": "experiments/runs/brainsync_matrix_20261031/execution_source/source.manifest.json",
+          "bytes": 96882,
+          "sha256": "b75de75804e333fa869a12716f1d9c8b139c9ec63f7cf8821769fcfbe727f33a",
+          "at_recorded_repository_path": false
+        },
+        {
+          "path": "experiments/runs/brainsync_matrix_20261031/recovery_source/source.manifest.json",
+          "bytes": 96882,
+          "sha256": "78f3979aa1544a584c0976a04740623c66a5de1167e05880485bf8ff1aae0d62",
+          "at_recorded_repository_path": false
+        },
+        {
+          "path": "experiments/runs/brainsync_matrix_20261031/complete_execution.tar.gz",
+          "bytes": 305844200,
+          "sha256": "5d5236ba0a88186093fcb39cc6ff0e0818f61fdf6279f37c5b5cd433c57227d9",
+          "at_recorded_repository_path": false
+        },
+        {
+          "path": "experiments/runs/brainsync_matrix_20261031/analysis/summary.json",
+          "bytes": 224417,
+          "sha256": "14389e22febec5259e653cd74c2aa6bc1b580a899ba67015ab739f464a52b1a0",
+          "at_recorded_repository_path": false
+        },
+        {
+          "path": "experiments/runs/brainsync_matrix_20261031/analysis/decision_records.json",
+          "bytes": 49237432,
+          "sha256": "f4d895c8e10f9a051b65d86285eab32f4d79866f2100df96d424e6b53be19a05",
+          "at_recorded_repository_path": false
+        },
+        {
+          "path": "experiments/runs/brainsync_matrix_20261031/analyze.py",
+          "bytes": 23901,
+          "sha256": "b77eca151dd0b31598546769532f744259d7df942667b5ddef5cfdd8e631fbc8",
+          "at_recorded_repository_path": false
+        },
+        {
+          "path": "experiments/runs/brainsync_matrix_20261031/single_round/plan.json",
+          "bytes": 1408,
+          "sha256": "dec0cc568bd1613d791f7eef632f0c3b4b0efda87e6addd1369562e0d585e3f0",
+          "at_recorded_repository_path": false
+        },
+        {
+          "path": "experiments/runs/brainsync_matrix_20261031/single_round/results.json",
+          "bytes": 216846,
+          "sha256": "e34e930cc597734f02906b947e7acd6015da8293edd44cff5a1befd30536ac43",
+          "at_recorded_repository_path": false
+        },
+        {
+          "path": "experiments/runs/brainsync_matrix_20261031/single_round/round_predictions.json",
+          "bytes": 24206303,
+          "sha256": "e49b1877a401c59a32acb2a56b70b2978ebd232e073b02c1faccadae0239da76",
+          "at_recorded_repository_path": false
+        },
+        {
+          "path": "experiments/runs/brainsync_matrix_20261031/single_round/verification.json",
+          "bytes": 778,
+          "sha256": "080c2ae211c1038991fb5330f0e83df562c098d2c3ec38613f9ded0ba31b0a8b",
+          "at_recorded_repository_path": false
+        },
+        {
+          "path": "experiments/runs/brainsync_matrix_20261031/single_round/index.html",
+          "bytes": 4707,
+          "sha256": "d9c07e045611a7190d7330f189cc0a393f2107735859b06d96e6c879da05ea26",
+          "at_recorded_repository_path": false
+        },
+        {
+          "path": "experiments/runs/brainsync_matrix_20261031/single_round/single_round.png",
+          "bytes": 137962,
+          "sha256": "dcb2c7e430bc9d2d6eca0dd0180e1a11cb6a76d7bba1a4e58a4b62e5d4ced189",
+          "at_recorded_repository_path": false
+        },
+        {
+          "path": "experiments/runs/brainsync_matrix_20261031/single_round/producer/experiments/analyze_brainsync_single_round.py",
+          "bytes": 22313,
+          "sha256": "008bc4054395453ba73ebbc580a2ad67fd7a40cee61e736d75e9288207d7d54f",
+          "at_recorded_repository_path": false
+        }
+      ],
+      "current_observation": "experiments/runs is absent; original hashes are retrieval keys, not proof of present payloads"
+    },
+    "major_20260920": {
+      "manifest": {
+        "path": "frozen/major_domain_transfer_20260920/manifest.json",
+        "bytes": 21212,
+        "sha256": "0196d5c2c7f8073baa4ca4eb613406e914e347d2b22b40d4c8b821ace2b707b0"
+      },
+      "archive_path": "frozen/major_domain_transfer_20260920/major.zip",
+      "expected_archive_sha256": "5812bbec40c19cf24ab310c06f79af2ce801a11227578b326b21db87116ae9e5",
+      "executed_source_roles": [
+        {
+          "role": "trained_primary",
+          "archive_sha256": "c71a4d2109eaed23bea734c76845940bcf05d51a3af4478ac3c1db54fe75fd24",
+          "members": 346,
+          "bytes": 1441349,
+          "verified_all_members": true,
+          "origin_repository_relative": "frozen/unified12_20260918_performance_v4/source.source-only.tar.gz"
+        },
+        {
+          "role": "first_fold_reused",
+          "archive_sha256": "5701d51f04dc1111e30f1bb9058f5e8992383abae3860250a1c8b87e2c3bcbce",
+          "members": 345,
+          "bytes": 1437513,
+          "verified_all_members": true,
+          "origin_repository_relative": "frozen/unified12_20260918_execution_v2/source.source-only.tar.gz"
+        },
+        {
+          "role": "input_preparation",
+          "archive_sha256": "bac9654edfe63610f4775aa34569efc524c782eac81a0496b35a9e0ac79a54f7",
+          "members": 345,
+          "bytes": 1433591,
+          "verified_all_members": true,
+          "origin_repository_relative": "frozen/source_modules_20260918_acceptance/source.source-only.tar.gz"
+        },
+        {
+          "role": "workstation_default_source",
+          "archive_sha256": "f3267cd466efac946ee4a79ababa11a79472ba78119694e641cc592940ac05e4",
+          "members": 215,
+          "bytes": 1072821,
+          "verified_all_members": true,
+          "origin_repository_relative": "frozen/binary_transfer_20260906e.source-only.tar.gz"
+        }
+      ],
+      "external_final_models_results": [
+        {
+          "role": "complete_final_models_and_results",
+          "bytes": 11990531333,
+          "sha256": "db3456fada03f6cc7177c225b822c4884aef4e2204c646218c029ef0bd99c790",
+          "current_reachability": "pending cloud owner live confirmation",
+          "historical_verified_members": 19779,
+          "original_locator_owner": "frozen/major_domain_transfer_20260920/manifest.json#external_assets",
+          "artifact_key": "unified12_20260918_verified_execution"
+        }
+      ],
+      "external_reachability_checked_in_this_cleanup": false
+    }
+  },
+  "authority_bindings": [
+    {
+      "path": "doc/assets/brainsync_matrix/acceptance.json",
+      "bytes": 4768,
+      "sha256": "2a5cc859220ad2d1610525c6063843739a1586efbba69663e02e6ed6e71c243d"
+    },
+    {
+      "path": "doc/assets/brainsync_matrix/single_round_acceptance.json",
+      "bytes": 2636,
+      "sha256": "30e8da46cdb76e025f13a01ca089276d87770865b614d4087c4ed0bf98b7c34e"
+    },
+    {
+      "path": "doc/assets/brainsync_matrix/block_reviewed_acceptance.json",
+      "bytes": 1496,
+      "sha256": "07193db51bc36682086d233087883caf0d7b110b5b687ede54d3e4af6017c053"
+    },
+    {
+      "path": "doc/assets/brainsync_matrix/source_QC_disposition_binding.json",
+      "bytes": 3297,
+      "sha256": "5f15be3def7cec766346849c5ea1807ab2498ef1a45052cdfe7d1ba09753a483"
+    },
+    {
+      "path": "doc/assets/research_resume_20261011/cloud_payload_recovery_binding.json",
+      "bytes": 17276,
+      "sha256": "41b98805b22d64368803dc1d0a5e9c532cd1469037ec579042ab524b6e54f4cf"
+    },
+    {
+      "path": "doc/assets/research_resume_20261011/binary_finalizer_recovery_binding.json",
+      "bytes": 4706,
+      "sha256": "2ab1ea8517d9bea7360eb168ab3e655a47142f600f874ea688f4c8556e6d0485"
+    },
+    {
+      "path": "doc/assets/research_resume_20261012/research_integration_acceptance.json",
+      "bytes": 163034,
+      "sha256": "45c1a93dad1f799d6813e6e2e8a7f6af89886647bec9c8e68f7f74e61dfc0ebf"
+    },
+    {
+      "path": "doc/assets/lean_personal_erp_20261018/identity_current_source_review_01.json",
+      "bytes": 7341,
+      "sha256": "ad7cbb88914850bf3ad0493faa51890fda827a9e6435b5b9f882fff3198f5833"
+    },
+    {
+      "path": "frozen/complete_learner_code_recovery.manifest.json",
+      "bytes": 1861,
+      "sha256": "28c28578b29c86fa8447a95da704d9c33ca31b8f98395dec54634cda1c7b1878"
+    },
+    {
+      "path": "frozen/early_source_retirement_20261107/manifest.json",
+      "bytes": 674637,
+      "sha256": "52cbd622194994d3f93ead3f35b35ec317971ae19e7a166349ad8cb8f68699e5"
+    },
+    {
+      "path": "frozen/major_domain_transfer_20260920/manifest.json",
+      "bytes": 21212,
+      "sha256": "0196d5c2c7f8073baa4ca4eb613406e914e347d2b22b40d4c8b821ace2b707b0"
+    }
+  ],
+  "archive_contract": {
+    "historical_records_target": "frozen/repository_consolidation_20261110/research_records.zip",
+    "actual_archive_and_retirement_result_owner": "doc/assets/build_cleanup/repository_20261110/receipt.json",
+    "required_live_lineage_inputs": [
+      "tmp/audit/scratch/g8_inventory.json",
+      "tmp/audit/scratch/g8_decl.json"
+    ],
+    "restore_before_reuse": "Restore exact original relative paths and verify every member against the archive manifest; preserve original producer SHA.",
+    "cache_retirement_gate": "No current source/configuration or either current paused checkpoint names the three cache subdirectories; complete member verification required before retiring loose files.",
+    "not_a_replacement_for": "Original EEG, final models and predictions, producer snapshots, pause state or external artifact reachability.",
+    "verified_archives": [
+      {
+        "kind": "training_inputs",
+        "manifest": "doc/assets/build_cleanup/repository_20261110/training_inputs.manifest.json",
+        "archive": "frozen/repository_consolidation_20261110/training_inputs.zip",
+        "archive_sha256": "2612d50ad9fcdcb9d7402a198d7289d89019d817c15ad868c0d1048d84a488dc",
+        "archive_bytes": 2583081719,
+        "source_logical_bytes": 4070366421,
+        "member_count": 55,
+        "member_SHA256_verification": "all members passed before loose-file retirement; see original manifest and cleanup receipt",
+        "logical_bytes_saved_if_originals_retired": 1487284702
+      },
+      {
+        "kind": "research_records",
+        "manifest": "doc/assets/build_cleanup/repository_20261110/research_records.manifest.json",
+        "archive": "frozen/repository_consolidation_20261110/research_records.zip",
+        "archive_sha256": "d62a1b9f2a1eb09f2b17add9ac2aabf185cd56d588f88d63c717e7b2ea1b3aac",
+        "archive_bytes": 35672738,
+        "source_logical_bytes": 245211088,
+        "member_count": 2753,
+        "member_SHA256_verification": "all members passed before loose-file retirement; see original manifest and cleanup receipt",
+        "logical_bytes_saved_if_originals_retired": 209538350
+      }
+    ]
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "schema": "n2p3_cleanup_inventory/1",
+  "root": "D:\\BCI\\n2p3-net",
+  "files": 177402,
+  "bytes": 77535914661,
+  "groups": {
+    ".editorconfig": {
+      "files": 1,
+      "bytes": 375
+    },
+    ".gitattributes": {
+      "files": 1,
+      "bytes": 481
+    },
+    ".gitignore": {
+      "files": 1,
+      "bytes": 1446
+    },
+    "AGENTS.md": {
+      "files": 1,
+      "bytes": 1551
+    },
+    "conftest.py": {
+      "files": 1,
+      "bytes": 404
+    },
+    "open_dashboard.cmd": {
+      "files": 1,
+      "bytes": 129
+    },
+    "open_dashboard.ps1": {
+      "files": 1,
+      "bytes": 7011
+    },
+    "pyproject.toml": {
+      "files": 1,
+      "bytes": 2256
+    },
+    "README.md": {
+      "files": 1,
+      "bytes": 6631
+    },
+    "requirements.txt": {
+      "files": 1,
+      "bytes": 185
+    },
+    "uv.lock": {
+      "files": 1,
+      "bytes": 726207
+    },
+    "__pycache__": {
+      "files": 1,
+      "bytes": 908
+    },
+    "tmp": {
+      "files": 2731,
+      "bytes": 54407009
+    },
+    "tests": {
+      "files": 509,
+      "bytes": 6194425
+    },
+    "src": {
+      "files": 502,
+      "bytes": 14194998
+    },
+    "scripts": {
+      "files": 13,
+      "bytes": 269282
+    },
+    "Paper": {
+      "files": 59,
+      "bytes": 200735384
+    },
+    "models": {
+      "files": 1,
+      "bytes": 36347053
+    },
+    "mne_data": {
+      "files": 67123,
+      "bytes": 59232954909
+    },
+    "frozen": {
+      "files": 1607,
+      "bytes": 3546558604
+    },
+    "formal": {
+      "files": 33137,
+      "bytes": 2682012955
+    },
+    "experiments": {
+      "files": 566,
+      "bytes": 4278478889
+    },
+    "doc": {
+      "files": 4056,
+      "bytes": 244686668
+    },
+    "configs": {
+      "files": 10,
+      "bytes": 12062
+    },
+    "cloud_inputs": {
+      "files": 21,
+      "bytes": 2129932259
+    },
+    "artifacts": {
+      "files": 2,
+      "bytes": 707
+    },
+    ".venv-gpu": {
+      "files": 31721,
+      "bytes": 3399707146
+    },
+    ".venv": {
+      "files": 34129,
+      "bytes": 1053285348
+    },
+    ".ruff_cache": {
+      "files": 82,
+      "bytes": 86742
+    },
+    ".pytest_cache": {
+      "files": 5,
+      "bytes": 67026
+    },
+    ".mne_home": {
+      "files": 1,
+      "bytes": 285
+    },
+    ".github": {
+      "files": 1,
+      "bytes": 1288
+    },
+    ".git": {
+      "files": 1110,
+      "bytes": 655228490
+    },
+    ".claude": {
+      "files": 3,
+      "bytes": 662
+    },
+    ".agents": {
+      "files": 1,
+      "bytes": 4886
+    }
+  },
+  "reparse_points": [
+    {
+      "path": "frozen/bidirectional_qc_20260909_acceptance/BrainSync_Tool_newest",
+      "target": "\\\\?\\D:\\BCI\\BrainSync_Tool_newest"
+    },
+    {
+      "path": "frozen/bidirectional_qc_20260909_acceptance/checkout/.venv",
+      "target": "\\\\?\\D:\\BCI\\n2p3-net\\.venv"
+    },
+    {
+      "path": "frozen/bidirectional_qc_20260909_acceptance/checkout/mne_data",
+      "target": "\\\\?\\D:\\BCI\\n2p3-net\\mne_data"
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,3567 @@
+{
+  "schema": "n2p3_consolidated_document_history/1",
+  "recorded_date": "2026-11-10",
+  "archive": "frozen/repository_consolidation_20261110/documents.zip",
+  "archive_role": "Original markdown bytes, including historical pages and active documents before this navigation edit. Archive integrity is recorded by the repository consolidation manifest.",
+  "member_count": 146,
+  "historical_document_count": 130,
+  "historical_topic_counts": {
+    "calibration": 11,
+    "formal": 14,
+    "public": 32,
+    "execution": 49,
+    "response": 24
+  },
+  "members": [
+    {
+      "original_path": "README.md",
+      "archive_member": "README.md",
+      "role": "active_document_before_edit",
+      "title": "N2P3-Net",
+      "topic": "active_guidance",
+      "bytes": 6631,
+      "sha256": "470d60d003d8cd5109a6e85ca570753dbb4404cd6e676a9485ea80760fd890d9",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/README.md",
+      "archive_member": "doc/README.md",
+      "role": "active_document_before_edit",
+      "title": "项目文档",
+      "topic": "active_guidance",
+      "bytes": 2618,
+      "sha256": "4a6a4df9dc852afc681a405a838a1bd3b03cac942885a8df16bf4598db061ce0",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/build_cleanup_maintenance.zh.md",
+      "archive_member": "doc/build_cleanup_maintenance.zh.md",
+      "role": "active_document_before_edit",
+      "title": "构建清理长期维护",
+      "topic": "active_guidance",
+      "bytes": 10992,
+      "sha256": "abd8d0c222719ee5abe5ad9f029bd485a8d133c1474574424f11bfc6fab9517f",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/engineering.zh.md",
+      "archive_member": "doc/engineering.zh.md",
+      "role": "active_document_before_edit",
+      "title": "工程指南",
+      "topic": "active_guidance",
+      "bytes": 78003,
+      "sha256": "99a959a31a8f9fdc7e38390d16542892049fcee1f5ed5c3c4bb6788870093084",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/README.md",
+      "archive_member": "doc/evidence/README.md",
+      "role": "active_document_before_edit",
+      "title": "研究与工程证据",
+      "topic": "active_guidance",
+      "bytes": 33885,
+      "sha256": "0586033847fbd3aa97c38d6c2485b2e39a31d1081e1a0c154cd42349acdb3777",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/algorithm_chain_repairs_20260916.zh.md",
+      "archive_member": "doc/evidence/algorithm_chain_repairs_20260916.zh.md",
+      "role": "historical_document",
+      "title": "算法链八项修复与完整验收",
+      "topic": "execution",
+      "bytes": 10017,
+      "sha256": "09e1973596ba8968d7137e986d20138c64ac2e3936bf04f4a84782958c9c2218",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/architecture_decision_cross_dataset_20260906.zh.md",
+      "archive_member": "doc/evidence/architecture_decision_cross_dataset_20260906.zh.md",
+      "role": "historical_document",
+      "title": "跨数据集 ERP 迁移训练方案",
+      "topic": "public",
+      "bytes": 20749,
+      "sha256": "deae4442906b6d44b511e470d2370397e4b3650929a38352dcc985a4bf08d968",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 173,
+          "label": "跨库研究设计",
+          "original_target": "architecture_decision_cross_dataset_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/bi61_author_exclusion_20260906.zh.md",
+      "archive_member": "doc/evidence/bi61_author_exclusion_20260906.zh.md",
+      "role": "historical_document",
+      "title": "BI2014a 作者拒收被试：依据与删除记录",
+      "topic": "public",
+      "bytes": 5364,
+      "sha256": "3b43f9ec4a279fe544ee961083f118ddd23afe6321792c748e24b14b13cfae32",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 155,
+          "label": "作者依据与删除记录",
+          "original_target": "bi61_author_exclusion_20260906.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 360,
+          "label": "作者依据与删除记录",
+          "original_target": "evidence/bi61_author_exclusion_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/bi64_protocol_factorial_20260906.zh.md",
+      "archive_member": "doc/evidence/bi64_protocol_factorial_20260906.zh.md",
+      "role": "historical_document",
+      "title": "BI64：源LOSO、校准单位与通道数的配对复核",
+      "topic": "public",
+      "bytes": 5980,
+      "sha256": "7aba842fd1cb90175c037f0f2e1c3775dee4e09df08465d4b0ad644768a2e855",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 160,
+          "label": "配对协议",
+          "original_target": "bi64_protocol_factorial_20260906.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 295,
+          "label": "BI64设计与运行记录",
+          "original_target": "evidence/bi64_protocol_factorial_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/bi64_protocol_factorial_results_20260906.zh.md",
+      "archive_member": "doc/evidence/bi64_protocol_factorial_results_20260906.zh.md",
+      "role": "historical_document",
+      "title": "BI64配对复核结果：LOSO与自身校准分开报告",
+      "topic": "public",
+      "bytes": 9415,
+      "sha256": "ad69aa9d7c2d059cb9ceac60b69577e0ed3ba9527466ac843417bdecfd8cf25f",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 160,
+          "label": "BI64结果",
+          "original_target": "bi64_protocol_factorial_results_20260906.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 296,
+          "label": "64人实测",
+          "original_target": "evidence/bi64_protocol_factorial_results_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/bi_family_transfer_census_20260904.zh.md",
+      "archive_member": "doc/evidence/bi_family_transfer_census_20260904.zh.md",
+      "role": "historical_document",
+      "title": "BI 家族（BrainInvaders 2012–2015b）跨域迁移普查",
+      "topic": "public",
+      "bytes": 12879,
+      "sha256": "6700296bef4d40fbf4658f93239bddbee24da404a1e70d3e862ecaf3f7c7a597",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 178,
+          "label": "BI家族普查",
+          "original_target": "bi_family_transfer_census_20260904.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/bidirectional_qc_20260909.zh.md",
+      "archive_member": "doc/evidence/bidirectional_qc_20260909.zh.md",
+      "role": "historical_document",
+      "title": "双向滤波与QC联合优化",
+      "topic": "response",
+      "bytes": 11070,
+      "sha256": "0a428a6de6a5ecb27990e11f8b68459e189c122c2ec4d62776d1a48924fb8d42",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 261,
+          "label": "双向联合验证",
+          "original_target": "evidence/bidirectional_qc_20260909.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 130,
+          "label": "双向滤波与QC联合优化",
+          "original_target": "bidirectional_qc_20260909.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 252,
+          "label": "推导与验证",
+          "original_target": "evidence/bidirectional_qc_20260909.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 148,
+          "label": "联合优化",
+          "original_target": "evidence/bidirectional_qc_20260909.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 352,
+          "label": "联合优化证据",
+          "original_target": "evidence/bidirectional_qc_20260909.zh.md"
+        },
+        {
+          "source": "doc/workstation.zh.md",
+          "line": 35,
+          "label": "双向联合优化",
+          "original_target": "evidence/bidirectional_qc_20260909.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/biot_applicability_assessment_20260904.zh.md",
+      "archive_member": "doc/evidence/biot_applicability_assessment_20260904.zh.md",
+      "role": "historical_document",
+      "title": "BIOT 在本项目情景下的应用能力评估",
+      "topic": "public",
+      "bytes": 10379,
+      "sha256": "0eb6ba5a1cefdbecc08f65cc7b09fc092654a2475c6ae1e027f266cc79120c94",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 181,
+          "label": "BIOT适用性审查",
+          "original_target": "biot_applicability_assessment_20260904.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/bnci_unseen_target_plan_20260906.zh.md",
+      "archive_member": "doc/evidence/bnci_unseen_target_plan_20260906.zh.md",
+      "role": "historical_document",
+      "title": "BNCI未见校准目标的严格开发对照",
+      "topic": "public",
+      "bytes": 3163,
+      "sha256": "ba49e384077e1074d44f7dd2ca1504ebf7cd4bcb8bd9d780b0a9ce2dc5da86f0",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 161,
+          "label": "实验协议",
+          "original_target": "bnci_unseen_target_plan_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/bnci_unseen_target_results_20260906.zh.md",
+      "archive_member": "doc/evidence/bnci_unseen_target_results_20260906.zh.md",
+      "role": "historical_document",
+      "title": "未见校准目标的BNCI开发结果与refit修复验收",
+      "topic": "public",
+      "bytes": 5523,
+      "sha256": "6d87f0ca7055a335b185484a48690c2b6def18be95f3dea9f3c45a8f3ffb9a91",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 161,
+          "label": "BNCI严格结果",
+          "original_target": "bnci_unseen_target_results_20260906.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 418,
+          "label": "BNCI未见校准目标结果",
+          "original_target": "evidence/bnci_unseen_target_results_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/boundary_state_redesign_20261005.zh.md",
+      "archive_member": "doc/evidence/boundary_state_redesign_20261005.zh.md",
+      "role": "historical_document",
+      "title": "边界状态重新设计：源码核对、数学反例与独立研究框架",
+      "topic": "response",
+      "bytes": 19982,
+      "sha256": "5e8d1bd4c3f6911a3d23188c7261c8de0d8a8fc3a79ad329f4cece2a4253350a",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 75,
+          "label": "边界状态重新设计与独立框架",
+          "original_target": "boundary_state_redesign_20261005.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 99,
+          "label": "边界状态核对",
+          "original_target": "evidence/boundary_state_redesign_20261005.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 90,
+          "label": "边界状态重新设计",
+          "original_target": "evidence/boundary_state_redesign_20261005.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 257,
+          "label": "设计核对",
+          "original_target": "evidence/boundary_state_redesign_20261005.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_app_integration_20260906.zh.md",
+      "archive_member": "doc/evidence/brainsync_app_integration_20260906.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync主工作站整合",
+      "topic": "execution",
+      "bytes": 7116,
+      "sha256": "e26b91a117ebf65e2ebcc414baac703749b79e29126641de9eda1411cd2b45e6",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 192,
+          "label": "工作站整合验收",
+          "original_target": "brainsync_app_integration_20260906.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 215,
+          "label": "实施记录",
+          "original_target": "evidence/brainsync_app_integration_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_architecture_20260915.zh.md",
+      "archive_member": "doc/evidence/brainsync_architecture_20260915.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync工作站架构修复与验收",
+      "topic": "execution",
+      "bytes": 5505,
+      "sha256": "490fe8491b447b3a2488f17841f019e9ab7b00bb3a75aec847a65746dfcb3b05",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 126,
+          "label": "架构实施与验收",
+          "original_target": "brainsync_architecture_20260915.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 340,
+          "label": "架构实施",
+          "original_target": "evidence/brainsync_architecture_20260915.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_auc_cause_audit_20260908.zh.md",
+      "archive_member": "doc/evidence/brainsync_auc_cause_audit_20260908.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync 低 AUC 与迁移负效应的原因核查",
+      "topic": "response",
+      "bytes": 18736,
+      "sha256": "c96102f7b365dfb9a9d92022f677fab7eb01cb440b0aed5f48481e9d22b38bf4",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 142,
+          "label": "原始数据与模型归因核查",
+          "original_target": "brainsync_auc_cause_audit_20260908.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_epoch_timing_audit_20260907.zh.md",
+      "archive_member": "doc/evidence/brainsync_epoch_timing_audit_20260907.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync 窗口、时轴与 epoch 核查",
+      "topic": "response",
+      "bytes": 8553,
+      "sha256": "8179b210743eed99533d6618725f0be30b423fd5047cf7fb0f606c8b1e3da993",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 187,
+          "label": "BrainSync 窗口与时轴核查",
+          "original_target": "brainsync_epoch_timing_audit_20260907.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 409,
+          "label": "窗口与时轴核查",
+          "original_target": "evidence/brainsync_epoch_timing_audit_20260907.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_frontend_logic_20260916.zh.md",
+      "archive_member": "doc/evidence/brainsync_frontend_logic_20260916.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync前端逻辑审查与修复",
+      "topic": "execution",
+      "bytes": 6253,
+      "sha256": "e26444589697117f612eeb1f511645112877298cb32b3a8e1679b4d317642ea9",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 123,
+          "label": "前端逻辑修复",
+          "original_target": "brainsync_frontend_logic_20260916.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 332,
+          "label": "逻辑修复",
+          "original_target": "evidence/brainsync_frontend_logic_20260916.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_input_replay_20260909.zh.md",
+      "archive_member": "doc/evidence/brainsync_input_replay_20260909.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync冻结输入重放：实现与软件验证",
+      "topic": "response",
+      "bytes": 5776,
+      "sha256": "6e2c1b02ff5b72793b749afa8de71a732d81a8a5496ef1168a944f49d0a301cb",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 131,
+          "label": "冻结输入重放",
+          "original_target": "brainsync_input_replay_20260909.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 404,
+          "label": "冻结输入重放验证",
+          "original_target": "evidence/brainsync_input_replay_20260909.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_notch_20260909.zh.md",
+      "archive_member": "doc/evidence/brainsync_notch_20260909.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync工频陷波实施与验证",
+      "topic": "response",
+      "bytes": 6935,
+      "sha256": "49f9bc021dbebf6bfc8af527873f99c5dc179225656c6535e0c4e7d361b65724",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 134,
+          "label": "陷波实施与验证",
+          "original_target": "brainsync_notch_20260909.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 328,
+          "label": "实施证据",
+          "original_target": "evidence/brainsync_notch_20260909.zh.md"
+        },
+        {
+          "source": "doc/workstation.zh.md",
+          "line": 168,
+          "label": "验证",
+          "original_target": "evidence/brainsync_notch_20260909.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_p001_pilot_20260907.zh.md",
+      "archive_member": "doc/evidence/brainsync_p001_pilot_20260907.zh.md",
+      "role": "historical_document",
+      "title": "P001 本人数据与云端迁移先导实验",
+      "topic": "execution",
+      "bytes": 8331,
+      "sha256": "984dc86eed56711b45fc7fcfb20432d8c0a219b9032cbbec0ea045dfc9c86cb7",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 573,
+          "label": "P001运行",
+          "original_target": "evidence/brainsync_p001_pilot_20260907.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 148,
+          "label": "P001 先导训练",
+          "original_target": "brainsync_p001_pilot_20260907.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 58,
+          "label": "P001证据",
+          "original_target": "evidence/brainsync_p001_pilot_20260907.zh.md"
+        },
+        {
+          "source": "doc/workstation.zh.md",
+          "line": 188,
+          "label": "历史P001训练记录",
+          "original_target": "evidence/brainsync_p001_pilot_20260907.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_p001_quality_20260909.zh.md",
+      "archive_member": "doc/evidence/brainsync_p001_quality_20260909.zh.md",
+      "role": "historical_document",
+      "title": "P001 新增两份记录与现有数据质量复核",
+      "topic": "execution",
+      "bytes": 8958,
+      "sha256": "33db6df0850906b885284566d237bf3de971be921a12d6d51e0e554d7d87a5cf",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 135,
+          "label": "六份记录质量复核",
+          "original_target": "brainsync_p001_quality_20260909.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_qc_redesign_20260908.zh.md",
+      "archive_member": "doc/evidence/brainsync_qc_redesign_20260908.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync 幅度分布与伪迹证据分离",
+      "topic": "response",
+      "bytes": 16207,
+      "sha256": "2bb0213da0805c59a747ba2838346d7ac87666fd94acfbddc05f30e7e87695a2",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 332,
+          "label": "QC验证",
+          "original_target": "evidence/brainsync_qc_redesign_20260908.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 138,
+          "label": "QC重设计与验证",
+          "original_target": "brainsync_qc_redesign_20260908.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 303,
+          "label": "QC裁决",
+          "original_target": "evidence/brainsync_qc_redesign_20260908.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 172,
+          "label": "QC重设计证据",
+          "original_target": "evidence/brainsync_qc_redesign_20260908.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 503,
+          "label": "本轮证据",
+          "original_target": "evidence/brainsync_qc_redesign_20260908.zh.md"
+        },
+        {
+          "source": "doc/workstation.zh.md",
+          "line": 210,
+          "label": "结果",
+          "original_target": "evidence/brainsync_qc_redesign_20260908.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_qc_remaining_20260908.zh.md",
+      "archive_member": "doc/evidence/brainsync_qc_remaining_20260908.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync 其余四项前置质量问题",
+      "topic": "response",
+      "bytes": 15186,
+      "sha256": "0cbd81a50dcdfb2c38efae8ec0c2eee30232d0c9b23c68bd1e74c57bc6ee0b8f",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 363,
+          "label": "四项收尾",
+          "original_target": "evidence/brainsync_qc_remaining_20260908.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 139,
+          "label": "持续趋势、采样支持与处理对照",
+          "original_target": "brainsync_qc_remaining_20260908.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 309,
+          "label": "科研反例",
+          "original_target": "evidence/brainsync_qc_remaining_20260908.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 175,
+          "label": "持续趋势、采样支持与处理对照",
+          "original_target": "evidence/brainsync_qc_remaining_20260908.zh.md"
+        },
+        {
+          "source": "doc/workstation.zh.md",
+          "line": 222,
+          "label": "其余四项收尾",
+          "original_target": "evidence/brainsync_qc_remaining_20260908.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_quality_implementation_20260907.zh.md",
+      "archive_member": "doc/evidence/brainsync_quality_implementation_20260907.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync 时钟与连续质量实施",
+      "topic": "response",
+      "bytes": 8907,
+      "sha256": "40090be7ef38987a7c2d4bdaeb169ab9df721f9d6e754e4e9b1127f3c02b9aaa",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 324,
+          "label": "实施记录",
+          "original_target": "evidence/brainsync_quality_implementation_20260907.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 146,
+          "label": "本次实施与验证",
+          "original_target": "brainsync_quality_implementation_20260907.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 153,
+          "label": "验证记录",
+          "original_target": "evidence/brainsync_quality_implementation_20260907.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 469,
+          "label": "实施证据",
+          "original_target": "evidence/brainsync_quality_implementation_20260907.zh.md"
+        },
+        {
+          "source": "doc/workstation.zh.md",
+          "line": 190,
+          "label": "方案实施",
+          "original_target": "evidence/brainsync_quality_implementation_20260907.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_recovery_20260908.zh.md",
+      "archive_member": "doc/evidence/brainsync_recovery_20260908.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync 局部污染后的有限恢复",
+      "topic": "execution",
+      "bytes": 15516,
+      "sha256": "334ca10e3ecd0fd45150f790e088a97b24bf1f164bbebc877ab372aa66a53a06",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 667,
+          "label": "恢复实验",
+          "original_target": "evidence/brainsync_recovery_20260908.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 143,
+          "label": "局部恢复与补充训练",
+          "original_target": "brainsync_recovery_20260908.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 287,
+          "label": "局部恢复证据",
+          "original_target": "evidence/brainsync_recovery_20260908.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 156,
+          "label": "局部恢复证据",
+          "original_target": "evidence/brainsync_recovery_20260908.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 485,
+          "label": "恢复记录",
+          "original_target": "evidence/brainsync_recovery_20260908.zh.md"
+        },
+        {
+          "source": "doc/workstation.zh.md",
+          "line": 228,
+          "label": "恢复证据",
+          "original_target": "evidence/brainsync_recovery_20260908.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_reference_20260908.zh.md",
+      "archive_member": "doc/evidence/brainsync_reference_20260908.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync 左耳垂 REF 更正与算法路径裁决",
+      "topic": "response",
+      "bytes": 9017,
+      "sha256": "22a0b01280bdf2690e38597546c702a26fb229fb0417a6790e6c567cc0dac75a",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 619,
+          "label": "科研/验证说明",
+          "original_target": "evidence/brainsync_reference_20260908.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 140,
+          "label": "左耳垂更正与算法裁决",
+          "original_target": "brainsync_reference_20260908.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 452,
+          "label": "左耳垂合同更正",
+          "original_target": "evidence/brainsync_reference_20260908.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 39,
+          "label": "科研判断与更正验证",
+          "original_target": "evidence/brainsync_reference_20260908.zh.md"
+        },
+        {
+          "source": "doc/workstation.zh.md",
+          "line": 178,
+          "label": "本轮裁决",
+          "original_target": "evidence/brainsync_reference_20260908.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_release_20260920.zh.md",
+      "archive_member": "doc/evidence/brainsync_release_20260920.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync发布版整理与EXE验收",
+      "topic": "execution",
+      "bytes": 3695,
+      "sha256": "8f03fcaa7a8d881b5613f7989b8256bf00dd637a19caf6b0ee19b50a12e5c8a0",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 112,
+          "label": "发布版记录",
+          "original_target": "evidence/brainsync_release_20260920.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 305,
+          "label": "发布版EXE验收",
+          "original_target": "evidence/brainsync_release_20260920.zh.md"
+        },
+        {
+          "source": "doc/workstation.zh.md",
+          "line": 58,
+          "label": "原发布记录",
+          "original_target": "evidence/brainsync_release_20260920.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_s1_calibration_20260908.zh.md",
+      "archive_member": "doc/evidence/brainsync_s1_calibration_20260908.zh.md",
+      "role": "historical_document",
+      "title": "四库新源模型的 BrainSync 独立会话校准",
+      "topic": "calibration",
+      "bytes": 5383,
+      "sha256": "50bfd5f513d40d6c1c8a5f9c0303ef2a891f43ef288fb01aa405cc08f19f5482",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 82,
+          "label": "新源校准记录",
+          "original_target": "evidence/brainsync_s1_calibration_20260908.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 141,
+          "label": "新源校准结果",
+          "original_target": "brainsync_s1_calibration_20260908.zh.md"
+        },
+        {
+          "source": "doc/workstation.zh.md",
+          "line": 181,
+          "label": "结果及路径",
+          "original_target": "evidence/brainsync_s1_calibration_20260908.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_signal_quality_design_20260907.zh.md",
+      "archive_member": "doc/evidence/brainsync_signal_quality_design_20260907.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync 连续质量与滤波状态研究方案",
+      "topic": "response",
+      "bytes": 20934,
+      "sha256": "c7ba205dbe5f8989f186542fcc374d5047c380a0a60ddc051243baedb15d67ea",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 189,
+          "label": "连续质量与滤波状态研究方案",
+          "original_target": "brainsync_signal_quality_design_20260907.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 200,
+          "label": "覆盖复核与方案",
+          "original_target": "evidence/brainsync_signal_quality_design_20260907.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 152,
+          "label": "文献、数学与实施规格",
+          "original_target": "evidence/brainsync_signal_quality_design_20260907.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_transient_quality_20260907.zh.md",
+      "archive_member": "doc/evidence/brainsync_transient_quality_20260907.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync 第三、第五会话的漂移与震荡诊断",
+      "topic": "response",
+      "bytes": 7504,
+      "sha256": "30d71c563169634a549a870971d990c25d964c61651519ce80ad89976e32e28b",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 188,
+          "label": "第三、第五会话瞬态诊断与第一份撤回",
+          "original_target": "brainsync_transient_quality_20260907.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 268,
+          "label": "瞬态诊断",
+          "original_target": "evidence/brainsync_transient_quality_20260907.zh.md"
+        },
+        {
+          "source": "doc/workstation.zh.md",
+          "line": 187,
+          "label": "质量诊断与处置",
+          "original_target": "evidence/brainsync_transient_quality_20260907.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/brainsync_transport_unification_20260917.zh.md",
+      "archive_member": "doc/evidence/brainsync_transport_unification_20260917.zh.md",
+      "role": "historical_document",
+      "title": "BrainSync串口/BLE统一与固定250 Hz验收",
+      "topic": "execution",
+      "bytes": 5729,
+      "sha256": "580d84cd56765a0d4185788a337bdfc2c49265e76ebbea66200f16e79871ca83",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/brainsync_versions_20260906.zh.md",
+      "archive_member": "doc/evidence/brainsync_versions_20260906.zh.md",
+      "role": "historical_document",
+      "title": "两份BrainSync采集端的源码比较",
+      "topic": "execution",
+      "bytes": 9086,
+      "sha256": "587f910242bd780589de9801b4c25d270bbfa15d1a373926b41b1caa923d4621",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 191,
+          "label": "BrainSync版本比较",
+          "original_target": "brainsync_versions_20260906.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 55,
+          "label": "版本比较",
+          "original_target": "evidence/brainsync_versions_20260906.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 409,
+          "label": "源码比较",
+          "original_target": "evidence/brainsync_versions_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/calibration_and_selection.zh.md",
+      "archive_member": "doc/evidence/calibration_and_selection.zh.md",
+      "role": "active_document_before_edit",
+      "title": "校准、温度与整程序选择",
+      "topic": "active_guidance",
+      "bytes": 40645,
+      "sha256": "6cfb814c1a9baf8970a6b94bc4a6980648188c789a867117ec266e483083cc95",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/calibration_g_prior_20261006.zh.md",
+      "archive_member": "doc/evidence/calibration_g_prior_20261006.zh.md",
+      "role": "historical_document",
+      "title": "全C固定reference g-prior：第一切片代码实施",
+      "topic": "calibration",
+      "bytes": 6435,
+      "sha256": "244685069165bf4cbee5e542c8530978ed89a2228662c1ffd4853867e5718490",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 141,
+          "label": "实施",
+          "original_target": "evidence/calibration_g_prior_20261006.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 66,
+          "label": "全C固定reference g-prior：第一切片代码实施",
+          "original_target": "calibration_g_prior_20261006.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 57,
+          "label": "固定reference g-prior",
+          "original_target": "evidence/calibration_g_prior_20261006.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 65,
+          "label": "B08第一切片",
+          "original_target": "evidence/calibration_g_prior_20261006.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 236,
+          "label": "g-prior",
+          "original_target": "evidence/calibration_g_prior_20261006.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/calibration_trace_control_20261006.zh.md",
+      "archive_member": "doc/evidence/calibration_trace_control_20261006.zh.md",
+      "role": "historical_document",
+      "title": "全C trace匹配isotropic prior对照",
+      "topic": "calibration",
+      "bytes": 3880,
+      "sha256": "bc2a8b602ffaad19025f0ebebeaf259df73f008c06a70d4cedbfd291f74f6cc9",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 63,
+          "label": "全C trace-isotropic控制代码实施",
+          "original_target": "calibration_trace_control_20261006.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 59,
+          "label": "trace-isotropic控制",
+          "original_target": "evidence/calibration_trace_control_20261006.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 238,
+          "label": "trace控制",
+          "original_target": "evidence/calibration_trace_control_20261006.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/car_math_audit_20260904.zh.md",
+      "archive_member": "doc/evidence/car_math_audit_20260904.zh.md",
+      "role": "historical_document",
+      "title": "跨域 CAR 数学复核与证据边界",
+      "topic": "response",
+      "bytes": 10446,
+      "sha256": "1e95a1a1f6c04c7868ee822134a73f4c6f30db11ec2d1444d456e09c70649eb6",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 179,
+          "label": "CAR数学审计",
+          "original_target": "car_math_audit_20260904.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/chain_implementation_20260930.zh.md",
+      "archive_member": "doc/evidence/chain_implementation_20260930.zh.md",
+      "role": "historical_document",
+      "title": "全链合同修复与 EA 类型化接线（2026-09-30）",
+      "topic": "execution",
+      "bytes": 4114,
+      "sha256": "da6d455c5dd372e16c11969b9b9eb48550329e5a12e22e74c60cbe6b9cb7d710",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 85,
+          "label": "全链合同修复与EA类型化接线",
+          "original_target": "chain_implementation_20260930.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/chain_mechanism_20260916.zh.md",
+      "archive_member": "doc/evidence/chain_mechanism_20260916.zh.md",
+      "role": "historical_document",
+      "title": "全链条的科学与工程判断：信息保留、监督单位和决策目标",
+      "topic": "execution",
+      "bytes": 21895,
+      "sha256": "1dbcf8a72296edc16cb5e40d9643315c6e5eea9c9f00c858f34f886e54602de9",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 114,
+          "label": "信息保留、监督单位与决策目标",
+          "original_target": "chain_mechanism_20260916.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 134,
+          "label": "独立机制审查",
+          "original_target": "evidence/chain_mechanism_20260916.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/cloud_ablation_v2_results_20260904.zh.md",
+      "archive_member": "doc/evidence/cloud_ablation_v2_results_20260904.zh.md",
+      "role": "historical_document",
+      "title": "域迁移 v2.1 松弛门槛重跑结果（2026-09-05）",
+      "topic": "public",
+      "bytes": 6669,
+      "sha256": "39b64d6cab430b9a4ded0968205086fc5aae4910680cecde5d0b623bcea47b13",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 163,
+          "label": "dev64结果",
+          "original_target": "cloud_ablation_v2_results_20260904.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/cloud_delivery_20260918.zh.md",
+      "archive_member": "doc/evidence/cloud_delivery_20260918.zh.md",
+      "role": "historical_document",
+      "title": "云端非核心清理与十二库输入交付",
+      "topic": "execution",
+      "bytes": 3869,
+      "sha256": "e921c8de1c9d6869f3b2902c44cc83e1cb265f5a6134dcf0619d6cc3e34118f2",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 110,
+          "label": "非核心清理与输入交付",
+          "original_target": "cloud_delivery_20260918.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/cloud_disk_cleanup_20260908.zh.md",
+      "archive_member": "doc/evidence/cloud_disk_cleanup_20260908.zh.md",
+      "role": "historical_document",
+      "title": "云端数据盘清理与保全",
+      "topic": "execution",
+      "bytes": 4150,
+      "sha256": "6a23875850f38ffcce4b72c7fda3d0bfe674cbf3b5689ec4768d1925c40e6a38",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 701,
+          "label": "云端清理记录",
+          "original_target": "evidence/cloud_disk_cleanup_20260908.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 197,
+          "label": "云端数据盘清理与保全",
+          "original_target": "cloud_disk_cleanup_20260908.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/code_quality_audit_20260908.zh.md",
+      "archive_member": "doc/evidence/code_quality_audit_20260908.zh.md",
+      "role": "historical_document",
+      "title": "全库代码质量核查",
+      "topic": "execution",
+      "bytes": 18687,
+      "sha256": "76614d778e9fd378ef96f60cc912607304220efd8c283672342cc4552a9d5777",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/completed_result_admission_20260909.zh.md",
+      "archive_member": "doc/evidence/completed_result_admission_20260909.zh.md",
+      "role": "historical_document",
+      "title": "完成实验产物准入：实现与软件验证",
+      "topic": "execution",
+      "bytes": 5515,
+      "sha256": "b1b145c1bfe90528b5ed17cd5f017a22f7f58578b040257a3f5723c5f65989a3",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 129,
+          "label": "完成产物准入",
+          "original_target": "completed_result_admission_20260909.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 578,
+          "label": "完成产物准入",
+          "original_target": "evidence/completed_result_admission_20260909.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/conditional_state_20261006.zh.md",
+      "archive_member": "doc/evidence/conditional_state_20261006.zh.md",
+      "role": "historical_document",
+      "title": "B06：候选条件均值、Schur 协方差与真实 operator 调用",
+      "topic": "response",
+      "bytes": 5609,
+      "sha256": "d39a584d1a343e9b00bcb396c79bad792ad86e0f0a389a9f19b64e9ae8fc4e1a",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 163,
+          "label": "B06条件路径",
+          "original_target": "evidence/conditional_state_20261006.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 64,
+          "label": "B06条件均值/Schur与实际operator调用",
+          "original_target": "conditional_state_20261006.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 71,
+          "label": "B06实际条件接口",
+          "original_target": "evidence/conditional_state_20261006.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 86,
+          "label": "B06条件软件路径",
+          "original_target": "evidence/conditional_state_20261006.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 265,
+          "label": "B06",
+          "original_target": "evidence/conditional_state_20261006.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/continuous_fixed_prefix_20261005.zh.md",
+      "archive_member": "doc/evidence/continuous_fixed_prefix_20261005.zh.md",
+      "role": "historical_document",
+      "title": "固定前缀条件AR：数学、梯度实施与代码质量",
+      "topic": "response",
+      "bytes": 18666,
+      "sha256": "146a84ee4d07cfa26b774745c979ecc4643ac1e9eff4fb54e016c814607f9349",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 150,
+          "label": "fixed32实施",
+          "original_target": "evidence/continuous_fixed_prefix_20261005.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 68,
+          "label": "固定前缀条件AR：数学、实现与真实路径诊断",
+          "original_target": "continuous_fixed_prefix_20261005.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 63,
+          "label": "fixed32条件估计量",
+          "original_target": "evidence/continuous_fixed_prefix_20261005.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 70,
+          "label": "fixed32条件AR研究",
+          "original_target": "evidence/continuous_fixed_prefix_20261005.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 242,
+          "label": "固定前缀条件AR",
+          "original_target": "evidence/continuous_fixed_prefix_20261005.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/cross_dataset_input_alignment_audit_20260906.zh.md",
+      "archive_member": "doc/evidence/cross_dataset_input_alignment_audit_20260906.zh.md",
+      "role": "historical_document",
+      "title": "BI 与 BNCI 跨库输入对齐审计",
+      "topic": "response",
+      "bytes": 7896,
+      "sha256": "236557fec55f3d0e4b34e57b43c45532e1290fdd662b84a3de254b11d7293544",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 156,
+          "label": "跨库输入对齐审计",
+          "original_target": "cross_dataset_input_alignment_audit_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/cross_dataset_start_20260906.zh.md",
+      "archive_member": "doc/evidence/cross_dataset_start_20260906.zh.md",
+      "role": "historical_document",
+      "title": "BI与BNCI双向跨库训练首轮",
+      "topic": "public",
+      "bytes": 6764,
+      "sha256": "464b12688dc764ebe34344fdb0aed59e713d6e8a78d2b4ddd1ef6e29f96c8c8b",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 606,
+          "label": "目标适配计时",
+          "original_target": "evidence/cross_dataset_start_20260906.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 158,
+          "label": "BI↔BNCI首轮",
+          "original_target": "cross_dataset_start_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/current_public_consumers_20261008.zh.md",
+      "archive_member": "doc/evidence/current_public_consumers_20261008.zh.md",
+      "role": "historical_document",
+      "title": "当前公共目标程序：损失、概率与实测空间",
+      "topic": "execution",
+      "bytes": 4861,
+      "sha256": "691b5071d04fa43cc10d451dce9859ee0d2707e03845aa50243006de12f3db05",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 52,
+          "label": "当前公共消费者：风险、概率与实测空间",
+          "original_target": "current_public_consumers_20261008.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 49,
+          "label": "当前选择执行关系",
+          "original_target": "evidence/current_public_consumers_20261008.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 128,
+          "label": "当前消费者",
+          "original_target": "evidence/current_public_consumers_20261008.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/dataset_expansion_audit_20260908.zh.md",
+      "archive_member": "doc/evidence/dataset_expansion_audit_20260908.zh.md",
+      "role": "historical_document",
+      "title": "现有公开数据能否扩入域迁移：文件、合同与调用链审计",
+      "topic": "public",
+      "bytes": 24411,
+      "sha256": "88b3de4a8e1c979a8ceb632942bdf9d9d6f2be3d47d369a80b6cd9ed60141a56",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 137,
+          "label": "扩源审计与新增下载",
+          "original_target": "dataset_expansion_audit_20260908.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/deep_chain_audit_20260929.zh.md",
+      "archive_member": "doc/evidence/deep_chain_audit_20260929.zh.md",
+      "role": "historical_document",
+      "title": "历史无迁移与当前迁移不一致：全链深度审计",
+      "topic": "execution",
+      "bytes": 33458,
+      "sha256": "225d2bfb3055f4fc3aa1a6ce91009fef3505d56cd173d11bba3d4a4713daaab6",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 87,
+          "label": "历史无迁移与当前迁移：全链深度审计",
+          "original_target": "deep_chain_audit_20260929.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 243,
+          "label": "全链深审",
+          "original_target": "evidence/deep_chain_audit_20260929.zh.md#f0-合法的独立raw边界仍可产生严重信号失真"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 108,
+          "label": "全链深审",
+          "original_target": "evidence/deep_chain_audit_20260929.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/deep_research_plan_20261005.zh.md",
+      "archive_member": "doc/evidence/deep_research_plan_20261005.zh.md",
+      "role": "historical_document",
+      "title": "愿望清单与优先任务：分块深度科研方案",
+      "topic": "execution",
+      "bytes": 33804,
+      "sha256": "4f35d416d58408095a4a87085e0de203af61ec0a786bc434fa8d66a501e64a2d",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 158,
+          "label": "分块方案",
+          "original_target": "evidence/deep_research_plan_20261005.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 73,
+          "label": "愿望清单与优先任务：分块深度科研方案",
+          "original_target": "deep_research_plan_20261005.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 66,
+          "label": "分块研究合同",
+          "original_target": "evidence/deep_research_plan_20261005.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 76,
+          "label": "分块科研方案",
+          "original_target": "evidence/deep_research_plan_20261005.zh.md"
+        },
+        {
+          "source": "doc/roadmap.zh.md",
+          "line": 41,
+          "label": "分块方案",
+          "original_target": "evidence/deep_research_plan_20261005.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 249,
+          "label": "分块科研规格",
+          "original_target": "evidence/deep_research_plan_20261005.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/device-portability.md",
+      "archive_member": "doc/evidence/device-portability.md",
+      "role": "historical_document",
+      "title": "Device Portability",
+      "topic": "execution",
+      "bytes": 7325,
+      "sha256": "37612647216a30f13641643b7a63430a0515de864a19f80e2119ab4c0b4fd35d",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 603,
+          "label": "设备测量记录",
+          "original_target": "evidence/device-portability.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 194,
+          "label": "设备与性能测量",
+          "original_target": "device-portability.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/domain_transfer_chain_primary_source_audit_20260904.zh.md",
+      "archive_member": "doc/evidence/domain_transfer_chain_primary_source_audit_20260904.zh.md",
+      "role": "historical_document",
+      "title": "主链公式与数值选择的一手来源审计",
+      "topic": "public",
+      "bytes": 30521,
+      "sha256": "0bd82efce86b8486f7220ed0e23e7cbbe6a95339838526dcd2114c28f69cc901",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 180,
+          "label": "主链公式一手来源核查",
+          "original_target": "domain_transfer_chain_primary_source_audit_20260904.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/domain_transfer_cloud_20260916.zh.md",
+      "archive_member": "doc/evidence/domain_transfer_cloud_20260916.zh.md",
+      "role": "historical_document",
+      "title": "P1/P2 云端开发矩阵",
+      "topic": "public",
+      "bytes": 13260,
+      "sha256": "ae29427c05cba45eacfab70225e071464b9150bfcd7234dd9445daa33f7699c0",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 536,
+          "label": "运行记录",
+          "original_target": "evidence/domain_transfer_cloud_20260916.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 122,
+          "label": "云端执行",
+          "original_target": "domain_transfer_cloud_20260916.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/domain_transfer_implementation_20260916.zh.md",
+      "archive_member": "doc/evidence/domain_transfer_implementation_20260916.zh.md",
+      "role": "historical_document",
+      "title": "域迁移首批实现：P1时空适配与P2源目标函数",
+      "topic": "public",
+      "bytes": 9334,
+      "sha256": "40df7693b04eafb42140548383d81a7a5c5c7f07eafcd0c4d63f2f8f0147c7c4",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 124,
+          "label": "P1/P2实施与验收",
+          "original_target": "domain_transfer_implementation_20260916.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 666,
+          "label": "实施与验收",
+          "original_target": "evidence/domain_transfer_implementation_20260916.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/domain_transfer_major_20260920.zh.md",
+      "archive_member": "doc/evidence/domain_transfer_major_20260920.zh.md",
+      "role": "historical_document",
+      "title": "2026-09-20 域迁移与 BrainSync 稳定大版",
+      "topic": "public",
+      "bytes": 4753,
+      "sha256": "12a75146feb43ec1c81546dc02a508f4d04cb07c623ee52c4b5d10f4032cf6e1",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 108,
+          "label": "连接统一验收",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 130,
+          "label": "执行计划",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 183,
+          "label": "源模块验收",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 221,
+          "label": "统一程序实施与验收",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 224,
+          "label": "验收记录",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 267,
+          "label": "精简方案",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 347,
+          "label": "全库核查与修复",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 382,
+          "label": "精简设计",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 390,
+          "label": "实施验收",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 111,
+          "label": "源接入与排程模块化",
+          "original_target": "domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 112,
+          "label": "固定250 Hz连接统一",
+          "original_target": "domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 117,
+          "label": "预算路由与性能准备验收",
+          "original_target": "domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 118,
+          "label": "分阶段停止与精简训练方案",
+          "original_target": "domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 119,
+          "label": "实施、反例与阶段归档",
+          "original_target": "domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 121,
+          "label": "修复与完整验收",
+          "original_target": "domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 133,
+          "label": "活动实验设计",
+          "original_target": "domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 136,
+          "label": "代码质量核查与修复",
+          "original_target": "domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 123,
+          "label": "修复与反例",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 242,
+          "label": "精简训练裁决",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 264,
+          "label": "八项修复证据",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 380,
+          "label": "compact512基线与组件消融",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 300,
+          "label": "连接统一记录",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 314,
+          "label": "实施记录",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 321,
+          "label": "预算执行器",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 420,
+          "label": "完整调用链验收",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        },
+        {
+          "source": "doc/workstation.zh.md",
+          "line": 51,
+          "label": "连接统一记录",
+          "original_target": "evidence/domain_transfer_major_20260920.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/domain_transfer_plan_20260915.zh.md",
+      "archive_member": "doc/evidence/domain_transfer_plan_20260915.zh.md",
+      "role": "historical_document",
+      "title": "域迁移改进：文献证据、机制设计与验证方案",
+      "topic": "public",
+      "bytes": 34387,
+      "sha256": "3873759b96c70625b52c1072dc3f6fe4e4447808b935c8def847730b6af1bc9b",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 125,
+          "label": "多库文献检索与改进方案",
+          "original_target": "domain_transfer_plan_20260915.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/e2_prior_scale_20261006.zh.md",
+      "archive_member": "doc/evidence/e2_prior_scale_20261006.zh.md",
+      "role": "historical_document",
+      "title": "E2 科研记录：AR 阶数 × 先验尺度与精确协方差传播",
+      "topic": "response",
+      "bytes": 11600,
+      "sha256": "23ae34c4551a12210816bafe33a658e1284f60da0445b2c4e0b34d3d61a637de",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/ensemble_implementation_20261005.zh.md",
+      "archive_member": "doc/evidence/ensemble_implementation_20261005.zh.md",
+      "role": "historical_document",
+      "title": "候选多专家主线：代码实施与质量验收",
+      "topic": "calibration",
+      "bytes": 8004,
+      "sha256": "d23bee24be07571f7a44856ab90cc7d889157833575c314fbbe44533cfeff50d",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 143,
+          "label": "多专家实施",
+          "original_target": "evidence/ensemble_implementation_20261005.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 70,
+          "label": "候选多专家主线：代码实施与质量验收",
+          "original_target": "ensemble_implementation_20261005.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 61,
+          "label": "代码实施",
+          "original_target": "evidence/ensemble_implementation_20261005.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 68,
+          "label": "多专家代码实施",
+          "original_target": "evidence/ensemble_implementation_20261005.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 252,
+          "label": "代码实施",
+          "original_target": "evidence/ensemble_implementation_20261005.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/ensemble_quality_20261005.zh.md",
+      "archive_member": "doc/evidence/ensemble_quality_20261005.zh.md",
+      "role": "historical_document",
+      "title": "候选多专家主线：独立代码质量评估",
+      "topic": "calibration",
+      "bytes": 6395,
+      "sha256": "e186a7f0339814d874aec624c5722a3c0be1ab9e9f9a03ab8260a36588a4eb5c",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 147,
+          "label": "质量验收",
+          "original_target": "evidence/ensemble_quality_20261005.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 71,
+          "label": "候选多专家独立代码质量评估",
+          "original_target": "ensemble_quality_20261005.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 64,
+          "label": "独立软件反例",
+          "original_target": "evidence/ensemble_quality_20261005.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 69,
+          "label": "Spec/Standards独立软件验收",
+          "original_target": "evidence/ensemble_quality_20261005.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 252,
+          "label": "独立质量验收",
+          "original_target": "evidence/ensemble_quality_20261005.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/erp_dictionary_20261006.zh.md",
+      "archive_member": "doc/evidence/erp_dictionary_20261006.zh.md",
+      "role": "historical_document",
+      "title": "B07 A0/A1：物理ERP字典与同ambient端点限制",
+      "topic": "response",
+      "bytes": 7432,
+      "sha256": "8adfa244303b2b47c2bf61c0a09f934e3f3ee106db684be605d310198c2b0e5c",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 165,
+          "label": "B07字典维护",
+          "original_target": "evidence/erp_dictionary_20261006.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 60,
+          "label": "B07物理ERP字典与端点切片",
+          "original_target": "erp_dictionary_20261006.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 55,
+          "label": "物理字典",
+          "original_target": "evidence/erp_dictionary_20261006.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 85,
+          "label": "B07 A0/A1",
+          "original_target": "evidence/erp_dictionary_20261006.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 220,
+          "label": "B07 `transfer.response_dictionary`",
+          "original_target": "evidence/erp_dictionary_20261006.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/execution_and_integration.zh.md",
+      "archive_member": "doc/evidence/execution_and_integration.zh.md",
+      "role": "active_document_before_edit",
+      "title": "执行、保存重放与代码集成",
+      "topic": "active_guidance",
+      "bytes": 86560,
+      "sha256": "e59a392f0db6c399090d0fe73211a16fa7269cb17ce4e4ca719109c2716057bc",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/filter_phase_20260909.zh.md",
+      "archive_member": "doc/evidence/filter_phase_20260909.zh.md",
+      "role": "historical_document",
+      "title": "单向与双向滤波：科研裁决及实施",
+      "topic": "response",
+      "bytes": 11225,
+      "sha256": "f474e834625c9518421c78ef884671d3d763048d886cb435046b85a172f0da92",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 132,
+          "label": "滤波机制核查",
+          "original_target": "filter_phase_20260909.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 239,
+          "label": "首轮数学与边界证据",
+          "original_target": "evidence/filter_phase_20260909.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/finetune_leakage_review_20260906.zh.md",
+      "archive_member": "doc/evidence/finetune_leakage_review_20260906.zh.md",
+      "role": "historical_document",
+      "title": "微调泄漏复核：校准范围守卫与证据更正",
+      "topic": "calibration",
+      "bytes": 7223,
+      "sha256": "a0040bb8da14c11205daa01c46c6db775cca0a73f947e0042c39637769c21740",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 162,
+          "label": "后续refit复核与更正",
+          "original_target": "finetune_leakage_review_20260906.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 417,
+          "label": "校准范围守卫复核",
+          "original_target": "evidence/finetune_leakage_review_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/four_study_launch_20260907.zh.md",
+      "archive_member": "doc/evidence/four_study_launch_20260907.zh.md",
+      "role": "historical_document",
+      "title": "四库整库留出开发启动",
+      "topic": "public",
+      "bytes": 5198,
+      "sha256": "776b7a1e899c8c90efd79f6f64543324cc7313815e2756d0cba8d3887a4ca240",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 153,
+          "label": "四库运行",
+          "original_target": "four_study_launch_20260907.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/four_study_results_20260907.zh.md",
+      "archive_member": "doc/evidence/four_study_results_20260907.zh.md",
+      "role": "historical_document",
+      "title": "四库整库留出：单seed结果分析",
+      "topic": "public",
+      "bytes": 8434,
+      "sha256": "dc806b72aedfdd46fd641cfefda58f975a1c0b67746b51c05ff0ed10a2fa4642",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 152,
+          "label": "单seed完整结果分析",
+          "original_target": "four_study_results_20260907.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/four_study_standard_budgets_20260907.zh.md",
+      "archive_member": "doc/evidence/four_study_standard_budgets_20260907.zh.md",
+      "role": "historical_document",
+      "title": "四库标准预算完整结果",
+      "topic": "public",
+      "bytes": 6563,
+      "sha256": "41b988ee74c95fad72b729da6ea9f4b094dedfe8497f4a21ca1b9478a94901fe",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 151,
+          "label": "标准预算完整分析",
+          "original_target": "four_study_standard_budgets_20260907.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/full_chain_audit_20260922.zh.md",
+      "archive_member": "doc/evidence/full_chain_audit_20260922.zh.md",
+      "role": "historical_document",
+      "title": "全链条只读审查（2026-09-22）",
+      "topic": "execution",
+      "bytes": 13533,
+      "sha256": "a32faaf6be5f385381036d9310d0c48bd76fcbfbec616ebecb249c225dc4bfdd",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 91,
+          "label": "全链条只读审查",
+          "original_target": "full_chain_audit_20260922.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 108,
+          "label": "全链条只读审查",
+          "original_target": "full_chain_audit_20260922.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/hit_at_r_valid_denominator_20260904.zh.md",
+      "archive_member": "doc/evidence/hit_at_r_valid_denominator_20260904.zh.md",
+      "role": "historical_document",
+      "title": "hit@R 口径修正与逐 R 曲线（2026-09-04）",
+      "topic": "public",
+      "bytes": 13980,
+      "sha256": "4ef5e19efcacd71335966e679c59d4caede3146011acbfe00ccd6c0025dd8d2b",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 163,
+          "label": "逐R与分母复算",
+          "original_target": "hit_at_r_valid_denominator_20260904.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/impedance_display_review_20260906.zh.md",
+      "archive_member": "doc/evidence/impedance_display_review_20260906.zh.md",
+      "role": "historical_document",
+      "title": "阻抗低值现象核查",
+      "topic": "execution",
+      "bytes": 2397,
+      "sha256": "c2871165a57f7a17447a9674688766cf69fcd13a5f4cc14b2ccb2dcad9b979df",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 193,
+          "label": "阻抗显示核查",
+          "original_target": "impedance_display_review_20260906.zh.md"
+        },
+        {
+          "source": "doc/workstation.zh.md",
+          "line": 292,
+          "label": "阻抗核查",
+          "original_target": "evidence/impedance_display_review_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/implementation_plan_cross_dataset_20260906.zh.md",
+      "archive_member": "doc/evidence/implementation_plan_cross_dataset_20260906.zh.md",
+      "role": "historical_document",
+      "title": "跨数据集方案实施清单",
+      "topic": "public",
+      "bytes": 10992,
+      "sha256": "505d3230431b6c98ebaa02a129aae854188d541e8414a8ea4e5c42cec3fbe5b5",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 174,
+          "label": "跨库接口规格",
+          "original_target": "implementation_plan_cross_dataset_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/independent_prefix_20261008.zh.md",
+      "archive_member": "doc/evidence/independent_prefix_20261008.zh.md",
+      "role": "historical_document",
+      "title": "独立前缀、多概率程序与配对公共入口",
+      "topic": "calibration",
+      "bytes": 3456,
+      "sha256": "cc7305dc13a715185bec792b170cec844850e56438ea7ca7143f1500fb982aa3",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 58,
+          "label": "B12独立前缀、温度程序与配对公共入口",
+          "original_target": "independent_prefix_20261008.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 53,
+          "label": "B12前缀实施",
+          "original_target": "evidence/independent_prefix_20261008.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 132,
+          "label": "B12独立前缀切片",
+          "original_target": "evidence/independent_prefix_20261008.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/input_contract_review_20260922.zh.md",
+      "archive_member": "doc/evidence/input_contract_review_20260922.zh.md",
+      "role": "historical_document",
+      "title": "输入合同与路线审查：复核与修正（2026-09-22）",
+      "topic": "response",
+      "bytes": 9243,
+      "sha256": "9366d84518d2839c2c2e83e4a666ec5145960d3391b1700094afa96d1dce8b27",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 93,
+          "label": "输入合同与路线审查复核",
+          "original_target": "input_contract_review_20260922.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 109,
+          "label": "输入合同与路线审查",
+          "original_target": "input_contract_review_20260922.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 154,
+          "label": "复核与反例",
+          "original_target": "evidence/input_contract_review_20260922.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/lda_head_order_20260906.zh.md",
+      "archive_member": "doc/evidence/lda_head_order_20260906.zh.md",
+      "role": "historical_document",
+      "title": "微调与收缩LDA的顺序对照",
+      "topic": "calibration",
+      "bytes": 11176,
+      "sha256": "fa20e4a70a0ec5071f8b5a71e6581cdff08c5de7de25720eb11ad8a6eeab8fc7",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 157,
+          "label": "LDA顺序与预算曲线",
+          "original_target": "lda_head_order_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/lean_erp_20261018.zh.md",
+      "archive_member": "doc/evidence/lean_erp_20261018.zh.md",
+      "role": "historical_document",
+      "title": "Lean：ERP 特征、源时间 Gram、Toeplitz 与数值状态",
+      "topic": "formal",
+      "bytes": 6577,
+      "sha256": "c2c0a0106877a7b70e1f7163ef55097b4beb7edcf4e38cae368821345b2f2cea",
+      "incoming_references_before_edit": [
+        {
+          "source": "formal/lean/README.md",
+          "line": 175,
+          "label": "ERP专题",
+          "original_target": "../../doc/evidence/lean_erp_20261018.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/lean_erp_continuation_20261018.zh.md",
+      "archive_member": "doc/evidence/lean_erp_continuation_20261018.zh.md",
+      "role": "historical_document",
+      "title": "ERP 非有限输出、字段构造与原始入口的增量验证",
+      "topic": "formal",
+      "bytes": 10597,
+      "sha256": "d5478ac805cf4c9367e07daf6a7af4a957ed937bc75cada140f8e0cda98adf20",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/lean_execution_performance_20261016.zh.md",
+      "archive_member": "doc/evidence/lean_execution_performance_20261016.zh.md",
+      "role": "historical_document",
+      "title": "Lean 检查启动、并发与资源测量",
+      "topic": "formal",
+      "bytes": 6722,
+      "sha256": "61022bea2b11e397ae301c19f76f8da4d4c7b79a2528abf56aa3fc4c9475537e",
+      "incoming_references_before_edit": [
+        {
+          "source": "formal/lean/README.md",
+          "line": 73,
+          "label": "性能证据",
+          "original_target": "../../doc/evidence/lean_execution_performance_20261016.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/lean_first_slice_20261016.zh.md",
+      "archive_member": "doc/evidence/lean_first_slice_20261016.zh.md",
+      "role": "historical_document",
+      "title": "Lean 首批验证：授权视图、有限 SOS 与协方差传播",
+      "topic": "formal",
+      "bytes": 7630,
+      "sha256": "68ed284f8bbb72b6d97df834af2381a23c196e701d786c1d17a48dc22737eb21",
+      "incoming_references_before_edit": [
+        {
+          "source": "formal/lean/README.md",
+          "line": 64,
+          "label": "首批记录",
+          "original_target": "../../doc/evidence/lean_first_slice_20261016.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/lean_first_slice_source_review_20261016.zh.md",
+      "archive_member": "doc/evidence/lean_first_slice_source_review_20261016.zh.md",
+      "role": "historical_document",
+      "title": "首批 Lean 规格的源码与反例独立审查",
+      "topic": "formal",
+      "bytes": 11450,
+      "sha256": "0cff79351633b8fe34981808096737343bee4a030c6ba1bb9355e818b7bc0626",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/lean_full_recipe_20261018.zh.md",
+      "archive_member": "doc/evidence/lean_full_recipe_20261018.zh.md",
+      "role": "historical_document",
+      "title": "配方构造与状态消费者的增量验证",
+      "topic": "formal",
+      "bytes": 6999,
+      "sha256": "bad857597db8eb885dff70e5f949eaf21b6280ff5327662735531ede77d472bc",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/lean_gaussian_20261016.zh.md",
+      "archive_member": "doc/evidence/lean_gaussian_20261016.zh.md",
+      "role": "historical_document",
+      "title": "Lean 连续候选：低秩、尺度、投影与高斯核",
+      "topic": "formal",
+      "bytes": 44719,
+      "sha256": "b9d4f01bf02317713b8fca79020ff4fbcc46308d34974078df30f24dca6c85c5",
+      "incoming_references_before_edit": [
+        {
+          "source": "formal/lean/README.md",
+          "line": 91,
+          "label": "本层记录",
+          "original_target": "../../doc/evidence/lean_gaussian_20261016.zh.md"
+        },
+        {
+          "source": "formal/lean/README.md",
+          "line": 129,
+          "label": "现有证据记录",
+          "original_target": "../../doc/evidence/lean_gaussian_20261016.zh.md"
+        },
+        {
+          "source": "formal/lean/README.md",
+          "line": 144,
+          "label": "现有证据",
+          "original_target": "../../doc/evidence/lean_gaussian_20261016.zh.md#事件设计完整事件史与构造器账本"
+        },
+        {
+          "source": "formal/lean/README.md",
+          "line": 155,
+          "label": "证据",
+          "original_target": "../../doc/evidence/lean_gaussian_20261016.zh.md#个人封装lda恢复与正式录制入口"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/lean_loss_20261018.zh.md",
+      "archive_member": "doc/evidence/lean_loss_20261018.zh.md",
+      "role": "historical_document",
+      "title": "Decision loss 的导数与前缀风险",
+      "topic": "formal",
+      "bytes": 4957,
+      "sha256": "402bcee5e1460ae6d0b5518bc8d45cef71ad247ec6d40be9c6004836bdb18fd8",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/lean_network_preprocessing_20261018.zh.md",
+      "archive_member": "doc/evidence/lean_network_preprocessing_20261018.zh.md",
+      "role": "historical_document",
+      "title": "参数归属、观测统计与冻结预处理",
+      "topic": "formal",
+      "bytes": 13060,
+      "sha256": "29121656eb5ca539276593ce4abcb4031ac3e515c35d89485aab350731948d9d",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/lean_outcomes_20261018.zh.md",
+      "archive_member": "doc/evidence/lean_outcomes_20261018.zh.md",
+      "role": "historical_document",
+      "title": "完整请求终态、指标数学与近零对比系数反例",
+      "topic": "formal",
+      "bytes": 32866,
+      "sha256": "40da6f41ef73c14c5081f74384312659d3d33d472b64e872283ba6a2718e8fe8",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/lean_personal_erp_20261018.zh.md",
+      "archive_member": "doc/evidence/lean_personal_erp_20261018.zh.md",
+      "role": "historical_document",
+      "title": "个人 ERP 调用与当前守卫的 Lean 组件证据",
+      "topic": "formal",
+      "bytes": 5323,
+      "sha256": "5f084813621a95f75c31f194085e4c3d02c63694eb99112473673c99935ebf2c",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/lean_personal_erp_source_20261018.zh.md",
+      "archive_member": "doc/evidence/lean_personal_erp_source_20261018.zh.md",
+      "role": "historical_document",
+      "title": "ERP 标量、拟合与实际消费者的增量验证",
+      "topic": "formal",
+      "bytes": 4955,
+      "sha256": "3a9b5062774da24d29922833bbdeff6a168ccc28e140c506412befce5119e479",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/lean_pilot_20261016.zh.md",
+      "archive_member": "doc/evidence/lean_pilot_20261016.zh.md",
+      "role": "historical_document",
+      "title": "Lean 自动形式化试验：协方差、候选证据与时间支持",
+      "topic": "formal",
+      "bytes": 6603,
+      "sha256": "c279521475355b7422d4f4fde4a2b421ff0f384828c969f0e4b1261b3f8857ca",
+      "incoming_references_before_edit": [
+        {
+          "source": "formal/lean/README.md",
+          "line": 53,
+          "label": "试验记录",
+          "original_target": "../../doc/evidence/lean_pilot_20261016.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/lean_temporal_operator_20261018.zh.md",
+      "archive_member": "doc/evidence/lean_temporal_operator_20261018.zh.md",
+      "role": "historical_document",
+      "title": "Lean：时间白化、完整状态回放与算子 LDA",
+      "topic": "formal",
+      "bytes": 7031,
+      "sha256": "8aa3430fa0d37fcdc20abd0065c6ea0be17549049e3a3f4b20dba89314fd98fc",
+      "incoming_references_before_edit": [
+        {
+          "source": "formal/lean/README.md",
+          "line": 166,
+          "label": "专题证据",
+          "original_target": "../../doc/evidence/lean_temporal_operator_20261018.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/mainsah_s2_admission_20260907.md",
+      "archive_member": "doc/evidence/mainsah_s2_admission_20260907.md",
+      "role": "historical_document",
+      "title": "Mainsah S2 metadata and conversion admission",
+      "topic": "public",
+      "bytes": 7523,
+      "sha256": "3e6bf54d017ebb799a92859c5161c5fb7ebed632f9bf208cb4b2214089ec6995",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 154,
+          "label": "Mainsah准入",
+          "original_target": "mainsah_s2_admission_20260907.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/math_verification_cross_dataset_20260906.zh.md",
+      "archive_member": "doc/evidence/math_verification_cross_dataset_20260906.zh.md",
+      "role": "historical_document",
+      "title": "跨数据集迁移的数学与反例记录",
+      "topic": "public",
+      "bytes": 5990,
+      "sha256": "6704006dce64611dccb7e6ac3c74200fcea2fd38cd2ee01b75004180c352041a",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 175,
+          "label": "跨库数学验证",
+          "original_target": "math_verification_cross_dataset_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/operator_research_20261004.zh.md",
+      "archive_member": "doc/evidence/operator_research_20261004.zh.md",
+      "role": "historical_document",
+      "title": "算子深度科研与连续决策复核（2026-10-05）",
+      "topic": "execution",
+      "bytes": 7654,
+      "sha256": "75a53468f48d138b0910a736faa43ac700a4dc69a8ee2126fcf6ae94b1537a9e",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 78,
+          "label": "算子深度科研与连续决策复核",
+          "original_target": "operator_research_20261004.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 101,
+          "label": "算子复核",
+          "original_target": "evidence/operator_research_20261004.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/other_agent_audit_20261005.zh.md",
+      "archive_member": "doc/evidence/other_agent_audit_20261005.zh.md",
+      "role": "historical_document",
+      "title": "其他 agent 深度科研实现核验（2026-10-05）",
+      "topic": "execution",
+      "bytes": 3783,
+      "sha256": "e08a1fe93b4dbef68dc2e78e60eac10ab030e0b8a7bb76a03b88ef49a5832b88",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 76,
+          "label": "其他 agent 深度科研实现核验",
+          "original_target": "other_agent_audit_20261005.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/p300_auc_leakage_audit_20260906.zh.md",
+      "archive_member": "doc/evidence/p300_auc_leakage_audit_20260906.zh.md",
+      "role": "historical_document",
+      "title": "AUC增益解释与泄漏复核",
+      "topic": "execution",
+      "bytes": 6585,
+      "sha256": "11ea36cdd1acef9d666e3ea2bbc6259b8ae06511cbccca63205e6d52ae69ef31",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 162,
+          "label": "初次AUC审计",
+          "original_target": "p300_auc_leakage_audit_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/p300_transfer_execution_plan_20260906.zh.md",
+      "archive_member": "doc/evidence/p300_transfer_execution_plan_20260906.zh.md",
+      "role": "historical_document",
+      "title": "公开ERP预训练辅助成人猜数字：全局执行计划",
+      "topic": "public",
+      "bytes": 18979,
+      "sha256": "3c64004d9241364473694adf1527c8ca395b68491707fb2e70dad69965c70d60",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 159,
+          "label": "执行过程",
+          "original_target": "p300_transfer_execution_plan_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/p300_transfer_results_20260906.zh.md",
+      "archive_member": "doc/evidence/p300_transfer_results_20260906.zh.md",
+      "role": "historical_document",
+      "title": "公开ERP预训练辅助猜数字：执行结果与下一阶段",
+      "topic": "public",
+      "bytes": 15780,
+      "sha256": "85f81c0f0cae2daea1e25620c41bfee80d59c27120b6d59e2d06745d022dc502",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 159,
+          "label": "主线实验结果",
+          "original_target": "p300_transfer_results_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/preprocessing_contract_research_20260915.zh.md",
+      "archive_member": "doc/evidence/preprocessing_contract_research_20260915.zh.md",
+      "role": "historical_document",
+      "title": "预处理合同执行：科研裁决、数学与实施清单",
+      "topic": "response",
+      "bytes": 20001,
+      "sha256": "0dbec9a5e83f05d58a2589b77a7484d825891d8a1e23dddebb5e47ebbea915e2",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 296,
+          "label": "2026-09-15裁决",
+          "original_target": "evidence/preprocessing_contract_research_20260915.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 128,
+          "label": "预处理执行科研裁决",
+          "original_target": "preprocessing_contract_research_20260915.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 325,
+          "label": "数学裁决",
+          "original_target": "evidence/preprocessing_contract_research_20260915.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 323,
+          "label": "预处理合同执行研究",
+          "original_target": "evidence/preprocessing_contract_research_20260915.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 432,
+          "label": "科研裁决",
+          "original_target": "evidence/preprocessing_contract_research_20260915.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/preprocessing_execution_20260915.zh.md",
+      "archive_member": "doc/evidence/preprocessing_execution_20260915.zh.md",
+      "role": "historical_document",
+      "title": "预处理合同执行：实施与验收",
+      "topic": "response",
+      "bytes": 6409,
+      "sha256": "c12a994e0d91d266f86c12012d861c12779534aafe301e7c90a84c082cc3c570",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 301,
+          "label": "执行器验收",
+          "original_target": "evidence/preprocessing_execution_20260915.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 127,
+          "label": "预处理执行落地",
+          "original_target": "preprocessing_execution_20260915.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 326,
+          "label": "实施反例",
+          "original_target": "evidence/preprocessing_execution_20260915.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 320,
+          "label": "实施验收",
+          "original_target": "evidence/preprocessing_execution_20260915.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 433,
+          "label": "执行器落地",
+          "original_target": "evidence/preprocessing_execution_20260915.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/prior_control_20261006.zh.md",
+      "archive_member": "doc/evidence/prior_control_20261006.zh.md",
+      "role": "historical_document",
+      "title": "B08：同 C 参考能量匹配的先验对照",
+      "topic": "response",
+      "bytes": 11406,
+      "sha256": "d339999c6b46a81514460503cb4eeaa50320b24e2b6f86c955d6ff4ff60a3c97",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 162,
+          "label": "B08能量匹配控制",
+          "original_target": "evidence/prior_control_20261006.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 62,
+          "label": "B08同C参考能量匹配的先验对照",
+          "original_target": "prior_control_20261006.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 66,
+          "label": "同C参考能量对照",
+          "original_target": "evidence/prior_control_20261006.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/public_evaluation.zh.md",
+      "archive_member": "doc/evidence/public_evaluation.zh.md",
+      "role": "active_document_before_edit",
+      "title": "公共数据评估与配对分析",
+      "topic": "active_guidance",
+      "bytes": 41766,
+      "sha256": "d024eb375b9830714f18dd773226b85431a49fc66b786e6e05afe8c793f51021",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/public_source_pipeline_20261008.zh.md",
+      "archive_member": "doc/evidence/public_source_pipeline_20261008.zh.md",
+      "role": "historical_document",
+      "title": "当前公共源程序：实施、质量与实际输入准备",
+      "topic": "execution",
+      "bytes": 5790,
+      "sha256": "d81abc9900603d7fe6b50a4347ae19bb8b6e9cfd458ddcc70b206851e0e1a1f0",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 56,
+          "label": "当前公共源程序、实际数据准备与质量",
+          "original_target": "public_source_pipeline_20261008.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 51,
+          "label": "当前公共输入准入",
+          "original_target": "evidence/public_source_pipeline_20261008.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 130,
+          "label": "当前source程序",
+          "original_target": "evidence/public_source_pipeline_20261008.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/public_source_throughput_20261008.zh.md",
+      "archive_member": "doc/evidence/public_source_throughput_20261008.zh.md",
+      "role": "historical_document",
+      "title": "公共源吞吐：软件切片与实际验收边界",
+      "topic": "execution",
+      "bytes": 12913,
+      "sha256": "b4d6547ddc6a9ea65d2ec8a75546798132a047b37e3364b6288f3b79bba2ac03",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 460,
+          "label": "原始终态与完整输入基准",
+          "original_target": "evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态"
+        },
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 470,
+          "label": "公共源吞吐切片",
+          "original_target": "evidence/public_source_throughput_20261008.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 54,
+          "label": "公共源吞吐软件切片",
+          "original_target": "public_source_throughput_20261008.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/redundancy_cleanup_20261008.zh.md",
+      "archive_member": "doc/evidence/redundancy_cleanup_20261008.zh.md",
+      "role": "historical_document",
+      "title": "全仓冗余审查与活动工具退役（2026-10-08）",
+      "topic": "execution",
+      "bytes": 5313,
+      "sha256": "6a80076f6e8f21bf3c21827efa04629747be52040019eedb2564284b17da91bf",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 49,
+          "label": "全仓冗余审查与活动工具退役",
+          "original_target": "redundancy_cleanup_20261008.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/repository_audit_20261019.zh.md",
+      "archive_member": "doc/evidence/repository_audit_20261019.zh.md",
+      "role": "historical_document",
+      "title": "全仓库审计与改进建议",
+      "topic": "execution",
+      "bytes": 60233,
+      "sha256": "55d7fc7d05dc6cc30b1b5cf95b99f48907b70c1f037ce6bb5963f939453138f5",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 36,
+          "label": "原全仓审计",
+          "original_target": "repository_audit_20261019.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/research_evidence_audit_20260906.zh.md",
+      "archive_member": "doc/evidence/research_evidence_audit_20260906.zh.md",
+      "role": "historical_document",
+      "title": "P300 实验目录的文献与现场核查记录",
+      "topic": "execution",
+      "bytes": 21342,
+      "sha256": "dedb48f1ac74b64318351b5443f0684b4b4f07104319c54c0bbef04884410053",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 177,
+          "label": "来源与文献核查",
+          "original_target": "research_evidence_audit_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/research_experiment_catalog_20260906.zh.md",
+      "archive_member": "doc/evidence/research_experiment_catalog_20260906.zh.md",
+      "role": "historical_document",
+      "title": "P300 研究改进与实验目录",
+      "topic": "public",
+      "bytes": 39524,
+      "sha256": "095bea0a939cc24d961cea23eaee3fb1e283abc3a556fdc54fbfa28f1193ed7d",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 176,
+          "label": "72项候选实验",
+          "original_target": "research_experiment_catalog_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/research_integration_20261008.zh.md",
+      "archive_member": "doc/evidence/research_integration_20261008.zh.md",
+      "role": "historical_document",
+      "title": "科研与代码集成",
+      "topic": "execution",
+      "bytes": 8689,
+      "sha256": "a6135d1698d10e2f0f1da6fa1192f27f6b1ae20bf33ea5f480bf470b99026d57",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 50,
+          "label": "科研与代码集成",
+          "original_target": "research_integration_20261008.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 31,
+          "label": "本轮科研合同",
+          "original_target": "evidence/research_integration_20261008.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 214,
+          "label": "集成骨干",
+          "original_target": "evidence/research_integration_20261008.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/research_mechanisms_20261009.zh.md",
+      "archive_member": "doc/evidence/research_mechanisms_20261009.zh.md",
+      "role": "historical_document",
+      "title": "科研机制：真实数据、保存态与独立反例",
+      "topic": "execution",
+      "bytes": 43649,
+      "sha256": "d44893c6de57542c575c3f028ab3ff734ea6200917412f6176516965ffc578fa",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 139,
+          "label": "本轮实际机制与来源",
+          "original_target": "evidence/research_mechanisms_20261009.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 44,
+          "label": "本地科研机制与真实数据",
+          "original_target": "research_mechanisms_20261009.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 46,
+          "label": "B05固定物理先验1728格终态",
+          "original_target": "research_mechanisms_20261009.zh.md#b05-固定物理先验-1728-格终态"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 226,
+          "label": "本轮证据",
+          "original_target": "evidence/research_mechanisms_20261009.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/response_and_noise.zh.md",
+      "archive_member": "doc/evidence/response_and_noise.zh.md",
+      "role": "active_document_before_edit",
+      "title": "响应模型、空间先验与噪声数值",
+      "topic": "active_guidance",
+      "bytes": 126989,
+      "sha256": "7a207f06b70747e090ecedc3c9b355a3feae860d08a2ad29264ccadf96667e0f",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/source_eog_training_20260909.zh.md",
+      "archive_member": "doc/evidence/source_eog_training_20260909.zh.md",
+      "role": "historical_document",
+      "title": "新陷波输入下的源池与EOG矩阵：完整结果与执行记录",
+      "topic": "response",
+      "bytes": 18353,
+      "sha256": "f3527c77bfd370aeddb920ac38d8f96b30fffa1e1c9e133c080352b53c60e0e3",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 133,
+          "label": "结果与执行证据",
+          "original_target": "source_eog_training_20260909.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/source_modules_20260918.zh.md",
+      "archive_member": "doc/evidence/source_modules_20260918.zh.md",
+      "role": "historical_document",
+      "title": "源数据接入与源池排程模块化验收",
+      "topic": "execution",
+      "bytes": 6512,
+      "sha256": "9a3d698daff4051df6dc317eb928eab2397b107e425674f7124ac9df8590444a",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/system_implementation_20261004.zh.md",
+      "archive_member": "doc/evidence/system_implementation_20261004.zh.md",
+      "role": "historical_document",
+      "title": "2026-10-04 全链路线实施与验证",
+      "topic": "execution",
+      "bytes": 19342,
+      "sha256": "6b65db74ad9dcde13bad09581ff26dd6c496cc30bbcc106b1d587db2dde9a125",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 170,
+          "label": "实施与验收",
+          "original_target": "evidence/system_implementation_20261004.zh.md"
+        },
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 316,
+          "label": "本轮实施",
+          "original_target": "evidence/system_implementation_20261004.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 81,
+          "label": "全链路线实施与验证",
+          "original_target": "system_implementation_20261004.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 105,
+          "label": "本轮实施",
+          "original_target": "evidence/system_implementation_20261004.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 96,
+          "label": "本轮实施",
+          "original_target": "evidence/system_implementation_20261004.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 260,
+          "label": "实施记录",
+          "original_target": "evidence/system_implementation_20261004.zh.md"
+        },
+        {
+          "source": "doc/workstation.zh.md",
+          "line": 26,
+          "label": "研究实施",
+          "original_target": "evidence/system_implementation_20261004.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/system_research_20261004.zh.md",
+      "archive_member": "doc/evidence/system_research_20261004.zh.md",
+      "role": "historical_document",
+      "title": "2026-10-04 全链科研重审：从物理观测到判别与决策",
+      "topic": "execution",
+      "bytes": 25454,
+      "sha256": "223a63ec0fbf8752fc58bac47a2d9c675c909fb7d15e6140cb56438b27b37d0d",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 83,
+          "label": "全链科研重审与改进方案",
+          "original_target": "system_research_20261004.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 92,
+          "label": "全链科研重审",
+          "original_target": "evidence/system_research_20261004.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/target_early_stopping_20260907.zh.md",
+      "archive_member": "doc/evidence/target_early_stopping_20260907.zh.md",
+      "role": "historical_document",
+      "title": "目标早停消融实现与GPU试跑",
+      "topic": "calibration",
+      "bytes": 8515,
+      "sha256": "3a9236e8476b7b3c20512ed43b191e971d7c3aeebe3c9e1b1a832fee8b40cec5",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 147,
+          "label": "早停消融实现与试跑",
+          "original_target": "target_early_stopping_20260907.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/target_early_stopping_results_20260908.zh.md",
+      "archive_member": "doc/evidence/target_early_stopping_results_20260908.zh.md",
+      "role": "historical_document",
+      "title": "目标早停全量结果",
+      "topic": "calibration",
+      "bytes": 8371,
+      "sha256": "2b73be8df4873f54e2e0be0a87245b1718df3f262889acced0e24d38f5d104ed",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 145,
+          "label": "早停全量结果",
+          "original_target": "target_early_stopping_results_20260908.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/target_epoch90_20260908.zh.md",
+      "archive_member": "doc/evidence/target_epoch90_20260908.zh.md",
+      "role": "historical_document",
+      "title": "固定目标60对90遍配对实验",
+      "topic": "calibration",
+      "bytes": 6173,
+      "sha256": "c2634a34affba6d02d59eee7211ff4962975c6ff286cfef7ab1371d0f1ef4ae0",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 144,
+          "label": "60对90遍结果",
+          "original_target": "target_epoch90_20260908.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/technical_audit_20260906.zh.md",
+      "archive_member": "doc/evidence/technical_audit_20260906.zh.md",
+      "role": "historical_document",
+      "title": "全项目技术结构审计与整理",
+      "topic": "execution",
+      "bytes": 10823,
+      "sha256": "dc0d425d6c2ad4e4eab6bd4078dfb7e224aa229abd51f74ff2aa83b98ad99c79",
+      "incoming_references_before_edit": [
+        {
+          "source": "README.md",
+          "line": 111,
+          "label": "technical audit",
+          "original_target": "doc/evidence/technical_audit_20260906.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 190,
+          "label": "技术审计",
+          "original_target": "technical_audit_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/training_chain_implementation_20260907.zh.md",
+      "archive_member": "doc/evidence/training_chain_implementation_20260907.zh.md",
+      "role": "historical_document",
+      "title": "训练链条实现与验证记录",
+      "topic": "execution",
+      "bytes": 27910,
+      "sha256": "f9c1434c9ce038f46549e0ab98def83bd0a7e01ddc73ae42822e34e0e055169f",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 661,
+          "label": "实施证据",
+          "original_target": "evidence/training_chain_implementation_20260907.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 150,
+          "label": "训练链条实现与验证",
+          "original_target": "training_chain_implementation_20260907.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/training_chain_results_20260907.zh.md",
+      "archive_member": "doc/evidence/training_chain_results_20260907.zh.md",
+      "role": "historical_document",
+      "title": "batch512训练链条完成结果",
+      "topic": "public",
+      "bytes": 12556,
+      "sha256": "4d63b8d865ec84a0ff9051728cb260974395e7ab43ecc62267fcccee6980aa57",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 149,
+          "label": "完成结果与分析",
+          "original_target": "training_chain_results_20260907.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/unified12_analysis_critique_20260918.zh.md",
+      "archive_member": "doc/evidence/unified12_analysis_critique_20260918.zh.md",
+      "role": "historical_document",
+      "title": "十二库统一框架数据分析的批判评估（2026-09-18）",
+      "topic": "public",
+      "bytes": 9492,
+      "sha256": "a92e004b23ae7e259ce1a0348da0632e4a4ef5ad801f7afb654bb87b076ae76d",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 98,
+          "label": "十二库数据分析批判评估",
+          "original_target": "unified12_analysis_critique_20260918.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/unified12_performance_20260918.zh.md",
+      "archive_member": "doc/evidence/unified12_performance_20260918.zh.md",
+      "role": "historical_document",
+      "title": "十二库云训练：停训优化、验证与恢复（2026-09-18）",
+      "topic": "public",
+      "bytes": 4957,
+      "sha256": "0e15f75a06ddf4ab1f82791156bccb1f50067c3a3729379ddd5a5e8433132688",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 95,
+          "label": "十二库停训优化与恢复",
+          "original_target": "unified12_performance_20260918.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/unified12_results_20260918.zh.md",
+      "archive_member": "doc/evidence/unified12_results_20260918.zh.md",
+      "role": "historical_document",
+      "title": "十二库统一框架训练结果分析（2026-09-18）",
+      "topic": "public",
+      "bytes": 5649,
+      "sha256": "1ffe49a233615d95e138003c8e099dc21a9da4772ed7d1111bc01e962047210b",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 97,
+          "label": "十二库统一框架最终结果",
+          "original_target": "unified12_results_20260918.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/unified_budget_execution_20260916.zh.md",
+      "archive_member": "doc/evidence/unified_budget_execution_20260916.zh.md",
+      "role": "historical_document",
+      "title": "分阶段预算执行器与性能准备",
+      "topic": "execution",
+      "bytes": 7457,
+      "sha256": "dc450f503ce456580e65f864896f19fb6f1a9f498c0d2db1671eea2cb075c716",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/unified_cloud_20260916.zh.md",
+      "archive_member": "doc/evidence/unified_cloud_20260916.zh.md",
+      "role": "historical_document",
+      "title": "统一预算云端执行记录",
+      "topic": "execution",
+      "bytes": 8681,
+      "sha256": "a522a94fbb9d4a99870bcdca2b56b33c3276d40eaaf6f11543876089bf83cfe8",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 529,
+          "label": "云端运行记录",
+          "original_target": "evidence/unified_cloud_20260916.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 116,
+          "label": "统一预算云端运行",
+          "original_target": "unified_cloud_20260916.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/unified_compact_training_20260916.zh.md",
+      "archive_member": "doc/evidence/unified_compact_training_20260916.zh.md",
+      "role": "historical_document",
+      "title": "统一模型：分阶段停止与精简训练方案",
+      "topic": "execution",
+      "bytes": 19171,
+      "sha256": "c62fd72d74cc2baea509a64fa0f396c9abddc1cb59b38d4c1c7a1538b02088a9",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/unified_model_implementation_20260916.zh.md",
+      "archive_member": "doc/evidence/unified_model_implementation_20260916.zh.md",
+      "role": "historical_document",
+      "title": "统一模型分模块实施记录",
+      "topic": "execution",
+      "bytes": 14982,
+      "sha256": "8648ab885ab3bdce7db64e64fe98b18b0351c1a2bc45db5fa5670bca001f9b65",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/unified_model_plan_20260916.zh.md",
+      "archive_member": "doc/evidence/unified_model_plan_20260916.zh.md",
+      "role": "historical_document",
+      "title": "统一 P300 模型：科研裁决、数学合同与实施方案",
+      "topic": "execution",
+      "bytes": 51833,
+      "sha256": "016d1530ead8fb746bca7fde8793998f8631c88d79962b9305b835e06059cae9",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 214,
+          "label": "分段验收清单",
+          "original_target": "evidence/unified_model_plan_20260916.zh.md#71-必过反例不以旧全套替代"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 120,
+          "label": "统一模型科研与实施方案",
+          "original_target": "unified_model_plan_20260916.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 434,
+          "label": "统一模型输入方案",
+          "original_target": "evidence/unified_model_plan_20260916.zh.md#5-输入统一与信息保留"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 239,
+          "label": "统一模型方案",
+          "original_target": "evidence/unified_model_plan_20260916.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 652,
+          "label": "统一模型方案",
+          "original_target": "evidence/unified_model_plan_20260916.zh.md#7-逐项工程实施与验收"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/unified_optimization_20260929.zh.md",
+      "archive_member": "doc/evidence/unified_optimization_20260929.zh.md",
+      "role": "historical_document",
+      "title": "十二库 A1/Q1 负交互：分层复算、机制反例与优化规格",
+      "topic": "execution",
+      "bytes": 24531,
+      "sha256": "f36dfa2307724e0eda3a7814116f1d754cbf057c9db84023822c19b367732e21",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 89,
+          "label": "A1/Q1负交互与优化规格",
+          "original_target": "unified_optimization_20260929.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 117,
+          "label": "分层复算与优化规格",
+          "original_target": "evidence/unified_optimization_20260929.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/unified_results_20260916.zh.md",
+      "archive_member": "doc/evidence/unified_results_20260916.zh.md",
+      "role": "historical_document",
+      "title": "统一模型完整矩阵：结果、核验与下一步",
+      "topic": "public",
+      "bytes": 12336,
+      "sha256": "0c259315ede722da6889256f63e44f50e5eb48d72b510e9712d6a0819fd8bfb9",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 526,
+          "label": "结果与核验",
+          "original_target": "evidence/unified_results_20260916.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 115,
+          "label": "完整结果与核验",
+          "original_target": "unified_results_20260916.zh.md"
+        },
+        {
+          "source": "doc/project_handover_20261107.zh.md",
+          "line": 658,
+          "label": "统一矩阵结果",
+          "original_target": "evidence/unified_results_20260916.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 131,
+          "label": "结果分析",
+          "original_target": "evidence/unified_results_20260916.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/wishlist_progress_20261010.zh.md",
+      "archive_member": "doc/evidence/wishlist_progress_20261010.zh.md",
+      "role": "historical_document",
+      "title": "愿望清单：阶段出口与当前主题入口",
+      "topic": "execution",
+      "bytes": 10376,
+      "sha256": "ad39f55afdea1535ee9b3167b8c790286fa53cf462a0ba2bae940fddc5e287f7",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 40,
+          "label": "愿望清单阶段出口与当前导航",
+          "original_target": "wishlist_progress_20261010.zh.md"
+        },
+        {
+          "source": "doc/input_contract_math.zh.md",
+          "line": 27,
+          "label": "新增科研切片",
+          "original_target": "evidence/wishlist_progress_20261010.zh.md"
+        },
+        {
+          "source": "doc/roadmap.zh.md",
+          "line": 41,
+          "label": "愿望清单",
+          "original_target": "evidence/wishlist_progress_20261010.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/workspace_cleanup_20260906.zh.md",
+      "archive_member": "doc/evidence/workspace_cleanup_20260906.zh.md",
+      "role": "historical_document",
+      "title": "工作树临时材料清理与数据保留",
+      "topic": "execution",
+      "bytes": 6426,
+      "sha256": "e60142572bc83f8cbcab52dcb823d815b9e7a6f252f2f7c3e85db106d824d74f",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 689,
+          "label": "数据保留记录",
+          "original_target": "evidence/workspace_cleanup_20260906.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 195,
+          "label": "工作树清理与数据保留",
+          "original_target": "workspace_cleanup_20260906.zh.md"
+        },
+        {
+          "source": "doc/research_program.zh.md",
+          "line": 404,
+          "label": "工作树清理与数据保留",
+          "original_target": "evidence/workspace_cleanup_20260906.zh.md"
+        },
+        {
+          "source": "doc/technical_structure.zh.md",
+          "line": 706,
+          "label": "数据保留与清理记录",
+          "original_target": "evidence/workspace_cleanup_20260906.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/workspace_cleanup_20260908.zh.md",
+      "archive_member": "doc/evidence/workspace_cleanup_20260908.zh.md",
+      "role": "historical_document",
+      "title": "工作树与 BCI 目录整理",
+      "topic": "execution",
+      "bytes": 4106,
+      "sha256": "5c8d473997b9966a6d4d75906e7ab780d2594698e51d6c55c8fa447da3bc8bc7",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/engineering.zh.md",
+          "line": 696,
+          "label": "本次整理记录",
+          "original_target": "evidence/workspace_cleanup_20260908.zh.md"
+        },
+        {
+          "source": "doc/evidence/README.md",
+          "line": 196,
+          "label": "工作树与BCI目录整理",
+          "original_target": "workspace_cleanup_20260908.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/evidence/workspace_cleanup_20261016.zh.md",
+      "archive_member": "doc/evidence/workspace_cleanup_20261016.zh.md",
+      "role": "historical_document",
+      "title": "本地记录整理与清理",
+      "topic": "execution",
+      "bytes": 1958,
+      "sha256": "346920b5204bd77c08500e3b010e8ef79ca3d39da49e5d21bdd51d17d9517566",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/workspace_folder_management_20261019.zh.md",
+      "archive_member": "doc/evidence/workspace_folder_management_20261019.zh.md",
+      "role": "historical_document",
+      "title": "工作区与文件夹管理审计及清理方案",
+      "topic": "execution",
+      "bytes": 18799,
+      "sha256": "6a8d27c427cbee779b357c78aa459f6e04d6e41875d5b3f788daf1a36da0829e",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/evidence/zero_shot_transfer_routes_20260920.zh.md",
+      "archive_member": "doc/evidence/zero_shot_transfer_routes_20260920.zh.md",
+      "role": "historical_document",
+      "title": "Zero-shot 正迁移路线与下一轮对照任务（2026-09-20）",
+      "topic": "public",
+      "bytes": 16956,
+      "sha256": "383ad59656f920bb15bae47b4a024392aee5b5e95dacb919eb0db98a3d9700ac",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/README.md",
+          "line": 99,
+          "label": "Zero-shot 正迁移路线与门槛",
+          "original_target": "zero_shot_transfer_routes_20260920.zh.md"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/input_contract_math.zh.md",
+      "archive_member": "doc/input_contract_math.zh.md",
+      "role": "active_document_before_edit",
+      "title": "P300 模型输入合同：离散时间、单位与分组",
+      "topic": "active_guidance",
+      "bytes": 48446,
+      "sha256": "4789f4f04cbf70abd22798da836a09a09ff42d100c697cf37485e9f8098b98a0",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/progress_report_20260929.zh.md",
+      "archive_member": "doc/progress_report_20260929.zh.md",
+      "role": "historical_document",
+      "title": "N2P3-Net 项目进展报告（2026-08-21 至 2026-09-29）",
+      "topic": "execution",
+      "bytes": 21546,
+      "sha256": "ffa599e44b21fba50097284eebe954d92b4306444dcee4d9e1a1cbba2ccc0ed3",
+      "incoming_references_before_edit": [
+        {
+          "source": "doc/evidence/calibration_and_selection.zh.md",
+          "line": 190,
+          "label": "旧阶段报告",
+          "original_target": "../progress_report_20260929.zh.md#41-gtn-契约"
+        }
+      ]
+    },
+    {
+      "original_path": "doc/project_handover_20261107.zh.md",
+      "archive_member": "doc/project_handover_20261107.zh.md",
+      "role": "active_document_before_edit",
+      "title": "N2P3-Net / BrainSync 项目负责人工作交接报告",
+      "topic": "active_guidance",
+      "bytes": 63549,
+      "sha256": "d07e73387569b6f13418dcf0745d25314c98634c3f992dda05dfc0e8b39655bd",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/research_program.zh.md",
+      "archive_member": "doc/research_program.zh.md",
+      "role": "active_document_before_edit",
+      "title": "N2P3-Net：公开ERP预训练辅助成人猜数字",
+      "topic": "active_guidance",
+      "bytes": 42613,
+      "sha256": "2ceb2ef739e41d8222a2588273ca3df4cc0cdf83c594afb8d52157630c57d7be",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/roadmap.zh.md",
+      "archive_member": "doc/roadmap.zh.md",
+      "role": "active_document_before_edit",
+      "title": "执行计划与依赖",
+      "topic": "active_guidance",
+      "bytes": 3656,
+      "sha256": "83867a67fee25697921ab8663b708ef11719a578447f372237ca95b859037703",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/technical_structure.zh.md",
+      "archive_member": "doc/technical_structure.zh.md",
+      "role": "active_document_before_edit",
+      "title": "当前技术结构与完整链条",
+      "topic": "active_guidance",
+      "bytes": 108557,
+      "sha256": "b7e5df9500c17e3f82c432e3a64da5bdb1d8f35e9c98bb9c1005cc0fe834a927",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "doc/workstation.zh.md",
+      "archive_member": "doc/workstation.zh.md",
+      "role": "active_document_before_edit",
+      "title": "BrainSync工作站指南",
+      "topic": "active_guidance",
+      "bytes": 30055,
+      "sha256": "461a3e61f9070198f0d8d20adc7bfbabf28007328da2bc4b5f551c0ff444b41f",
+      "incoming_references_before_edit": []
+    },
+    {
+      "original_path": "formal/lean/README.md",
+      "archive_member": "formal/lean/README.md",
+      "role": "active_document_before_edit",
+      "title": "N2P3-Net Lean 形式化验证",
+      "topic": "active_guidance",
+      "bytes": 11008,
+      "sha256": "4fc8871d397a0694861ecd1f0ae9ed89d88b23700ffa95bd31c69b3bd689b15d",
+      "incoming_references_before_edit": []
+    }
+  ],
+  "unavailable_runtime_reference_count": 17,
+  "unavailable_runtime_references": [
+    {
+      "original_path": "experiments/runs/brainsync_eog_consistent_20261031/BI2012_pathfix_numeric_validation.json",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/handover_20261107/source_inventory.json",
+      "navigation_role": "handover_snapshot_only",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/calibration_and_selection.zh.md",
+          "line": 52,
+          "label": "数值核验",
+          "original_target": "../../experiments/runs/brainsync_eog_consistent_20261031/BI2012_pathfix_numeric_validation.json"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_eog_consistent_20261031/analysis_remaining_20261101/index.html",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/handover_20261107/source_inventory.json",
+      "navigation_role": "handover_snapshot_only",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/calibration_and_selection.zh.md",
+          "line": 41,
+          "label": "阶段报告",
+          "original_target": "../../experiments/runs/brainsync_eog_consistent_20261031/analysis_remaining_20261101/index.html"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_eog_consistent_20261031/checkpoint.json",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/README.md#当前状态与续接",
+      "navigation_role": "checkpoint_entry",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/calibration_and_selection.zh.md",
+          "line": 30,
+          "label": "本轮checkpoint",
+          "original_target": "../../experiments/runs/brainsync_eog_consistent_20261031/checkpoint.json"
+        },
+        {
+          "source": "doc/evidence/response_and_noise.zh.md",
+          "line": 46,
+          "label": "本轮checkpoint",
+          "original_target": "../../experiments/runs/brainsync_eog_consistent_20261031/checkpoint.json"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_eog_consistent_20261031/confirmed_EOG_inputs/receipt.json",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/handover_20261107/source_inventory.json",
+      "navigation_role": "handover_snapshot_only",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/calibration_and_selection.zh.md",
+          "line": 20,
+          "label": "派生声明收据",
+          "original_target": "../../experiments/runs/brainsync_eog_consistent_20261031/confirmed_EOG_inputs/receipt.json"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_eog_consistent_20261031/experiment_plan_startup_cut.json",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/brainsync_quality/startup_cut_acceptance.json",
+      "navigation_role": "existing_compact_acceptance",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/calibration_and_selection.zh.md",
+          "line": 33,
+          "label": "新比较计划",
+          "original_target": "../../experiments/runs/brainsync_eog_consistent_20261031/experiment_plan_startup_cut.json"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_eog_consistent_20261031/intake_all12_full_QC_v2/availability.json",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/handover_20261107/source_inventory.json",
+      "navigation_role": "handover_snapshot_only",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/calibration_and_selection.zh.md",
+          "line": 23,
+          "label": "代表输入检查",
+          "original_target": "../../experiments/runs/brainsync_eog_consistent_20261031/intake_all12_full_QC_v2/availability.json"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_eog_consistent_20261031/opening_signal_audit.json",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/handover_20261107/source_inventory.json",
+      "navigation_role": "handover_snapshot_only",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/response_and_noise.zh.md",
+          "line": 13,
+          "label": "开头波形收据",
+          "original_target": "../../experiments/runs/brainsync_eog_consistent_20261031/opening_signal_audit.json"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_eog_consistent_20261031/post_cut_amplitude_review/index.html",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/brainsync_quality/post_cut_amplitude_acceptance.json",
+      "navigation_role": "existing_compact_acceptance",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/response_and_noise.zh.md",
+          "line": 52,
+          "label": "幅值报告",
+          "original_target": "../../experiments/runs/brainsync_eog_consistent_20261031/post_cut_amplitude_review/index.html"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_eog_consistent_20261031/post_cut_eog_audit_final/results.json",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/brainsync_quality/post_cut_amplitude_acceptance.json",
+      "navigation_role": "existing_compact_acceptance",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/response_and_noise.zh.md",
+          "line": 70,
+          "label": "冻结EOG隔离对照",
+          "original_target": "../../experiments/runs/brainsync_eog_consistent_20261031/post_cut_eog_audit_final/results.json"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_eog_consistent_20261031/source_preparation_group_v1/local_readiness.json",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/handover_20261107/source_inventory.json",
+      "navigation_role": "handover_snapshot_only",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/calibration_and_selection.zh.md",
+          "line": 63,
+          "label": "缓存核验收据",
+          "original_target": "../../experiments/runs/brainsync_eog_consistent_20261031/source_preparation_group_v1/local_readiness.json"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_eog_consistent_20261031/startup_cut_validation.json",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/brainsync_quality/startup_cut_acceptance.json",
+      "navigation_role": "existing_compact_acceptance",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/response_and_noise.zh.md",
+          "line": 35,
+          "label": "独立实数值核验",
+          "original_target": "../../experiments/runs/brainsync_eog_consistent_20261031/startup_cut_validation.json"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_matrix_20261031/analysis/K1_complementarity.json",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/brainsync_matrix/acceptance.json",
+      "navigation_role": "existing_compact_acceptance",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/calibration_and_selection.zh.md",
+          "line": 111,
+          "label": "逐block互补明细",
+          "original_target": "../../experiments/runs/brainsync_matrix_20261031/analysis/K1_complementarity.json"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_matrix_20261031/block_reviewed/index.html",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/brainsync_matrix/block_reviewed_acceptance.json",
+      "navigation_role": "existing_compact_acceptance",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/calibration_and_selection.zh.md",
+          "line": 137,
+          "label": "R5逐block配对分解",
+          "original_target": "../../experiments/runs/brainsync_matrix_20261031/block_reviewed/index.html"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_matrix_20261031/index.html",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/brainsync_matrix/acceptance.json",
+      "navigation_role": "existing_compact_acceptance",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/calibration_and_selection.zh.md",
+          "line": 70,
+          "label": "实机矩阵报告",
+          "original_target": "../../experiments/runs/brainsync_matrix_20261031/index.html"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_matrix_20261031/single_round/GTN_comparison_audit.json",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/brainsync_matrix/single_round_acceptance.json",
+      "navigation_role": "existing_compact_acceptance",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/calibration_and_selection.zh.md",
+          "line": 187,
+          "label": "只读比较核验",
+          "original_target": "../../experiments/runs/brainsync_matrix_20261031/single_round/GTN_comparison_audit.json"
+        }
+      ]
+    },
+    {
+      "original_path": "experiments/runs/brainsync_matrix_20261031/single_round/index.html",
+      "availability_at_consolidation": "original_local_path_missing",
+      "navigation_target": "doc/assets/brainsync_matrix/single_round_acceptance.json",
+      "navigation_role": "existing_compact_acceptance",
+      "restored_by_this_change": false,
+      "references_before_edit": [
+        {
+          "source": "doc/evidence/calibration_and_selection.zh.md",
+          "line": 161,
+          "label": "单轮R1报告",
+          "original_target": "../../experiments/runs/brainsync_matrix_20261031/single_round/index.html"
+        }
+      ]
+    }
+  ],
+  "preservation_rules": "Original bytes, scientific results, producer bindings, existing manifests and checkpoints are not rewritten. New navigation does not certify payload restoration."
+}

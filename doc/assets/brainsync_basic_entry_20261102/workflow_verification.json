@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "source": {
+    "id": "old_basic_nn_source",
+    "profile_sha256": "f991fe799af2e6c554b49120a19b20a712e6da9620f8a3f4a6fb19ad6d24ccf0",
+    "source_checkpoint_sha256": "935ee55de598256ca9299595ec899359751b1ebbf5fa0bb15af0f0fbb8bda3bd",
+    "dependency_sha256": {
+      "preprocessing": "deffab5f529e8a780fdfe63f6ed19817ade4d56dff0fca55946627b0d0c5ab93",
+      "training_budget": "e7162e54b388cc421edabc58cde1c42a9179244a2350d116542a764b4d731b2d"
+    }
+  },
+  "synthetic_contract_only": true,
+  "epochs": 90,
+  "R5_status": "predicted",
+  "protocol_compliant": true,
+  "target_labels_used": false
+}

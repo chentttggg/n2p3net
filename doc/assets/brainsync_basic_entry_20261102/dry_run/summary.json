@@ -1,0 +1,239 @@
+{
+  "schema": "n2p3_brainsync_model_task/2",
+  "task": "calibrate",
+  "artifact_path": "D:\\BCI\\n2p3-net\\doc\\assets\\brainsync_basic_entry_20261102\\dry_run\\model.pt",
+  "model_artifact": "D:\\BCI\\n2p3-net\\doc\\assets\\brainsync_basic_entry_20261102\\dry_run\\model.pt",
+  "request_id": null,
+  "session_dirs": [
+    "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_p001_20260907\\inputs\\P001_20260903_172410_01"
+  ],
+  "calibration_profile": {
+    "id": "old_basic_nn_source",
+    "profile_sha256": "f991fe799af2e6c554b49120a19b20a712e6da9620f8a3f4a6fb19ad6d24ccf0",
+    "source_checkpoint_sha256": "935ee55de598256ca9299595ec899359751b1ebbf5fa0bb15af0f0fbb8bda3bd",
+    "dependency_sha256": {
+      "preprocessing": "deffab5f529e8a780fdfe63f6ed19817ade4d56dff0fca55946627b0d0c5ab93",
+      "training_budget": "e7162e54b388cc421edabc58cde1c42a9179244a2350d116542a764b4d731b2d"
+    }
+  },
+  "training_budget_input": {
+    "path": "D:\\BCI\\n2p3-net\\configs\\unified_training_budget.json",
+    "sha256": "e7162e54b388cc421edabc58cde1c42a9179244a2350d116542a764b4d731b2d"
+  },
+  "execution": {
+    "requested_device": "cpu",
+    "tensor_device": "cpu",
+    "torch_threads": 4
+  },
+  "status": "dry_run",
+  "data_fitted": false,
+  "model_written": false,
+  "selector_mode": "unified",
+  "selection_protocol": "fixed_full_calibration",
+  "participant_key": "n2p3-origin://BrainSync-GTN/participant/P001",
+  "subject_id": "P001",
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "name": "nn_source",
+      "initialization": "source",
+      "input_statistics": "target_prefix",
+      "bn_buffers": "calibration",
+      "bn_affine": "trainable",
+      "weights": "non_bn",
+      "dropout": "off",
+      "batch_size": 512,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "epochs": 90,
+      "max_updates": null,
+      "seed": 20261031,
+      "refit_full_prefix": false,
+      "candidate_loss_weight": 0.0,
+      "candidate_loss_temperature": 1.0
+    }
+  ],
+  "batch_rule": {
+    "schema": "n2p3_target_batch_rule/1",
+    "batch_size": 512,
+    "policy": "operator_fixed",
+    "provenance": "run_configuration",
+    "selection_evidence": false,
+    "selection_scope": "predeclared_no_score_selection",
+    "rationale": "Explicit unified calibration recipe; no target-score batch selection",
+    "evidence_level": "prescribed_configuration",
+    "target_device_performance_confirmed": false
+  },
+  "candidate_fit_gates": [
+    {
+      "candidate_id": "nn_source",
+      "fit_eligible": true,
+      "training_rows": 441,
+      "validation_rows": 0,
+      "reason": null
+    }
+  ],
+  "inner_split": {
+    "mode": "complete_recording_zero_phase",
+    "legal": false,
+    "reason": "product selection requires separate complete calibration sessions",
+    "training_sessions": [],
+    "validation_sessions": [],
+    "training_rows": 0,
+    "validation_rows": 0,
+    "purged_rows": 0,
+    "split_sha256": "d8bfe073171526dcf62ef1baffe87a3473e2778a5475a9bf1a551b28fd62a31f"
+  },
+  "inner_training_rows": [],
+  "inner_validation_rows": [],
+  "inner_selection_planned": false,
+  "full_refit_rows": 441,
+  "full_calibration_lda_gate": {
+    "legal": true,
+    "requested_training_rows": 441,
+    "training_rows": 441,
+    "observed_channel_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "observed_channel_count": 6,
+    "feature_count": 168,
+    "waveform_training_policy": "common_observed_training_channels",
+    "reason": null
+  },
+  "source_checkpoint_supplied": true,
+  "source_checkpoint_gate": {
+    "status": "compatible",
+    "checkpoint_sha256": "935ee55de598256ca9299595ec899359751b1ebbf5fa0bb15af0f0fbb8bda3bd"
+  },
+  "scoring_gate": {
+    "status": "not_required_without_inner_selection"
+  },
+  "execution_ready": true,
+  "execution_blockers": [],
+  "fallback_planned": false,
+  "fallback": null,
+  "unified_training_budget": {
+    "reference_patience": 3,
+    "reference_min_delta": 0.0001,
+    "reference_max_epochs": 12,
+    "source_validation_fraction": 0.2,
+    "target_epochs": 90,
+    "development_people_per_domain": 2,
+    "development_seed": 20260906
+  },
+  "calibration_sessions": [
+    "P001_20260903_172410_01"
+  ],
+  "calibration_data_sha256": "90ba1a5d497885cad842244527236e6272056b28a894b68f0604b7b0aed25712",
+  "input_contract": {
+    "channel_names": [
+      "FZ",
+      "P3",
+      "PZ",
+      "P4",
+      "PO8",
+      "OZ"
+    ],
+    "channel_positions_m": [
+      [
+        -0.0012292765313759446,
+        0.09327445179224014,
+        0.10263929516077042
+      ],
+      [
+        -0.05503823608160019,
+        -0.04421030357480049,
+        0.0999089777469635
+      ],
+      [
+        -0.0017094503855332732,
+        -0.045212991535663605,
+        0.1266729235649109
+      ],
+      [
+        0.053636010736227036,
+        -0.044334523379802704,
+        0.10051602870225906
+      ],
+      [
+        0.053557317703962326,
+        -0.06641694158315659,
+        0.04785097762942314
+      ],
+      [
+        -0.0020602515432983637,
+        -0.08278299123048782,
+        0.060736630111932755
+      ]
+    ],
+    "preprocessing": {
+      "name": "brainsync_bidirectional_v1",
+      "sfreq": 128.0,
+      "l_freq": 0.1,
+      "h_freq": 30.0,
+      "tmin_ms": -200.0,
+      "tmax_ms": 1200.0,
+      "n_times": 179,
+      "baseline_mode": "mean_only",
+      "signal_unit": "V",
+      "filter_method": "iir",
+      "filter_order": 4,
+      "filter_phase": "zero",
+      "causal_iir_initial_state": "not_applicable",
+      "notch_freqs_hz": [
+        50.0
+      ],
+      "notch_quality_factor": 30.0,
+      "zero_phase_edge_policy": "mne_reflect_limited",
+      "resample_domain": "epoched",
+      "resample_method": "fft",
+      "resample_npad": "auto",
+      "resample_window": "auto",
+      "resample_pad": "edge",
+      "trial_reference_window_ms": null,
+      "trial_reference_center": "mean",
+      "trial_reference_scale": "none",
+      "reject_threshold_v": null
+    },
+    "source_reference": "measured_channel:CZ",
+    "n_channels": 6,
+    "n_times": 179,
+    "simulation_status": "not_declared",
+    "ocular_artifact_processing": {
+      "status": "not_applied",
+      "eog_retained_in_raw": true,
+      "eog_in_classifier": false,
+      "eog_channels": [
+        "EOG"
+      ]
+    },
+    "continuous_artifact_processing": {
+      "status": "not_applied"
+    }
+  },
+  "planned_ocular": {
+    "requested": false,
+    "fitted": false,
+    "fit_sessions": [
+      "P001_20260903_172410_01"
+    ],
+    "fit_rows": 441,
+    "lifecycle": "freeze_after_full_calibration_fit",
+    "eog_reference_policy": "shared_measured_reference"
+  },
+  "input_gate_basis": "actual_deterministic_input",
+  "repeat_input_gates_after_planned_eog": false,
+  "planned_epoch_quality": {
+    "requested": false,
+    "method": null,
+    "lifecycle": "not_applied",
+    "fitted": false
+  },
+  "evidence_scope": "software_plan_no_device_or_accuracy_evidence",
+  "planned_epoch_qc": false
+}

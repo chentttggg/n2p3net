@@ -1,0 +1,505 @@
+{
+  "schema": "n2p3_full_no_large_data_omissions/2",
+  "generated_at": "2026-11-11T03:21:47-07:00",
+  "purpose": "Catalog of excluded scientific data, runtime payloads, large binary files, local environments, Git history, literature library and historical frozen material.",
+  "excluded_count": 101,
+  "excluded_entries": [
+    {
+      "path": ".claude/skills/eeg-p300-research/SKILL.md",
+      "reason": "excluded_root",
+      "bytes": 490
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/before/RELEASE.md",
+      "reason": "excluded_payload_component",
+      "bytes": 1599
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/before/backend_task.py",
+      "reason": "excluded_payload_component",
+      "bytes": 30666
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/before/frontend_backend.py",
+      "reason": "excluded_payload_component",
+      "bytes": 8656
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/before/frontend_decoding.py",
+      "reason": "excluded_payload_component",
+      "bytes": 51702
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/before/frontend_guide.md",
+      "reason": "excluded_payload_component",
+      "bytes": 12658
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/before/frontend_results.py",
+      "reason": "excluded_payload_component",
+      "bytes": 15720
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/before/release-manifest.json",
+      "reason": "excluded_payload_component",
+      "bytes": 92746
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/before/workstation.md",
+      "reason": "excluded_payload_component",
+      "bytes": 28825
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/profile_page.png",
+      "reason": "excluded_binary_or_data_payload",
+      "bytes": 11941
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/profile_settings.png",
+      "reason": "excluded_binary_or_data_payload",
+      "bytes": 6629
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/ui/abstained_1440.png",
+      "reason": "excluded_payload_component",
+      "bytes": 65570
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/ui/calibration_1440.png",
+      "reason": "excluded_payload_component",
+      "bytes": 85902
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/ui/inference_1440.png",
+      "reason": "excluded_payload_component",
+      "bytes": 66075
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/ui/records_1160.png",
+      "reason": "excluded_payload_component",
+      "bytes": 66770
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/ui/records_1440.png",
+      "reason": "excluded_payload_component",
+      "bytes": 66345
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/ui_baseline/abstained_1440.png",
+      "reason": "excluded_payload_component",
+      "bytes": 65570
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/ui_baseline/calibration_1440.png",
+      "reason": "excluded_payload_component",
+      "bytes": 85902
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/ui_baseline/inference_1440.png",
+      "reason": "excluded_payload_component",
+      "bytes": 66075
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/ui_baseline/records_1160.png",
+      "reason": "excluded_payload_component",
+      "bytes": 66770
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/ui_baseline/records_1440.png",
+      "reason": "excluded_payload_component",
+      "bytes": 66345
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/cal/dataset_description.json",
+      "reason": "excluded_payload_component",
+      "bytes": 73
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/cal/session.json",
+      "reason": "excluded_payload_component",
+      "bytes": 1634
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_coordsystem.json",
+      "reason": "excluded_payload_component",
+      "bytes": 128
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_electrodes.tsv",
+      "reason": "excluded_payload_component",
+      "bytes": 381
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_channels.tsv",
+      "reason": "excluded_payload_component",
+      "bytes": 205
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.edf",
+      "reason": "excluded_payload_component",
+      "bytes": 282980
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.json",
+      "reason": "excluded_payload_component",
+      "bytes": 199
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_events.tsv",
+      "reason": "excluded_payload_component",
+      "bytes": 2625
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/calibrate/summary.json",
+      "reason": "excluded_payload_component",
+      "bytes": 77844
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/held/dataset_description.json",
+      "reason": "excluded_payload_component",
+      "bytes": 73
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/held/session.json",
+      "reason": "excluded_payload_component",
+      "bytes": 1635
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/held/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_coordsystem.json",
+      "reason": "excluded_payload_component",
+      "bytes": 128
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/held/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_electrodes.tsv",
+      "reason": "excluded_payload_component",
+      "bytes": 381
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_channels.tsv",
+      "reason": "excluded_payload_component",
+      "bytes": 205
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.edf",
+      "reason": "excluded_payload_component",
+      "bytes": 282980
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.json",
+      "reason": "excluded_payload_component",
+      "bytes": 199
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_events.tsv",
+      "reason": "excluded_payload_component",
+      "bytes": 2625
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/infer/summary.json",
+      "reason": "excluded_payload_component",
+      "bytes": 7159
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow/inspect/summary.json",
+      "reason": "excluded_payload_component",
+      "bytes": 77532
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/.target-confirmation.lock",
+      "reason": "excluded_payload_component",
+      "bytes": 1
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/dataset_description.json",
+      "reason": "excluded_payload_component",
+      "bytes": 73
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/session.json",
+      "reason": "excluded_payload_component",
+      "bytes": 1634
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_coordsystem.json",
+      "reason": "excluded_payload_component",
+      "bytes": 128
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_electrodes.tsv",
+      "reason": "excluded_payload_component",
+      "bytes": 381
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_channels.tsv",
+      "reason": "excluded_payload_component",
+      "bytes": 205
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.edf",
+      "reason": "excluded_payload_component",
+      "bytes": 282980
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.json",
+      "reason": "excluded_payload_component",
+      "bytes": 199
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/cal/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_events.tsv",
+      "reason": "excluded_payload_component",
+      "bytes": 2625
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/calibrate/summary.json",
+      "reason": "excluded_payload_component",
+      "bytes": 77899
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/held/dataset_description.json",
+      "reason": "excluded_payload_component",
+      "bytes": 73
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/held/session.json",
+      "reason": "excluded_payload_component",
+      "bytes": 1635
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/held/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_coordsystem.json",
+      "reason": "excluded_payload_component",
+      "bytes": 128
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/held/sub-P001/ses-session/eeg/sub-P001_ses-session_space-BrainSyncHead_electrodes.tsv",
+      "reason": "excluded_payload_component",
+      "bytes": 381
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_channels.tsv",
+      "reason": "excluded_payload_component",
+      "bytes": 205
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.edf",
+      "reason": "excluded_payload_component",
+      "bytes": 282980
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_eeg.json",
+      "reason": "excluded_payload_component",
+      "bytes": 199
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/held/sub-P001/ses-session/eeg/sub-P001_ses-session_task-gtn_run-01_events.tsv",
+      "reason": "excluded_payload_component",
+      "bytes": 2625
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/infer/summary.json",
+      "reason": "excluded_payload_component",
+      "bytes": 7684
+    },
+    {
+      "path": "doc/assets/brainsync_basic_entry_20261102/workflow_current/inspect/summary.json",
+      "reason": "excluded_payload_component",
+      "bytes": 77579
+    },
+    {
+      "path": "doc/assets/build_cleanup/repository_20261110/targets_before.json",
+      "reason": "larger_than_5MiB",
+      "bytes": 5638647
+    },
+    {
+      "path": "doc/assets/build_cleanup/temp_retirement_20261107/before.json",
+      "reason": "larger_than_5MiB",
+      "bytes": 5284259
+    },
+    {
+      "path": "frozen/early_source_retirement_20261107/README.zh.md",
+      "reason": "excluded_root",
+      "bytes": 1429
+    },
+    {
+      "path": "frozen/early_source_retirement_20261107/manifest.json",
+      "reason": "excluded_root",
+      "bytes": 674637
+    },
+    {
+      "path": "frozen/repository_consolidation_20261110/README.zh.md",
+      "reason": "excluded_root",
+      "bytes": 2138
+    },
+    {
+      "path": "doc/assets/brainsync_recovery_20260908/event_channel_availability.png",
+      "bytes": 90941,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/brainsync_recovery_20260908/matched_event_erp.png",
+      "bytes": 679077,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/continuous_fixed_prefix_20261005/m1_ar_orders.pdf",
+      "bytes": 39835,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/continuous_fixed_prefix_20261005/m1_ar_orders.png",
+      "bytes": 218447,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/deep_chain_audit_20260929/bi_quality/bi61_c200_quality.png",
+      "bytes": 134099,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/deep_chain_audit_20260929/input/bi01_raw_extreme_anchor.png",
+      "bytes": 909643,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/early_stopping_full_20260908/quality_and_cost.png",
+      "bytes": 117271,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/epoch_timing_audit_20260907/erp.png",
+      "bytes": 621617,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/p300_transfer_20260906/calibration_curves.pdf",
+      "bytes": 23886,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/p300_transfer_20260906/calibration_curves.png",
+      "bytes": 149489,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/analysis_1280x800.png",
+      "bytes": 39653,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/analysis_1440x900.png",
+      "bytes": 41068,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/device_1280x800.png",
+      "bytes": 97090,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/device_1440x900.png",
+      "bytes": 100296,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/experiment_1280x800.png",
+      "bytes": 103494,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/experiment_1440x900.png",
+      "bytes": 107869,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/model_1280x800.png",
+      "bytes": 74472,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/model_1440x900.png",
+      "bytes": 105514,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/overview_1280x800.png",
+      "bytes": 75039,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/overview_1440x900.png",
+      "bytes": 76809,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/r5_result_1440x900.png",
+      "bytes": 89187,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/result_layout_1280x800.png",
+      "bytes": 74472,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/technical_audit_20260906/app/result_layout_1440x900.png",
+      "bytes": 76006,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/training_chain_results_20260907/paired_effects.png",
+      "bytes": 131015,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/unified_cloud_20260916/bnci_decision_results.png",
+      "bytes": 84785,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/unified_cloud_20260916/paired_participant_differences.png",
+      "bytes": 89877,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "doc/assets/unified_cloud_20260916/results_overview.png",
+      "bytes": 79003,
+      "reason": "excluded_suffix"
+    },
+    {
+      "path": "mne_data/",
+      "reason": "scientific_raw_and_derived_data"
+    },
+    {
+      "path": "cloud_inputs/",
+      "reason": "cloud_training_inputs"
+    },
+    {
+      "path": "frozen/",
+      "reason": "historical_frozen_archives_and_manifests"
+    },
+    {
+      "path": ".venv/",
+      "reason": "local_environment"
+    },
+    {
+      "path": ".venv-gpu/",
+      "reason": "local_environment"
+    },
+    {
+      "path": ".git/",
+      "reason": "git_history"
+    },
+    {
+      "path": "Paper/",
+      "reason": "local_literature_library"
+    },
+    {
+      "path": "tmp/",
+      "reason": "temporary_runtime_material"
+    },
+    {
+      "path": "models/",
+      "reason": "model_payloads"
+    }
+  ],
+  "restore_rule": "Supply omitted inputs from their custodians and revalidate source/data contracts before use."
+}

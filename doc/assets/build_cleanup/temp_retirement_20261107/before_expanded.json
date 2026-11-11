@@ -1,0 +1,345 @@
+{
+  "schema": "n2p3_temp_retirement_expanded_preflight/1",
+  "observed_at": "2026-11-07T02:09:53.764596-07:00",
+  "authorization": "User clarified all listed staging materials are very old; preserve a pure-source freeze, then remove the old materials. This supersedes the earlier conservative plan to retain old data and results.",
+  "scope": "Only current top-level children of D:/Temp enumerated below; D:/Temp workspace root is retained. Current project and all its data are outside deletion scope.",
+  "source_freeze": {
+    "path": "frozen/early_source_retirement_20261107/source_only.zip",
+    "bytes": 6308680,
+    "sha256": "f4cd38c1228d0722df6401fd503cf3cc9fef728eb14c36eba00bdf1af04cda1c"
+  },
+  "source_members_verified": 1643,
+  "targets": [
+    {
+      "id": "TEMP-001",
+      "path": "D:\\Temp\\braininvaders_official_downloader.err.log",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 0,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-002",
+      "path": "D:\\Temp\\braininvaders_official_downloader.log",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 145756,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-003",
+      "path": "D:\\Temp\\braininvaders_official_downloader.py",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 6039,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-004",
+      "path": "D:\\Temp\\cnp.pdf",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 1264558,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-005",
+      "path": "D:\\Temp\\gtn_update.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 1670407,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-006",
+      "path": "D:\\Temp\\gtn_watch.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 1667827,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-007",
+      "path": "D:\\Temp\\n2p3-archive-check",
+      "kind": "directory",
+      "files": 0,
+      "logical_bytes": 0,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-008",
+      "path": "D:\\Temp\\n2p3-code-sync.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 1902358,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-009",
+      "path": "D:\\Temp\\n2p3-net",
+      "kind": "directory",
+      "files": 31658,
+      "logical_bytes": 3113059795,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-010",
+      "path": "D:\\Temp\\n2p3net-bi2014-component-ablation-20260827-r1.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 2220820,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-011",
+      "path": "D:\\Temp\\n2p3net-bi2014-runner-patch-20260827-r1.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 6270,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-012",
+      "path": "D:\\Temp\\n2p3net-chart-state.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 9819,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-013",
+      "path": "D:\\Temp\\n2p3net-component-ablation-20260827-r1.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 2238325,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-014",
+      "path": "D:\\Temp\\n2p3net-component-ablation-20260827-r2.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 2220116,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-015",
+      "path": "D:\\Temp\\n2p3net-component-ablation-20260827-r3.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 2220295,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-016",
+      "path": "D:\\Temp\\n2p3net-dashboard-fold-patch-20260827.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 11761,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-017",
+      "path": "D:\\Temp\\n2p3net-finalfold-dashboard-v2.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 9533,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-018",
+      "path": "D:\\Temp\\n2p3net-finalfold-dashboard.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 9529,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-019",
+      "path": "D:\\Temp\\n2p3net-gtn-cache-v3-20260827-r1.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 201585199,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-020",
+      "path": "D:\\Temp\\n2p3net-patch-staging-20260827",
+      "kind": "directory",
+      "files": 1,
+      "logical_bytes": 40922,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-021",
+      "path": "D:\\Temp\\n2p3net-queued-run-accumulate.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 48283,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-022",
+      "path": "D:\\Temp\\n2p3net-source-dep56.tar.gz",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 1858199,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-023",
+      "path": "D:\\Temp\\Paper",
+      "kind": "directory",
+      "files": 16,
+      "logical_bytes": 73336366,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-024",
+      "path": "D:\\Temp\\tmp",
+      "kind": "directory",
+      "files": 30,
+      "logical_bytes": 20690941,
+      "reparse_points": 0,
+      "status": "pending"
+    },
+    {
+      "id": "TEMP-025",
+      "path": "D:\\Temp\\zenodo_huebner_search.json",
+      "kind": "file",
+      "files": 1,
+      "logical_bytes": 15810,
+      "reparse_points": 0,
+      "status": "pending"
+    }
+  ],
+  "protected_files": [
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\project_handover_20261107.zh.md",
+      "bytes": 63549,
+      "sha256": "d07e73387569b6f13418dcf0745d25314c98634c3f992dda05dfc0e8b39655bd"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\handover_20261107\\source_inventory.json",
+      "bytes": 31126,
+      "sha256": "2e9f39b4d8bbca230dc5f4ff66d415c71f2fd6d2cc4e4ba69f03852d1c5f0d24"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\manifest.json",
+      "bytes": 12431,
+      "sha256": "214563ebbad33b1113142d18c4b60f0348b37203e952f2d92b5f457e78f8ac9f"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\README.zh.md",
+      "bytes": 2430,
+      "sha256": "a52baf15eb6376fa1780b9a00d3d3e045ed0719077ef132cef61a8ba3e4a1067"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\run_records.md",
+      "bytes": 9269,
+      "sha256": "fd038c68b978252f790ac5656efe4cc6f03b0436a979eb4aab831b4863a0d2df"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\blueprint.md",
+      "bytes": 13867,
+      "sha256": "adf1fd2831913eba0ee0b4909d3b9027d57f149cd98923a3ce91e18df0af4c09"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\constitution.md",
+      "bytes": 19157,
+      "sha256": "3cea4531dd16777408cee9cd85e66f2a04d2acd6fcb84e31ce4becc9702f2e3b"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\datasets.md",
+      "bytes": 9520,
+      "sha256": "23ecb20fa07b3c66d59dd6cc90b6624d6aae4394d281366473ed1198b785929d"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\evaluation_protocol.md",
+      "bytes": 14250,
+      "sha256": "c1ad6498e3b7ec412d77d3c4af840153f74badcdb1c97474f578671b3b784ee9"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\mission.md",
+      "bytes": 5672,
+      "sha256": "1387f95ae0cef2f84ca9fdd331dee6ef76d08174b64a747e163b0402a0df5cce"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\neural_ride_recipe.md",
+      "bytes": 5520,
+      "sha256": "17239701442bffdbf616d32059760660d91b55b4062c6eeb4c1b8ecd83c83469"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\pcw_shift_equivariance_research.zh.md",
+      "bytes": 3691,
+      "sha256": "ba045104e1591e481cb8740e70c4f28b34e41f69e62562abed3757603544cfe7"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\performance_lessons.md",
+      "bytes": 4096,
+      "sha256": "dfbab1630b9e8eef8864ba3e90ac692d7fd48824ac5a5ea1dc30eb25fa1d8e27"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\PROJECT_ENGINEERING_JOURNEY.zh.md",
+      "bytes": 36254,
+      "sha256": "fa164429b5d80555a45faad79a7d0fedccf654f0344dd13f9b0febb2ba290d23"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\README.md",
+      "bytes": 4987,
+      "sha256": "624c033e142b38be889199727f811d7a23113092d0fe0eca09358c5076caa79c"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\roadmap.md",
+      "bytes": 4151,
+      "sha256": "9cf06d82500d8a3b5ecfd45cbb90ff954583ceb2da0726fa7b5325e3fbc2a48b"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\routes.md",
+      "bytes": 5443,
+      "sha256": "4904a1037f3f4c2c39b6cd5f888cb480cc7649669b7404dda9306119fdfbf4e6"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\frozen\\early_exploration_reference_20260826\\source_texts.zip",
+      "bytes": 67409,
+      "sha256": "f652472d5f8e55ccc17013bb577585fa998bbd186e4556ce98e66b881c0d8d32"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\frozen\\early_source_retirement_20261107\\source_only.zip",
+      "bytes": 6308680,
+      "sha256": "f4cd38c1228d0722df6401fd503cf3cc9fef728eb14c36eba00bdf1af04cda1c"
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\frozen\\early_source_retirement_20261107\\manifest.json",
+      "bytes": 674637,
+      "sha256": "52cbd622194994d3f93ead3f35b35ec317971ae19e7a166349ad8cb8f68699e5"
+    }
+  ],
+  "total_files": 31725,
+  "total_logical_bytes": 3426238928,
+  "live_executable_or_working_directory_dependencies": [],
+  "deletion_policy": "CMD, one explicit quoted absolute target per invocation; stop on policy or approval denial."
+}

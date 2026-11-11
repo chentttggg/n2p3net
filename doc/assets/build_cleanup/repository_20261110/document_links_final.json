@@ -1,0 +1,49 @@
+{
+  "schema": "n2p3_active_document_links/1",
+  "documents": 21,
+  "repository_links_checked": 659,
+  "missing": [],
+  "private_retrieval_pointers": [
+    {
+      "source": "doc/evidence/response_and_noise.zh.md",
+      "target": "D:/BCI/artifacts/research-deliveries/joint-predictive-integration/lambda_support.png"
+    },
+    {
+      "source": "doc/evidence/response_and_noise.zh.md",
+      "target": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/ADULT_BRIDGE_HANDOFF.zh.md"
+    },
+    {
+      "source": "doc/evidence/response_and_noise.zh.md",
+      "target": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/SOURCE_ARTIFACT_PLAN.zh.md"
+    },
+    {
+      "source": "doc/evidence/response_and_noise.zh.md",
+      "target": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/independent-compact-factor/CANDIDATE_MATH_CONTROLS.json"
+    },
+    {
+      "source": "doc/evidence/response_and_noise.zh.md",
+      "target": "D:/BCI/artifacts/research-deliveries/source-response-states/public-population-source/compact-factor-delivery/PRIOR_AUTHORITY_CONTROLS.json"
+    },
+    {
+      "source": "doc/evidence/execution_and_integration.zh.md",
+      "target": "D:/BCI/artifacts/source-response-generic/recovery/INDEPENDENT_WRAPPER_RESULT_REVIEW.json"
+    },
+    {
+      "source": "doc/evidence/execution_and_integration.zh.md",
+      "target": "D:/BCI/artifacts/research-deliveries/source-response-states/public-joint-history-inference/adult-programme-input/test-fixture-convergence/DELIVERY_MANIFEST.json"
+    },
+    {
+      "source": "doc/build_cleanup_maintenance.zh.md",
+      "target": "/D:/BCI/n2p3-net/experiments/runs/brainsync_quality_20261030/implementation/index.html"
+    },
+    {
+      "source": "doc/build_cleanup_maintenance.zh.md",
+      "target": "/D:/BCI/n2p3-net/experiments/runs/brainsync_quality_20261030/implementation/accepted/continuous_reviewed_native7.json"
+    },
+    {
+      "source": "doc/build_cleanup_maintenance.zh.md",
+      "target": "/D:/BCI/n2p3-net/experiments/runs/brainsync_quality_20261030/implementation/distribution/n2p3_net-0.1.0-py3-none-any.whl"
+    }
+  ],
+  "passed": true
+}

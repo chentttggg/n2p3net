@@ -1,0 +1,150 @@
+{
+  "schema": "n2p3_source_only_retirement_archive/1",
+  "created_at": "2026-11-07T02:08:37.668992-07:00",
+  "authorization": "User clarified that these are old materials; freeze pure code, then delete the retired staging materials.",
+  "archive": {
+    "path": "frozen/early_source_retirement_20261107/source_only.zip",
+    "bytes": 6308680,
+    "sha256": "f4cd38c1228d0722df6401fd503cf3cc9fef728eb14c36eba00bdf1af04cda1c"
+  },
+  "old_checkout_head": "8732be2a4694a444b77c81b1aae1d641e611f088",
+  "old_checkout_status": [
+    " M doc/CLI_MANUAL.zh.md",
+    " M doc/README.md",
+    " M doc/datasets.md",
+    " M doc/neural_ride_recipe.md",
+    " M experiments/dashboard.html",
+    " M experiments/prepare_eeg_dataset.py",
+    " M experiments/run_eeg_loso.py",
+    " M experiments/run_gtn_baseline.py",
+    " M experiments/run_n2p3net_gtn.py",
+    " M open_dashboard.ps1",
+    " M src/baselines/evaluate.py",
+    " M src/baselines/evidence_protocol.py",
+    " M src/data/dataset.py",
+    " M src/data/epochs.py",
+    " M src/data/events.py",
+    " M src/data/manifest.py",
+    " M src/data/moabb.py",
+    " M src/data/preprocess.py",
+    " M src/models/component_window.py",
+    " M src/models/n2p3net.py",
+    " M src/train/augment.py",
+    " M src/train/factory.py",
+    " M src/train/losses.py",
+    " M src/train/recipe.py",
+    " M src/train/trainer.py",
+    " M tests/test_augment.py",
+    " M tests/test_dataset.py",
+    " M tests/test_epochs.py",
+    " M tests/test_evaluate.py",
+    " M tests/test_events.py",
+    " M tests/test_losses.py",
+    " M tests/test_moabb_adapter.py",
+    " M tests/test_n2p3net.py",
+    " M tests/test_preprocess.py",
+    " M tests/test_recipe.py",
+    " M tests/test_trainer.py",
+    "?? doc/pcw_shift_equivariance_research.zh.md",
+    "?? experiments/exports/",
+    "?? experiments/launch_v12_component_ablation.sh",
+    "?? experiments/launch_v12_component_ablation_bi2014.sh",
+    "?? src/data/artifact.py",
+    "?? tests/test_artifact.py"
+  ],
+  "source_members": 1643,
+  "source_uncompressed_bytes": 20445363,
+  "archive_members_reopened_and_verified": 1643,
+  "contents": "Working source, tests, launchers, dependency declarations, source configs and each transport-package source version. Includes uncommitted working source; no old Git database, EEG, model, experiment data, figures, logs or virtual environment.",
+  "excluded_transport_member_counts": {
+    ".md": 191,
+    ".pdf": 8,
+    ".txt": 35,
+    ".json": 475,
+    "<no extension>": 59,
+    ".sha256": 8,
+    ".jsonl": 52,
+    ".log": 92,
+    ".csv": 4,
+    ".TAG": 2,
+    ".npz": 1,
+    ".pyc": 3
+  },
+  "source_package_identities": [
+    {
+      "name": "gtn_update.tar.gz",
+      "bytes": 1670407,
+      "sha256": "ad3629ecd06488ca7cc8d31224e159522d6dc0294f6e7522e4f8c500dc77ad07"
+    },
+    {
+      "name": "gtn_watch.tar.gz",
+      "bytes": 1667827,
+      "sha256": "a0b65514e1d5c8ef365cf6120950de2c522d7f0a421dad34c1e7c1d2b0150ec5"
+    },
+    {
+      "name": "n2p3-code-sync.tar.gz",
+      "bytes": 1902358,
+      "sha256": "b62fb960b0dc8c7c7e83c8f6dc354f08871a0be8a61734ad693c73de0ba48393"
+    },
+    {
+      "name": "n2p3net-bi2014-component-ablation-20260827-r1.tar.gz",
+      "bytes": 2220820,
+      "sha256": "de0359ee9ed39c5d4a0145626c5069957ddce7171aa27d646b5170c287271a2c"
+    },
+    {
+      "name": "n2p3net-bi2014-runner-patch-20260827-r1.tar.gz",
+      "bytes": 6270,
+      "sha256": "84ccbe4f54e71751b3cded05bfc3f6f6144eccba1d4977355593831b2552e0f2"
+    },
+    {
+      "name": "n2p3net-chart-state.tar.gz",
+      "bytes": 9819,
+      "sha256": "0b0d26f9b6e53d97fe0ac380ea1bd64d3ae30795a70022a6efd8851be5f0a8fc"
+    },
+    {
+      "name": "n2p3net-component-ablation-20260827-r1.tar.gz",
+      "bytes": 2238325,
+      "sha256": "be4fd54ab4a50b17f485f36dac025c592f64a591313b401c14d10c2109184e3a"
+    },
+    {
+      "name": "n2p3net-component-ablation-20260827-r2.tar.gz",
+      "bytes": 2220116,
+      "sha256": "284322f4cce275cd626aee10adbf32cde74df11e629f08667775da51dfdd81a2"
+    },
+    {
+      "name": "n2p3net-component-ablation-20260827-r3.tar.gz",
+      "bytes": 2220295,
+      "sha256": "99bfa908f978de330b2a900d3055c34809751365f4d16a263e15ffce7c240b82"
+    },
+    {
+      "name": "n2p3net-dashboard-fold-patch-20260827.tar.gz",
+      "bytes": 11761,
+      "sha256": "237edbdae2ffedd311fa2f919c448fb64e115a8493de6d3e60bd73049c394724"
+    },
+    {
+      "name": "n2p3net-finalfold-dashboard-v2.tar.gz",
+      "bytes": 9533,
+      "sha256": "e64525969eb73b063a0d5f8f9221b5d899396a50131722356ce1b83fce3531be"
+    },
+    {
+      "name": "n2p3net-finalfold-dashboard.tar.gz",
+      "bytes": 9529,
+      "sha256": "f7802b6d57c1c0767b3a851a221fef9525b6351281d3116e47f972669031e1cf"
+    },
+    {
+      "name": "n2p3net-gtn-cache-v3-20260827-r1.tar.gz",
+      "bytes": 201585199,
+      "sha256": "281e58e7ac66233a10f4743fce9be64081d670cb13595dd0096b726bcd00293c"
+    },
+    {
+      "name": "n2p3net-queued-run-accumulate.tar.gz",
+      "bytes": 48283,
+      "sha256": "c784e5f743930736c6dfbea25ed09c64c522fbe02f71cae70d8b9be29fac5113"
+    },
+    {
+      "name": "n2p3net-source-dep56.tar.gz",
+      "bytes": 1858199,
+      "sha256": "309a9df40c80e10dbc5e2974b7b8f1dc7c211412f3f30832bbf6659a33ce63bb"
+    }
+  ]
+}

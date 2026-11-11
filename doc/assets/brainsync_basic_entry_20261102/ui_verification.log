@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\tests\verify_decoding_ui.py", line 98, in <module>
+    main()
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\tests\verify_decoding_ui.py", line 65, in main
+    capture(f"records_{width}")
+  File "D:\BCI\BrainSync_Tool_newest\BrainSync_Tool\tests\verify_decoding_ui.py", line 55, in capture
+    assert scroll.verticalScrollBar().maximum() == 0, name
+AssertionError: records_1160

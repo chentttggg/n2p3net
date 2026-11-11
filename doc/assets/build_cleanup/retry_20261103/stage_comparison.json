@@ -1,0 +1,47 @@
+[
+  {
+    "relative": "BrainSync 软件使用手册.docx",
+    "staged": null,
+    "release": {
+      "relative": "BrainSync 软件使用手册.docx",
+      "type": "file",
+      "bytes": 460404,
+      "sha256": "d7ff39523adceda3660c39e6da7be7d9fa13f9a575dc89dd3813e9e31cdf0370"
+    }
+  },
+  {
+    "relative": "RELEASE.md",
+    "staged": null,
+    "release": {
+      "relative": "RELEASE.md",
+      "type": "file",
+      "bytes": 775,
+      "sha256": "1413995ac64f75f8c5cd0262717c707fb57e7a4663311553c74a1732dc41f562"
+    }
+  },
+  {
+    "relative": "config/decoding.json",
+    "staged": {
+      "relative": "config/decoding.json",
+      "type": "file",
+      "bytes": 184,
+      "sha256": "6d43682e72f3eab9720738205917a97b8115a44e4406a7dcb5afc8bb99ed2eef"
+    },
+    "release": {
+      "relative": "config/decoding.json",
+      "type": "file",
+      "bytes": 192,
+      "sha256": "46928c7f51a5059b0bb6b050a58092c101240dcd8d9f31a6285783149f63c88d"
+    }
+  },
+  {
+    "relative": "release-manifest.json",
+    "staged": null,
+    "release": {
+      "relative": "release-manifest.json",
+      "type": "file",
+      "bytes": 102902,
+      "sha256": "e1c9e22d627a4b2cf7b7469ac3f64374d3fc05a6bfd73302de1abd6098d1c2fe"
+    }
+  }
+]

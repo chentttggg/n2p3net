@@ -1,0 +1,17 @@
+{
+  "schema": "n2p3_cleanup_empty_parent/1",
+  "record": {
+    "path": "experiments/cache",
+    "absolute_path": "D:\\BCI\\n2p3-net\\experiments\\cache",
+    "kind": "directory",
+    "bytes": 0,
+    "reason": "empty_parent_after_verified_cache_retirement",
+    "command": "cmd.exe /d /c rmdir \"D:\\BCI\\n2p3-net\\experiments\\cache\"",
+    "result": {
+      "exit_code": 0,
+      "output": "",
+      "wall_time_seconds": 0.4781686
+    }
+  }
+}
+
