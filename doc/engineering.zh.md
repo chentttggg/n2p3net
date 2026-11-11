@@ -1,6 +1,6 @@
 # 工程指南
 
-本页维护环境、验证、资源和交付规则。研究纪律见[主规范](research_program.zh.md)，证据见[执行与集成](evidence/execution_and_integration.zh.md)；当前工作树、并发限额和运行安排从[文档入口](README.md#当前状态与续接)读取。
+本页维护环境、验证、资源和交付规则。历史命令、测试数与运行记录通过[历史索引](evidence/history.zh.md#执行与集成)检索。研究纪律见[主规范](research_program.zh.md)，证据见[执行与集成](evidence/execution_and_integration.zh.md)；当前工作树、并发限额和运行安排从[文档入口](README.md#当前状态与续接)读取。
 
 ## 文档维护
 
@@ -36,7 +36,7 @@ ignore规则只控制新增分发，不删除本地科研证据，也不自动�
 2. 列出旧对象的绝对路径、类别和保留或删除依据，核实际运行、暂停恢复、共享依赖及其他作者的引用。
 3. 将可删除对象限定为确认退役的构建输出、构建缓存和冗余打包副本。原始数据、科研原始证据、冻结结果、producer快照、暂停checkpoint及其在途依赖独立保留。
 4. 核目标解析路径位于声明范围内，使用cmd工具删除。批量失败后对明确目标逐个处理；删除后复查路径。命令失败或自动审批拒绝时保留实际结果及原因。
-5. 在该交付已有的`cleanup.json`或清理清单中记录新构建凭证、候选类别/路径、执行命令、退出码、实际删除文件数与原字节数、删除后核验、保留对象及未完成项。文件字节数与物理释放空间分别解释。
+5. 将实际清理事项合并到项目级的[构建清理长期维护文档](build_cleanup_maintenance.zh.md)，记录新构建凭证、绝对目标、执行结果、核验及未完成项；细分`runs`只保留引用，不再各建活动清单。原始回执集中保存于`doc/assets/build_cleanup/`作为不可变历史证据。文件逻辑字节与物理释放空间分别解释。
 
 清理结果使用`completed`、`incomplete`或`not_applicable`。已确认的旧对象全部退休或有明确保留用途，且结果已记录，才能将清理项记为完成；没有替代构建或退役对象时记录不适用及实际检查范围。后续清理不隐含恢复暂停的科研进程。
 
@@ -79,7 +79,7 @@ known_hosts，脚本强制`StrictHostKeyChecking=ask`，拒绝已改变的主机
 2026-10-12本机全部3,806个唯一`.pt`产物逐一比对一致，见[读取兼容绑定](assets/research_resume_20261012/checkpoint_weights_only_integration.json)。
 冻结恢复模型跨Windows/Linux重载时保留原序列化模态身份，
 重算特征值仅容许1e-12绝对舍入差；原QC摘要不改写，错序/明显变化仍拒绝。
-复现实测差1.51e-13且恢复样本数一致，见[新源校准记录](evidence/brainsync_s1_calibration_20260908.zh.md)。
+复现实测差1.51e-13且恢复样本数一致，见[新源校准记录](evidence/history.zh.md#校准与选择)。
 
 NumPy/SciPy/MNE承担信号与格式处理，sklearn/pyRiemann承担经典基线，PyTorch承担神经网络。
 CLI使用argparse与显式JSON合同；Hydra不在依赖中。配置优先来自数据类和已有接口，
@@ -105,11 +105,11 @@ SDK发行包版本0.3.0的运行时自报0.2.0，来源记录分别保存，不�
 两种传输均按250 Hz运行；`test_transport_sample_contract.py`覆盖相同回调/样本时钟/暂停/BIDS及
 拒绝非250请求，`test_transport_connection.py`覆盖迟到连接、旧回调、断开重试与阻抗后配置恢复。
 `tests/verify_transport_ui.py <TEMP输出目录>`在真实qasync下使用FakeSdk检验串口/BLE启动与预览，
-不扫描或连接硬件。测试证据见[连接统一验收](evidence/domain_transfer_major_20260920.zh.md)。
+不扫描或连接硬件。测试证据见[连接统一验收](evidence/history.zh.md#公共评估)。
 2026-09-20发布构建位于`D:/BCI/BrainSync_Release_20260920`，使用PyInstaller onedir并随附`_internal`运行时；
 构建时排除未使用的Qt WebEngine/Qt3D/Quick等模块；单个EXE、发布载荷与`_internal`运行时分别计量，
 不复制`.venv`、源码、测试、开发入口或历史数据。启动探针使用`BrainSync.exe --mock`，
-不代表真实设备验收。发布manifest的实际字段和历史文字勘误见[发布计量](evidence/execution_and_integration.zh.md#发布载荷与历史计量)，原启动验收见[发布版记录](evidence/brainsync_release_20260920.zh.md)。
+不代表真实设备验收。发布manifest的实际字段和历史文字勘误见[发布计量](evidence/execution_and_integration.zh.md#发布载荷与历史计量)，原启动验收见[发布版记录](evidence/history.zh.md#执行与集成)。
 Qt测试必须注入临时`app_root`，在同一qasync循环内完成`window.shutdown()`，不得读取操作员设置或
 以强制`_close_ready`跳过进程回收。应用直接quit与启动中的模型任务须有真实子进程回归。
 
@@ -127,7 +127,7 @@ Qt测试必须注入临时`app_root`，在同一qasync循环内完成`window.shu
 epoch后Cz、EOG和QC拥有Cz参考、保存的通道子集/顺序、旧无陷波包；按实际张量与事件账本比较。
 零epoch路径先核验录制准入，普通合同失败不能降级为拒判；报告禁止分类器执行，原始文件和模型只读。
 2026-09-08本轮入口修复在当前后端环境全套1539通过、4跳过；前端35项通过。
-CUDA实际拟合、保存重载及CLI推理验证见[执行计划](evidence/domain_transfer_major_20260920.zh.md)，
+CUDA实际拟合、保存重载及CLI推理验证见[执行计划](evidence/history.zh.md#公共评估)，
 该合成验证不构成CPU/GPU吞吐比较或成人效能结果。
 
 采集后质量报告需要`signals`依赖组，Matplotlib已显式声明并由`uv.lock`锁定；绘图使用Agg后端。
@@ -136,18 +136,18 @@ CUDA实际拟合、保存重载及CLI推理验证见[执行计划](evidence/doma
 
 ## 开发与验证
 
-[本轮实际机制与来源](evidence/research_mechanisms_20261009.zh.md)记录本地A01六格空间prior、native边界及自适应输入挑战；完整公共训练/跨host与一次最终整仓验证仍依各自实际环境验收。source ledger同一次同步只读调用在真实validate后用私有row digest，公共entry继续验证、新调用重新hash当前输入；39.3MB合成账本六对实测约1.34倍，只关闭该重复扫描，不称云全阶段吞吐。
+[本轮实际机制与来源](evidence/history.zh.md#执行与集成)记录本地A01六格空间prior、native边界及自适应输入挑战；完整公共训练/跨host与一次最终整仓验证仍依各自实际环境验收。source ledger同一次同步只读调用在真实validate后用私有row digest，公共entry继续验证、新调用重新hash当前输入；39.3MB合成账本六对实测约1.34倍，只关闭该重复扫描，不称云全阶段吞吐。
 
-g raw研究expert显式提供`kernel_prior=KernelPriorSpec.calibration_g(g)`，同时不给ridge；默认旧ridge1与新g互斥。compiled root只在fit/C或load ingress验证，数值η循环消费同一immutable root；rank failure有`KernelPriorRankError.record()`结构化证据供runner保存。新/5实际numerical payload和source门禁不接受旧数据/recipe重标，见[实施](evidence/calibration_g_prior_20261006.zh.md)。
+g raw研究expert显式提供`kernel_prior=KernelPriorSpec.calibration_g(g)`，同时不给ridge；默认旧ridge1与新g互斥。compiled root只在fit/C或load ingress验证，数值η循环消费同一immutable root；rank failure有`KernelPriorRankError.record()`结构化证据供runner保存。新/5实际numerical payload和source门禁不接受旧数据/recipe重标，见[实施](evidence/history.zh.md#校准与选择)。
 
-[多专家实施](evidence/ensemble_implementation_20261005.zh.md)将概率/producer/物理身份检查集中到入口及frozen载入；
+[多专家实施](evidence/history.zh.md#校准与选择)将概率/producer/物理身份检查集中到入口及frozen载入；
 `calibration_state.FrozenTrialPredictor`复用真实decode并取代ERP comparator重复实现。研究CLI冻结全部src与实际入口，
 仅捕获明确ExpectedSubjectError/数值分解失败为fit_failure，合同错误传播并保存failed进度。
 本轮编辑Python文件以局部.gitattributes固定LF，actual源摘要按执行bytes保存，不以Git父SHA替代工作代码。
-完整测试对应`0f8074a`，最后只读调整对应`d3e6027`并另有定向及独立复验；精确命令/退出码、跳过原因和两轴结论见[质量验收](evidence/ensemble_quality_20261005.zh.md)。
+完整测试对应`0f8074a`，最后只读调整对应`d3e6027`并另有定向及独立复验；精确命令/退出码、跳过原因和两轴结论见[质量验收](evidence/history.zh.md#校准与选择)。
 最终源码与原始质量证据分别物理封存，Git仅分发清单；执行新公开比较时使用已核验的实际源码归档，不用历史成绩或测试通过替代训练吞吐证据。
 
-[fixed32实施](evidence/continuous_fixed_prefix_20261005.zh.md)的solver/estimator由实际noise strategy与AR阶数统一派生并在载入处核对。
+[fixed32实施](evidence/history.zh.md#响应与噪声)的solver/estimator由实际noise strategy与AR阶数统一派生并在载入处核对。
 `comparison_role=fixed_prefix_ar_order`要求六阶×Burg/conditional-profile、共同32点prefix及相同basis/ridge；实际scored字段与planned字段分开，未收敛是具名fit_failure。
 真实路径先测fit/save/score/reload总墙钟，再优化矩阵/梯度热点；开发数据吞吐探针不能代替完整公共配对矩阵。
 fixed32 solver固定maxiter1000、maxcor32、eta_max8、ftol1e-10、gtol1e-6，CPU/float64 exact autograd；逐次求值及初末独立核对都计入真实账本。
@@ -155,19 +155,19 @@ fixed32 solver固定maxiter1000、maxcor32、eta_max8、ftol1e-10、gtol1e-6，C
 M1从物理冻结的materialized源码运行，绑定计划/原MAT哈希/venv；结束后核全部执行bytes。完整测试对应4b99源，计数修复e982源另有定向及独立复验，不混写测试版本。
 实际多进程egress消费已保存JSON record，冻结metadata/state不进入pickle协议。M1包续跑仅准入同src bytes与同科学/资源计划，先验证旧execution/physical freeze和relative包成员，再复制旧bytes；每格fit producer、实际fit/reuse与score来源分列，坏完整包不fallback。
 
-2026-10-05 [分块方案](evidence/deep_research_plan_20261005.zh.md)将123愿望映射到15块，
+2026-10-05 [分块方案](evidence/history.zh.md#执行与集成)将123愿望映射到15块，
 实际研究入口/helper须一并冻结；旧Phase4凭证遗漏不能消费端补签。
 减少防御代码按“外部ingress/fit/load一次验证、不可变内部状态、纯数值核”实施，
 保留身份/fit/时间/完整候选/失败分母与artifact守卫，不以多层catch或默认参数吞掉失败。
-[B08能量匹配控制](evidence/prior_control_20261006.zh.md)由同prior owner派生`λ_C`并集中reference/kind规则，init/Burg/NumPy/Torch/OOF共享冻结root。真实28臂panel必须固定C、basis、prefix、noise与温度；typed rank failure保持requested分母及actual scored0，矩阵不得从原M1旧包改签复用。
-[B06条件路径](evidence/conditional_state_20261006.zh.md)由noise owner持有gain/Schur与支持合同，operator及CLI只消费冻结状态。生产SHA按实际执行字节绑定；相关源码与测试以LF跨checkout保持，修后probe与原RED各用自己的capsule。外部signal/means/operator的finite-real检查集中在ingress，数值核不散落重复防御；真实映射和producer核验仍保留。
+[B08能量匹配控制](evidence/history.zh.md#响应与噪声)由同prior owner派生`λ_C`并集中reference/kind规则，init/Burg/NumPy/Torch/OOF共享冻结root。真实28臂panel必须固定C、basis、prefix、noise与温度；typed rank failure保持requested分母及actual scored0，矩阵不得从原M1旧包改签复用。
+[B06条件路径](evidence/history.zh.md#响应与噪声)由noise owner持有gain/Schur与支持合同，operator及CLI只消费冻结状态。生产SHA按实际执行字节绑定；相关源码与测试以LF跨checkout保持，修后probe与原RED各用自己的capsule。外部signal/means/operator的finite-real检查集中在ingress，数值核不散落重复防御；真实映射和producer核验仍保留。
 按用户2026-10-06要求，代码质量优先通读实际调用链、公式及运行证据，再选能区分新旧行为的必要验证；不以重复本地全集代替阅读。真实先验矩阵的后验误判采用原失败数组→独立QR/SVD→后向关系修复，40项关联/实际spawn通过；413文件旧全集不追认为修后源。全矩阵重新冻结完整执行源，原101包保留历史producer，当前程序不改签复用它们。
-[B07字典维护](evidence/erp_dictionary_20261006.zh.md)采用一次compile/载入关系检查、immutable basis内部复用，η中不重造dict或hash；actual C信息与容量/后验共用owner，消除自签mirror。20项必要行为及原MAT三包重放、两轴复验替代重复本地全集；保留修前755/431 cap与RED、修后a981/432 cap的各自source身份。后续完整源训练/seed/caller在B12主线验证。
+[B07字典维护](evidence/history.zh.md#响应与噪声)采用一次compile/载入关系检查、immutable basis内部复用，η中不重造dict或hash；actual C信息与容量/后验共用owner，消除自签mirror。20项必要行为及原MAT三包重放、两轴复验替代重复本地全集；保留修前755/431 cap与RED、修后a981/432 cap的各自source身份。后续完整源训练/seed/caller在B12主线验证。
 共享raw/view缓存和ready DAG消费同一CPU总预算、GPU容量及HostMemoryAdmission；四worker各6线程加1调度，
 准备/评价从总预算分配，尾部记录capacity/ready/active。本轮仅数学/合同验证，未实测新云吞吐。
 有并发原树时采用已绑定当前字节的隔离worktree，分块提交，交付净树；不reset/clean/stash他人内容。
 
-2026-10-04按实际dirty tree先物理冻结，再实施和独立双轴复审，见[实施与验收](evidence/system_implementation_20261004.zh.md)。
+2026-10-04按实际dirty tree先物理冻结，再实施和独立双轴复审，见[实施与验收](evidence/history.zh.md#执行与集成)。
 `experiments/freeze_source_snapshot.py`包含源码、测试、配置、六指南、Git换行规则及运行JSON/HTML/CSS/JS和许可证；
 逐成员核对archive与当前字节。已有脏改动用改前快照区分，不能拿Git HEAD差异替代本轮范围。
 历史RED探针保留，修后结果另记；全套通过也不能替代真实输入、失败分母和数学反例审查。
@@ -180,7 +180,7 @@ M1从物理冻结的materialized源码运行，绑定计划/原MAT哈希/venv；
 连续BNCI入口为`experiments/run_bnci_continuous_study.py --plan <plan> --output <new-directory>`，
 计划示例及真实执行源见实施证据；运行前据本机可用内存确定线程，不能同时物化全四库数组。
 
-2026-09-18源池配置与准备验证集中化，详情见[源模块验收](evidence/domain_transfer_major_20260920.zh.md)。
+2026-09-18源池配置与准备验证集中化，详情见[源模块验收](evidence/history.zh.md#公共评估)。
 新研究使用`configs/source_pool_expansion.example.json`描述source_pools、targets的整库排除、seed、
 matched_pools、product_pools和独立输入布局。示例默认三seed、四个已用开发目标，不代表准入已完成。
 `run_source_pool_matrix.py --matrix-plan <JSON> --prepared <目录> --snapshot <源码清单> --output <新目录> --dry-run`
@@ -211,17 +211,17 @@ valid_samples_exclusive_end=289814，其余不裁。BI2012直接消费training/o
 2026-09-16统一模型研究资产位于`doc/assets/unified_model_research_20260916/`，
 四个独立数学脚本及JSON检验参数/梯度、membership、输入信息和因素设计；主链实施证据另存
 `doc/assets/unified_model_implementation_20260916/`。真实raw三记录探针验证输入范围，不推断识别效能。
-实施按[分段验收清单](evidence/unified_model_plan_20260916.zh.md#71-必过反例不以旧全套替代)推进：
+实施按[分段验收清单](evidence/history.zh.md#执行与集成)推进：
 先对应合同/反例与Ruff，跨主链最终集成再做完整套件。新架构、loss组合、采样风险、源中心尺度、
 BN状态或score定义变化均进入checkpoint/cache/resume身份；旧归档不重标。
 实际执行前用`experiments/freeze_source_snapshot.py --output <新目录>`冻结将要执行的合并源码并核验逐文件摘要；
 不为每次修复另留完整微冻结。阶段落地后保当前骨干、主要可恢复版本及最终模型/预测所必需的真实producer来源，
 已解决失败、重复review副本和一次性工具退役。未关闭问题保必要反例与原状态；不清除并行dirty工作、原数据或唯一结果。
 统一主链最终全套2095通过、4跳过，定向反例及六份阶段源码校验见
-[统一程序实施与验收](evidence/domain_transfer_major_20260920.zh.md)；最终源码与验证证据已分别物理冻结。
+[统一程序实施与验收](evidence/history.zh.md#公共评估)；最终源码与验证证据已分别物理冻结。
 
 2026-09-16算法链修复以失败反例先行，最终全套1936通过、4跳过，Ruff及diff检查通过，见
-[验收记录](evidence/domain_transfer_major_20260920.zh.md)。修复前后源码均物理归档，已有dirty改动保留。
+[验收记录](evidence/history.zh.md#公共评估)。修复前后源码均物理归档，已有dirty改动保留。
 源MMD/SupCon在normalize/dedup前验证原特征和索引，CUDA采用一次设备断言，保留批量MMD；
 合法无项返回图连通零，CE批序、draws、BN、optimizer及RNG不变，基础双样本MMD仍严格。
 新source准备目录使用`n2p3_source_preparation/2`；方法、raw或sidecar改变以及缓存record缺失/篡改均拒绝旧completed复用，
@@ -258,13 +258,13 @@ P1的残差处理必须核对实际保存架构；P2候选更新点必须保存�
 完整记录先划分再滤波，zero禁止同raw内校准前缀/验证后缀；保存逐事件分数、质量掩码与分母。
 双端状态界须包含第二遍耦合，固定epoch映射缓存用真实线性算子生成并核验数值；所有缓存有界。
 Windows原子JSON替换对短暂PermissionError最多等待0.63秒重试，失败仍保留旧文件并清理临时文件。
-源码、性能基准及重载分别绑定实际执行版本，见[双向联合验证](evidence/bidirectional_qc_20260909.zh.md)。
+源码、性能基准及重载分别绑定实际执行版本，见[双向联合验证](evidence/history.zh.md#响应与噪声)。
 
 测试共享造数放在`tests/support/`，复用dataset、candidate、BrainSync、quality、checkpoint及物理artifact；
 测试文件不互相导入。辅助函数直接构造当前合同，不加兼容别名、异常吞并或猜测字段的兜底。
 相同操作的不同输入用参数化用例；一次拟合可覆盖学习效果、logit和概率，避免为重复断言重训。
 2026-09-16按此原则合并数据与统一适配测试：测试文件144→135，相关个人NN拟合105→89，
-重复prefix准备和EOG拟合均5→1；完整映射及最终验证见[精简方案](evidence/domain_transfer_major_20260920.zh.md)。
+重复prefix准备和EOG拟合均5→1；完整映射及最终验证见[精简方案](evidence/history.zh.md#公共评估)。
 测试数量不是质量目标；删除项必须由同接口的独立行为检查覆盖，先归档，再移除旧入口和无用途的假拟合层。
 删除没有独立行为价值的退役状态断言、不可达fake与重复构造，不保留空壳；净删减统计包含辅助代码。
 参数案例直接声明输入变更与预期，避免用同一个场景名分别驱动造数和断言的分支链。
@@ -293,12 +293,12 @@ Braindecode仅在构造其对照模型时加载。调度日志直接格式化pla
 
 每轮依次完成理念、数学概念、公式、反例、调用链联动和文档/产物整理。
 预处理合同执行的科研探针、14项数学/软件反例与93项现有基线测试已归档，
-见[2026-09-15裁决](evidence/preprocessing_contract_research_20260915.zh.md)。七处实际入口已统一，
+见[2026-09-15裁决](evidence/history.zh.md#响应与噪声)。七处实际入口已统一，
 新显式JSON必须包含完整`PreprocessingSpec.record()`（或全部dataclass字段），空/局部配置拒绝；
 旧record省略notch/edge仍按原义解码。低层`n_times=None`不自动产生严格执行凭证。
 验收须比较X、事件/拒绝分母、源支持、旧record和模型重放，不能只比较kwargs。
 实际模块加载时源码摘要随凭证保存；参数改变不能复用旧凭证。先冻结源码，完整测试期间停止
-源码和文档修改；本轮归档与测试记录见[执行器验收](evidence/preprocessing_execution_20260915.zh.md)。
+源码和文档修改；本轮归档与测试记录见[执行器验收](evidence/history.zh.md#响应与噪声)。
 模块明确shape、dtype、metadata、fitted状态、失败语义；复用已实现的合同和算法。
 数据合同、划分和评价工具先能服务同一比较，再添加模型；不能因追求速度省去真实builder。
 
@@ -313,7 +313,7 @@ QC、EOG、EA、BN及阈值选择服从同一范围，不能只查模型优化�
 EA变换后的坐标由`data.ea_artifact`依据调用者`EAFitPlan`集中完成授权fit、state、transform和产物发布；
 10-04复审发现的关系缺口已在本轮实施通过实际父输入重放关闭，旧物理EA普通模型入口拒绝，历史审计用独立loader。
 活动统计区分物理证据和数值输入：复用须核fit/score/执行身份，算子实验允许ContrastPlan声明的变化轴；
-只有行号相同不构成同一输入。相关组合反例及修复证据见[本轮实施](evidence/system_implementation_20261004.zh.md)。
+只有行号相同不构成同一输入。相关组合反例及修复证据见[本轮实施](evidence/history.zh.md#执行与集成)。
 连续质量改动还须运行`test_continuous_qc`、`test_recording_clock`、`test_acquisition_contract`、
 `test_personal_quality`、`test_ocular`和个体保存/推理测试；大范围改动运行全量。
 逐导恢复另覆盖`test_epoch_state_recovery`、`test_local_recovery_pipeline`、`test_recovery_contamination`、
@@ -321,7 +321,7 @@ EA变换后的坐标由`data.ea_artifact`依据调用者`EAFitPlan`集中完成�
 loader/参考/重采样/基线和后续QC，不只检验简化滤波脚本。总污染与重置状态误差分开报告。
 前端使用其独立`.venv`并先调用`gtn_workstation.app.configure_runtime_paths()`再运行unittest。
 真实EDF导出的填充、失败写入与暂停后响应支持必须作反例，不能只检查JSON字段存在。
-本次验证和源码归档入口见[实施记录](evidence/brainsync_quality_implementation_20260907.zh.md)。
+本次验证和源码归档入口见[实施记录](evidence/history.zh.md#响应与噪声)。
 个人信号证据QC另覆盖`test_personal_signal_quality`、`test_personal_quality_dispatch`和
 `test_raw_constant_quality`：他导/mask不变性、低幅动态信号、宽ERP、原始恒值减参考、持续时间边界、
 新旧schema分派以及新方法必须依赖已应用连续QC `/4`。公共旧QC测试保留原语义。
@@ -329,7 +329,7 @@ loader/参考/重采样/基线和后续QC，不只检验简化滤波脚本。总
 启用时写 `/4`，明确5秒等实际参数，不修改旧profile摘要。
 2026-09-08最终后端全套1404项中1400通过、4跳过、0失败/错误，前端29项通过。
 云端57模型/114预测在最终门禁下CPU重放，有限值mask完全一致，最大logit差1.431e-6；
-不是CPU/GPU逐位相等声明。详细环境、反例和归档见[QC验证](evidence/brainsync_qc_redesign_20260908.zh.md)。
+不是CPU/GPU逐位相等声明。详细环境、反例和归档见[QC验证](evidence/history.zh.md#响应与噪声)。
 结果复用`research.execution.atomic_write_json`，序列化失败保留旧结果。
 完成目标结果由`transfer.result_reuse`封存`n2p3_result_integrity/1`：record/cell语义摘要绑定
 预测和完整模型文件摘要。读取后直接解码同一份已验证字节；产物损坏或缺少原始声明时明确
@@ -344,7 +344,7 @@ loader/参考/重采样/基线和后续QC，不只检验简化滤波脚本。总
 适配器任何阶段失败后均拒绝推理和统计导出。回归包括NaN loss、非有限梯度/参数和refit中断。
 监控PID存活使用已声明依赖`psutil`的只读查询，Windows禁止以`os.kill(pid, 0)`探测。
 仪表盘的监控认领在已有锁中完成；缺失数值保持缺失，真实零值仍保留，见
-[全库核查与修复](evidence/domain_transfer_major_20260920.zh.md)。
+[全库核查与修复](evidence/history.zh.md#公共评估)。
 Dense PDS的GPU距离使用直接差值路径，避免矩阵平方展开的相消；坐标指数超出安全平方范围
 时复用既有CPU `hypot`计算，不放宽半径。该边界由float64精度和特征维数推导，backend照实记录。
 每个实验保存实际配置、训练/评估各自源码snapshot、训练行、预测、指标、包版本及资源记录。
@@ -360,7 +360,7 @@ dirty工作树父commit不等于执行源码；不得用新hash重标旧实验�
 12条件72拟合/144预测从`brainsync_qc_remaining_20260908/source_preparation_v2/checkout/`执行，
 并在同一冻结源码下完成CPU重放。启动前先更正继承的旧问题文字，初始未执行计划单独归档，
 不得把模板残留描述当作实际fit范围。后续测试夹具及GUI改动另绑定最终实现，不重标训练源码。
-详细验证、吞吐和独立证据见[四项收尾](evidence/brainsync_qc_remaining_20260908.zh.md)。
+详细验证、吞吐和独立证据见[四项收尾](evidence/history.zh.md#响应与噪声)。
 
 目标早停消融使用`--stage ES`，plan可声明`epoch_selection={"patience":6,"min_delta":1e-6}`。
 固定轮数扩展可在`epoch_selection`中声明`epochs:90`、`treatments:["full","scratch"]`、
@@ -379,7 +379,7 @@ ES轮数读取`epoch_selection.epochs`，缺省60；普通非stage入口的`targ
 
 ### 统一模型的分阶段训练预算
 
-用户最新允许按阶段采用不同停止规则。当前[精简设计](evidence/domain_transfer_major_20260920.zh.md)只在每外折一个源内参考上早停：
+用户最新允许按阶段采用不同停止规则。当前[精简设计](evidence/history.zh.md#公共评估)只在每外折一个源内参考上早停：
 patience3、min_delta1e-4、最多12曝光周期。reference inner与refit的范围和成本分别记录；
 主源两种配方/三个seed消费同一个冻结e*，每次直接拟合全部合法源。个人迁移和scratch固定90轮，完整C一次拟合。
 输入统计、BN重估和LDA为一次估计；K0/只读推理没有停止轮数。主K0/200/800，不默认展开更高K或模块大笛卡尔积。
@@ -387,7 +387,7 @@ patience3、min_delta1e-4、最多12曝光周期。reference inner与refit的范
 当前代码已由`UnifiedTrainingBudget`路由新预算；省略`--training-budget`时使用dataclass默认值，
 `configs/unified_training_budget.json`是可显式传入的示例，不是自动读取的默认文件。
 复用`PatienceStopper`、source fit/refit及直接target fit；`GlobalEarlyStoppingPolicy`和`EpochSelectionPolicy`保留为其它显式研究能力。
-来源与反例见[实施验收](evidence/domain_transfer_major_20260920.zh.md)，没有新增每算法一个runner。参考source范围/配置、e*、λ、实际模式、目标轮数均进入checkpoint、计划和cache身份。
+来源与反例见[实施验收](evidence/history.zh.md#公共评估)，没有新增每算法一个runner。参考source范围/配置、e*、λ、实际模式、目标轮数均进入checkpoint、计划和cache身份。
 相同e*对应不同fit行数时按曝光周期换算updates；固定个人模式不请求或生成无用途的inner raw缓存。
 确定性LDA按实际输入和数值程序复用，seed标签不能触发相同的重新拟合。
 
@@ -457,7 +457,7 @@ ordinary、group-LOO与整prefix选择共享该接点。source-only K0、结构�
 队列的退出事实不代替科学CLI的完整模型/预测准入。Linux冻结副本的21项正式测试及
 父进程中断、重复启动、逃逸后代、终态篡改、迟到退出、声明追加和锁实现漂移反例已通过。
 
-用户于2026-10-08再次强调多次遇到25核配额只用1核：必须核真实进程创建身份、就绪任务、有效CPU核、GPU利用、内存峰、阶段进度和完成产物；25线程/4worker配置本身不能作为验收。遇到串行压缩/解压、重复加载/哈希、I/O、锁或内存准入等待，要落实代码并验证端到端路径。2394曾GPU95%但worker突然退出、内存接近90 GiB上限，原因未确定；[原始终态与完整输入基准](evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)已物理保留。本地整机CPU<80%与云端配额利用分别控制，不能混用。
+用户于2026-10-08再次强调多次遇到25核配额只用1核：必须核真实进程创建身份、就绪任务、有效CPU核、GPU利用、内存峰、阶段进度和完成产物；25线程/4worker配置本身不能作为验收。遇到串行压缩/解压、重复加载/哈希、I/O、锁或内存准入等待，要落实代码并验证端到端路径。2394曾GPU95%但worker突然退出、内存接近90 GiB上限，原因未确定；[原始终态与完整输入基准](evidence/history.zh.md#执行与集成)已物理保留。本地整机CPU<80%与云端配额利用分别控制，不能混用。
 
 用户随后明确本轮交付目标是**优化底层调用算法并彻底模块化云端训练**：相近实验固定复用同一个执行模块，已有优秀训练实现按当前合同复用。实验计划提供依赖、配方、科学调用和真实输入/输出身份；公共底层统一拥有ready队列、进程与数值线程、host/GPU/暂存准入、缓存复用、阶段记录和异常退出诊断。`GpuPerformanceScheduler`、`MatrixBatchSource`、源轨迹登记表、原缓存writer/attested loader及资源owner作为复用基础；CLI消费稳定接口，资源算法集中在SRC。
 
@@ -467,7 +467,7 @@ ordinary、group-LOO与整prefix选择共享该接点。source-only K0、结构�
 
 用户进一步要求有云端时尽量在云端跑测试：资源敏感case、集成全集和性能基准默认使用本任务云端锁定venv及实际冻结源码，保留archive/member SHA、真实JUnit/退出与资源凭证。Windows特有行为及少量必要本地检查另行核验，本地整机CPU仍低于80%。本机因RAM不足产生的资源RED保留；同一源码的云端GREEN只证明对应环境与实际case，不改签旧记录。
 
-2026-10-08首个[公共源吞吐切片](evidence/public_source_throughput_20261008.zh.md)将QC按epoch分块，
+2026-10-08首个[公共源吞吐切片](evidence/history.zh.md#执行与集成)将QC按epoch分块，
 保持逐行float64归约及最终float32结果；新outer工作cache采用免压缩容器，并由同进程真实writer
 以独立production凭证交接实际数据，避免马上重新复制、哈希和解压。`source_view_working_directory`可显式指定
 独占工作cache根目录，与持久结果根分开；工作cache的恢复/持久镜像由运行owner记录，不能覆盖旧view。
@@ -523,17 +523,17 @@ raw、model和唯一evidence不属于此清理名单；压缩/删除失败保留
 
 2026-09-16统一精简矩阵的完整计数与总执行时间见[历史公共程序口径](evidence/public_evaluation.zh.md#历史公共程序的计数与结果归属)。
 该墙钟不含此前补传及提前源折；完整计数、保存模型重放、数值规则及压缩结果验证见
-[结果与核验](evidence/unified_results_20260916.zh.md)。旧200-update重放器不能直接验证新90-epoch程序；
+[结果与核验](evidence/history.zh.md#公共评估)。旧200-update重放器不能直接验证新90-epoch程序；
 预算须包含D0/D1匹配的decision工作集，LDA重放须还原实际数值dtype及标准化次序，不靠放宽容差通过。
 
-2026-09-16新统一预算的5090部署、真实输入吞吐和归档删除证据见[云端运行记录](evidence/unified_cloud_20260916.zh.md)。
+2026-09-16新统一预算的5090部署、真实输入吞吐和归档删除证据见[云端运行记录](evidence/history.zh.md#执行与集成)。
 同机短测与154723行真实源输入均未显示default编译收益，本轮使用eager；输入准备可与已就绪的完整源折并行，
 完成模型经现有摘要准入复用。tmpfs计算输入须另存持久压缩包及恢复根路径，不能仅依赖实例内存保存。
 
 2026-09-16 P1/P2统一入口为`run_domain_transfer_matrix.py`；按cache/被试分片把两个阶段与所有
 源处理交给同一目标worker，复用已验证的相同拟合。源端条件MMD用固定掩码批量计算，
 保持各domain-pair/class独立中位数带宽和无偏公式；真实热运行约3.25倍改善，见
-[运行记录](evidence/domain_transfer_cloud_20260916.zh.md)。三个完整流程seed的统计须用
+[运行记录](evidence/history.zh.md#公共评估)。三个完整流程seed的统计须用
 `analyze_training_chain.py --seed-pair SOURCE TARGET`逐对声明，未指定时仍是原Cartesian设计。
 
 2026-09-09源池矩阵已将大源账本向量无损压缩、固定采样CDF预计算和排程分组验证集中到原模块。
@@ -570,7 +570,7 @@ raw、model和唯一evidence不属于此清理名单；压缩/删除失败保留
 `operator_fixed_target_batch_rule`允许记录有明确理由的执行方固定batch配置；
 其provenance为`run_configuration`，没有选优证据，不冒充用户逐字指定或完成B0搜索。
 P001先导采用上限512，在校准数据上比较1/2个spawn进程后选择双进程、每进程1线程；
-最新时耗及云端源码/输入验证见[P001运行](evidence/brainsync_p001_pilot_20260907.zh.md)。
+最新时耗及云端源码/输入验证见[P001运行](evidence/history.zh.md#执行与集成)。
 
 复用`train.runtime.GpuPerformanceScheduler`与`MatrixBatchSource`，设备顺序CUDA、XPU、CPU，
 张量经所选`torch.device`迁移，不硬编码`.cuda()`。CPU是正确性参照，
@@ -600,10 +600,10 @@ GPU folds用spawned进程隔离RNG和CUDA上下文，不能共享训练线程。
 令4个E2 worker各占一CPU核而GPU长期0%，一次合同校验约1.57秒。
 优化后的4单元真实5090校验为27.31到4.24秒，确定性GPU条件下预测完全相同；
 默认CUDA自身重复存在浮点波动，不将此性能检查声称为独立科学样本。
-历史5090耗时、并发策略和归约细节保留在[设备测量记录](evidence/device-portability.md)，
+历史5090耗时、并发策略和归约细节保留在[设备测量记录](evidence/history.zh.md#执行与集成)，
 其数值不是当前机器的实时能力。方法效用比较与等draws/等updates的机制归因分别记账。
 
-本次[目标适配计时](evidence/cross_dataset_start_20260906.zh.md)中CUDA单任务约快6.4%，
+本次[目标适配计时](evidence/history.zh.md#公共评估)中CUDA单任务约快6.4%，
 不支持“小模型必选CPU”的规则，也不替代并发吞吐测试。CPU/CUDA随机训练预测可能明显
 不同，运行后端须冻结入配方；性能探针不冒充新增独立科学样本。
 
@@ -616,7 +616,7 @@ BrainSync采集REF更正为左耳耳垂耳夹时，活动元数据通过`correct
 原EDF和追加式事件日志不改写，旧二进制头中的声明由BIDS/session更正记录明确覆盖。
 历史cache/QC/模型/结果保持执行身份；新派生物使用新目录，禁止直接改旧digest假装旧模型已经重训。
 见[更正清单](../frozen/brainsync_reference_20260908/metadata/manifest.json)及
-[科研/验证说明](evidence/brainsync_reference_20260908.zh.md)。
+[科研/验证说明](evidence/history.zh.md#响应与噪声)。
 
 训练链条入口的`--dry-run`生成任务、真实身份/行范围、recipe、候选失败与预算清单，
 不得拟合normalizer、BN、LDA或网络。已完成compact运行使用`--stage compact`，plan声明
@@ -658,13 +658,13 @@ E3共享候选缓存仅驻留当前人/实际K；切换scope清空，避免GPU�
 
 2026-09-07本次本地环境为Python3.14.3、Torch2.13.0+cpu；管理工具可见5070 Laptop，
 但项目Torch无CUDA运行时。本轮软件/CPU计时不作为目标5090的吞吐、显存或batch选择证据；
-当前设备结果及正式执行前的资源缺口见[实施证据](evidence/training_chain_implementation_20260907.zh.md)。
+当前设备结果及正式执行前的资源缺口见[实施证据](evidence/history.zh.md#执行与集成)。
 
 2026-09-08经用户授权新增本地GPU专用`.venv-gpu`，原CPU`.venv`保留。GPU环境先按项目锁定
 依赖安装，再显式覆盖为`torch==2.13.0+cu130`；`uv pip check`及真实CUDA运算通过。
 本机实测RTX5070 Laptop 8GB、驱动610.62；使用单GPU worker、固定batch32的独立P001开发对照。
 该环境不是公共云5090配方。启动前核对实际包版本、显存与源码快照，完整记录依赖覆盖与执行路径。
-结果与脚本见[恢复实验](evidence/brainsync_recovery_20260908.zh.md)；不修改默认CPU环境或静默回退CPU训练。
+结果与脚本见[恢复实验](evidence/history.zh.md#执行与集成)；不修改默认CPU环境或静默回退CPU训练。
 
 2026-09-08代码质量修复期间，另一安装进程将主`.venv`的Torch改为`2.13.0+cu130`，
 最终1530通过/4跳过基于该实际环境，GPU故障注入也已执行。小型CUDA/BF16/fused Adam及
@@ -686,19 +686,19 @@ Windows编译验证使用`python -X utf8`，避免当前Torch模板读取采用G
 保留无关dirty修改；stage或commit须属于用户明确要求的提交整理范围。
 
 历史`tmp/`的数据和结果现存cache/results history，完整查找方法见
-[数据保留记录](evidence/workspace_cleanup_20260906.zh.md)。Git忽略的大材料迁机时单独携带，
+[数据保留记录](evidence/history.zh.md#执行与集成)。Git忽略的大材料迁机时单独携带，
 不能把Git clone当数据备份。代码归档与研究成绩各自保留原身份。
 
 2026-09-08再次整理本地临时材料，4,816份历史文件及工具缓存压缩保存在
 `frozen/local_history/workspace_cleanup_20260908/`；BCI根目录16份旧传输文件集中到
 `D:/BCI/n2p3-audit-archive/transfers_20260831_20260901/`。当天脚本、SSH/EDF支持目录和
 三个Git工作树保留原位。旧路径查询、校验与恢复见
-[本次整理记录](evidence/workspace_cleanup_20260908.zh.md)。
+[本次整理记录](evidence/history.zh.md#执行与集成)。
 
 2026-09-08云端数据盘已清理，旧BI64/GTN/R8派生缓存、早期开发结果和旧部署展开目录
 经压缩逐文件校验后退役，归档位于`/root/autodl-fs/n2p3-cleanup-20260908/`。
 当前四库输入、完整训练链、源模型和早停/90轮实验仍在原位；历史路径查询、清理清单与
-本地证据包见[云端清理记录](evidence/cloud_disk_cleanup_20260908.zh.md)。
+本地证据包见[云端清理记录](evidence/history.zh.md#执行与集成)。
 
 GitHub不分发历史压缩归档；`frozen/`只跟踪清单、哈希与交付记录，详见
 [归档说明](../frozen/README.md)。移除已进入未推送历史的归档时，先在本地备份原Git历史，

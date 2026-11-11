@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
-from data.brainsync_raw_authority import require_raw_capability
+from data.brainsync_raw_authority import observed_event_indices, require_raw_capability
 from models.candidate_evidence import CandidateEvidence, CandidateExpertIdentity
 from research.collapsed_continuous_prediction import (
     CollapsedContinuousPrediction,
@@ -60,12 +60,12 @@ def publish_grouped_physical(verified_inference, target, original_segments, caps
                 or original.record_id != b['record_segment_id']
                 or p != b['prefix_stop'] - b['sample_start'] or f != b['full_stop'] - b['sample_start']):
             raise ValueError('generic publication changed the actual independent raw/model/read programme')
-        for i, event in enumerate(cap.events):
-            if event.sample < b['full_stop']:
-                if event.event_id in event_ids:
-                    raise ValueError('one completed session event cannot enter the requested evidence twice')
-                event_ids.add(event.event_id)
-                observed += cap.membership[i]
+        for i in observed_event_indices(cap):
+            event = cap.events[i]
+            if event.event_id in event_ids:
+                raise ValueError('one completed session event cannot enter the requested evidence twice')
+            event_ids.add(event.event_id)
+            observed += cap.membership[i]
     if (not isinstance(expert_identity, CandidateExpertIdentity) or expert_identity.model_digest != target.identity
             or expert_identity.probability_calibrated
             or expert_identity.score_kind != f'physical_grouped_full_history/{scoring_law}/1'

@@ -1,0 +1,70 @@
+{
+  "schema": "brainsync_post_cut_amplitude_diagnostic_acceptance/1",
+  "status": "diagnostic_verified_QC_stability_issue_open",
+  "artifacts": {
+    "preprocessing_binding": {
+      "path": "experiments\\runs\\brainsync_eog_consistent_20261031\\post_cut_preparation_binding.json",
+      "sha256": "166eda9e1dae5c40bd62d599fa7cfcf8fa245805bf1d8026ace028090d55bb1f"
+    },
+    "amplitude_results": {
+      "path": "experiments\\runs\\brainsync_eog_consistent_20261031\\post_cut_amplitude_review\\results.json",
+      "sha256": "ba4c1fa14780b7e501fcc9b64f63acdd8baceed67e8c2cf0c9513d96a5685947"
+    },
+    "amplitude_table": {
+      "path": "experiments\\runs\\brainsync_eog_consistent_20261031\\post_cut_amplitude_review\\epoch_amplitudes.csv",
+      "sha256": "0640ea27b7c0e1874a7e761c9f1a7daaf3608532eaf29401e97aa8f9878ec950"
+    },
+    "amplitude_report": {
+      "path": "experiments\\runs\\brainsync_eog_consistent_20261031\\post_cut_amplitude_review\\index.html",
+      "sha256": "cb66093f09e92b044146d17eee9356f81fe8c7d6ab6f96f19a75137e033eca55"
+    },
+    "EOG_control": {
+      "path": "experiments\\runs\\brainsync_eog_consistent_20261031\\post_cut_eog_audit_final\\results.json",
+      "sha256": "33b8ba9d3687d2ff406bd3248078b757035b010484732bd8650139761cf95f05"
+    },
+    "independent_validation": {
+      "path": "experiments\\runs\\brainsync_eog_consistent_20261031\\post_cut_amplitude_validation.json",
+      "sha256": "5d95297099b96e6715b79a8e8ab068400b05ca5606427ebe7b76b2f882bea24e"
+    },
+    "executed_analysis_source": {
+      "path": "experiments\\runs\\brainsync_eog_consistent_20261031\\runtime_post_cut_amplitude_final\\source.manifest.json",
+      "sha256": "a36344b1a85e43d2fe505be15f4ca6a4fc2f9d3e88ff277213a4aa9c7f1bd56d"
+    }
+  },
+  "scope": {
+    "basic_records": 13,
+    "QC_C10_records": 12,
+    "whole_record_exclusion_preserved": true,
+    "fresh_preprocessing_cells": 8,
+    "serialized_QC_states": 4,
+    "serialized_EOG_states": 4,
+    "new_classifier_fits": 0
+  },
+  "observations": {
+    "basic_above_1mV": 16,
+    "basic_epochs": 5757,
+    "QC_C10_above_1mV": 3,
+    "QC_C10_epochs": 5136,
+    "QC_C1_fixed_test_above_1mV": 228,
+    "QC_C1_fixed_test_epochs": 641,
+    "same_support_EOG_undo_above_1mV": 0
+  },
+  "validation": [
+    "prepared cache hashes independently checked",
+    "fixed-test statistics recomputed from float64 arrays",
+    "raw saved-C mask hash and OLS coefficients reproduced",
+    "frozen full QC1 outputs replayed bitwise",
+    "counterfactual holds final observed masks and actual filter segments fixed",
+    "PNG waveform/timeline figures visually reviewed",
+    "HTML assets verified",
+    "independent review accepted final counting and control guards"
+  ],
+  "thresholds_uv": [
+    200,
+    500,
+    1000
+  ],
+  "threshold_action": "diagnostic only; no new epoch exclusion or parameter selection",
+  "open_issue": "C1 EOG regression generalization amplifies input voltage; method revision must be validated consistently in source and calibration",
+  "created_utc": "2026-11-03T05:46:32.237126+00:00"
+}

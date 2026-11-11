@@ -23,11 +23,13 @@ from data.bidirectional import BidirectionalStateRecovery
 from data.channel import canonical_channel_name
 from data.preprocess import continuous_filter_segments
 from data.recovery import EpochStateRecovery, epoch_linear_projection, epoch_recovery_from_record
+from data.reviewed_intervals import ReviewedRecording, match_reviewed_recording
 from research.contracts import semantic_sha256
 from research.execution import atomic_write_json
 
 CONTINUOUS_QC_SCHEMA = "n2p3_continuous_qc/3"
 CONTINUOUS_QC_CONSTANT_SCHEMA = "n2p3_continuous_qc/4"
+CONTINUOUS_QC_REVIEWED_SCHEMA = "n2p3_continuous_qc/5"
 
 
 @dataclass(frozen=True)
@@ -192,6 +194,7 @@ class ContinuousQCResult:
     channel_names: tuple[str, ...] = ()
     channel_local: bool = False
     detection_lookahead_samples: int = 0
+    detection_origin: str = "automatic"
 
     @property
     def valid_sample_mask(self) -> np.ndarray:
@@ -205,8 +208,9 @@ class ContinuousQCResult:
                 "sample_rate_hz": self.sample_rate_hz, "model_digest": self.model_digest,
                 "intervals": [asdict(interval) for interval in self.intervals],
                 "sample_interval": "half_open", "signal_unit": "V",
-                "detection": "raw_anomaly_with_backdated_support_complete_recording"
-                if self.detection_lookahead_samples else "causal_difference_no_backdating",
+                "detection": self.detection_origin if self.detection_origin != "automatic" else
+                    "raw_anomaly_with_backdated_support_complete_recording"
+                    if self.detection_lookahead_samples else "causal_difference_no_backdating",
                 "detection_lookahead_samples": self.detection_lookahead_samples,
                 "disposition": "channel_mask" if self.channel_local else "global_epoch_exclusion_with_channel_local_reasons",
                 "channel_names": list(self.channel_names)}
@@ -252,11 +256,26 @@ class FittedContinuousQC:
     recovery: FilterStateRecovery | None = None
     epoch_recovery: EpochStateRecovery | BidirectionalStateRecovery | None = None
     range_threshold_v: tuple[float, ...] | None = None
+    reviewed_recordings: tuple[ReviewedRecording, ...] = ()
+    reviewed_only: bool = False
 
     def __post_init__(self) -> None:
         channels = len(self.channel_names)
         if not channels or len(set(self.channel_names)) != channels:
             raise ValueError("continuous QC needs unique measured channels")
+        object.__setattr__(self, "reviewed_recordings", tuple(self.reviewed_recordings))
+        if any(not isinstance(r, ReviewedRecording) for r in self.reviewed_recordings):
+            raise ValueError("reviewed recordings must be validated immutable declarations")
+        if type(self.reviewed_only) is not bool or self.reviewed_only and not self.reviewed_recordings:
+            raise ValueError("reviewed-only QC requires a content-bound recording roster")
+        if self.reviewed_only and self.spec.flatline_min_duration_s is None:
+            raise ValueError("reviewed-only QC requires explicit raw exact-constant detection")
+        if self.reviewed_recordings:
+            if (not self.spec.channel_local
+                    or len({r.raw_sha256 for r in self.reviewed_recordings}) != len(self.reviewed_recordings)
+                    or any(not set(interval.channels) <= set(self.channel_names)
+                           for recording in self.reviewed_recordings for interval in recording.intervals)):
+                raise ValueError("reviewed annotations require distinct content identities and measured local channels")
         center, scale = np.asarray(self.difference_center_v), np.asarray(self.difference_scale_v)
         if (center.shape != (channels,) or scale.shape != (channels,)
                 or not np.isfinite(center).all() or not np.isfinite(scale).all()
@@ -296,7 +315,11 @@ class FittedContinuousQC:
         if self.spec.flatline_min_duration_s is None:
             spec.pop("flatline_min_duration_s")
             schema = CONTINUOUS_QC_SCHEMA
+        if self.reviewed_recordings:
+            schema = CONTINUOUS_QC_REVIEWED_SCHEMA
         return {"schema": schema, "spec": spec,
+                **({"reviewed_recordings": [r.record() for r in self.reviewed_recordings]} if self.reviewed_recordings else {}),
+                **({"reviewed_only": True} if self.reviewed_only else {}),
                 "channel_names": list(self.channel_names), "sample_rate_hz": self.sample_rate_hz,
                 "difference_center_v": list(self.difference_center_v),
                 "difference_scale_v": list(self.difference_scale_v),
@@ -357,6 +380,9 @@ class FittedContinuousQC:
             raise ValueError("continuous QC source sample rate differs from calibration")
         if any(name not in raw.ch_names for name in self.channel_names):
             raise ValueError("continuous QC measured channels differ from calibration")
+        reviewed = match_reviewed_recording(raw, self.reviewed_recordings)
+        if self.reviewed_only and reviewed is None:
+            raise ValueError("recording is outside the content-bound reviewed-only QC roster")
         values = raw.get_data(picks=list(self.channel_names))
         if not np.isfinite(values).all():
             raise ValueError("nonfinite raw requires acquisition rejection before QC")
@@ -367,10 +393,12 @@ class FittedContinuousQC:
         for start, end in continuous_filter_segments(raw):
             differences = np.diff(values[:, start:end], axis=1)
             bad = np.abs(differences - center) > limit
+            if self.reviewed_only:
+                bad[:] = False
             if self.spec.channel_local:
                 flags = np.pad(bad, ((0, 0), (1, 0)))
                 width = self.spec.range_window_samples
-                if width is not None and self.spec.range_action == "reject" and end - start >= width:
+                if not self.reviewed_only and width is not None and self.spec.range_action == "reject" and end - start >= width:
                     ranges = trailing_range(values[:, start:end], width)
                     range_bad = ranges > np.asarray(self.range_threshold_v)[:, None]
                     range_bad[:, :width-1] = False
@@ -418,9 +446,14 @@ class FittedContinuousQC:
                 if recovery_end > start:
                     intervals.append(ContinuousQCInterval(start, recovery_end, start, start,
                         self.channel_names, "filter_state_uncertainty_unbounded" if recovery_samples is None else "filter_state_bounded_recovery", False))
+        if reviewed is not None:
+            intervals.extend(ContinuousQCInterval(r.start_sample, r.stop_sample, r.start_sample,
+                r.stop_sample - 1, r.channels, r.reason, True) for r in reviewed.intervals)
         result = ContinuousQCResult(int(raw.n_times), self.sample_rate_hz, tuple(intervals),
                                    semantic_sha256(self.record()), self.channel_names, self.spec.channel_local,
-                                   self.detection_lookahead_samples)
+                                   self.detection_lookahead_samples,
+                                   "reviewed_intervals_and_exact_constants" if self.reviewed_only else
+                                   "automatic_with_reviewed_intervals" if reviewed is not None else "automatic")
         if self.spec.channel_local:
             return self.project_result(result, np.eye(len(self.channel_names)), self.channel_names,
                 boundaries=[start for start, _ in continuous_filter_segments(raw) if start])
@@ -450,7 +483,7 @@ class FittedContinuousQC:
                 if exact_constant_enabled:
                     evidence.append(ContinuousQCInterval(
                         row.start_sample, row.end_sample, row.detected_sample, row.confirmed_sample,
-                        (name,), "raw_exact_constant" if row.reason == "raw_exact_constant"
+                        (name,), row.reason if row.reason.startswith("reviewed_") else "raw_exact_constant" if row.reason == "raw_exact_constant"
                         else "raw_dependency_outlier", True))
                 crosses_boundary = exact_constant_enabled and row.start_sample in boundary_samples
                 if merged and row.start_sample <= merged[-1].end_sample and not crosses_boundary:
@@ -478,7 +511,8 @@ class FittedContinuousQC:
                     intervals.append(ContinuousQCInterval(start, stop, start, confirmation, (name,),
                         "empirical_epoch_state_recovery" if waits is not None else "filter_state_uncertainty_unbounded", False))
         return ContinuousQCResult(result.n_samples, result.sample_rate_hz, tuple(intervals),
-                                  result.model_digest, tuple(channels), True, result.detection_lookahead_samples)
+                                  result.model_digest, tuple(channels), True, result.detection_lookahead_samples,
+                                  result.detection_origin)
 
 
 def trailing_range(values, width):
@@ -604,12 +638,14 @@ def fit_continuous_qc(
 
 def continuous_qc_from_record(record: Mapping[str, Any]) -> FittedContinuousQC:
     schema = record.get("schema")
-    if schema not in (CONTINUOUS_QC_SCHEMA, CONTINUOUS_QC_CONSTANT_SCHEMA):
+    if schema not in (CONTINUOUS_QC_SCHEMA, CONTINUOUS_QC_CONSTANT_SCHEMA, CONTINUOUS_QC_REVIEWED_SCHEMA):
         raise ValueError("unsupported continuous QC schema")
     if schema == CONTINUOUS_QC_SCHEMA and "flatline_min_duration_s" in record["spec"]:
         raise ValueError("continuous QC schema /3 does not define raw exact-constant detection")
     if schema == CONTINUOUS_QC_CONSTANT_SCHEMA and record["spec"].get("flatline_min_duration_s") is None:
         raise ValueError("continuous QC schema /4 requires explicit raw exact-constant detection")
+    if schema == CONTINUOUS_QC_REVIEWED_SCHEMA and not record.get("reviewed_recordings"):
+        raise ValueError("continuous QC schema /5 requires content-bound reviewed recordings")
     recovery = record.get("recovery")
     if recovery is not None:
         recovery = FilterStateRecovery(**{**recovery, "sos": tuple(map(tuple, recovery["sos"])),
@@ -618,7 +654,9 @@ def continuous_qc_from_record(record: Mapping[str, Any]) -> FittedContinuousQC:
         record["sample_rate_hz"], tuple(record["difference_center_v"]),
         tuple(record["difference_scale_v"]), record["fit_provenance"], recovery,
         None if record["epoch_recovery"] is None else epoch_recovery_from_record(record["epoch_recovery"]),
-        None if record["range_threshold_v"] is None else tuple(record["range_threshold_v"]))
+        None if record["range_threshold_v"] is None else tuple(record["range_threshold_v"]),
+        tuple(ReviewedRecording.from_record(r) for r in record.get("reviewed_recordings", ())),
+        record.get("reviewed_only", False))
     if semantic_sha256(model.record()) != semantic_sha256(record):
         raise ValueError("continuous QC record has inconsistent fields")
     return model

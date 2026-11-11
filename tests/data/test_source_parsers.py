@@ -8,6 +8,23 @@ from data.source_parsers import read_source_record, validate_source_manifest
 from data.source_records import file_sha256, prepare_source_record, verify_source_record_inputs
 
 
+def test_bi2012_basename_condition_survives_a_dotted_cache_directory(tmp_path):
+    path = tmp_path / "cache.with.dots" / "subject_01" / "training.mat"
+    path.parent.mkdir(parents=True)
+    values = np.zeros((512, 20))
+    values[:, 1:18] = np.random.default_rng(83).normal(size=(512, 17))
+    values[128, 18] = 1
+    values[256, 19] = 2
+    savemat(path, {"training": values})
+    item = dict(study="BI2012", subject="1")
+    raw, events, labels = read_source_record(item, path)
+    # MOABB removes the Fz ground slot from the 17 acquired EEG columns.
+    np.testing.assert_allclose(raw.get_data(picks="eeg"), np.delete(values[:, 1:18], 2, axis=1).T * 1e-6)
+    np.testing.assert_array_equal(events[:, 0], [128, 256])
+    assert labels.shape == (2,)
+    raw.close()
+
+
 def _brainform(tmp_path):
     path = tmp_path / "EXP_P02" / "stamp__ERPAutotrainingPipeline_raw_data0.csv"
     path.parent.mkdir()

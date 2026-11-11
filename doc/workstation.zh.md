@@ -8,12 +8,22 @@
 
 固定ERP配方通过`--selector-mode fixed_erp --calibration-recipe <TargetRecipe.json>`显式传入；`--training-budget`仅用于`unified`。配方或预算解析失败也保存失败任务回执。
 
+日常软件的“源模型微调（旧 basic）”使用具名入口
+`brainsync_model_task.py --task calibrate --calibration-profile old_basic_nn_source`。
+唯一配置为[旧 basic 配置](../configs/brainsync_old_basic_nn_source.json)：固定十二库 A0Q0 源的实际 SHA、
+Cz 六导、原双向基础预处理、完整授权 C 的90轮 unified 校准、batch512、lr0.001及 seed20261031，
+本人输入统计与校准 BN，关闭 EOG 回归和额外连续/epoch QC。至少一份具备两类的完整合法录制即可；
+不进行内部选方，也不生成内部验证 AUC。源文件可由 `--source-checkpoint` 指向同一权重的副本，
+哈希不符或叠加处理/训练覆盖均拒绝；实际被预检/训练消费的源 SHA 也须与配置一致。
+此入口只接旧 basic 链，不恢复一致 EOG/QC 的新源训练。个人包保存具名配置身份；
+加载与新45闪烁推理继续读取包内冻结状态。本人 LDA 保留原入口及其设置，切换校准方法不切换已加载模型。
+
 统一个人校准入口为`brainsync_model_task.py --task calibrate --selector-mode unified --calibration-recipe <TargetRecipe.json> --training-budget configs/unified_training_budget.json`。配方、预算与输入声明一致；QC、EOG和统计拟合按实际授权校准范围保存，后续推理读取完整冻结状态。显式`--preprocessing-config`使用完整配置，示例见`configs/brainsync_bidirectional_preprocessing.json`。
 
 ## 启动与环境
 
 2026-10-04新增ERP/Toeplitz/时间基研究配方可经后端`fixed_erp`个人包保存重载并预测未知标签，
-对应证据见[研究实施](evidence/system_implementation_20261004.zh.md)。Toeplitz须匹配无baseline输入，
+对应证据见[研究实施](evidence/history.zh.md#执行与集成)。Toeplitz须匹配无baseline输入，
 源时间基须核目标库/参与者排除；既有模型仍消费保存的原合同。
 新工频cleaner、算子LDA和BNCI连续decoder尚未接为工作站默认；公开36选一诊断和软件重放不能当成人九选一验收。
 
@@ -22,7 +32,7 @@
 新连续QC须重新拟合双端边界模型，提供明确干净校准区间和`epoch_recovery`参数；新拟合默认
 把滚动幅度作为漂移诊断，在伪迹切段使用完整双端误差门。已有模型推理读取保存的原合同。
 新校准默认本人LDA；源微调需选择与新滤波签名匹配的源权重，旧单向源不能重标使用。
-当前P001可使用本轮重建的原生七导QC与个人包；效果边界见[双向联合优化](evidence/bidirectional_qc_20260909.zh.md)。
+当前P001可使用本轮重建的原生七导QC与个人包；效果边界见[双向联合优化](evidence/history.zh.md#响应与噪声)。
 
 采集端是单独交付的本地项目，不包含在本仓库的GitHub clone中。
 以下路径均相对采集端根目录`D:/BCI/BrainSync_Tool_newest/BrainSync_Tool`：
@@ -38,12 +48,14 @@
 BLE对应`--transport ble --address BrainSync`。省略地址使用所选模式的保存值。
 阻抗后重新应用250 Hz及所选增益；串口要求采样率读回，BLE保留有链路存活证据的读回超时声明。
 取消连接等待迟到句柄清理，关窗在原生连接请求结束后才关闭事件循环。
-软件与模拟验收见[连接统一记录](evidence/domain_transfer_major_20260920.zh.md)。
+软件与模拟验收见[连接统一记录](evidence/history.zh.md#公共评估)。
 
-发布使用`D:/BCI/BrainSync_Release_20260920/BrainSync.exe`，不再使用开发目录的Python入口或模拟启动器。
+当前发布使用`D:/BCI/artifacts/apps/BrainSync_Release_20261102/BrainSync.exe`，包含旧 basic 日常入口；
+2026-09-20发布保持原样，其运行时删除被策略拒绝，不能把旧EXE当作本次更新。
+日常使用发布EXE，不再使用开发目录的Python入口或模拟启动器。
 发布版数据、日志和用户模型分别写入发布目录的`data/`、`logs/`和`models/`；算法设置中仍可显式选择
 后端项目与计算环境。发布目录随附`_internal`运行时；单个EXE大小与完整载荷范围分别解释，发布计量和历史勘误见
-[发布载荷](evidence/execution_and_integration.zh.md#发布载荷与历史计量)，启动/设备验收边界见[原发布记录](evidence/brainsync_release_20260920.zh.md)。
+[发布载荷](evidence/execution_and_integration.zh.md#发布载荷与历史计量)，启动/设备验收边界见[原发布记录](evidence/history.zh.md#执行与集成)。
 
 采集端使用自己的Python3.10/SDK/Qt环境，模型任务通过结构化argv调用后端项目`.venv`。
 模型任务支持进度、取消和日志，并与设备/录制生命周期互斥；运行问题先查实际解释器与日志。
@@ -95,6 +107,19 @@ BLE对应`--transport ble --address BrainSync`。省略地址使用所选模式�
 
 ## 校准与新测试
 
+2026-10-30新增记录的已审阅批次使用
+`experiments/runs/brainsync_quality_20261030/implementation/accepted/continuous_reviewed_native7.json`，
+结果和条件见[本批处置](evidence/response_and_noise.zh.md#已实施的本批质量处置)。
+这是绑定该批EDF字节的`/5 reviewed_only`配置，不是新记录的通用自动检测器。
+继续使用旧冻结配置时读取其原`/3`、`/4`合同；不通过改版本号迁移。
+
+读取本批缓存可直接用`load_epoch_dataset(<会话目录>/epochs.npz)`；X和逐导mask须共同消费。
+重新读取原EDF时，用`load_continuous_qc`加载上述JSON，并向
+`load_brainsync_inference_session`或`load_brainsync_session`传同一`continuous_qc_model`与
+`accepted/execution.json`保存的`IndependentRecordingScope`。前者无标签，后者持确认标签；
+质量复核产物采用前者。省略回顾scope不能绕过实际校准时间门。
+完整观测模型须使用匹配的共同电极声明；局部masked七导不能当七导齐全。
+
 1. 连接设备，核对电极角色、参考、真实波形、阻抗来源及接触变化。
 2. 同一人采集已知目标校准session，结束后确认目标；预算与排程以[研究规范](research_program.zh.md)及[采集计划](../configs/brainsync_collection_plan.json)为准。
 3. 在“本人校准”选择受试者与已确认记录，点击“校准并保存”；方法、参考和质量处理沿用已配置方案。
@@ -140,7 +165,7 @@ EDF注释与BIDS事件使用该样本轴；后端在断点重置滤波并拒绝�
 加载旧个体包时仍使用包内原处理，新默认不改变它。要让个体模型使用陷波，需要以新输入重新校准。
 旧无陷波源checkpoint与新输入不兼容，须使用匹配源或无源本人模型；本次没有自动重训公共源。
 带滤波恢复证书的旧连续QC也不能直接配新陷波，需在合法校准范围重新计算证书/拟合相应QC。
-显式重放旧处理时连同匹配QC使用完整旧JSON，不只更改名称；见[验证](evidence/brainsync_notch_20260909.zh.md)。
+显式重放旧处理时连同匹配QC使用完整旧JSON，不只更改名称；见[验证](evidence/history.zh.md#响应与噪声)。
 
 REF实际接法为**左耳耳垂耳夹**，配置/BIDS规范值`left earlobe`。七路EEG及单端HEOG共享该REF，
 GND是另一电极，不能当作参考；旧T7/T3声明已作有来源的更正。
@@ -150,19 +175,19 @@ GND是另一电极，不能当作参考；旧T7/T3声明已作有来源的更正
 新缓存及两种参考的质量文件在`experiments/runs/brainsync_reference_20260908/{native7,cz6,quality}/`。
 该次历史原生路径使用`continuous_native7.json/epoch_native7.json`，Cz路径使用
 `continuous_cz6.json/epoch_cz6.json`，不互换质量模型。旧个体模型的原始合同不会被自动重标。
-新七导路径尚无配对准确率胜出证据，详见[本轮裁决](evidence/brainsync_reference_20260908.zh.md)。
+新七导路径尚无配对准确率胜出证据，详见[本轮裁决](evidence/history.zh.md#响应与噪声)。
 
 2026-09-08新增四库S1源的独立会话校准开发包：第二+第四次训练、第三/第五次分别评分，
-共19模型/38预测，见[结果及路径](evidence/brainsync_s1_calibration_20260908.zh.md)。
+共19模型/38预测，见[结果及路径](evidence/history.zh.md#校准与选择)。
 模型已回传且本地检查入口可加载；新源未稳定优于scratch，严格R5均无完整block，未自动设为工作站默认。
 
 2026-09-07旧P001先导的4个全数据个体包已撤下活动路径：其中包含用户拒绝的
 `0903_170721`。旧产物已物理归档，不能作为当前可用模型。
 第三、第五会话原始文件保留；新局部恢复与个体模型只作开发联动验证，不能仅因图形平滑或末端回零就认定合格。
-见[质量诊断与处置](evidence/brainsync_transient_quality_20260907.zh.md)及
-[历史P001训练记录](evidence/brainsync_p001_pilot_20260907.zh.md)。
+见[质量诊断与处置](evidence/history.zh.md#响应与噪声)及
+[历史P001训练记录](evidence/history.zh.md#执行与集成)。
 
-连续质量与时钟已按[方案实施](evidence/brainsync_quality_implementation_20260907.zh.md)：
+连续质量与时钟已按[方案实施](evidence/history.zh.md#响应与噪声)：
 新排程保证休息后基线、末次onset后响应支持及实际样本落盘。暂停后的尾段不得跨采集段补齐，
 EDF格式填充不能代替真实样本。真实瞬态恢复上界另行验证，不用固定3秒或首次过零判定。
 校准设置保留“校准内信号证据 QC”和“连续QC模型”选项；后者选择已在合法校准范围拟合的JSON。
@@ -182,7 +207,7 @@ Cz六导选`continuous_cz6.json`，原生七导选`continuous_native7.json`，�
 Cz第二+第四次冻结epoch模型为同目录`signal_evidence.json`；原生七导生命周期导出位于
 `experiments/runs/brainsync_qc_redesign_20260908/native7_lifecycle/epoch_quality.json`，不可跨参考互换。
 这些文件绑定现有P001及相应校准输入；其他参与者须重新合法拟合，不直接套用P001阈值。
-三臂实验和原生七导保存/只读推理已验证，但不据测试成绩自动选择工作站默认模型，见[结果](evidence/brainsync_qc_redesign_20260908.zh.md)。
+三臂实验和原生七导保存/只读推理已验证，但不据测试成绩自动选择工作站默认模型，见[结果](evidence/history.zh.md#响应与噪声)。
 
 “校准与数据设置”新增“EOG参考”选项，只有眼电回归开启且任务空闲时可编辑。
 默认“随 EEG 重参考”维持旧规则并要求相应接法声明；“保留采集电压”只将EEG减Cz，EOG保持原采集值。
@@ -194,13 +219,13 @@ Cz第二+第四次冻结epoch模型为同目录`signal_evidence.json`；原生�
 采集排程现在在首刺激、休息后和恢复后确认当前段真实基线样本并checkpoint，每block结束也确认
 末刺激响应尾窗才进入休息。暂停、停止和超时均有明确终态，旧数据缺失支持不补齐。
 质量账本新增持续慢趋势诊断，但它不证明输入无污染；约30秒恢复等待有逐导误差证书，不凭保留率改短。
-完整机制、模拟采集和72模型验证见[其余四项收尾](evidence/brainsync_qc_remaining_20260908.zh.md)。
+完整机制、模拟采集和72模型验证见[其余四项收尾](evidence/history.zh.md#响应与噪声)。
 
 此前局部恢复开发JSON位于`experiments/runs/brainsync_recovery_20260908/validated_v3/`，分别为
 `continuous_qc.json`和`epoch_quality.json`；对应第二份R2拟合、Cz参考及未做EOG回归的输入。
 重放该方案时关闭“眼电回归”；若修改原QC拟合信号处理，须重新拟合对应QC，不重标旧JSON。
 第三/第五份分别保留54.89%/50.89%的epoch，但完整R5均缺失，且慢漂移残留未消除，
-不得将这些开发包作为已验证真人模型。原始记录保持不变，详见[恢复证据](evidence/brainsync_recovery_20260908.zh.md)。
+不得将这些开发包作为已验证真人模型。原始记录保持不变，详见[恢复证据](evidence/history.zh.md#执行与集成)。
 
 ### 可审查的校准选择器
 
@@ -227,7 +252,7 @@ Cz第二+第四次冻结epoch模型为同目录`signal_evidence.json`；原生�
 [输入合同](input_contract_math.zh.md)定义；原PO7槽采PO8，原PO8槽采独立EOG。
 旧raw保持采集时声明，不能因新默认生效就静默更名或认定完成迁移。
 
-源NN要求至少两份独立校准session供内部选择；固定LDA至少一份含两类的session，
+旧 `legacy_product` 源NN要求至少两份独立校准session供内部选择；固定LDA至少一份含两类的session，
 单session不产生内部验证分数。NN只在内部训练session拟合自动EOG，冻结后贯穿验证、refit和推理。
 默认BNCI Cz6研究checkpoint只是公开ERP初始化，参考适配须显式核对，不代表真人性能已验证。
 
@@ -264,7 +289,7 @@ REF更正必须显式指定原标签、权限说明和新审计目录。原metad
 设备SDK阻抗按kΩ原值显示，当前软件回调测试未发现额外缩放或2–4区间截断。
 用户此前低值现象发生时的模式尚未确认，因此不能认为真实电极或固件问题已排除。
 若在设备模式仍出现固定低值，下一步同步记录原始SDK回调、通道与实际接触/断开变化。
-详见[阻抗核查](evidence/impedance_display_review_20260906.zh.md)。
+详见[阻抗核查](evidence/history.zh.md#执行与集成)。
 
 已完成的是声明模拟的Qt录制、BIDS导出、真实源checkpoint校准、EOG、保存重载、
 新45闪烁无标签推理及事后反馈的软件链验证。真实设备、光学刺激时间、丢包影响及成人

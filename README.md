@@ -1,124 +1,53 @@
 # N2P3-Net
 
-Public ERP pretraining and participant-specific calibration for BrainSync
-nine-choice P300 decoding. The acquisition layout is seven scalp EEG channels
-(`Fz,Cz,P3,Pz,P4,PO8,Oz`) and one independent EOG channel.
+N2P3-Net是BrainSync九选一P300解码的研究后端：用公开ERP数据训练源模型，再用参与者自己的早期录制校准，在独立后续录制上评价。采集应用是另一个项目；本仓库不包含设备SDK。
 
-Read [the active research guide](doc/research_program.zh.md) first, then the
-[verified technical map](doc/technical_structure.zh.md) and
-[document index](doc/README.md). Historical experiment results are development
-evidence. The integrated workstation's block-completion prediction path has
-been tested with declared mock data; real-device decoding accuracy is not validated.
+从[文档入口](doc/README.md)开始。研究目标、数学与比较规则由[研究规范](doc/research_program.zh.md)维护；输入处理和实际调用链分别见[输入合同](doc/input_contract_math.zh.md)与[技术结构](doc/technical_structure.zh.md)。
 
-## Current Chain
+## 使用与验证
 
-1. Validate raw source data, participant identity, physical channels and timing.
-2. Build attested causal epoch caches and explicit binary ERP source views.
-3. Train a supervised N2P3Net source model with participant exclusion.
-4. Calibrate on the participant's declared earlier labelled recordings.
-5. Score independent later EEG and aggregate evidence over the declared candidates.
-
-The default research path uses ordinary supervised source training and retained
-source-head adaptation. EA, AS-MMD, Split-BN, source selection and other existing
-mechanisms remain explicit research controls, with their own fit scopes.
-
-The requested product budget is 9 calibration targets x 10 blocks x 45 flashes
-= 4,050 flashes, followed by a new 45-flash test decision. Each balanced block
-contains five repetitions of all nine candidates, so the product endpoint is
-`hit@R5`. Trial AUC is a separate diagnostic. See the prospective
-[collection plan](configs/brainsync_collection_plan.json).
-
-The integrated BrainSync workstation (a separate acquisition application)
-now provides calibration record selection, internal neural recipe selection,
-frozen EOG correction, personal model save/load and automatic prediction after
-a new 45-flash block. The target is confirmed only after prediction. The backend
-reuses the existing checkpoint, preprocessing, adaptation and candidate modules.
-This is completed-recording inference, not per-SDK-chunk streaming prediction.
-
-This repository contains the model backend, not the acquisition application or
-its SDK. Local launch paths and operation are described in the
-[workstation guide](doc/workstation.zh.md).
-
-## Environment
-
-Python 3.11 or later is required. From the repository root, create the environment
-with [uv](https://docs.astral.sh/uv/). `pyproject.toml` is the dependency authority and
-`uv.lock` records the resolved environment. See the [engineering guide](doc/engineering.zh.md)
-for installation, validation and CPU/CUDA behavior.
+Python至少3.11，依赖以`pyproject.toml`和`uv.lock`为准。在仓库根目录执行：
 
 ```powershell
 uv sync --locked --extra signals --extra baselines --extra dev
+.\.venv\Scripts\python.exe experiments\brainsync_model_task.py --help
+.\.venv\Scripts\python.exe experiments\check_docs.py
 .\.venv\Scripts\python.exe -m ruff check src experiments tests
-.\.venv\Scripts\python.exe -m pytest
 git diff --check
 ```
 
-On Linux, use `.venv/bin/python`. For an unlocked pip installation, create a
-virtual environment with `python -m venv .venv`, then run its Python with
-`-m pip install -r requirements.txt`. Accelerator wheel selection and validated
-hardware are separate from dependency resolution; see the engineering guide.
+按改动范围运行相关测试；环境分支、完整验证、云端资源和交付要求见[工程指南](doc/engineering.zh.md)。Linux使用`.venv/bin/python`。测试通过证明相应软件行为，真实设备的九选一效能需要独立记录验收。
 
-Tests should exercise the changed interface and counterexamples. A full-suite
-pass does not establish scientific validity or real-device performance.
+## 从数据到预测
 
-The dashboard and its SSH launcher use a loopback HTTP service and verified SSH
-host keys. Configure the SSH destination and remote project path as described in
-the [engineering guide](doc/engineering.zh.md); connection details are local settings.
+链条依次是原始数据准入、输入cache、监督源训练、个人校准、独立后续评分。输入、参与者身份、拟合范围与实际执行源码都随产物绑定。
 
-## Entrypoints
-
-| Task | Script |
+| 任务 | `experiments/`入口 |
 |---|---|
-| Public EEG / candidate cache | `prepare_eeg_dataset.py`, `prepare_bnci2014_008_candidate.py`, `prepare_bi2014a_candidate.py` |
-| Source channel/reference/binary view | `adapt_eeg_domain.py`, `prepare_multidomain_source.py` |
-| Supervised source pretraining | `run_pretrain_supervised.py` |
-| Public binary calibration comparison | `run_binary_subject_transfer.py` |
-| Whole-dataset held-out transfer | `run_cross_dataset_transfer.py` |
-| External Mainsah source admission audit | `audit_mainsah_s2.py` |
-| Completed BrainSync recordings to cache | `prepare_brainsync_cache.py` |
-| Calibration-only EOG regression | `fit_brainsync_eog.py` |
-| Offline BrainSync later-decision evaluation | `run_brainsync_cross_decision.py` |
-| Personal calibration / model inspection / unlabelled prediction | `brainsync_model_task.py` |
-| Candidate experiment orchestration | `run_candidate_promotion_matrix.py`, `run_candidate_result_batch.py` |
-| Generic LOSO / sensitivity | `run_eeg_loso.py`, `run_n2p3_sensitivity.py` |
+| 公共EEG和合法candidate输入 | `prepare_eeg_dataset.py`、`prepare_bnci2014_008_candidate.py`、`prepare_bi2014a_candidate.py` |
+| 源通道、参考和binary视图 | `adapt_eeg_domain.py`、`prepare_multidomain_source.py` |
+| 监督源预训练 | `run_pretrain_supervised.py` |
+| 公共目标校准与跨库比较 | `run_binary_subject_transfer.py`、`run_cross_dataset_transfer.py` |
+| 完成的BrainSync录制转cache | `prepare_brainsync_cache.py` |
+| 个人校准、包检查和无标签预测 | `brainsync_model_task.py` |
+| 独立后续decision评价 | `run_brainsync_cross_decision.py` |
 
-Scripts live under `experiments/`; use their `--help` for actual accepted
-arguments. Source training and evaluation must identify the code snapshot that
-executed each stage. A new evaluation does not rename an old source checkpoint.
+参数以各入口的`--help`为准。默认研究路径使用监督源训练和保留源分类头的适配；EA、AS-MMD、Split-BN、源选择等机制各有显式合同和对照。
 
-```powershell
-.\.venv\Scripts\python.exe experiments\prepare_brainsync_cache.py `
-  --session-dir "D:\path\to\completed-session" `
-  --output "D:\path\to\epochs.npz" --invalid-session error
-```
+BrainSync采集为七路EEG（`Fz,Cz,P3,Pz,P4,PO8,Oz`）和一路独立EOG，原生250Hz。产品预算是9个校准目标×10个block×45次闪烁，随后用新的45次闪烁作一次R5判定；R1和trial AUC分别报告。不同历史配方的滤波、参考、QC和EOG处理以各自输入合同为准。
 
-The default causal input contract is 128 Hz, volts, continuous 0.1-30 Hz forward
-IIR filtering, `[-200,1200)` ms and mean-only baseline correction. Native raw
-BrainSync acquisition remains 250 Hz. Reference changes, missing channels and
-EOG cleaning are explicit, provenance-bound operations; EOG is never a scalp
-classifier input. See [the input contract](doc/input_contract_math.zh.md).
+工作站已用声明的模拟数据验收保存完成后自动预测的调用链。采集、个人模型和新block操作见[工作站指南](doc/workstation.zh.md)；逐SDK chunk的流式解码另属后续范围。
 
-## Data And History
+## 数据、结果与历史
 
-Raw datasets, cache/run directories and frozen evidence have different roles;
-see [the workspace map](doc/technical_structure.zh.md#目录与数据层级).
-GitHub contains source, tests, guidance and evidence manifests. Historical archive
-payloads remain local; see [archive distribution](frozen/README.md). A clone does
-not include datasets, pretrained checkpoints, run outputs or the BrainSync app.
-Completed stage snapshots and superseded process documents are consolidated in
-the [stable domain-transfer and BrainSync major](frozen/major_domain_transfer_20260920/README.zh.md).
-Its manifest binds the necessary executed sources and restoration evidence.
-The [technical audit](doc/evidence/technical_audit_20260906.zh.md) records fixes, tests
-and remaining integration work. Existing data and measured scores retain their
-original provenance.
+[训练数据与精简结果](doc/training_data.zh.md)汇总保留资产、结果口径与恢复入口。结论与读数由[四个证据主题](doc/evidence/README.md)维护，运行状态由[原检查点](doc/README.md#当前状态与续接)维护。
 
-## Dashboard
+原始数据、cache、模型、冻结结果和文献有不同用途，见[目录层级](doc/technical_structure.zh.md#目录与数据层级)。Git主要分发源码、测试、指南和紧凑清单；本地历史载荷按[归档规则](frozen/README.md)保管。旧文档的原路径、成员SHA和检索方法集中在[历史索引](doc/evidence/history.zh.md)。
+
+需要进度面板时运行：
 
 ```powershell
-.\.venv\Scripts\python.exe experiments\dashboard_server.py `
-  --port 8812 --bind 127.0.0.1 --directory experiments
+.\.venv\Scripts\python.exe experiments\dashboard_server.py --port 8812 --bind 127.0.0.1 --directory experiments
 ```
 
-Open [the local dashboard](http://127.0.0.1:8812/dashboard.html). Only runners emitting the dashboard
-`progress.jsonl`/`record.json` protocol appear there; completed JSON results from
-other entrypoints are not live dashboard telemetry.
+打开[本地面板](http://127.0.0.1:8812/dashboard.html)。只有输出其`progress.jsonl`/`record.json`协议的运行会出现在面板；SSH接入配置见工程指南。

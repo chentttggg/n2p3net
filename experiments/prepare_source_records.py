@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from data.eog_preprocessing import EOGPreprocessingPolicy  # noqa: E402
 from data.epochs import parse_preprocessing_spec  # noqa: E402
 from data.preprocess import RawSampleScope  # noqa: E402
 from data.source_parsers import validate_source_manifest  # noqa: E402
@@ -40,7 +41,8 @@ from train.runtime import available_cpu_threads  # noqa: E402
 def worker(arguments):
     from threadpoolctl import threadpool_limits
 
-    item, root, output, method, preprocessing, prefixes = arguments
+    item, root, output, method, preprocessing, prefixes = arguments[:6]
+    eog_policy = arguments[6] if len(arguments) == 7 else None
     with threadpool_limits(limits=1):
         if prefixes is not None:
             if isinstance(item, list):
@@ -49,7 +51,7 @@ def worker(arguments):
             return prepare_source_record_prefixes(item, root=root, output=output,
                 preparation_method=method, preprocessing=preprocessing, **prefixes)
         return prepare_source_record(item, root=root, output=output, preparation_method=method,
-                                     preprocessing=preprocessing)
+                                     preprocessing=preprocessing, eog_policy=eog_policy)
 
 
 def _manifest_preprocessing(manifest, config_path):
@@ -76,6 +78,8 @@ def main(argv=None, *, merge_gate=None):
     parser.add_argument("--workers", type=int)
     parser.add_argument("--preprocessing-config", type=Path,
                         help="Complete PreprocessingSpec JSON; must agree with manifest declarations")
+    parser.add_argument("--eog-policy", type=Path,
+                        help="Explicit preprocessing-only EOG policy; requires fresh whole-record source preparation")
     parser.add_argument("--target-prefix-budgets", type=int, nargs="+",
                         help="Prepare independent raw prefixes for these original-label allocations")
     parser.add_argument("--early-stopping-inner", action="store_true",
@@ -85,6 +89,10 @@ def main(argv=None, *, merge_gate=None):
                         default="limited_data_80_percent",
                         help="Explicitly allow and record a short test, or enforce the minimum after purge")
     args = parser.parse_args(argv)
+    eog_policy = (None if args.eog_policy is None else
+                  EOGPreprocessingPolicy.from_record(json.loads(args.eog_policy.read_text(encoding="utf-8"))))
+    if eog_policy is not None and args.target_prefix_budgets is not None:
+        raise ValueError("EOG source policy currently requires whole-record source preparation")
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
     validate_source_manifest(manifest)
     args.output.mkdir(parents=True, exist_ok=True)
@@ -111,7 +119,8 @@ def main(argv=None, *, merge_gate=None):
                 prefixes["test_size_policy"] = protocol.get("test_size_policy", args.test_size_policy)
             else:
                 raise ValueError("unsupported explicit target protocol in source manifest")
-    method = source_preparation_method() if spec == SOURCE_EOG_PREPROCESSING else source_preparation_method(spec)
+    method = ((source_preparation_method() if spec == SOURCE_EOG_PREPROCESSING else source_preparation_method(spec))
+              if eog_policy is None else source_preparation_method(spec, eog_policy=eog_policy))
     entrypoint = {"path": "experiments/prepare_source_records.py", "sha256": file_sha256(Path(__file__))}
     result = json.loads(result_path.read_text(encoding="utf-8")) if result_path.exists() else {
         "schema": SOURCE_PREPARATION_SCHEMA, "study": manifest["study"],
@@ -148,7 +157,7 @@ def main(argv=None, *, merge_gate=None):
             verify_prepared_cache(found["cache"], cache_sha256=found["cache_sha256"],
                                   cache_record_sha256=found.get("cache_record_sha256"))
             continue
-        pending.append((item, manifest["remote_root"], str(args.output / "shards"), method, spec, prefixes))
+        pending.append((item, manifest["remote_root"], str(args.output / "shards"), method, spec, prefixes, eog_policy))
     if result.get("status") == "completed" and not pending:
         if prefixes is not None:
             final = Path(result["target_prefix_manifest"])

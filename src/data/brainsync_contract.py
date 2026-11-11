@@ -506,6 +506,9 @@ def _validate_brainsync_recording(
     if bids.duration_seconds > ended_timestamp_s - started_timestamp_s:
         raise ValueError("BrainSync BIDS recording duration exceeds the session lifetime.")
 
+    from data.recording_review import require_admitted_recording
+
+    require_admitted_recording(bids, session_id)
     bids.assert_content_unchanged()
     common = dict(
         root=root,

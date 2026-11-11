@@ -1,0 +1,42 @@
+{
+  "schema": "n2p3_brainsync_R5_QC_decomposition_acceptance/1",
+  "status": "accepted_readonly_mechanical_decomposition",
+  "new_model_fits": 0,
+  "requested_blocks": 20,
+  "methods": [
+    "nn_source",
+    "nn_scratch",
+    "xdawn_erp",
+    "nn_lda_xdawn"
+  ],
+  "calibration_record_counts": [
+    1,
+    3,
+    5,
+    10
+  ],
+  "artifacts": [
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/block_reviewed/results.json",
+      "bytes": 133477,
+      "sha256": "2216d1c8be65a1ec4445de1235b3b1cf24a2675084ba0c94ff53aeb46a587226"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/block_reviewed/verification.json",
+      "bytes": 374,
+      "sha256": "8487b57f9b709793538038c07dd89c30bf02e08af5ad26425dbb99fbf7ce448b"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/block_reviewed/index.html",
+      "bytes": 4202,
+      "sha256": "927379d63003e3ae283bb97c946711439a19edeb3446155832e8ed0a20bed451"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/block_reviewed/producer/experiments/analyze_brainsync_block_qc.py",
+      "bytes": 14608,
+      "sha256": "cdd9aef333ecfaaef10dc5cf0e95a109d84ee66bf5652e8de0d944611e7b3c2e"
+    }
+  ],
+  "original_matrix_acceptance": "doc/assets/brainsync_matrix/acceptance.json",
+  "scope": "paired same requested physical blocks; decomposition of rejection support and remaining prediction differences, not independent causal QC ablation"
+}

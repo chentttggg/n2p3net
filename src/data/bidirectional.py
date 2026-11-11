@@ -153,7 +153,8 @@ class BidirectionalStateRecovery:
                       unsupported_by_channel=(~np.isfinite(bounds)).sum(axis=0).tolist(),
                       boundary_action=boundary_action,
                       filter_segment_boundaries=segment_records,
-                      natural_boundary_interpretation="declared_finite_record_operator; sensitivity_is_diagnostic",
+                      natural_boundary_interpretation=("declared_finite_record_operator; sensitivity_is_diagnostic"
+                          if boundary_action == "artifact_edges" else "all_filter_boundaries_require_frozen_recovery_support"),
                       hard_error_bounds_v=[[float(x) if np.isfinite(x) else None for x in row] for row in hard_bounds],
                       epoch_error_bounds_v=[[float(x) if np.isfinite(x) else None for x in row] for row in bounds])
         return usable, record

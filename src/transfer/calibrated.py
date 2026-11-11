@@ -472,6 +472,10 @@ def _input_contract(dataset: EpochDataset) -> dict[str, object]:
         "channel_positions_m": np.asarray(dataset.channel_positions_m).tolist(),
         "preprocessing": dataset.preprocessing.record(),
         "source_reference": reference,
+        **({"artifact_preprocessing_policy": dataset.provenance["artifact_preprocessing_policy"]}
+           if "artifact_preprocessing_policy" in dataset.provenance else {}),
+        **({"nominal_montage_projection": dataset.provenance["domain_adapter"]}
+           if dataset.provenance.get("domain_adapter", {}).get("preserve_reference_label") is True else {}),
         "n_channels": dataset.n_channels,
         "n_times": dataset.n_times,
         "simulation_status": dataset.provenance.get("simulation_status", "not_declared"),
@@ -728,6 +732,17 @@ class CalibratedPredictor:
                 recording, post_reference=post_reference),
         )
         dataset = apply_brainsync_reference(dataset, reference, ocular, channels=channels)
+        if "nominal_montage_projection" in contract:
+            from data.domain import adapt_observed_montage
+
+            dataset = adapt_observed_montage(dataset, channels, preserve_reference_label=True)
+        if "artifact_preprocessing_policy" in contract:
+            from data.eog_preprocessing import EOGPreprocessingPolicy
+
+            policy = EOGPreprocessingPolicy.from_record(contract["artifact_preprocessing_policy"])
+            if policy.enabled != (ocular is not None):
+                raise ValueError("saved artifact policy disagrees with the actual ocular preprocessing")
+            dataset.provenance["artifact_preprocessing_policy"] = policy.record()
         self.validate_input(dataset)
         self.validate_inference_scope(dataset)
         return dataset
@@ -766,7 +781,15 @@ class CalibratedPredictor:
                     recording.bids.channel_positions_m, strict=True,
                 ) if kind == "EEG"}, coordinate_source="bids_electrodes_tsv",
             ).positions_m
-        if positions.tolist() != contract["channel_positions_m"]:
+        projection = contract.get("nominal_montage_projection")
+        if projection is not None:
+            nominal = build_channel_identity(contract["channel_names"], allow_missing_positions=False).coords
+            if (projection.get("preserve_reference_label") is not True
+                    or projection.get("target_channels") != contract["channel_names"]
+                    or nominal.tolist() != contract["channel_positions_m"]
+                    or not np.allclose(positions, nominal, atol=1e-6)):
+                raise ValueError("recording channel geometry differs from the declared nominal montage projection")
+        elif positions.tolist() != contract["channel_positions_m"]:
             raise ValueError("recording channel geometry differs from the model input contract")
 
     def validate_input(self, dataset: EpochDataset) -> None:
@@ -962,6 +985,20 @@ def fit_calibrated_predictor(
             "intercept": torch.as_tensor(lda.intercept_[0], dtype=torch.float64),
         }
         return CalibratedPredictor(metadata, state, device=device)
+
+def fit_fixed_waveform_lda(dataset, *, seed=0, device="cpu", declared_preprocessing=None):
+    """Fit one waveform LDA on all C through the shared masked-channel owner.
+
+    Both basic and QC use the same fitter and saved recipe. The historical
+    unmasked legacy package remains available through its existing API.
+    """
+    _, rule = _resolve_calibration_batch_rule("legacy_product", 64, None)
+    return _fit_candidate_predictor(dataset, source_checkpoint=None, recipes=DEFAULT_CALIBRATION_RECIPES,
+        device=device, seed=seed, batch_size=64, input_request=None, progress=None,
+        selector_mode="legacy_product", selection_protocol="binary_auc", transfer_policy=None,
+        batch_rule=rule, epoch_quality_policy=None, epoch_quality_model=None,
+        declared_preprocessing=declared_preprocessing, unified_training_budget=None, source_temporal_basis=None)
+
 
 def _fit_candidate_predictor(
     dataset: EpochDataset, *, source_checkpoint, recipes, device, seed, batch_size,

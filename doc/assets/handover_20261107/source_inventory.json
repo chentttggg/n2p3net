@@ -1,0 +1,760 @@
+{
+  "schema": "n2p3_responsible_owner_handover_snapshot/2",
+  "observed_at": "2026-11-07T01:29:35.337456-07:00",
+  "scope": "Documentation handover only; historical result claims are attributed to existing evidence; no model training, signal reprocessing or full-suite rerun.",
+  "git": {
+    "branch": "main",
+    "head": "6c31085289cc4c6674480592238b5f890f31086c",
+    "preexisting_status_entries": 102,
+    "preexisting_status": [
+      " M .gitignore",
+      " M doc/README.md",
+      " M doc/engineering.zh.md",
+      " M doc/evidence/README.md",
+      " M doc/evidence/calibration_and_selection.zh.md",
+      " M doc/evidence/execution_and_integration.zh.md",
+      " M doc/evidence/response_and_noise.zh.md",
+      " M doc/input_contract_math.zh.md",
+      " M doc/research_program.zh.md",
+      " M doc/technical_structure.zh.md",
+      " M doc/workstation.zh.md",
+      " M experiments/brainsync_model_task.py",
+      " M experiments/fit_brainsync_continuous_qc.py",
+      " M experiments/fit_brainsync_eog.py",
+      " M experiments/prepare_multidomain_source.py",
+      " M experiments/prepare_source_records.py",
+      " M pyproject.toml",
+      " M src/data/bidirectional.py",
+      " M src/data/bnci2014_008_candidate.py",
+      " M src/data/brainsync.py",
+      " M src/data/brainsync_contract.py",
+      " M src/data/brainsync_raw_authority.py",
+      " M src/data/continuous_qc.py",
+      " M src/data/domain.py",
+      " M src/data/epochs.py",
+      " M src/data/gtn.py",
+      " M src/data/ocular.py",
+      " M src/data/source_parsers.py",
+      " M src/data/source_records.py",
+      " M src/research/adult_programme_input.py",
+      " M src/research/candidate_metrics.py",
+      " M src/research/collapsed_continuous_prediction.py",
+      " M src/research/grouped_physical_prediction.py",
+      " M src/research/recording_quality.py",
+      " M src/research/source_selection.py",
+      " M src/transfer/calibrated.py",
+      " M src/transfer/checkpoint.py",
+      " M src/transfer/quality.py",
+      " M tests/brainsync/test_calibrated_predictor.py",
+      " M tests/data/test_gtn.py",
+      " M tests/data/test_source_parsers.py",
+      " M tests/research/test_adult_programme_input.py",
+      " M tests/transfer/test_prepared_checkpoint.py",
+      "?? .agents/",
+      "?? .claude/",
+      "?? configs/brainsync_old_basic_nn_source.json",
+      "?? doc/assets/brainsync_basic_entry_20261102/",
+      "?? doc/assets/brainsync_matrix/",
+      "?? doc/assets/brainsync_quality/",
+      "?? doc/assets/build_cleanup/",
+      "?? doc/build_cleanup_maintenance.zh.md",
+      "?? experiments/admit_source_qc_outcomes.py",
+      "?? experiments/analyze_brainsync_block_qc.py",
+      "?? experiments/analyze_brainsync_consistent.py",
+      "?? experiments/analyze_brainsync_post_cut_amplitude.py",
+      "?? experiments/analyze_brainsync_single_round.py",
+      "?? experiments/analyze_brainsync_trial_matrix.py",
+      "?? experiments/audit_consistent_eog_inputs.py",
+      "?? experiments/audit_post_cut_eog_amplification.py",
+      "?? experiments/cut_brainsync_startup.py",
+      "?? experiments/declare_brainsync_eog_derivation.py",
+      "?? experiments/evaluate_brainsync_remaining.py",
+      "?? experiments/fit_consistent_analytic_controls.py",
+      "?? experiments/merge_consistent_source_pools.py",
+      "?? experiments/prepare_brainsync_consistent_eog.py",
+      "?? experiments/prepare_brainsync_matrix.py",
+      "?? experiments/prepare_brainsync_matrix_raw.py",
+      "?? experiments/prepare_brainsync_remaining.py",
+      "?? experiments/prepare_consistent_source_cohorts.py",
+      "?? experiments/project_brainsync_nominal_inputs.py",
+      "?? experiments/run_brainsync_real_matrix.py",
+      "?? experiments/verify_brainsync_startup_cut.py",
+      "?? scripts/analyze_brainsync_artifact_remedies.py",
+      "?? scripts/analyze_brainsync_batch_quality.py",
+      "?? scripts/analyze_brainsync_channel_similarity.py",
+      "?? scripts/apply_brainsync_reviewed_quality.py",
+      "?? scripts/audit_brainsync_polarity.py",
+      "?? scripts/compare_brainsync_months.py",
+      "?? scripts/replay_brainsync_segment_masks.py",
+      "?? src/data/brainsync_startup.py",
+      "?? src/data/brainsync_startup_cuts.json",
+      "?? src/data/eog_preprocessing.py",
+      "?? src/data/recording_review.py",
+      "?? src/data/recording_reviews.json",
+      "?? src/data/reviewed_intervals.py",
+      "?? src/data/source_qc.py",
+      "?? src/research/target_recognition.py",
+      "?? src/transfer/workstation_profiles.py",
+      "?? tests/brainsync/test_consistent_recognition_analysis.py",
+      "?? tests/brainsync/test_consistent_source_pools.py",
+      "?? tests/brainsync/test_consistent_source_storage.py",
+      "?? tests/brainsync/test_old_basic_profile.py",
+      "?? tests/brainsync/test_real_matrix_driver.py",
+      "?? tests/brainsync/test_recording_review.py",
+      "?? tests/brainsync/test_remaining_recognition.py",
+      "?? tests/brainsync/test_source_qc_outcomes.py",
+      "?? tests/brainsync/test_startup_cut.py",
+      "?? tests/data/test_eog_preprocessing.py",
+      "?? tests/data/test_ocular_fit_domain.py",
+      "?? tests/data/test_reviewed_continuous_quality.py",
+      "?? tests/research/test_scored_target_accuracy.py",
+      "?? tests/research/test_target_recognition.py"
+    ]
+  },
+  "environment": {
+    "python": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "D:\\BCI\\n2p3-net\\.venv\\Scripts\\python.exe",
+    "packages": {
+      "torch": "2.13.0",
+      "mne": "1.12.1",
+      "numpy": "2.5.2",
+      "scipy": "1.18.1",
+      "scikit-learn": "1.9.0",
+      "moabb": "1.6.1",
+      "pytest": "9.1.1",
+      "pyriemann": "0.12"
+    },
+    "fresh_default_N2P3Net_Cz6_179_parameter_count": 1202,
+    "parameter_count_scope": "Current constructor defaults only; not a claim about any archived trained checkpoint."
+  },
+  "source_files": [
+    {
+      "id": "H01",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\PROJECT_ENGINEERING_JOURNEY.zh.md",
+      "exists": true,
+      "bytes": 36254,
+      "sha256": "fa164429b5d80555a45faad79a7d0fedccf654f0344dd13f9b0febb2ba290d23",
+      "original_sha256": "628d445103312759edfcb97534fa08b5ab8c5d57318037d1f62577f27717e67f",
+      "original_archive_member": "documents/PROJECT_ENGINEERING_JOURNEY.zh.md",
+      "reference_collection": "doc/evidence/early_exploration_20260826/manifest.json",
+      "reference_kind": "Historical document reading copy"
+    },
+    {
+      "id": "H02",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\README.md",
+      "exists": true,
+      "bytes": 4987,
+      "sha256": "624c033e142b38be889199727f811d7a23113092d0fe0eca09358c5076caa79c",
+      "original_sha256": "a959755f79117d27643b83540fcaf0f6980f124645c8dd9483041e79769a4f64",
+      "original_archive_member": "documents/README.md",
+      "reference_collection": "doc/evidence/early_exploration_20260826/manifest.json",
+      "reference_kind": "Historical document reading copy"
+    },
+    {
+      "id": "H03",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\routes.md",
+      "exists": true,
+      "bytes": 5443,
+      "sha256": "4904a1037f3f4c2c39b6cd5f888cb480cc7649669b7404dda9306119fdfbf4e6",
+      "original_sha256": "78e531d00f1b858028b6b38e2f5ea9010ce198278a9a8240dadd56fd78ec47c5",
+      "original_archive_member": "documents/routes.md",
+      "reference_collection": "doc/evidence/early_exploration_20260826/manifest.json",
+      "reference_kind": "Historical document reading copy"
+    },
+    {
+      "id": "H04",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\mission.md",
+      "exists": true,
+      "bytes": 5672,
+      "sha256": "1387f95ae0cef2f84ca9fdd331dee6ef76d08174b64a747e163b0402a0df5cce",
+      "original_sha256": "0697a89ec87e9ee590eb4c88ea15a6d9c8cdc3ad9f58b95475d2ca5a7de810c9",
+      "original_archive_member": "documents/mission.md",
+      "reference_collection": "doc/evidence/early_exploration_20260826/manifest.json",
+      "reference_kind": "Historical document reading copy"
+    },
+    {
+      "id": "H05",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\documents\\blueprint.md",
+      "exists": true,
+      "bytes": 13867,
+      "sha256": "adf1fd2831913eba0ee0b4909d3b9027d57f149cd98923a3ce91e18df0af4c09",
+      "original_sha256": "671414dfaff6314f8fb32b2e426ceff46a073e0e97ce752df7070f788099cc78",
+      "original_archive_member": "documents/blueprint.md",
+      "reference_collection": "doc/evidence/early_exploration_20260826/manifest.json",
+      "reference_kind": "Historical document reading copy"
+    },
+    {
+      "id": "S01",
+      "path": "D:\\BCI\\n2p3-net\\doc\\README.md",
+      "exists": true,
+      "bytes": 2618,
+      "sha256": "4a6a4df9dc852afc681a405a838a1bd3b03cac942885a8df16bf4598db061ce0",
+      "sha256_before_handover_navigation": "46642c770c7aacba3bbf7168ce7560222b0c9a81713fcc42b50f3c18f26bd58a",
+      "task_change": "Added dated handover and in-repository historical reference navigation; canonical ownership unchanged."
+    },
+    {
+      "id": "S02",
+      "path": "D:\\BCI\\n2p3-net\\doc\\research_program.zh.md",
+      "exists": true,
+      "bytes": 42613,
+      "sha256": "2ceb2ef739e41d8222a2588273ca3df4cc0cdf83c594afb8d52157630c57d7be"
+    },
+    {
+      "id": "S03",
+      "path": "D:\\BCI\\n2p3-net\\doc\\technical_structure.zh.md",
+      "exists": true,
+      "bytes": 108557,
+      "sha256": "b7e5df9500c17e3f82c432e3a64da5bdb1d8f35e9c98bb9c1005cc0fe834a927"
+    },
+    {
+      "id": "S04",
+      "path": "D:\\BCI\\n2p3-net\\doc\\input_contract_math.zh.md",
+      "exists": true,
+      "bytes": 48446,
+      "sha256": "4789f4f04cbf70abd22798da836a09a09ff42d100c697cf37485e9f8098b98a0"
+    },
+    {
+      "id": "S05",
+      "path": "D:\\BCI\\n2p3-net\\doc\\roadmap.zh.md",
+      "exists": true,
+      "bytes": 3656,
+      "sha256": "83867a67fee25697921ab8663b708ef11719a578447f372237ca95b859037703"
+    },
+    {
+      "id": "S06",
+      "path": "D:\\BCI\\n2p3-net\\doc\\engineering.zh.md",
+      "exists": true,
+      "bytes": 78003,
+      "sha256": "99a959a31a8f9fdc7e38390d16542892049fcee1f5ed5c3c4bb6788870093084"
+    },
+    {
+      "id": "S07",
+      "path": "D:\\BCI\\n2p3-net\\doc\\workstation.zh.md",
+      "exists": true,
+      "bytes": 30055,
+      "sha256": "461a3e61f9070198f0d8d20adc7bfbabf28007328da2bc4b5f551c0ff444b41f"
+    },
+    {
+      "id": "E01",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\calibration_and_selection.zh.md",
+      "exists": true,
+      "bytes": 40645,
+      "sha256": "6cfb814c1a9baf8970a6b94bc4a6980648188c789a867117ec266e483083cc95"
+    },
+    {
+      "id": "E02",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\response_and_noise.zh.md",
+      "exists": true,
+      "bytes": 126989,
+      "sha256": "7a207f06b70747e090ecedc3c9b355a3feae860d08a2ad29264ccadf96667e0f"
+    },
+    {
+      "id": "E03",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\public_evaluation.zh.md",
+      "exists": true,
+      "bytes": 41766,
+      "sha256": "d024eb375b9830714f18dd773226b85431a49fc66b786e6e05afe8c793f51021"
+    },
+    {
+      "id": "E04",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\execution_and_integration.zh.md",
+      "exists": true,
+      "bytes": 86560,
+      "sha256": "e59a392f0db6c399090d0fe73211a16fa7269cb17ce4e4ca719109c2716057bc"
+    },
+    {
+      "id": "E05",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\unified_results_20260916.zh.md",
+      "exists": true,
+      "bytes": 12336,
+      "sha256": "0c259315ede722da6889256f63e44f50e5eb48d72b510e9712d6a0819fd8bfb9"
+    },
+    {
+      "id": "B01",
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\brainsync_matrix\\acceptance.json",
+      "exists": true,
+      "bytes": 4768,
+      "sha256": "2a5cc859220ad2d1610525c6063843739a1586efbba69663e02e6ed6e71c243d"
+    },
+    {
+      "id": "B02",
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\brainsync_matrix\\single_round_acceptance.json",
+      "exists": true,
+      "bytes": 2636,
+      "sha256": "30e8da46cdb76e025f13a01ca089276d87770865b614d4087c4ed0bf98b7c34e"
+    },
+    {
+      "id": "B03",
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\brainsync_matrix\\block_reviewed_acceptance.json",
+      "exists": true,
+      "bytes": 1496,
+      "sha256": "07193db51bc36682086d233087883caf0d7b110b5b687ede54d3e4af6017c053"
+    },
+    {
+      "id": "B04",
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\brainsync_quality\\startup_cut_acceptance.json",
+      "exists": true,
+      "bytes": 2558,
+      "sha256": "3b284cd81c7453b6dc168dc1af27b5c1313583e0469452a8d04d3fa666f6b64b"
+    },
+    {
+      "id": "B05",
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\brainsync_quality\\post_cut_amplitude_acceptance.json",
+      "exists": true,
+      "bytes": 3074,
+      "sha256": "6d0434385a3d20b232a7fb6f8bc7657d2f7e885b3051d9b4ccb99d082f236bfb"
+    },
+    {
+      "id": "B06",
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\brainsync_basic_entry_20261102\\acceptance.json",
+      "exists": true,
+      "bytes": 1206,
+      "sha256": "8b174260674061a9fcf9025f1e270c0c55e6dba4c319866758b6766dd1330fb3"
+    },
+    {
+      "id": "B07",
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\build_cleanup\\retry_20261103\\receipt.json",
+      "exists": true,
+      "bytes": 5724,
+      "sha256": "3431f564f2292853ede483d32f661ae17b7d25537375a4b0837487e5c0f65200"
+    },
+    {
+      "id": "B08",
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\brainsync_matrix\\source_QC_disposition_binding.json",
+      "exists": true,
+      "bytes": 3297,
+      "sha256": "5f15be3def7cec766346849c5ea1807ab2498ef1a45052cdfe7d1ba09753a483"
+    },
+    {
+      "id": "C01",
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\pause_checkpoint_current.json",
+      "exists": true,
+      "bytes": 102976,
+      "sha256": "c249de4521b9ed849c1e4c950b93192c3c2732b73e038bef48b49e8b11a7547e"
+    },
+    {
+      "id": "C02",
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\research_resume_20261012\\research_integration_acceptance.json",
+      "exists": true,
+      "bytes": 163034,
+      "sha256": "45c1a93dad1f799d6813e6e2e8a7f6af89886647bec9c8e68f7f74e61dfc0ebf"
+    },
+    {
+      "id": "C03",
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\lean_gaussian_20261016\\active_checkpoint.json",
+      "exists": true,
+      "bytes": 61336,
+      "sha256": "c2b7e6f35fdddada9debf8fba1686343545c3e597b4b11b24d3df96d59e7cd46"
+    },
+    {
+      "id": "C04",
+      "path": "D:\\BCI\\n2p3-net\\doc\\build_cleanup_maintenance.zh.md",
+      "exists": true,
+      "bytes": 8812,
+      "sha256": "9872d0aa191abe69d3e1576d0facc4592d11318ce295ec23ffe860d4776751fa"
+    },
+    {
+      "id": "C05",
+      "path": "D:\\BCI\\n2p3-net\\frozen\\major_domain_transfer_20260920\\README.zh.md",
+      "exists": true,
+      "bytes": 2191,
+      "sha256": "11b858e068c4a122d03dbc69d7e9e80774888c232ecd8e898bc41cecbb3f142d"
+    },
+    {
+      "id": "C06",
+      "path": "D:\\BCI\\n2p3-net\\frozen\\README.md",
+      "exists": true,
+      "bytes": 2269,
+      "sha256": "e5f4e5c94b00e900cec89378455a1687791ac2f0becaac80e9382b5aa5d4b175"
+    },
+    {
+      "id": "I01",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\BrainSync_startup_cut_4s\\manifest.json",
+      "exists": true,
+      "bytes": 89756,
+      "sha256": "36a058d1c78ed1dc7d6ec8bc0c6f16ea7666b8f0cb10b3993beeb7c09fb880ed"
+    },
+    {
+      "id": "I02",
+      "path": "D:\\BCI\\n2p3-net\\configs\\brainsync_old_basic_nn_source.json",
+      "exists": true,
+      "bytes": 703,
+      "sha256": "f991fe799af2e6c554b49120a19b20a712e6da9620f8a3f4a6fb19ad6d24ccf0"
+    },
+    {
+      "id": "I03",
+      "path": "D:\\BCI\\n2p3-net\\configs\\brainsync_bidirectional_preprocessing.json",
+      "exists": true,
+      "bytes": 759,
+      "sha256": "deffab5f529e8a780fdfe63f6ed19817ade4d56dff0fca55946627b0d0c5ab93"
+    },
+    {
+      "id": "I04",
+      "path": "D:\\BCI\\n2p3-net\\configs\\unified_training_budget.json",
+      "exists": true,
+      "bytes": 232,
+      "sha256": "e7162e54b388cc421edabc58cde1c42a9179244a2350d116542a764b4d731b2d"
+    },
+    {
+      "id": "I05",
+      "path": "D:\\BCI\\n2p3-net\\models\\source\\basic12_r1s0m0_u27950.pt",
+      "exists": true,
+      "bytes": 36347053,
+      "sha256": "935ee55de598256ca9299595ec899359751b1ebbf5fa0bb15af0f0fbb8bda3bd"
+    },
+    {
+      "id": "P01",
+      "path": "D:\\BCI\\n2p3-net\\src\\models\\n2p3net.py",
+      "exists": true,
+      "bytes": 55549,
+      "sha256": "00384bb166b10ae63660fcdf79801ed1f7fc5eb4e77d4b52ba87cfdbcd950404"
+    },
+    {
+      "id": "P02",
+      "path": "D:\\BCI\\n2p3-net\\src\\data\\brainsync_startup.py",
+      "exists": true,
+      "bytes": 7253,
+      "sha256": "317308b5feef33d86a737fbd7ffac75c08754f13a04fbee77cafe4bf258926db"
+    },
+    {
+      "id": "P03",
+      "path": "D:\\BCI\\n2p3-net\\src\\data\\ocular.py",
+      "exists": true,
+      "bytes": 24048,
+      "sha256": "d230ad0947ed455e58fc99a9517792ff522191f8aa5718f4cf5c46507a74c2bf"
+    },
+    {
+      "id": "P04",
+      "path": "D:\\BCI\\n2p3-net\\src\\transfer\\calibrated.py",
+      "exists": true,
+      "bytes": 73761,
+      "sha256": "52896c4ee38afda60fbc6db52ecbf95fc53310bec14d2290bcff016df66a3605"
+    },
+    {
+      "id": "P05",
+      "path": "D:\\BCI\\n2p3-net\\src\\research\\candidate_metrics.py",
+      "exists": true,
+      "bytes": 37652,
+      "sha256": "812df2b1b9c7710f7a7724056b9dbdb9572688c03b21cba667575f3c58287882"
+    },
+    {
+      "id": "P06",
+      "path": "D:\\BCI\\n2p3-net\\src\\research\\target_recognition.py",
+      "exists": true,
+      "bytes": 6042,
+      "sha256": "74cd3f731dd9c14684c8242b5c051ea63f33c62d9625c751b52c4c4b73c79f64"
+    },
+    {
+      "id": "H06",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\run_records.md",
+      "exists": true,
+      "bytes": 9269,
+      "sha256": "fd038c68b978252f790ac5656efe4cc6f03b0436a979eb4aab831b4863a0d2df",
+      "original_sha256": "ae6f95510fc18208bd4ced1b63a2c2934386ce544e080f52c43156805f1d98e6",
+      "section_id": "h06",
+      "reference_collection": "doc/evidence/early_exploration_20260826/manifest.json",
+      "reference_kind": "Metadata-only run summary; original EEG, prediction arrays and model payload excluded"
+    },
+    {
+      "id": "H07",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\run_records.md",
+      "exists": true,
+      "bytes": 9269,
+      "sha256": "fd038c68b978252f790ac5656efe4cc6f03b0436a979eb4aab831b4863a0d2df",
+      "original_sha256": "593b73d666fb2f4abca26650cf14c6b0978d6ece1aa32a2ebc70547a565c5727",
+      "section_id": "h07",
+      "reference_collection": "doc/evidence/early_exploration_20260826/manifest.json",
+      "reference_kind": "Metadata-only run summary; original EEG, prediction arrays and model payload excluded"
+    },
+    {
+      "id": "H08",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\run_records.md",
+      "exists": true,
+      "bytes": 9269,
+      "sha256": "fd038c68b978252f790ac5656efe4cc6f03b0436a979eb4aab831b4863a0d2df",
+      "original_sha256": "e5abec796e3e7786837624ff7c5eaceff64edfa7beddcdec4c42155b0dd67874",
+      "section_id": "h08",
+      "reference_collection": "doc/evidence/early_exploration_20260826/manifest.json",
+      "reference_kind": "Metadata-only run summary; original EEG, prediction arrays and model payload excluded"
+    },
+    {
+      "id": "H09",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\run_records.md",
+      "exists": true,
+      "bytes": 9269,
+      "sha256": "fd038c68b978252f790ac5656efe4cc6f03b0436a979eb4aab831b4863a0d2df",
+      "original_sha256": "3debec3432969c4659298f7c88170b98d3ba2f8c6e415f32fe44f1d154d3d638",
+      "section_id": "h09",
+      "reference_collection": "doc/evidence/early_exploration_20260826/manifest.json",
+      "reference_kind": "Metadata-only run summary; original EEG, prediction arrays and model payload excluded"
+    },
+    {
+      "id": "H10",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\run_records.md",
+      "exists": true,
+      "bytes": 9269,
+      "sha256": "fd038c68b978252f790ac5656efe4cc6f03b0436a979eb4aab831b4863a0d2df",
+      "original_sha256": "7e46d96395479d1cb90c04625efd3b848ab7796cfa5f4799afa10129e8f65370",
+      "section_id": "h10",
+      "reference_collection": "doc/evidence/early_exploration_20260826/manifest.json",
+      "reference_kind": "Metadata-only run summary; original EEG, prediction arrays and model payload excluded"
+    },
+    {
+      "id": "H11",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\run_records.md",
+      "exists": true,
+      "bytes": 9269,
+      "sha256": "fd038c68b978252f790ac5656efe4cc6f03b0436a979eb4aab831b4863a0d2df",
+      "original_sha256": "bfede5f3f4505eb6caa5208a6b62f86a8643e833a751ca99a80dc063488e8562",
+      "section_id": "h11",
+      "reference_collection": "doc/evidence/early_exploration_20260826/manifest.json",
+      "reference_kind": "Metadata-only run summary; original EEG, prediction arrays and model payload excluded"
+    },
+    {
+      "id": "H12",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\run_records.md",
+      "exists": true,
+      "bytes": 9269,
+      "sha256": "fd038c68b978252f790ac5656efe4cc6f03b0436a979eb4aab831b4863a0d2df",
+      "original_sha256": "e403dff3353ec96abb97898ec66688960f5335d0ce14d7dde4129b614f71b515",
+      "section_id": "h12",
+      "reference_collection": "doc/evidence/early_exploration_20260826/manifest.json",
+      "reference_kind": "Metadata-only run summary; original EEG, prediction arrays and model payload excluded"
+    },
+    {
+      "id": "H13",
+      "path": "D:\\BCI\\n2p3-net\\doc\\evidence\\early_exploration_20260826\\run_records.md",
+      "exists": true,
+      "bytes": 9269,
+      "sha256": "fd038c68b978252f790ac5656efe4cc6f03b0436a979eb4aab831b4863a0d2df",
+      "original_sha256": "004308df2347345fe7460031bac20c72d0a4671bfbd110101d75ddb2bb2606b3",
+      "section_id": "h13",
+      "reference_collection": "doc/evidence/early_exploration_20260826/manifest.json",
+      "reference_kind": "Metadata-only run summary; original EEG, prediction arrays and model payload excluded"
+    }
+  ],
+  "locator_checks": [
+    {
+      "path": "D:\\BCI\\n2p3-net\\experiments\\runs",
+      "exists": false
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_matrix_20261031\\checkpoint.json",
+      "exists": false
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_matrix_20261031\\analysis\\decision_records.json",
+      "exists": false
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_eog_consistent_20261031\\checkpoint.json",
+      "exists": false
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_eog_consistent_20261031\\source_preparation_group_v1\\local_readiness.json",
+      "exists": false
+    },
+    {
+      "path": "D:\\BCI\\artifacts\\apps\\BrainSync_Release_20261102\\BrainSync.exe",
+      "exists": true,
+      "bytes": 7189436,
+      "sha256": "88d627ccda7b8d4615adc8cba13f0d50aaee6915323f0c74e03372a6c50ffcc5"
+    },
+    {
+      "path": "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool",
+      "exists": true,
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "path": "C:\\Users\\chent\\AppData\\Local\\Packages\\OpenAI.Codex_2p2nqsd0c76g0\\LocalCache\\Local\\n2p3-net-cache\\brainsync_eog_consistent_20261031",
+      "exists": true,
+      "bytes": null,
+      "sha256": null
+    }
+  ],
+  "historical_artifact_locator_checks": [
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/plan.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/jobs.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/recovery_map.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/execution_source/source.manifest.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/recovery_source/source.manifest.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/old_source_expected.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/recovered_models.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/archive_receipt.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/complete_execution.tar.gz",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/verification.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/input_numerical_verification.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/independent_prediction_verification.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/original_scope_verification.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/analysis/summary.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/analysis/decision_records.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/index.html",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B01",
+      "declared_path": "experiments/runs/brainsync_matrix_20261031/analyze.py",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B04",
+      "declared_path": "mne_data/BrainSync_startup_cut_4s/manifest.json",
+      "exists_at_declared_path": true
+    },
+    {
+      "binding": "B04",
+      "declared_path": "experiments\\runs\\brainsync_eog_consistent_20261031\\startup_cut_validation.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B04",
+      "declared_path": "experiments\\runs\\brainsync_eog_consistent_20261031\\startup_cut_replay.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B04",
+      "declared_path": "experiments\\runs\\brainsync_eog_consistent_20261031\\startup_cut_frozen_tests.xml",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B04",
+      "declared_path": "experiments\\runs\\brainsync_eog_consistent_20261031\\runtime_startup_cut_20261102\\source.manifest.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B04",
+      "declared_path": "experiments\\runs\\brainsync_eog_consistent_20261031\\experiment_plan_startup_cut.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B05",
+      "declared_path": "experiments\\runs\\brainsync_eog_consistent_20261031\\post_cut_preparation_binding.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B05",
+      "declared_path": "experiments\\runs\\brainsync_eog_consistent_20261031\\post_cut_amplitude_review\\results.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B05",
+      "declared_path": "experiments\\runs\\brainsync_eog_consistent_20261031\\post_cut_amplitude_review\\epoch_amplitudes.csv",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B05",
+      "declared_path": "experiments\\runs\\brainsync_eog_consistent_20261031\\post_cut_amplitude_review\\index.html",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B05",
+      "declared_path": "experiments\\runs\\brainsync_eog_consistent_20261031\\post_cut_eog_audit_final\\results.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B05",
+      "declared_path": "experiments\\runs\\brainsync_eog_consistent_20261031\\post_cut_amplitude_validation.json",
+      "exists_at_declared_path": false
+    },
+    {
+      "binding": "B05",
+      "declared_path": "experiments\\runs\\brainsync_eog_consistent_20261031\\runtime_post_cut_amplitude_final\\source.manifest.json",
+      "exists_at_declared_path": false
+    }
+  ],
+  "source_weight_hash_matches_profile": true,
+  "process_observation": {
+    "method": "Non-elevated CIM process query for python.exe/pythonw.exe/BrainSync.exe/lean.exe after environment import finished",
+    "matching_processes": 0,
+    "limit": "Point-in-time query; other executable names, remote hosts and later launches are outside this observation."
+  },
+  "historical_record_examples": {
+    "H06": {
+      "primary": "llr@15",
+      "original_hit_rate": 1.0,
+      "n_covered": 2,
+      "n_total": 3,
+      "coverage": 0.6666666666666666,
+      "n_subjects": 3,
+      "n_trials": 463
+    },
+    "H07": {
+      "mode": "benchmark",
+      "n_subjects": 242,
+      "n_trials": 36625
+    }
+  },
+  "reference_collection_updated_at": "2026-11-07T01:50:27.113046-07:00",
+  "reference_collection": {
+    "index": "doc/evidence/early_exploration_20260826/README.zh.md",
+    "manifest": "doc/evidence/early_exploration_20260826/manifest.json",
+    "historical_documents": 12,
+    "run_summaries": 8,
+    "scope": "Text documents and metadata summaries only; each file and the complete collected group are smaller than 100 MB. Historical references resolve inside the current project.",
+    "text_collection_bytes": 150738,
+    "original_text_archive_bytes": 67409
+  }
+}

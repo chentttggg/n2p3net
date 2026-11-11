@@ -1,5 +1,19 @@
 # P300 模型输入合同：离散时间、单位与分组
 
+已审阅记录的整份处置绑定真实EDF字节；复制或重命名不改变该内容身份。
+逐导排除保原native sample和事件轴，不能剪接后当连续记录；对应通道的滤波段及双端恢复必须同步。
+冻结名单处理仅授权其声明字节；局部缺导不自动等于整trial不可用，亦不能冒充完整观测。
+
+BrainSync本批设备启动故障按用户确认采用原始采样域裁剪：从首个刺激起排除4秒，向上取整至
+首个保留trial的完整`[-200,1200)ms`源支持。设首刺激为`e0`、源采样率为`f`，
+`b=e0+ceil(4f)`；在原排程中取首个满足`e_i+round(-0.2f)>=b`且完整响应仍在记录内的trial，
+裁剪边界为其基线起点`a=e_i+round(-0.2f)`，原始`[0,a)`不进入滤波、QC/EOG拟合或EEG证据。
+内容绑定的[裁剪登记](../src/data/brainsync_startup_cuts.json)只作用于已确认的实机原字节；
+EDF导出保原始数字值与电压标定，模型入口保原native轴、暂停和完整requested排程。
+真实刺激历史及原授权C权限保留，已删除EEG的事件不能计为有实测支持；训练epoch及标签行同步排除。
+QC/EOG模型逐个校准源核裁剪身份，支持改变后须重新拟合；本批来源与验证由
+[质量主题](evidence/response_and_noise.zh.md#设备启动故障的原始采样裁剪)维护。
+
 物理响应设计分别声明观测时钟、source字典时钟、噪声启动段、物理漂移组、target-lock与shape-block。暂停保留真实秒数及前段响应尾；共同漂移组沿同一参考原点使用`a_g+b_g*t_seconds`，其参数与物理平坦测度`da_g db_g`在联合积分中各进入一次。噪声段重启与漂移组归属由各自模型字段决定。completed、interrupted及未知身份曝光共同进入实际历史；未知身份的联合law由调用者显式提供。
 
 source-informed响应四臂共用原source `β=μ+Fu`、Gaussian噪声`ηK`及每导物理漂移`a+b·t_seconds`，λ固定为1。原source先验进入C一次。非空C的whole evidence由保存的归一C后验直接积分`p(F\C|C,q)`；conditional另计算`p(T|C,P,q)`，保各自完整支持与误差证书。C0保共同平坦测度，完整观测识别漂移即可产生whole概率，conditional还要求P可识别。当前q的完整正质量状态与候选分母沿真实issuer权限保留，预算不足作为原请求的不可用结果。
@@ -10,11 +24,11 @@ source程序与当前selection输入的数值family相容由`validate_selection_
 
 信息界`/2`的估计量分列：同C的raw Mahalanobis plug-in保留拟合偏差；独立flash/共同已知covariance模型用完整binary activation A和`h[t,q]=sum_i(A[i,q]-A[i,t])²`定义候选log-likelihood差的mean `-d²h/2`、variance `d²h`。pairwise上下界、finite MC、实际生产tie/abstention分别持有自己的角色。有限算子传播用pre-filter AR输入law的`F K_AR F.T`；SPD ambient密度、显式正交支撑的Euclidean密度和regularized ridge诊断分别保存测度。符号公式和小型反例接受见[响应与噪声](evidence/response_and_noise.zh.md#当前模型与数值任务)。
 
-2026-10-10[新增科研切片](evidence/wishlist_progress_20261010.zh.md)继续区分函数、先验与观测算子：固定graph的同C/noise centered信号能量相等不等于effective response df相等；reference/gain/缺导须同步推送同physical S与Sigma，剩余通道上重建graph是另一个模型。B07有限状态参考以精确`L/fs`及stored binary64的有理数半开边界统一mask、retained rows和censor；浮点秒数只用于显示。B11共同scalar改变半径但不改变逐记录角向比，跨记录shared-beta contrast在独立record尺度下须另推角向law。
+2026-10-10[新增科研切片](evidence/history.zh.md#执行与集成)继续区分函数、先验与观测算子：固定graph的同C/noise centered信号能量相等不等于effective response df相等；reference/gain/缺导须同步推送同physical S与Sigma，剩余通道上重建graph是另一个模型。B07有限状态参考以精确`L/fs`及stored binary64的有理数半开边界统一mask、retained rows和censor；浮点秒数只用于显示。B11共同scalar改变半径但不改变逐记录角向比，跨记录shared-beta contrast在独立record尺度下须另推角向law。
 
 cubic字典的native坐标为`q=n/L`，功能端点为`T=L/fs`，区别于last sample；open-clamped端点行是首/末coefficient selector，hard-value留下`k−2`维但不约束斜率。内部C2不代表free因果截断的全局平滑性；同列数、同reference能量和同effective df分别验证，不把不同函数空间自动当匹配模型。
 
-[本轮科研合同](evidence/research_integration_20261008.zh.md)对B06任务泛函和B08 quotient预测逐非零行独立归一，不能用另一强响应的尺度授予弱未观测方向信息。零泛函自然可识别，数值unresolved与结构null分开；proper completion明确提供新的物理外推prior，不把quotient未支持方差写成零。保存的QR precision决定实际评分，dense后验H只作为原生产factor的舍入诊断。
+[本轮科研合同](evidence/history.zh.md#执行与集成)对B06任务泛函和B08 quotient预测逐非零行独立归一，不能用另一强响应的尺度授予弱未观测方向信息。零泛函自然可识别，数值unresolved与结构null分开；proper completion明确提供新的物理外推prior，不把quotient未支持方差写成零。保存的QR precision决定实际评分，dense后验H只作为原生产factor的舍入诊断。
 
 对自适应清理，完整增量是`T(x+h)-T(x)`，一般不等于单独`T(h)-T(0)`或冻结一次的线性映射。B10经验covariance factor只描述指定base与draw分布，不能代替固定Gaussian的`FΣFᵀ`；B11重尾模型仅noise受共同Gamma尺度作用，独立ERP/state Gaussian不随该scale重标。两者仍须由实际调用者保持同physical grid、单位、角色与读取截止。
 
@@ -32,29 +46,29 @@ B11 full-C模型在一个独立proper global β prior下计算 `m(C+full,q)/m(C+
 
 raw score的共同intercept平移`y*=y−y0`不改proper β或同da测度，prefix条件下tail Jacobian为1。tail二次型使用`||r_t−A_tθ||²+||R_pθ−c_p||²`，保a后验；prefix正交残差在ratio抵消。条件评分单独估计source/whitening/prefix与tail QR误差，超出actual tail行数乘`sqrtε`的absolute nats预算则typed unresolved。有限t的归一项使用`logΓ(a+n/2)−logΓ(a)−(n/2)log a`的整数维递推与稳定半步，有限ν仍保原值，解析截断界不含所有浮点或积分误差。
 
-[当前选择执行关系](evidence/current_public_consumers_20261008.zh.md)核source原actualreceipt与target capability/实际selection证据，允许经证明的相同SOS/padding/closed-grid/FFT/first-T程序族，不把不同授权长度的F_N说成相同。实测BNCI Cz6投影与原8导physical identity分列；raw256Hz/unfiltered与trial128Hz179/finite-zero的时间合同不同，不以共同空间消除该差异。
+[当前选择执行关系](evidence/history.zh.md#执行与集成)核source原actualreceipt与target capability/实际selection证据，允许经证明的相同SOS/padding/closed-grid/FFT/first-T程序族，不把不同授权长度的F_N说成相同。实测BNCI Cz6投影与原8导physical identity分列；raw256Hz/unfiltered与trial128Hz179/finite-zero的时间合同不同，不以共同空间消除该差异。
 
-[当前公共输入准入](evidence/public_source_pipeline_20261008.zh.md)使用新完整finite-zero none/128Hz179声明，父mean_only与旧raw/cache保持原身份；prepared程序绑定实际18dafd6源码，后续训练不得改签。源1964请求中仅BI2012已证常零的subject3 online记录明确排除，training保留。GTN实际245 NIX/TXT exact keys和一手论文支撑源内匿名dataset-participant authority，全局person linkage未独立验证。target534原记录与123 participant group分别记分母。
+[当前公共输入准入](evidence/history.zh.md#执行与集成)使用新完整finite-zero none/128Hz179声明，父mean_only与旧raw/cache保持原身份；prepared程序绑定实际18dafd6源码，后续训练不得改签。源1964请求中仅BI2012已证常零的subject3 online记录明确排除，training保留。GTN实际245 NIX/TXT exact keys和一手论文支撑源内匿名dataset-participant authority，全局person linkage未独立验证。target534原记录与123 participant group分别记分母。
 
-[B12前缀实施](evidence/independent_prefix_20261008.zh.md)将raw的right-censored完整K与截止内真实可用trial分别记录；A01 C200为raw200/trial196。candidate严格下一未知flash截止，binary按其prefix owner保留原epoch尾部与共同test embargo；两个面板各自冻结可用时间，不据不同输入直接认定算法反差。
+[B12前缀实施](evidence/history.zh.md#校准与选择)将raw的right-censored完整K与截止内真实可用trial分别记录；A01 C200为raw200/trial196。candidate严格下一未知flash截止，binary按其prefix owner保留原epoch尾部与共同test embargo；两个面板各自冻结可用时间，不据不同输入直接认定算法反差。
 
-[物理字典](evidence/erp_dictionary_20261006.zh.md)拥有actual `L=round(fs*Trequested)`、`t_n=n/fs`和支持`[0,L)`；右端点在`Tactual=L/fs`评价，lastsample为`(L−1)/fs`。fs256、请求1.2秒时，L307、实际端点1.19921875秒、最后采样1.1953125秒，三者分列。`E=[Φ(0);Φ(Tactual)]`、`N∈ker(E)`作用于同一ambient cosine及实际event design；prior遵循`Λactual=NblockᵀΛambient Nblock`。本切片不扩现unknown-overlap准入，不变更可用raw/score时间。
+[物理字典](evidence/history.zh.md#响应与噪声)拥有actual `L=round(fs*Trequested)`、`t_n=n/fs`和支持`[0,L)`；右端点在`Tactual=L/fs`评价，lastsample为`(L−1)/fs`。fs256、请求1.2秒时，L307、实际端点1.19921875秒、最后采样1.1953125秒，三者分列。`E=[Φ(0);Φ(Tactual)]`、`N∈ker(E)`作用于同一ambient cosine及实际event design；prior遵循`Λactual=NblockᵀΛambient Nblock`。本切片不扩现unknown-overlap准入，不变更可用raw/score时间。
 
-[固定reference g-prior](evidence/calibration_g_prior_20261006.zh.md)以每record `Dbar=(I−Q_ZQ_Zᵀ)D_C` 的增量AR0 thin QR构建 `G=R_CᵀR_C`，读完整授权C；prior precision root `R_C/√g`同时进初始化和fixed32 NumPy/Torch目标，η期间不变，Σ仍profile为Q/nTail。g程序新/5 actual roots与source保存；held不建G，C-inner每fold单独编译。
+[固定reference g-prior](evidence/history.zh.md#校准与选择)以每record `Dbar=(I−Q_ZQ_Zᵀ)D_C` 的增量AR0 thin QR构建 `G=R_CᵀR_C`，读完整授权C；prior precision root `R_C/√g`同时进初始化和fixed32 NumPy/Torch目标，η期间不变，Σ仍profile为Q/nTail。g程序新/5 actual roots与source保存；held不建G，C-inner每fold单独编译。
 rank分辨尺度同时使用实际原design与residual thin roots，threshold记录投影roundoff参考，不以近零residual自己的最大值认证纯nuisance方向；weak方向只在数值可分辨时准入，不能拿full rank证明统计识别。reference ledger与actual C/basis/input/support在同一binding owner交叉核对。
-[trace-isotropic控制](evidence/calibration_trace_control_20261006.zh.md)在同C-reference上固定`λ_C=tr(G)/(kg)`与`H_I=I/λ_C`，故`tr(GH_I)=tr(GH_g)=kg`。k为common与target全部kernel坐标数；这是AR0参考上的row-prior能量匹配，不保证final fitted-noise能量或有效自由度相等。compiler从同thin root派生precision，held及η不重建G/λ；一般basis不变性仅属g。
+[trace-isotropic控制](evidence/history.zh.md#校准与选择)在同C-reference上固定`λ_C=tr(G)/(kg)`与`H_I=I/λ_C`，故`tr(GH_I)=tr(GH_g)=kg`。k为common与target全部kernel坐标数；这是AR0参考上的row-prior能量匹配，不保证final fitted-noise能量或有效自由度相等。compiler从同thin root派生precision，held及η不重建G/λ；一般basis不变性仅属g。
 
-[代码实施](evidence/ensemble_implementation_20261005.zh.md)以`ensemble_views`分开无标签物理view与授权CalSelection；
+[代码实施](evidence/history.zh.md#校准与选择)以`ensemble_views`分开无标签物理view与授权CalSelection；
 真实359 source点经FFT180保留179，358点仍诚实输出178。每组FiniteFilterOperator/共享resample/baseline执行receipt和lineage保留。
-AR显式阶数使用stationary innovations且同步Y/D；[fixed32条件估计量](evidence/continuous_fixed_prefix_20261005.zh.md)已另以`/4`实施，不能把旧stationary程序称公平tail矩阵。
-最终[独立软件反例](evidence/ensemble_quality_20261005.zh.md)核对错参考/布局/候选顺序先拒绝，合法物理缺失保留概率不可用状态；本轮共同支持、拟合授权和模型内数值绑定在保存重载后仍一致。
+AR显式阶数使用stationary innovations且同步Y/D；[fixed32条件估计量](evidence/history.zh.md#响应与噪声)已另以`/4`实施，不能把旧stationary程序称公平tail矩阵。
+最终[独立软件反例](evidence/history.zh.md#校准与选择)核对错参考/布局/候选顺序先拒绝，合法物理缺失保留概率不可用状态；本轮共同支持、拟合授权和模型内数值绑定在保存重载后仍一致。
 
-2026-10-05 [分块研究合同](evidence/deep_research_plan_20261005.zh.md)要求共同物理decision与
+2026-10-05 [分块研究合同](evidence/history.zh.md#执行与集成)要求共同物理decision与
 各专家独立数值view分开绑定；MAT上游分发信号不称ADC raw。AR0/1/4/8/16/32按共同hold-back=32
 源采样点比较，Y/D同步白化并保存实际条件prefix；prefix同时可能更新ERP/kernel后验，不能只改noise创新。
 g-prior信息矩阵来自授权C，不逐held候选重建。外部状态Gaussian条件模型同时使用候选相关均值
 与Schur协方差；确定padding和F(X)不能当新增独立噪声/观测。
-[B06实际条件接口](evidence/conditional_state_20261006.zh.md)在标准化Σ_X的已识别支持内解算并检查Ω的range，不以未声明pinv恢复未观测方向。条件response的shared affine support与null class contrast是当前LDA切片的准入限制；零随机response不补epsilon。caller必须证明实际feature map的读取区间和available_at，维度名/区间声明不替代native映射；新增raw条件与response不能重复消费同一确定观测。
+[B06实际条件接口](evidence/history.zh.md#响应与噪声)在标准化Σ_X的已识别支持内解算并检查Ω的range，不以未声明pinv恢复未观测方向。条件response的shared affine support与null class contrast是当前LDA切片的准入限制；零随机response不补epsilon。caller必须证明实际feature map的读取区间和available_at，维度名/区间声明不替代native映射；新增raw条件与response不能重复消费同一确定观测。
 ERP保真与white-noise gain来自完整T映射；输出重叠率和0/2/8秒距离仅作研究分层，不是启用规则。
 研究框架现显式表达native `T(x)=Gx+b`；注入/white-noise增量只用G，短及输出网格为sample×physical-channel。external-only注入的短参照为零时relative error不可用；不能改flatten顺序或用输出投影条件数代替完整G的增益/condition。
 
@@ -82,13 +96,13 @@ provenance必须写 `ocular_artifact_processing.status=not_applied`，不能称�
 
 ## 1. 证据边界
 
-2026-10-05 [边界状态核对](evidence/boundary_state_redesign_20261005.zh.md)：S 个 SOS 的双端 state basis 为 `(N,4S)`，padding 长度不等于 IIR 衰减支持。长短算子差须在实际已观测上下文和共同输出网格上定义。
+2026-10-05 [边界状态核对](evidence/history.zh.md#响应与噪声)：S 个 SOS 的双端 state basis 为 `(N,4S)`，padding 长度不等于 IIR 衰减支持。长短算子差须在实际已观测上下文和共同输出网格上定义。
 当前矩阵正态核先验 `Σ⊗I/λ` 在 `K→αK, Σ→Σ/α` 时要求 `λ→λ/α`；电压单位 `Y→sY, Σ→s²Σ` 则保持 λ。真实 AR 阶数变化通常改变协方差形状，不能视为纯尺度 gauge。ERP 输出投影幅度与完整校正映射的 ERP 增量保真分别检验。
 
 2026-10-04研究补充：有限滤波、epoch/resample和baseline是实际输入算子的一部分，亦改变噪声协方差。
 baseline `B=I−1bᵀ` 后应传播为`BΣBᵀ`，不能默认仍具Toeplitz平稳性；对不同输入算子需要显式不同身份。
 边缘误差可处于低秩状态子空间，但硬删该子空间可能同时删除ERP；新研究以合法估计的不确定性权衡，未更改默认滤波。
-重审发现的旧EA物理cache普通入口缺口已在[本轮实施](evidence/system_implementation_20261004.zh.md)关闭：
+重审发现的旧EA物理cache普通入口缺口已在[本轮实施](evidence/history.zh.md#执行与集成)关闭：
 普通EpochDataset/checkpoint均拒绝非物理EA；历史专用loader仅供审计。EA feature artifact必须核父输入、
 授权fit行与实际state/output关系，不能将无量纲component改名为伏特电极。
 
@@ -106,7 +120,7 @@ decision样本坐标不重叠不等于滤后统计独立，1.2s有限因果ERP�
 历史MNE全局skip与逐导后端各按实际支持执行，不因共享解释器改变旧滤波坐标/顺序。
 永久坏非参考导先从数值输入剔除，坏/缺/错误角色参考导在投影前拒绝；只在最终固定槽表示缺失为0。
 空间输出可用性为其全部非零系数依赖导可用性的逻辑与，Cz失效传播到所有Cz差分输出；不以`NaN*0`代替掩码。
-相应来源、mask、QC特征、lineage及凭证同步，见[修复与反例](evidence/domain_transfer_major_20260920.zh.md)。
+相应来源、mask、QC特征、lineage及凭证同步，见[修复与反例](evidence/history.zh.md#公共评估)。
 
 2026-09-16的P1空间/时间参数组和P2源特征辅助损失均不改变物理输入合同。
 P2中的L2归一化只作用于source训练的post-MST特征；它不是raw重参考、EA白化或通道补全。
@@ -137,7 +151,7 @@ baseline = per-trial, per-channel mean over [-200, 0) ms
 该数值保留既有cache/模型的执行身份，并不表示1200ms已经被单因素验证为最优。
 历史GTN `2Hz/800ms` 对 `0.1Hz/1200ms` 同时改变高通与窗长，不能分离窗长收益，
 也不能由儿童三导队列推出成人跨库最优窗口。窗口判定先于下一轮EA/RPA/GALIA路线，
-详见[复核与反例](evidence/input_contract_review_20260922.zh.md)及[执行计划](roadmap.zh.md)。
+详见[复核与反例](evidence/history.zh.md#响应与噪声)及[执行计划](roadmap.zh.md)。
 `600/800/1200ms`对应102/128/179点；裁已有FFT缓存只检验保留特征的效果，
 保留父缓存完整raw支持、可用时间、QC及分割身份，不能把裁后的名义tmax写回原预处理合同。
 真实短窗必须从raw重建；双向处理须先隔离fit/test raw范围，时间分块仍须清除跨界epoch。
@@ -183,7 +197,7 @@ BIDS `acquisition_boundary`与session断点sample必须一致。读取后生成`
 P001真实先导的旧五会话缓存复核为block 1有45个epoch，block 2-10各44个；四份保留
 记录逐事件确认缺的是休息后首trial，其刺激前基线跨入前一休息，450个scheduled仅保留441个。
 严格R5只有第一个block完整；此前“末次flash缺尾部/最后block完整”的文字解释错误，已更正，
-见[覆盖复核与方案](evidence/brainsync_signal_quality_design_20260907.zh.md)。缺口保留在分母。
+见[覆盖复核与方案](evidence/history.zh.md#响应与噪声)。缺口保留在分母。
 排程同时要求首onset加tmin不早于休息结束/恢复可用边界，下一休息或录制结束不早于
 末次onset加tmax；不能只等待主机时间，还须确认所需样本收到并落盘。
 首刺激、休息后及暂停恢复后均先在当前segment累积真实baseline样本，再checkpoint确认后发刺激。
@@ -222,11 +236,11 @@ MNE延拓长度，逐采集段限制为段长减一；缺字段为`legacy`，保
 校准/测试先划分独立raw再滤波，不能拼接后双向；短epoch不能单独代替连续输入。
 N=4带通实际单遍8阶，含二阶陷波后10阶，双遍等效20阶；幅频响应平方是本次比较的一部分。
 padding不提供恢复或真实样本认证，新旧边界策略都存在位置相关误差，见
-[首轮数学与边界证据](evidence/filter_phase_20260909.zh.md)。
+[首轮数学与边界证据](evidence/history.zh.md#响应与噪声)。
 padding由实际backend、SOS、edge policy和段长共同确定：无notch的legacy零相位分支使用MNE，
 legacy含notch的显式SOS分支与新完整SOS分支分别记录自己的延拓规则。按实际通道类型选择EEG，
 typed EOG保持其独立输入角色。padlen是有限边界延拓参数，恢复或保真时间另由实际误差定义。
-2026-09-29的[全链深审](evidence/deep_chain_audit_20260929.zh.md#f0-合法的独立raw边界仍可产生严重信号失真)
+2026-09-29的[全链深审](evidence/history.zh.md#执行与集成)
 已在BI2014a真实C200末端与全61人test起点量化该风险：大幅50Hz干扰经有限odd延拓可引入
 毫伏级慢坡，纯50Hz无ERP反例与SciPy同padding结果一致。时间授权正确不能替代信号保真检查；
 完整record仅作算子诊断，不能作为合法校准/独立test的无说明替换。
@@ -235,7 +249,7 @@ typed EOG保持其独立输入角色。padlen是有限边界延拓参数，恢�
 `data.bidirectional`在真实段长和epoch位置计算两端模态包络的条件界，不假设单调恢复秒数。
 自然记录/采集段端点属于声明的有限算子，敏感度保留为诊断；只要片段任一端由伪迹切段引入，
 就使用完整双端界作门禁，不能删掉另一端的耦合项。默认QC新拟合使用`range_action=diagnostic`、
-`boundary_action=artifact_edges`，旧缺字段保留原含义，详见[推导与验证](evidence/bidirectional_qc_20260909.zh.md)。
+`boundary_action=artifact_edges`，旧缺字段保留原含义，详见[推导与验证](evidence/history.zh.md#响应与噪声)。
 
 online `phase=forward` 使用单向 SOS：
 
@@ -251,7 +265,7 @@ stream chunk，后续 chunk 必须携带上一 chunk 的 `z_end`；首文件才�
 首样本稳态不消除后续真实电位阶跃。2026-09-07在BrainSync `0903_173947`发现0.328秒的
 14.2 mV Pz阶跃，其因果IIR恢复响应污染了3.064秒开始的刺激epoch；未识别的原始阶跃及
 滤波恢复期仍是当前质量处理缺口。基线只令刺激前均值为零，不保证epoch末端回零，
-也不能以提高高通或加强平滑后图形变好作为选方依据，见[瞬态诊断](evidence/brainsync_transient_quality_20260907.zh.md)。
+也不能以提高高通或加强平滑后图形变好作为选方依据，见[瞬态诊断](evidence/history.zh.md#响应与噪声)。
 
 `data.continuous_qc`已实现冻结差分/滚动范围检测、完整异常区间及状态恢复合同。全局区间由因果和
 零相位路径共同消费；forward使用单向模态恢复，zero使用显式双端有效状态模型。局部异常注释仅重置受影响导，
@@ -270,7 +284,7 @@ guard从已检测区间向前扩展并截在当前采集段，物理检测/确�
 异常真正起点；小幅持续斜坡仍可漏检。最低有效3/6导同时约束loader、epoch QC和推理。
 被屏蔽数值为零占位并携带mask，LDA仅使用完整可观测特征；不能学习缺导占位数值。
 完整recording的确认和交付依赖进入availability，EDF填充值不计入真实样本支持。
-推导、实际恢复26.672-30.216秒及限制见[局部恢复证据](evidence/brainsync_recovery_20260908.zh.md)。
+推导、实际恢复26.672-30.216秒及限制见[局部恢复证据](evidence/history.zh.md#执行与集成)。
 
 2026-09-08新个人QC要求`n2p3_continuous_qc/4`已实际应用，且为逐导模式、显式启用
 `flatline_min_duration_s`。本次取5秒：连续相等的原始数字样本须满足`(n-1)/fs >= 5`，
@@ -286,13 +300,13 @@ guard从已检测区间向前扩展并截在当前采集段，物理检测/确�
 epoch `PTP==0`的实测导标记`no_dynamic_signal`；恒值导超过原观测导一半时拒该epoch，
 并继续应用既有最低有效导数和全导不可用门禁。屏蔽值只作mask占位，不修饰幸存波形。
 `PTP_c/median_observed(PTP)`不再进入新个人硬门：本导不变而他导/mask变化也能改变其判定。
-旧方法及公共FoldLocalArtifactPolicy保持原义，数学反例见[QC裁决](evidence/brainsync_qc_redesign_20260908.zh.md)。
+旧方法及公共FoldLocalArtifactPolicy保持原义，数学反例见[QC裁决](evidence/history.zh.md#响应与噪声)。
 
 `data.slow_trend`在原始参考/滤波前按1秒完整bin取中位数，5/15/30秒窗取所有bin对斜率的中位数
 `median_{i<j}((b_j-b_i)/(t_j-t_i))`，单位V/s；另记去趋势残差MAD、bin范围以及前一不重叠同尺度
 窗口的斜率差。完整窗口和比较窗口均不得跨采集断点、缺样、局部不支持段或非有限值。
 这些量不拟合阈值、不改X/mask；`continuing_input_quality_certified=false`明确没有认证持续输入清洁。
-现有6个斜坡漏检中存在趋势抵消，不能靠绝对斜率阈值解决，详见[科研反例](evidence/brainsync_qc_remaining_20260908.zh.md)。
+现有6个斜坡漏检中存在趋势抵消，不能靠绝对斜率阈值解决，详见[科研反例](evidence/history.zh.md#响应与噪声)。
 
 `EpochStateRecovery.recovery_certificate()`给每导最小放行样本、前一采样误差界、刺激onset及完整
 epoch支持的最早位置。age从reset后首源采样到epoch起点，不是到onset。当前Cz六导26.672-30.216秒
@@ -308,8 +322,8 @@ adapter继续合并更晚的QC、clock和交付时刻。每个排程事件都有
 数值顺序保持源epoch→FFT→前T点→半开基线；接近目标频率时沿用生产np.isclose的跳过规则，
 恢复证书共用该实际数值映射。median仅可作数值基线，不能获得线性矩阵/恢复界能力。
 这些是时间账本和证书语义修正；新派生cache使用新执行凭证，既有cache/成绩保持原义。
-见[数学裁决](evidence/preprocessing_contract_research_20260915.zh.md)与
-[实施反例](evidence/preprocessing_execution_20260915.zh.md)。
+见[数学裁决](evidence/history.zh.md#响应与噪声)与
+[实施反例](evidence/history.zh.md#响应与噪声)。
 
 先在源 sample 轴上按 `e_i` 切片，再对每个 epoch 重采样：
 
@@ -392,7 +406,7 @@ D_total_ms = 1000 * (R_s - 1) / f.
 基准证据窗，其固定偏移集合上的注意力可学习，不是任意可移动的 epoch 或卷积扫描范围。
 五份 BrainSync 会话的 2205 epoch 已独立复算，未发现分段整体提前；采集端录制零点
 尚未绑定首个样本，12 秒断流告警也不能证明毫秒级对齐，详见
-[窗口与时轴核查](evidence/brainsync_epoch_timing_audit_20260907.zh.md)。
+[窗口与时轴核查](evidence/history.zh.md#响应与噪声)。
 
 把采样率从 `f0` 改为 `f1` 时，保持跨度的奇数核满足
 
@@ -417,7 +431,7 @@ K1 = 1 + round_even((K0 - 1) * f1 / f0).
 缺导不计入BN均值/方差，亦不让NaN占位进入卷积梯度；全实测时与原生Conv/BN语义一致。
 source准备入口当前只执行有限值、恒值及通道准入，learned QC/EOG启用仍须另行绑定合法fit范围。
 原生七导的可逆参考扩展仍待研究。公式、mask及源/目标联动见
-[统一模型输入方案](evidence/unified_model_plan_20260916.zh.md#5-输入统一与信息保留)。
+[统一模型输入方案](evidence/history.zh.md#执行与集成)。
 
 若真实头皮电势为 `s_c(t)`，参考电极为 `r(t)`，记录值是
 
@@ -435,7 +449,7 @@ BrainSync本人模型的默认基准保留左耳垂原生七导。已有源check
 差分矩阵`D`为6×7且`rank(D)=6`、`D*1=0`，仅靠六导不能还原七导；保留原生Cz才能逆转。
 Cz任务响应和噪声都参与差分，故共同参考不等于普遍去噪或性能最优。
 七导与六导分别绑定QC、统计和模型；`--reference-mode native`拒绝隐式继承Cz QC/EOG。
-数学反例、文献和更正记录见[左耳垂合同更正](evidence/brainsync_reference_20260908.zh.md)。
+数学反例、文献和更正记录见[左耳垂合同更正](evidence/history.zh.md#响应与噪声)。
 
 眼电共享参考旧模式仍先同时减Cz再回归，要求显式接法。新显式`preserve_acquired_eog`仅EEG减Cz、
 EOG保持采集值，拟合`EEGc-Cz ~ EOG`，应用为`EEGc-Cz-beta*EOG`，Cz依赖系数始终-1。

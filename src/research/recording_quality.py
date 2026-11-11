@@ -26,6 +26,7 @@ from data.brainsync_contract import validate_brainsync_bids_recording
 from data.channel import canonical_channel_name
 from data.dataset import read_raw
 from data.qc_features import compute_epoch_qc_features
+from data.recording_review import RecordingExcludedError
 from research.contracts import semantic_sha256
 from research.execution import atomic_write_json
 from transfer.quality import transform_epoch_quality
@@ -325,6 +326,12 @@ def create_recording_quality_report(session_dir, output_dir, *, loader=load_brai
         elif qc_record["method"] == "fold_local_ptp_cv":
             report["notes"].append("本次按历史相对幅度QC模型重放；其分布超界不等于伪迹已得到独立证实。")
         validated.bids.assert_content_unchanged()
+    except RecordingExcludedError as error:
+        report.update(status="excluded", session_id=error.session_id,
+                      headline=error.review["reason"], recording_review=error.review)
+        report["counts"] = {"scheduled_trials": error.scheduled_trials, "preprocessed_epochs": 0,
+                            "preprocessing_unavailable": error.scheduled_trials, "qc_retained_epochs": 0}
+        report["notes"].append("该记录已由数据所有者明确排除；原始数据和完整请求分母保留。")
     except BrainSyncNoUsableEvidenceError as error:
         report["continuous_quality"] = error.ledger
         report["counts"] = {"scheduled_trials": error.scheduled_trials, "preprocessed_epochs": 0,

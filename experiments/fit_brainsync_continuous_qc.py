@@ -18,6 +18,11 @@ if str(ROOT / "src") not in sys.path:
 
 from data.brainsync import load_brainsync_session  # noqa: E402
 from data.brainsync_contract import validate_brainsync_bids_session  # noqa: E402
+from data.brainsync_startup import (  # noqa: E402
+    apply_startup_cut,
+    startup_cut_for,
+    startup_fit_provenance,
+)
 from data.continuous_qc import (  # noqa: E402
     ContinuousQCSpec,
     FilterStateRecovery,
@@ -64,6 +69,7 @@ def fit_brainsync_continuous_manifest(path: str | Path):
             if not isinstance(epoch_parameters, dict) or set(epoch_parameters) != expected:
                 raise ValueError('epoch_recovery requires exactly tolerance_v, inflation, warmup_samples and probe_step_samples')
         raws, masks, sessions, participants, references, records = [], [], [], set(), set(), []
+        startup_cuts = []
         for item in manifest["sessions"]:
             root = (path.parent / item["session_dir"]).resolve()
             session = validate_brainsync_bids_session(root)
@@ -79,6 +85,9 @@ def fit_brainsync_continuous_manifest(path: str | Path):
                 if type(start) is not int or type(stop) is not int or not 0 <= start < stop <= raw.n_times:
                     raise ValueError("clean calibration intervals must be half-open native sample bounds")
                 mask[start:stop] = True
+            startup_cut = startup_cut_for(session.bids)
+            apply_startup_cut(raw, startup_cut, mask)
+            startup_cuts.append(startup_cut)
             if not mask.any() or not item.get("clean_interval_evidence"):
                 raise ValueError("clean interval selection requires samples and evidence")
             clock = session.manifest["recording"].get("clock")
@@ -101,26 +110,47 @@ def fit_brainsync_continuous_manifest(path: str | Path):
             records.append({"session_id": session.session_id,
                             "raw_sha256": hashlib.sha256(session.bids.raw_path.read_bytes()).hexdigest(),
                             "clean_intervals_samples": item["clean_intervals_samples"],
+                            "raw_startup_cut": startup_cut,
                             "clean_interval_evidence": item["clean_interval_evidence"]})
         if (len(participants) != 1 or len(references) != 1
                 or len({session.session_id for session in sessions}) != len(sessions)):
             raise ValueError("continuous QC requires unique sessions from one participant and reference")
         provenance = {"participant_key": next(iter(participants)),
+                            **startup_fit_provenance(startup_cuts),
                             "source_reference": next(iter(references)), "sources": records,
                             "calibration_session_ids": [session.session_id for session in sessions],
                             "calibration_end_timestamp_s": max(session.ended_timestamp_s for session in sessions),
                             "role": "explicit_clean_calibration_intervals",
                             "manifest_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                             "preprocessing": preprocessing.record()}
+        group_models = None
+        if "threshold_aggregation" in manifest:
+            if manifest["threshold_aggregation"] != "per_record_MAD_envelope":
+                raise ValueError("unknown declared continuous threshold aggregation")
+            group_models = [fit_continuous_qc(group_raw, spec=spec, fit_sample_mask=group_mask,
+                fit_provenance={**provenance, "calibration_session_ids": [group_session.session_id],
+                    "role": "single_authorized_calibration_record_thresholds"})
+                for group_raw, group_mask, group_session in zip(raws, masks, sessions, strict=True)]
         raw = mne.concatenate_raws(raws, verbose=False)
         mask = np.concatenate(masks)
         epoch_recovery = None
         if manifest.get("epoch_recovery") is not None:
+            if "recovery_warmup_rule" in manifest:
+                from data.source_qc import scope_recovery_parameters
+
+                epoch_parameters = scope_recovery_parameters(raw, mask, preprocessing, epoch_parameters,
+                    rule=manifest["recovery_warmup_rule"])
+                provenance["recovery_warmup_rule"] = manifest["recovery_warmup_rule"]
             channels = tuple(raw.ch_names[index] for index in mne.pick_types(raw.info,
                 eeg=True, eog=spec.include_eog, exclude="bads"))
             epoch_recovery = fit_epoch_state_recovery(raw, preprocessing=preprocessing,
                 channels=channels, fit_sample_mask=mask, fit_provenance=provenance,
                 **epoch_parameters)
+        if group_models is not None:
+            from data.source_qc import calibration_group_envelope
+
+            return calibration_group_envelope(group_models, fit_provenance=provenance,
+                recovery=recovery, epoch_recovery=epoch_recovery)
         return fit_continuous_qc(raw, spec=spec, fit_sample_mask=mask,
             recovery=recovery,
             epoch_recovery=epoch_recovery, fit_provenance=provenance)

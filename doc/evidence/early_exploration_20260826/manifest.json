@@ -1,0 +1,341 @@
+{
+  "schema": "n2p3_early_text_reference_collection/1",
+  "collected_at": "2026-11-07T01:49:31.520328-07:00",
+  "scope": "Historical text documents and metadata-only run summaries. No EEG, raw datasets, caches, trained weights or per-trial numerical arrays.",
+  "source_snapshot_commit": "8732be2",
+  "historical_document_snapshot_commit": "918fc08",
+  "documents": [
+    {
+      "id": "H01",
+      "title": "工程演进与踩坑复盘",
+      "path": "documents/PROJECT_ENGINEERING_JOURNEY.zh.md",
+      "bytes": 36254,
+      "sha256": "fa164429b5d80555a45faad79a7d0fedccf654f0344dd13f9b0febb2ba290d23",
+      "original_member": "documents/PROJECT_ENGINEERING_JOURNEY.zh.md",
+      "original_bytes": 35307,
+      "original_sha256": "628d445103312759edfcb97534fa08b5ab8c5d57318037d1f62577f27717e67f",
+      "edits": [
+        "Historical-version banner",
+        "Local navigation or non-clickable historic reference labels"
+      ],
+      "scientific_text_changed": false
+    },
+    {
+      "id": "H02",
+      "title": "早期文档总览",
+      "path": "documents/README.md",
+      "bytes": 4987,
+      "sha256": "624c033e142b38be889199727f811d7a23113092d0fe0eca09358c5076caa79c",
+      "original_member": "documents/README.md",
+      "original_bytes": 4558,
+      "original_sha256": "a959755f79117d27643b83540fcaf0f6980f124645c8dd9483041e79769a4f64",
+      "edits": [
+        "Historical-version banner",
+        "Local navigation or non-clickable historic reference labels"
+      ],
+      "scientific_text_changed": false
+    },
+    {
+      "id": "H03",
+      "title": "正式路线与研究路线",
+      "path": "documents/routes.md",
+      "bytes": 5443,
+      "sha256": "4904a1037f3f4c2c39b6cd5f888cb480cc7649669b7404dda9306119fdfbf4e6",
+      "original_member": "documents/routes.md",
+      "original_bytes": 5020,
+      "original_sha256": "78e531d00f1b858028b6b38e2f5ea9010ce198278a9a8240dadd56fd78ec47c5",
+      "edits": [
+        "Historical-version banner",
+        "Local navigation or non-clickable historic reference labels"
+      ],
+      "scientific_text_changed": false
+    },
+    {
+      "id": "H04",
+      "title": "原始任务与目标",
+      "path": "documents/mission.md",
+      "bytes": 5672,
+      "sha256": "1387f95ae0cef2f84ca9fdd331dee6ef76d08174b64a747e163b0402a0df5cce",
+      "original_member": "documents/mission.md",
+      "original_bytes": 5263,
+      "original_sha256": "0697a89ec87e9ee590eb4c88ea15a6d9c8cdc3ad9f58b95475d2ca5a7de810c9",
+      "edits": [
+        "Historical-version banner",
+        "Local navigation or non-clickable historic reference labels"
+      ],
+      "scientific_text_changed": false
+    },
+    {
+      "id": "H05",
+      "title": "v12 四对象架构",
+      "path": "documents/blueprint.md",
+      "bytes": 13867,
+      "sha256": "adf1fd2831913eba0ee0b4909d3b9027d57f149cd98923a3ce91e18df0af4c09",
+      "original_member": "documents/blueprint.md",
+      "original_bytes": 13243,
+      "original_sha256": "671414dfaff6314f8fb32b2e426ceff46a073e0e97ce752df7070f788099cc78",
+      "edits": [
+        "Historical-version banner",
+        "Local navigation or non-clickable historic reference labels"
+      ],
+      "scientific_text_changed": false
+    },
+    {
+      "id": "A01",
+      "title": "早期科学与工程原则",
+      "path": "documents/constitution.md",
+      "bytes": 19157,
+      "sha256": "3cea4531dd16777408cee9cd85e66f2a04d2acd6fcb84e31ce4becc9702f2e3b",
+      "original_member": "documents/constitution.md",
+      "original_bytes": 18582,
+      "original_sha256": "1f5feabbe41fa843bfe9e36ac01a7f79cf1e96d75d0783f91b9d0af37f81744d",
+      "edits": [
+        "Historical-version banner",
+        "Local navigation or non-clickable historic reference labels"
+      ],
+      "scientific_text_changed": false
+    },
+    {
+      "id": "A02",
+      "title": "早期评估协议",
+      "path": "documents/evaluation_protocol.md",
+      "bytes": 14250,
+      "sha256": "c1ad6498e3b7ec412d77d3c4af840153f74badcdb1c97474f578671b3b784ee9",
+      "original_member": "documents/evaluation_protocol.md",
+      "original_bytes": 13718,
+      "original_sha256": "994ef2bbcbb3652ea4b05a2bb4b25e32b2d482f4c39ee6dfd1bb4f0730f90ef1",
+      "edits": [
+        "Historical-version banner",
+        "Local navigation or non-clickable historic reference labels"
+      ],
+      "scientific_text_changed": false
+    },
+    {
+      "id": "A03",
+      "title": "早期数据合同",
+      "path": "documents/datasets.md",
+      "bytes": 9520,
+      "sha256": "23ecb20fa07b3c66d59dd6cc90b6624d6aae4394d281366473ed1198b785929d",
+      "original_member": "documents/datasets.md",
+      "original_bytes": 8977,
+      "original_sha256": "e28c24b60a9cb467a60efdb5e925ca59bbeb5d0cf3761a5b954130412c249940",
+      "edits": [
+        "Historical-version banner",
+        "Local navigation or non-clickable historic reference labels"
+      ],
+      "scientific_text_changed": false
+    },
+    {
+      "id": "A04",
+      "title": "早期训练配方",
+      "path": "documents/neural_ride_recipe.md",
+      "bytes": 5520,
+      "sha256": "17239701442bffdbf616d32059760660d91b55b4062c6eeb4c1b8ecd83c83469",
+      "original_member": "documents/neural_ride_recipe.md",
+      "original_bytes": 5109,
+      "original_sha256": "644e6d5f8659210de1b2ef703f2cdbc29f26331e684dcdf277c411a5786997d2",
+      "edits": [
+        "Historical-version banner",
+        "Local navigation or non-clickable historic reference labels"
+      ],
+      "scientific_text_changed": false
+    },
+    {
+      "id": "A05",
+      "title": "性能工程教训",
+      "path": "documents/performance_lessons.md",
+      "bytes": 4096,
+      "sha256": "dfbab1630b9e8eef8864ba3e90ac692d7fd48824ac5a5ea1dc30eb25fa1d8e27",
+      "original_member": "documents/performance_lessons.md",
+      "original_bytes": 3688,
+      "original_sha256": "fe48a0f42398842839f73a51622d2eaa9aae0e2ae9feaa2f68bce47f81476e2b",
+      "edits": [
+        "Historical-version banner",
+        "Local navigation or non-clickable historic reference labels"
+      ],
+      "scientific_text_changed": false
+    },
+    {
+      "id": "A06",
+      "title": "成分窗与时间平移研究",
+      "path": "documents/pcw_shift_equivariance_research.zh.md",
+      "bytes": 3691,
+      "sha256": "ba045104e1591e481cb8740e70c4f28b34e41f69e62562abed3757603544cfe7",
+      "original_member": "documents/pcw_shift_equivariance_research.zh.md",
+      "original_bytes": 3264,
+      "original_sha256": "21db6f16b532f46cf4b10ebffe9e9c7ca3f34a33d3ec16e51a95c81a00d321d9",
+      "edits": [
+        "Historical-version banner",
+        "Local navigation or non-clickable historic reference labels"
+      ],
+      "scientific_text_changed": false
+    },
+    {
+      "id": "A07",
+      "title": "早期研究路线图",
+      "path": "documents/roadmap.md",
+      "bytes": 4151,
+      "sha256": "9cf06d82500d8a3b5ecfd45cbb90ff954583ceb2da0726fa7b5325e3fbc2a48b",
+      "original_member": "documents/roadmap.md",
+      "original_bytes": 3732,
+      "original_sha256": "36756acd05ce111c2c68a466ab1fae4d060195b80ee6ad5bcdcc33dfda37ff74",
+      "edits": [
+        "Historical-version banner",
+        "Local navigation or non-clickable historic reference labels"
+      ],
+      "scientific_text_changed": false
+    }
+  ],
+  "run_records": [
+    {
+      "id": "H06",
+      "run_name": "v8_audit_loso_smoke",
+      "original_record_name": "record.json",
+      "original_bytes": 31449,
+      "original_sha256": "ae6f95510fc18208bd4ced1b63a2c2934386ce544e080f52c43156805f1d98e6",
+      "reference_path": "run_records.md",
+      "reference_anchor": "h06",
+      "extracted_fields": [
+        "source_record_sha256",
+        "mode",
+        "data_summary",
+        "results",
+        "decision_metrics",
+        "protocol_summary"
+      ],
+      "original_payload_included": false
+    },
+    {
+      "id": "H07",
+      "run_name": "v8_timing_benchmark_bs512_20260824",
+      "original_record_name": "record.json",
+      "original_bytes": 46582,
+      "original_sha256": "593b73d666fb2f4abca26650cf14c6b0978d6ece1aa32a2ebc70547a565c5727",
+      "reference_path": "run_records.md",
+      "reference_anchor": "h07",
+      "extracted_fields": [
+        "source_record_sha256",
+        "mode",
+        "data_summary",
+        "benchmark_summary",
+        "protocol_summary"
+      ],
+      "original_payload_included": false
+    },
+    {
+      "id": "H08",
+      "run_name": "v8_joint_smoke",
+      "original_record_name": "record.json",
+      "original_bytes": 10624,
+      "original_sha256": "e5abec796e3e7786837624ff7c5eaceff64edfa7beddcdec4c42155b0dd67874",
+      "reference_path": "run_records.md",
+      "reference_anchor": "h08",
+      "extracted_fields": [
+        "source_record_sha256",
+        "mode",
+        "data_summary",
+        "benchmark_summary",
+        "protocol_summary"
+      ],
+      "original_payload_included": false
+    },
+    {
+      "id": "H09",
+      "run_name": "v8_long_smoke",
+      "original_record_name": "record.json",
+      "original_bytes": 8763,
+      "original_sha256": "3debec3432969c4659298f7c88170b98d3ba2f8c6e415f32fe44f1d154d3d638",
+      "reference_path": "run_records.md",
+      "reference_anchor": "h09",
+      "extracted_fields": [
+        "source_record_sha256",
+        "mode",
+        "data_summary",
+        "benchmark_summary",
+        "protocol_summary"
+      ],
+      "original_payload_included": false
+    },
+    {
+      "id": "H10",
+      "run_name": "v8_timing_benchmark_20260824",
+      "original_record_name": "record.json",
+      "original_bytes": 82592,
+      "original_sha256": "7e46d96395479d1cb90c04625efd3b848ab7796cfa5f4799afa10129e8f65370",
+      "reference_path": "run_records.md",
+      "reference_anchor": "h10",
+      "extracted_fields": [
+        "source_record_sha256",
+        "mode",
+        "data_summary",
+        "benchmark_summary",
+        "protocol_summary"
+      ],
+      "original_payload_included": false
+    },
+    {
+      "id": "H11",
+      "run_name": "neural_ride_v7_smoke",
+      "original_record_name": "record.json",
+      "original_bytes": 6559,
+      "original_sha256": "bfede5f3f4505eb6caa5208a6b62f86a8643e833a751ca99a80dc063488e8562",
+      "reference_path": "run_records.md",
+      "reference_anchor": "h11",
+      "extracted_fields": [
+        "source_record_sha256",
+        "mode",
+        "data_summary",
+        "benchmark_summary",
+        "protocol_summary"
+      ],
+      "original_payload_included": false
+    },
+    {
+      "id": "H12",
+      "run_name": "neural_ride_v7_smoke_final",
+      "original_record_name": "record.json",
+      "original_bytes": 6982,
+      "original_sha256": "e403dff3353ec96abb97898ec66688960f5335d0ce14d7dde4129b614f71b515",
+      "reference_path": "run_records.md",
+      "reference_anchor": "h12",
+      "extracted_fields": [
+        "source_record_sha256",
+        "mode",
+        "data_summary",
+        "benchmark_summary",
+        "protocol_summary"
+      ],
+      "original_payload_included": false
+    },
+    {
+      "id": "H13",
+      "run_name": "neural_ride_v7_smoke_multiset",
+      "original_record_name": "record.json",
+      "original_bytes": 6607,
+      "original_sha256": "004308df2347345fe7460031bac20c72d0a4671bfbd110101d75ddb2bb2606b3",
+      "reference_path": "run_records.md",
+      "reference_anchor": "h13",
+      "extracted_fields": [
+        "source_record_sha256",
+        "mode",
+        "data_summary",
+        "benchmark_summary",
+        "protocol_summary"
+      ],
+      "original_payload_included": false
+    }
+  ],
+  "original_text_archive": {
+    "path": "frozen/early_exploration_reference_20260826/source_texts.zip",
+    "bytes": 67409,
+    "sha256": "f652472d5f8e55ccc17013bb577585fa998bbd186e4556ce98e66b881c0d8d32",
+    "members": 12,
+    "contents": "Markdown text originals only"
+  },
+  "run_summary": {
+    "path": "run_records.md",
+    "bytes": 9269,
+    "sha256": "fd038c68b978252f790ac5656efe4cc6f03b0436a979eb4aab831b4863a0d2df",
+    "omitted": "Machine locators, participant rows, per-trial outputs, training arrays and original payloads are excluded."
+  }
+}

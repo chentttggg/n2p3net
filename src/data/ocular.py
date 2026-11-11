@@ -6,6 +6,7 @@ import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from math import ceil
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,9 @@ OCULAR_STRENGTH_SCHEMA = "n2p3_calibration_eog_regression/5"
 SHARED_MEASURED_REFERENCE = "shared_measured_reference"
 PRESERVE_ACQUIRED_EOG = "preserve_acquired_eog"
 EOG_REFERENCE_POLICIES = (SHARED_MEASURED_REFERENCE, PRESERVE_ACQUIRED_EOG)
+NATIVE_EOG_FIT_DOMAIN = "native_raw"
+PASSBAND_EOG_FIT_DOMAIN = "matched_passband_scopes"
+EOG_FIT_DOMAINS = (NATIVE_EOG_FIT_DOMAIN, PASSBAND_EOG_FIT_DOMAIN)
 
 
 def validate_eog_derivation(derivation, channels, source_reference, *, rereference=False):
@@ -197,6 +201,81 @@ class FittedEOGRegression:
         return output
 
 
+def _passband_fit_operands(raw, mask, eeg, eog, preprocessing):
+    """Filter authorised common scopes before learning within-scope covariance.
+
+    Temporary numeric operands share the existing continuous filter owner;
+    original raw/BIDS channel roles and acquired EOG are never changed.
+    """
+    from data.preprocess import continuous_filter_segments, filter_continuous, source_epoch_support
+
+    if preprocessing is None:
+        raise ValueError("matched passband ocular fit requires a complete preprocessing declaration")
+    preprocessing.validate()
+    if preprocessing.l_freq is None or preprocessing.l_freq <= 0:
+        raise ValueError("matched passband ocular fit requires its declared high-pass")
+    scopes = []
+    for start, stop in continuous_filter_segments(raw):
+        edges = np.diff(np.r_[False, mask[start:stop], False].astype(np.int8))
+        scopes.extend((int(start+a), int(start+b)) for a,b in
+            zip(np.flatnonzero(edges == 1), np.flatnonzero(edges == -1), strict=True))
+    if not scopes:
+        raise ValueError("ocular fit has no authorised continuous calibration scope")
+    rate = float(raw.info["sfreq"])
+    left, right = source_epoch_support(np.array([[0,0,1]],dtype=np.int64), rate, preprocessing)
+    minimum_interior = int(right[0]-left[0])
+    guard = min(ceil(30*rate), max(stop-start for start,stop in scopes)//4)
+    operands = raw.get_data(picks=list(eeg+eog))
+    selected = np.zeros(raw.n_times, dtype=bool)
+    pieces, records = [], []
+    native_spread = np.zeros(len(eog))
+    native_scale = np.zeros(len(eog))
+    for start, stop in scopes:
+        if stop-start-2*guard < minimum_interior:
+            continue
+        values = operands[:,start:stop].copy()
+        native_spread = np.maximum(native_spread,np.ptp(values[len(eeg):],axis=1))
+        native_scale = np.maximum(native_scale,np.max(np.abs(values[len(eeg):]),axis=1))
+        values -= values[:,:1]
+        values -= values.mean(axis=1,keepdims=True)
+        info = mne.create_info([f"fit_operand_{i}" for i in range(len(values))], rate, "eeg")
+        block = mne.io.RawArray(values, info, verbose=False)
+        filtered = filter_continuous(block, l_freq=preprocessing.l_freq, h_freq=preprocessing.h_freq,
+            method=preprocessing.filter_method, phase=preprocessing.filter_phase,
+            causal_iir_initial_state=preprocessing.causal_iir_initial_state, order=preprocessing.filter_order,
+            notch_freqs_hz=preprocessing.notch_freqs_hz, notch_quality_factor=preprocessing.notch_quality_factor,
+            zero_phase_edge_policy=preprocessing.zero_phase_edge_policy).get_data()
+        kept = filtered[:,guard:stop-start-guard].copy()
+        kept -= kept.mean(axis=1,keepdims=True)
+        pieces.append(kept)
+        selected[start+guard:stop-guard] = True
+        records.append({"start_sample":start,"stop_sample":stop,
+                        "fit_start_sample":start+guard,"fit_stop_sample":stop-guard})
+    if not pieces or selected.sum() < 2:
+        raise ValueError("ocular fit has no supported passband calibration interior")
+    numeric_floor = 512*np.finfo(np.float64).eps*native_scale
+    if np.any(native_spread <= numeric_floor):
+        raise ValueError("ocular calibration EOG is flat within authorised scopes")
+    values = np.concatenate(pieces,axis=1).T
+    if np.any(np.std(values[:,len(eeg):],axis=0) <= numeric_floor):
+        raise ValueError("filtered EOG has no numerically supported calibration variation")
+    return values[:,:len(eeg)], values[:,len(eeg):], selected, {
+        "fit_domain":PASSBAND_EOG_FIT_DOMAIN, "fit_preprocessing":preprocessing.record(),
+        "fit_requested_mask_sha256":hashlib.sha256(mask.tobytes()).hexdigest(),
+        "fit_operator":"declared_continuous_filter_only_no_epoch_resampling",
+        "fit_minimum_interior_samples":minimum_interior,
+        "fit_EOG_numeric_floor_v":numeric_floor.tolist(),
+        "fit_scopes":records,"fit_edge_guard_samples":guard,
+        "fit_edge_guard_rule":"min_30_seconds_or_longest_authorised_clean_scope_quarter",
+        "fit_nuisance":"independent_common_scope_constants_removed_before_filter_and_covariance"}
+
+
+def validate_eog_fit_preprocessing(model, preprocessing):
+    if (model.fit_provenance.get("fit_domain") == PASSBAND_EOG_FIT_DOMAIN
+            and model.fit_provenance.get("fit_preprocessing") != preprocessing.record()):
+        raise ValueError("ocular calibration passband differs from the requested preprocessing")
+
+
 def fit_eog_regression(
     calibration_raw: mne.io.BaseRaw,
     *,
@@ -207,11 +286,15 @@ def fit_eog_regression(
     fit_sample_mask: np.ndarray | None = None,
     eog_derivation: Mapping[str, Any] | None = None,
     eog_reference_policy: str = SHARED_MEASURED_REFERENCE,
+    fit_domain: str = NATIVE_EOG_FIT_DOMAIN,
+    preprocessing=None,
 ) -> FittedEOGRegression:
     """Fit only the explicitly supplied calibration raw; never choose EEG labels."""
     anchor = None if reference_channel is None else canonical_channel_name(reference_channel)
     if eog_reference_policy not in EOG_REFERENCE_POLICIES:
         raise ValueError("unsupported EOG reference policy")
+    if fit_domain not in EOG_FIT_DOMAINS:
+        raise ValueError("unsupported ocular calibration fit domain")
     _, original_eog = _channel_roles(calibration_raw)
     validate_eog_derivation(eog_derivation, original_eog, source_reference,
                            rereference=anchor is not None and eog_reference_policy == SHARED_MEASURED_REFERENCE)
@@ -226,11 +309,20 @@ def fit_eog_regression(
         raise ValueError(
             "calibration EEG channels must be usable before fitting ocular coefficients."
         )
-    artifact = calibration_raw.get_data(picks=list(eog)).T[mask]
-    signal = calibration_raw.get_data(picks=list(eeg)).T[mask]
+    domain_record = {}
+    if fit_domain == PASSBAND_EOG_FIT_DOMAIN:
+        signal, artifact, mask, domain_record = _passband_fit_operands(
+            calibration_raw, mask, eeg, eog, preprocessing)
+    else:
+        artifact = calibration_raw.get_data(picks=list(eog)).T[mask]
+        signal = calibration_raw.get_data(picks=list(eeg)).T[mask]
     if not np.isfinite(artifact).all() or not np.isfinite(signal).all():
         raise ValueError("ocular calibration must be finite.")
+    if np.any(np.ptp(artifact,axis=0) == 0):
+        raise ValueError("ocular calibration has flat EOG channels")
     center = artifact.mean(axis=0)
+    native_center = (calibration_raw.get_data(picks=list(eog)).T[mask].mean(axis=0)
+                     if domain_record else center)
     model = LinearRegression(fit_intercept=False).fit(
         artifact - center, signal - signal.mean(axis=0)
     )
@@ -240,7 +332,7 @@ def fit_eog_regression(
         eeg_channels=eeg,
         eog_channels=eog,
         coefficients=tuple(tuple(float(value) for value in row) for row in model.coef_),
-        calibration_eog_mean_v=tuple(float(value) for value in center),
+        calibration_eog_mean_v=tuple(float(value) for value in native_center),
         participant_key=participant_key,
         source_reference=source_reference,
         reference_channel=anchor,
@@ -248,6 +340,7 @@ def fit_eog_regression(
         eog_reference_policy=eog_reference_policy,
         fit_provenance={
             **fit_provenance,
+            **domain_record,
             "samples": len(artifact),
             "fit_sample_mask_sha256": hashlib.sha256(mask.tobytes()).hexdigest(),
             "fit_sample_mask_explicit": fit_sample_mask is not None,

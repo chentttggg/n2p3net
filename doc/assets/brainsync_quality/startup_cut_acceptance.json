@@ -1,0 +1,54 @@
+{
+  "schema": "brainsync_raw_startup_cut_acceptance/1",
+  "status": "accepted",
+  "owner_authority": "2026-11-02 user confirmed device fault and explicitly selected four seconds from first flash, rounded to complete trials",
+  "records": 14,
+  "removed_trials_each": 3,
+  "removed_trials_total": 42,
+  "admitted_recordings": 13,
+  "whole_record_exclusion_preserved": "P001_20261030_144501_01",
+  "noncompleted_recordings_accounted": 6,
+  "new_real_data_model_fits": 0,
+  "artifacts": {
+    "batch": {
+      "path": "mne_data/BrainSync_startup_cut_4s/manifest.json",
+      "sha256": "36a058d1c78ed1dc7d6ec8bc0c6f16ea7666b8f0cb10b3993beeb7c09fb880ed"
+    },
+    "validation": {
+      "path": "experiments\\runs\\brainsync_eog_consistent_20261031\\startup_cut_validation.json",
+      "sha256": "fac50bc3a4302f567296139c32b93bbea0144ea2bbae4b4841a1a6f5f1b6b2cd"
+    },
+    "cold_replay": {
+      "path": "experiments\\runs\\brainsync_eog_consistent_20261031\\startup_cut_replay.json",
+      "sha256": "44dcd361f3b43d9d965beab82dd6f4faa7ff1fdafafa91226043c93fa1e5a6e9"
+    },
+    "frozen_test_results": {
+      "path": "experiments\\runs\\brainsync_eog_consistent_20261031\\startup_cut_frozen_tests.xml",
+      "sha256": "2da818e63e53f2e87ffb83305e11e05236fcb86ea075d2e3e546da9f63c0ad5d"
+    },
+    "execution_source": {
+      "path": "experiments\\runs\\brainsync_eog_consistent_20261031\\runtime_startup_cut_20261102\\source.manifest.json",
+      "sha256": "0906bde6042f02c07698bbee4e535e4adedb154baf8da7ee8887435706989b13"
+    },
+    "experiment_plan": {
+      "path": "experiments\\runs\\brainsync_eog_consistent_20261031\\experiment_plan_startup_cut.json",
+      "sha256": "e4662019541fd0a6e86b227981a0a25d4421d7481696656875aa65230242a89b"
+    }
+  },
+  "tests": {
+    "total": 137,
+    "passed": 135,
+    "skipped": 2,
+    "failures": 0,
+    "errors": 0,
+    "skip_reason": "two optional external workstation producer integrations not enabled"
+  },
+  "checks": [
+    "all 14 EDF files regenerated in memory from original EDF inputs with identical output SHA256",
+    "all retained MNE voltages bitwise equal to original suffixes",
+    "13 admitted loader probes exclude startup samples before filtering; requested event identity remains original",
+    "QC/EOG fit support, stale-source rejection, native C admission and observed-event counts tested",
+    "independent code review accepted the final startup-cut scope"
+  ],
+  "next_stage": "fresh target preprocessing/calibration/inference needed; previous matrices remain under untrimmed input identities"
+}

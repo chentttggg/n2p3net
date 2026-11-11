@@ -584,6 +584,8 @@ def _validate_source_metadata(payload):
         "epoch": payload.get("input_preprocessing"),
         "channel_names": payload.get("input_channel_names"),
         "source_reference": payload.get("input_source_reference"),
+        **({"artifact_preprocessing_policy": payload["artifact_preprocessing_policy"]}
+           if "artifact_preprocessing_policy" in payload else {}),
     }
     if semantic_sha256(input_signature) != semantic_sha256(contract_preprocessing):
         raise ValueError("checkpoint input signature disagrees with its training contract.")
@@ -604,6 +606,8 @@ def _validate_target_metadata(payload, dataset, admission, *, target_subject,
     """Recheck the actual current physical input and participant on every bind."""
     training_identity_ledger = admission.training_identity
     expected_execution = admission.expected_execution
+    if payload.get("artifact_preprocessing_policy") != dataset.provenance.get("artifact_preprocessing_policy"):
+        raise ValueError("checkpoint and target artifact preprocessing policies differ; use matching source pretraining")
     if expected_execution is not None and preprocessing_execution_identity(dataset) != expected_execution:
         from transfer.ensemble_views import validate_selection_checkpoint_execution
 
@@ -1054,13 +1058,16 @@ class _AdmittedTransferSource:
             "channels": payload["input_channel_names"], "preprocessing": payload["input_preprocessing"],
             "source_reference": payload["input_source_reference"],
             "execution_identity": self.admission.expected_execution})
+        if "artifact_preprocessing_policy" in payload:
+            self.input_domain_digest = semantic_sha256({"legacy_domain_digest": self.input_domain_digest,
+                "artifact_preprocessing_policy": payload["artifact_preprocessing_policy"]})
         # Retire the decoded source fit diagnostics and mutable contract copy.
         # Subsequent target gates consume only these unchanged small signatures;
         # the one frozen metadata record owns source provenance for predictors.
         self._payload = {name: payload.get(name) for name in (
             "n_channels", "n_times", "input_sample_rate_hz", "input_tmin_s",
             "input_channel_names", "input_preprocessing", "input_source_reference",
-            "input_preprocessing_execution")}
+            "input_preprocessing_execution", "artifact_preprocessing_policy")}
 
     def bind(self, dataset, subject):
         assert_physical_epoch_dataset(dataset)
@@ -1085,7 +1092,8 @@ class _BoundTransferSource:
             "identity": dataset.identity_table.payload(), "preprocessing": dataset.preprocessing.record(),
             "channel_names": list(dataset.channel_names), "provenance": {
                 name: dataset.provenance[name] for name in (
-                    "source_reference", "preprocessing_execution", "selection_epoch_capability", "data_alignment")
+                    "source_reference", "preprocessing_execution", "selection_epoch_capability", "data_alignment",
+                    "artifact_preprocessing_policy")
                 if name in dataset.provenance}})
         self._target_membership = None
 

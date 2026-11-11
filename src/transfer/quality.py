@@ -15,6 +15,7 @@ from data.artifact_sidecar import artifact_model_from_record
 from data.brainsync_contract import BRAIN_SYNC_SESSION_SCHEMA
 from data.continuous_qc import (
     CONTINUOUS_QC_CONSTANT_SCHEMA,
+    CONTINUOUS_QC_REVIEWED_SCHEMA,
     continuous_qc_from_record,
     minimum_usable_channel_count,
     validate_recovery_contract,
@@ -45,7 +46,7 @@ def validate_personal_epoch_raw_quality(processing: dict, quality) -> None:
 
 def _validate_required_raw_quality(processing: dict) -> None:
     message = (
-        "BrainSync personal epoch QC requires applied channel-local continuous QC /4 "
+        "BrainSync personal epoch QC requires applied channel-local continuous QC /4 or /5 "
         "with raw exact-constant detection enabled; provide a compatible --continuous-qc-model. "
         "Epoch amplitude diagnostics alone do not establish clean EEG."
     )
@@ -53,7 +54,7 @@ def _validate_required_raw_quality(processing: dict) -> None:
         raise PersonalEpochRawQualityError(message)
     record = processing.get("model")
     if not isinstance(record, dict) or (
-        record.get("schema") != CONTINUOUS_QC_CONSTANT_SCHEMA
+        record.get("schema") not in (CONTINUOUS_QC_CONSTANT_SCHEMA, CONTINUOUS_QC_REVIEWED_SCHEMA)
         or not isinstance(record.get("spec"), dict)
         or record["spec"].get("channel_local") is not True
         or record["spec"].get("flatline_min_duration_s") is None

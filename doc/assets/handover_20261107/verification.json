@@ -1,0 +1,31 @@
+{
+  "schema": "n2p3_handover_document_verification/2",
+  "verified_at": "2026-11-07T01:52:19.415652-07:00",
+  "status": "passed",
+  "report": "D:\\BCI\\n2p3-net\\doc\\project_handover_20261107.zh.md",
+  "report_sha256": "d07e73387569b6f13418dcf0745d25314c98634c3f992dda05dfc0e8b39655bd",
+  "report_characters": 32216,
+  "report_lines": 676,
+  "sections": 15,
+  "local_links_checked": 73,
+  "source_references_checked": 50,
+  "historical_documents": 12,
+  "historical_run_summaries": 8,
+  "collected_files": 16,
+  "collected_bytes": 218147,
+  "missing_report_or_reference_links": [],
+  "excluded_location_mentions": [],
+  "archive_errors": [],
+  "source_hash_drift": [],
+  "checks": {
+    "handover_and_reference_links_resolve": true,
+    "all_50_source_references_match_current_bytes": true,
+    "historical_machine_location_absent": true,
+    "12_text_originals_and_reading_copies_verified": true,
+    "eight_run_summaries_and_key_denominators_verified": true,
+    "collected_files_below_100MB_each_and_total": true,
+    "only_text_and_text_archive_collected": true,
+    "git_head_preserved": true
+  },
+  "validation_scope": "Documentation, text-source archive integrity, local reference closure and metadata summary scope; no model training, raw EEG copying or old experiment rerun."
+}

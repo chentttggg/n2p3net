@@ -403,12 +403,15 @@ def adapt_observed_montage(
     *,
     name: str | None = None,
     reference_channel: str | None = None,
+    preserve_reference_label: bool = False,
 ) -> EpochDataset:
     """Project observed EEG, optionally using a common measured reference."""
     dataset.validate(require_labels=dataset.y is not None)
     identity = build_channel_identity(target_channels, allow_missing_positions=False)
     channels = identity.names
     anchor = None if reference_channel is None else canonical_channel_name(reference_channel)
+    if type(preserve_reference_label) is not bool or (preserve_reference_label and anchor is not None):
+        raise ValueError("preserving an established reference requires selection without re-referencing")
     if (
         anchor is not None
         and dataset.provenance.get("ocular_artifact_processing", {}).get("status") == "applied"
@@ -442,7 +445,7 @@ def adapt_observed_montage(
         expected_reference = (
             "measured_channel:" + anchor
             if anchor is not None
-            else "native:" + str(previous_reference.get("source_reference"))
+            else ("" if preserve_reference_label else "native:") + str(previous_reference.get("source_reference"))
         )
         if (
             isinstance(previous, Mapping)
@@ -450,6 +453,7 @@ def adapt_observed_montage(
             and previous.get("target_channels") == list(channels)
             and previous.get("operation") == "select_reference_and_observation_mask"
             and previous.get("preprocessing_identity") == dataset.preprocessing.name
+            and previous.get("preserve_reference_label", False) == preserve_reference_label
             and reference_matches
             and dataset.channel_names == channels
             and np.allclose(dataset.channel_positions_m, identity.coords, atol=1e-6)
@@ -504,13 +508,15 @@ def adapt_observed_montage(
         if anchor is None
         else {"mode": "measured_channel", "channel": anchor}
     )
-    output_reference = "native:" + reference if anchor is None else "measured_channel:" + anchor
+    output_reference = (("" if preserve_reference_label else "native:") + reference
+                        if anchor is None else "measured_channel:" + anchor)
     adapter = {
         "schema": OBSERVED_MONTAGE_SCHEMA,
         "target_channels": list(channels),
         "operation": "select_reference_and_observation_mask",
         "reference": reference_record,
         "preprocessing_identity": dataset.preprocessing.name,
+        **({"preserve_reference_label": True} if preserve_reference_label else {}),
     }
     output = replace(
         dataset,

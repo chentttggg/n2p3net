@@ -252,14 +252,24 @@ def _record_inputs(role, request, issuer, participant_key, files, ledger):
         raise ValueError('one original segment is granted once inside its actual recording')
     labels = None
     coverage = None
+    startup_history_ids = set()
     if role == 'calibration':
         labels = issuer.issue_labels(request.label_count, ready_at_timestamp_s=request.ready_at_timestamp_s)
         ledger.update(actual_C_labels=len(labels.labels), calibration_label_capability_identity=labels.identity_sha256)
         coverage = allowed_candidates(caps, labels)
         observed = {event.event_id for cap in caps for event in cap.events
             if cap.public_binding['sample_start'] <= event.sample < cap.public_binding['full_stop']}
-        if any(label.event_id not in observed for label in labels.labels):
+        attested_startup_ids = set(labels.public_binding.get('startup_events_without_EEG_support', ()))
+        startup_history_ids = {event.event_id for cap in caps for event in cap.events
+            if cap.public_binding.get('raw_startup_cut') is not None
+            and event.event_id in attested_startup_ids
+            and event.sample < cap.public_binding['raw_startup_cut']['stop_sample']
+            and event.sample < cap.public_binding['full_stop']}
+        if any(label.event_id not in observed | startup_history_ids for label in labels.labels):
             raise ValueError('every requested C bit needs its original granted EEG observation support')
+        if startup_history_ids:
+            ledger.update(startup_history_labels_without_EEG_support=sorted(startup_history_ids),
+                actual_C_labels_with_EEG_support=sum(label.event_id in observed for label in labels.labels))
     history_cap = max(caps, key=lambda cap: cap.public_binding['available_stop'])
     history = history_cap.public_binding['public_physical_history']
     blocks = tuple(row['block_id'] for row in first['block_requests'])
@@ -287,7 +297,8 @@ def _record_inputs(role, request, issuer, participant_key, files, ledger):
         'block_requests': first['block_requests'],
         'requested_completed_flashes': history['requested_completed_flashes'],
         'actual_observed_completed_flashes': sum(1 for cap in caps for event in cap.events
-            if event.sample < cap.public_binding['full_stop']),
+            if cap.public_binding['sample_start'] <= event.sample < cap.public_binding['full_stop']),
+        **({'startup_history_labels_without_EEG_support': sorted(startup_history_ids)} if startup_history_ids else {}),
         'requested_C_labels': request.label_count if role == 'calibration' else None,
         'actual_C_labels': None if labels is None else len(labels.labels),
         'calibration_label_capability_identity': None if labels is None else labels.identity_sha256,

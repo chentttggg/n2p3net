@@ -1,0 +1,380 @@
+{
+  "schema": "brainsync_quality_acceptance/1",
+  "date": "2026-10-30",
+  "role": "same_person_descriptive_quality",
+  "scope": {
+    "new_session_directories": 14,
+    "new_complete_sessions": 8,
+    "new_failed_or_incomplete_sessions": 6,
+    "historical_complete_sessions": 6,
+    "person_count": 1,
+    "person_linkage_authority": "Direct user confirmation on 2026-10-30; original P001/P003 declarations unchanged.",
+    "new_scheduled_flashes_in_complete_sessions": 3600,
+    "new_preprocessed_epochs": 3599,
+    "new_complete_input_blocks": 79,
+    "new_scheduled_blocks": 80
+  },
+  "evidence_owner": "doc/evidence/response_and_noise.zh.md#brainsync同一个体新增记录的质量分析2026-10-30",
+  "artifacts": {
+    "manifest.json": {
+      "path": "experiments/runs/brainsync_quality_20261030/manifest.json",
+      "sha256": "10cdc47e45e345066077ad63a847eebf6a37031981553fb91948b866b631baab"
+    },
+    "channel_details.json": {
+      "path": "experiments/runs/brainsync_quality_20261030/channel_followup/channel_details.json",
+      "sha256": "9caf071b7a48eebc6198050c8b53c297b2215251a23501cbe6b79995aecf6b3e"
+    },
+    "delivery_verification.json": {
+      "path": "experiments/runs/brainsync_quality_20261030/delivery_verification.json",
+      "sha256": "3549df301d7625f385256f43b83a305a392692a3321f6aa92a079e144701e182"
+    },
+    "index.html": {
+      "path": "experiments/runs/brainsync_quality_20261030/index.html",
+      "sha256": "8ef9814679d5aceca3ad2ab165ee75cbc5b667135a84d8e9f54dc42aa61f2253"
+    },
+    "overview.png": {
+      "path": "experiments/runs/brainsync_quality_20261030/overview.png",
+      "sha256": "6d501061691f77b63c15fbf5a24c018a906bbd1ef90a4599787a2d431727a344"
+    },
+    "sessions.csv": {
+      "path": "experiments/runs/brainsync_quality_20261030/sessions.csv",
+      "sha256": "759d34fd17b3261658ff002a426396a31c21a7d60921bf365090cb2e362a5da2"
+    },
+    "channel_similarity.png": {
+      "path": "experiments/runs/brainsync_quality_20261030/channel_followup/channel_similarity.png",
+      "sha256": "4c6ded2d5e335141ff88ebba7c03177c8910435e46f1670d10099b6294c13a58"
+    }
+  },
+  "scripts": {
+    "scripts/analyze_brainsync_batch_quality.py": {
+      "sha256": "253eaf1439b7bd843ebff0fb81e1aec06e39513890a7baa4ceef4099f51a0039"
+    },
+    "scripts/analyze_brainsync_channel_similarity.py": {
+      "sha256": "e8f861d7dcb3cf8653cf0059173a4c7baaf7932ac5d1800ad409e03e008cb086"
+    }
+  },
+  "reproduce": [
+    ".venv/Scripts/python.exe -X utf8 scripts/analyze_brainsync_batch_quality.py --output <new-empty-output-directory>",
+    ".venv/Scripts/python.exe -X utf8 scripts/analyze_brainsync_channel_similarity.py --batch-manifest <batch-output>/manifest.json --output <new-empty-followup-directory>"
+  ],
+  "quality_thresholds_fitted": false,
+  "classifier_fit_or_evaluation": false,
+  "descriptive_erp_labels_used": true,
+  "validation": "delivery_verification.json binds 319 input-file rehashes, output/source hashes, denominators, HTML/image integrity, spectral and common-signal counterexamples, 14 regression tests.",
+  "future_quality_work": [
+    "Annotate transient intervals and inspect filter-recovery support in 1028_221030, 1028_222559 and 1030_144501.",
+    "Check Fz/EOG/REF contact and persistent Cz/Pz common components; correlation alone does not diagnose bridging.",
+    "Declare calibration/development sessions before fitting any new QC; preserve original target/clock/identity denominators."
+  ],
+  "deep_review": {
+    "completed_date": "2026-10-30",
+    "analysis_status": "complete",
+    "all_real_data_cleaning_accepted": false,
+    "new_complete_sessions_replayed": 8,
+    "related_tests": {
+      "tests": 50,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "artifacts": {
+      "index.html": {
+        "path": "experiments/runs/brainsync_quality_20261030/deep_review/index.html",
+        "sha256": "979330fea8ac81858ac6b108f838fdd8043a37676597f108aeb8f1db80d1c6af"
+      },
+      "numerical/manifest.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/deep_review/numerical/manifest.json",
+        "sha256": "aaf2d446b6c25c675ddc1d0c4854adabb40a6912355b067e4dfdd32e9660d048"
+      },
+      "split_replay/manifest.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/deep_review/split_replay/manifest.json",
+        "sha256": "152a658fce1bdb1dda1006c9604a87901e8271401d46bc0562b73da9aa0aa688"
+      },
+      "verification.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/deep_review/verification.json",
+        "sha256": "dcc3f4e111394b8d361991386c335147773f94acf815b67db2c3e99e78a2d9b4"
+      },
+      "independent_controls.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/deep_review/independent_controls.json",
+        "sha256": "98f863e4f2b51b309fa91753b5f55b512b92b25bef9b667c96fda27b7ab8d9a4"
+      },
+      "literature_sources.md": {
+        "path": "experiments/runs/brainsync_quality_20261030/deep_review/literature_sources.md",
+        "sha256": "85a4e7de4892685b82025141ab2ca86808efcfd4ac53c05e5401a6e88bb919a0"
+      },
+      "validation.xml": {
+        "path": "experiments/runs/brainsync_quality_20261030/deep_review/validation.xml",
+        "sha256": "b06831736f614328cc8b64eeb42da6625903ba1add27e027c537a65257929f96"
+      },
+      "numerical/filter_tradeoffs.png": {
+        "path": "experiments/runs/brainsync_quality_20261030/deep_review/numerical/filter_tradeoffs.png",
+        "sha256": "444e334626ffc595130bd8fd6a83cc518124e3af53d58719d3694b7f40c53fd9"
+      },
+      "split_replay/split_filter_comparison.png": {
+        "path": "experiments/runs/brainsync_quality_20261030/deep_review/split_replay/split_filter_comparison.png",
+        "sha256": "e07f4c83eb98c6bb3e5d7b4f341e85ab6c7fb248c9aa6cc68f2aeb85d41f066b"
+      }
+    },
+    "scripts": {
+      "scripts/analyze_brainsync_artifact_remedies.py": "35bd4ad56bad3f04eee387b93227dce0fec855e9f978de33d815a0757363feda",
+      "scripts/replay_brainsync_segment_masks.py": "5dfa5beb8ce85561b7f976ba677aabb6afd1b696c0b7cdafd3505730dfe98377"
+    },
+    "accepted_direction": "Isolate large transients before filtering, preserve native sample/event axis and channel masks, verify both new boundaries; retain current cutoff until ERP-preservation and clean-calibration evidence supports any change.",
+    "remaining": "Actual artifact classification, boundary recovery under real calibration, and ongoing poor-contact/common contamination are not certified by exploratory masks."
+  },
+  "implementation": {
+    "role": "retrospective_reviewed_batch_continuous_quality",
+    "status": "data_processing_complete_cleanup_blocked",
+    "whole_record_exclusion_registry": {
+      "path": "src/data/recording_reviews.json",
+      "sha256": "42a455c1769fac9b4e2dd63009aa86881ab9f8b700bac60434baa8af6be665ba"
+    },
+    "accepted_profile_schema": "n2p3_continuous_qc/5",
+    "reviewed_only": true,
+    "processed_new_sessions": 7,
+    "retained_continuous_quality_epochs": 2740,
+    "scheduled_remaining_epochs": 3150,
+    "full_requested_flash_denominator": 3600,
+    "raw_files_modified": false,
+    "classifier_fitted": false,
+    "personal_epoch_quality_fitted": false,
+    "all_eeg_artifact_free_claim": false,
+    "artifacts": {
+      "index.html": {
+        "path": "experiments/runs/brainsync_quality_20261030/implementation/index.html",
+        "sha256": "dd6cd58f1a0d40190166267a389e2819dbbfdae674316b1c7df4bf12d34994d6"
+      },
+      "overview.png": {
+        "path": "experiments/runs/brainsync_quality_20261030/implementation/overview.png",
+        "sha256": "61282aed2dec3e900ed987922290d92334f55e2ea0f25a9b91e2bb0abf068c4e"
+      },
+      "accepted/execution.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/implementation/accepted/execution.json",
+        "sha256": "d2de8c314d56677eed6ef08340a2f7df4169920d2f1d083fb47543ad0c4b70bf"
+      },
+      "accepted/continuous_reviewed_native7.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/implementation/accepted/continuous_reviewed_native7.json",
+        "sha256": "c52a6acaf0f18b090960056a38fd54f81b4c438876bab00192b1668535cba665"
+      },
+      "batch_policy.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/implementation/batch_policy.json",
+        "sha256": "0990e2b5209f1c4c99039be7144bbc422cec6691ed6f023f7795684b9122350c"
+      },
+      "erp_injection_validation.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/implementation/erp_injection_validation.json",
+        "sha256": "da0197b09bacb8ad5c51e15f125861c0797fe170aa428e2eb12250f138cd39ef"
+      },
+      "reviewer_boundary_validation.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/implementation/reviewer_boundary_validation.json",
+        "sha256": "4e1462f48e8347513a9aaaaf1a26b4c0f3c3a80d51935aa650b91cce807eb32e"
+      },
+      "delivery_verification.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/implementation/delivery_verification.json",
+        "sha256": "eefc840d699da63e658331d56e13e464614b59c588abf5da7e37bfad7f2490f5"
+      },
+      "validation.xml": {
+        "path": "experiments/runs/brainsync_quality_20261030/implementation/validation.xml",
+        "sha256": "50d37eaeee75b6edbc61546abc9162d69c4d874c8222c66000726282d1845f19"
+      },
+      "code_review.md": {
+        "path": "experiments/runs/brainsync_quality_20261030/implementation/code_review.md",
+        "sha256": "64646f8f8b568376ba560a170b87551596dc1a227b5334b4201c6191de259d50"
+      },
+      "execution_review.md": {
+        "path": "experiments/runs/brainsync_quality_20261030/implementation/execution_review.md",
+        "sha256": "007856a234f6dcc5d2d84a102d13ea0239d43a8b5e6003f6c0e410c97038e496"
+      },
+      "distribution/validation.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/implementation/distribution/validation.json",
+        "sha256": "9cf78c56ec007eca939acb4044ec4420b5634dc1b5a9d02e2749d5172963c7d3"
+      },
+      "six_channel_ingress_validation.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/implementation/six_channel_ingress_validation.json",
+        "sha256": "df0a03f6b5abcd5f894241b6f9285a870ebec5f4c0ca5f779a78e3182888e2fd"
+      },
+      "delivery_review.md": {
+        "path": "experiments/runs/brainsync_quality_20261030/implementation/delivery_review.md",
+        "sha256": "2f376bfd5fe66b0ff4565c1d4528d13201b40d887f01bb9ec50a8f93583dbd7e"
+      },
+      "cleanup_original_receipt": {
+        "path": "doc/assets/build_cleanup/brainsync_quality_20261030.receipt.json",
+        "sha256": "faeb4cd2151835cec5ecbc018be4e97c54ee58c8f084ddfeb115eb5a88cf5844",
+        "role": "immutable_original_receipt_at_project_level_outside_runs"
+      }
+    },
+    "commands": {
+      "reproduce": "D:/BCI/n2p3-net/.venv/Scripts/python.exe -X utf8 D:/BCI/n2p3-net/scripts/apply_brainsync_reviewed_quality.py --batch-manifest D:/BCI/n2p3-net/experiments/runs/brainsync_quality_20261030/manifest.json --numerical-manifest D:/BCI/n2p3-net/experiments/runs/brainsync_quality_20261030/deep_review/numerical/manifest.json --output <new-empty-output-directory>"
+    },
+    "usage_owner": "doc/workstation.zh.md",
+    "cleanup_status": "blocked_by_policy",
+    "cleanup_maintenance": {
+      "path": "doc/build_cleanup_maintenance.zh.md",
+      "entry": "n2p3-net-brainsync-quality",
+      "role": "single_mutable_project_level_long_term_document_outside_runs",
+      "historical_receipt": "doc/assets/build_cleanup/brainsync_quality_20261030.receipt.json"
+    }
+  },
+  "september_comparison": {
+    "role": "same_person_retrospective_same_rule_diagnostic",
+    "september_complete_eligible_sessions": 6,
+    "october_complete_eligible_sessions": 7,
+    "same_rule_retained": {
+      "September": [
+        2227,
+        2700
+      ],
+      "October": [
+        2750,
+        3150
+      ]
+    },
+    "october_actual_admitted": [
+      2740,
+      3150
+    ],
+    "october_all_complete_recording_requested_denominator": 3600,
+    "excluded1445_unchanged": true,
+    "existing_frozen_profile_or_production_roster_changed": false,
+    "p003_original_identity_preserved": true,
+    "classifier_fit_or_evaluation": false,
+    "single_heog_source_causality_claim": false,
+    "procedure": {
+      "path": "scripts/compare_brainsync_months.py",
+      "sha256": "b95b2c9c81b0bbe8477be87fce4d4ccf9c5d24018c8f8fc7be8b47e786082f93"
+    },
+    "artifacts": {
+      "comparison.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/september_comparison/comparison.json",
+        "sha256": "fa10e6e85258f0e41c42c0725176364f7e05834f8c0dba49a9cf048b7e25ae79"
+      },
+      "eog_followup.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/september_comparison/eog_followup.json",
+        "sha256": "82a837e6a65224abbc743ba4327b20b6a2773ca707e8b2c529e098875d1aa7d2"
+      },
+      "verification.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/september_comparison/verification.json",
+        "sha256": "39e1af28ad429f2a5914e25a0ece420f934a0428a8ef63bbb45b896fd288746e"
+      },
+      "index.html": {
+        "path": "experiments/runs/brainsync_quality_20261030/september_comparison/index.html",
+        "sha256": "71c0cabe72de745acf882a7c6673bbca53818c90a37f9f565a1d321e00ebc0d1"
+      },
+      "sessions.csv": {
+        "path": "experiments/runs/brainsync_quality_20261030/september_comparison/sessions.csv",
+        "sha256": "af65a25f834f7b6852a822d48e4ece88225bf0ad9d4b02e3331ddf15a5b8a7c7"
+      },
+      "comparison.png": {
+        "path": "experiments/runs/brainsync_quality_20261030/september_comparison/comparison.png",
+        "sha256": "1505c68f299751532d6c8a8ea4c326466327cdd2135736c6d75b1db6424f5227"
+      },
+      "matched_target_erp.png": {
+        "path": "experiments/runs/brainsync_quality_20261030/september_comparison/matched_target_erp.png",
+        "sha256": "b72714b4ceb9603b98bd10f9af2114e4140c76dac7e6776c5c52d650a2881437"
+      },
+      "same_trial_eog.png": {
+        "path": "experiments/runs/brainsync_quality_20261030/september_comparison/same_trial_eog.png",
+        "sha256": "22eecb5461c9b954a992f6be5a42974d6b7a99b156af0ed621efb39b52f97de0"
+      }
+    }
+  },
+  "polarity_audit": {
+    "role": "same_stored_voltage_old_new_code_sign_diagnosis",
+    "verdict": "No global sign inversion found in compared stored-EDF backend/QC/label/difference paths.",
+    "old_snapshot": "frozen/bidirectional_qc_20260909_acceptance/checkout",
+    "old_actual_execution_correspondence": "Per module in code_review.json; preprocess matches, entire tree not assumed original execution.",
+    "same_input_exact_X_sessions": 13,
+    "mapping_slope_old_to_new": 1.0,
+    "max_X_difference_v": 0.0,
+    "independent_EDF_affine_decode_matches_sessions": 13,
+    "all_EDF_affine_gain_positive": true,
+    "october_negative_native_unfiltered_Pz_late_differences": 7,
+    "positive_and_negative_pulse_controls_passed": true,
+    "negative_difference_physical_impossibility_claim": false,
+    "negative_wave_identified_as_P300": false,
+    "hardware_or_acquisition_time_ADC_polarity_certified": false,
+    "known_limit": "Current acquisition runtime.py does not match saved October source digest; September acquisition source fingerprint unavailable.",
+    "production_code_or_QC_roster_changed": false,
+    "excluded1445_unchanged": true,
+    "artifacts": {
+      "index.html": {
+        "path": "experiments/runs/brainsync_quality_20261030/polarity_audit/index.html",
+        "sha256": "81f8ea48aa21740a77c3701e8357c4e33b96cf4710526401e9cf4e6d0ca2c1ec"
+      },
+      "polarity_checks.png": {
+        "path": "experiments/runs/brainsync_quality_20261030/polarity_audit/polarity_checks.png",
+        "sha256": "c79a0853f014b0dbf29888b0b96d53768e9351356a5f6339eb739e6bb6f7f208"
+      },
+      "verification.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/polarity_audit/verification.json",
+        "sha256": "470f43bdd09813066133d228fa75b68c6c50b82e15b9ae65a8b59cded8743171"
+      },
+      "current/audit.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/polarity_audit/current/audit.json",
+        "sha256": "56f6cf39b9d4e9a45147446755bd41783dcfde370345af1f1349364fb3e7ca1e"
+      },
+      "september_backend_compatible/audit.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/polarity_audit/september_backend_compatible/audit.json",
+        "sha256": "afbc405512e93cde96420e94cf7359a91e386c2b39057cd755b6ac4a1250a593"
+      },
+      "code_review.md": {
+        "path": "experiments/runs/brainsync_quality_20261030/polarity_audit/code_review.md",
+        "sha256": "f460fe311f313a0e64db5057a0ef27f4813d09d3f23c0820aafbe32923b083ee"
+      },
+      "code_review.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/polarity_audit/code_review.json",
+        "sha256": "58f74be531de123ed707eab5e8e079973fa0ee8c50c6c8e8104c2e509ca2da7f"
+      },
+      "physiology_sources.md": {
+        "path": "experiments/runs/brainsync_quality_20261030/polarity_audit/physiology_sources.md",
+        "sha256": "d729aaddbda5a0419baf284ef7f56b696ffeb542a2bd6d0a42ee8e20d00b5e2b"
+      },
+      "september_backend/harness_failure.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/polarity_audit/september_backend/harness_failure.json",
+        "sha256": "40b48d8b3000b0d1c039cf8172b851b8b734331eb220ce7f66c64f89865efe70"
+      }
+    },
+    "script": {
+      "path": "scripts/audit_brainsync_polarity.py",
+      "sha256": "24426ab72450668e1c14af412c8f2a7a6fb535ce19b0a0b6b1002d72c06439a0"
+    }
+  },
+  "p300_window": {
+    "role": "single_person_descriptive_morphology_not_component_certification",
+    "primary_window_ms": [
+      250,
+      500
+    ],
+    "sensitivity_window_ms": [
+      250,
+      600
+    ],
+    "september_sessions": 6,
+    "october_sessions": 7,
+    "october_stage": "actual_accepted_cache_mask",
+    "all_october_window_mean_block_intervals_include_zero": true,
+    "clear_positive_component_confirmed": false,
+    "excluded1445_unchanged": true,
+    "artifacts": {
+      "index.html": {
+        "path": "experiments/runs/brainsync_quality_20261030/p300_window/index.html",
+        "sha256": "173f8675c656d799e87b4fdf65e1058182c0b5fd31673dd46342b80b6d6a841f"
+      },
+      "results.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/p300_window/results.json",
+        "sha256": "28975bb2950498f67a6e4f2bdc6f41237d112c6e7d746be09b6fa8b66be0c353"
+      },
+      "verification.json": {
+        "path": "experiments/runs/brainsync_quality_20261030/p300_window/verification.json",
+        "sha256": "175b9b6cef248225ac821a4f71d8d5743aafff362431c225c35af025ab78db19"
+      },
+      "p300_windows.png": {
+        "path": "experiments/runs/brainsync_quality_20261030/p300_window/p300_windows.png",
+        "sha256": "e71bac1f996b634ec29cbc8d916399ebe8dc241e6113017090300c039fc78343"
+      },
+      "analyze.py": {
+        "path": "experiments/runs/brainsync_quality_20261030/p300_window/analyze.py",
+        "sha256": "9c3962faf1d5d53b150c6774d94d7757833acb0a0661f2db9d3c98d601dd8de7"
+      }
+    }
+  }
+}

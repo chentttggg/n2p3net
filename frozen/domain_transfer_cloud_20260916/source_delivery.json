@@ -1,9 +1,0 @@
-{
-  "status": "verified",
-  "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\domain_transfer_cloud_20260916\\export\\sources.tar.gz",
-  "bytes": 125288046,
-  "sha256": "09017472cae0fcff0b0ca60e6a8e63aea323ae080ec611d0c59b8ca2539e3d49",
-  "verified_members": 257,
-  "source_models": 45,
-  "elapsed_seconds": 1.0543389320373535
-}

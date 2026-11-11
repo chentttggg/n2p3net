@@ -21,6 +21,7 @@ from data.brainsync_contract import (
     validate_brainsync_bids_recording,
     validate_brainsync_bids_session,
 )
+from data.brainsync_startup import startup_cut_for
 from data.channel import canonical_channel_name
 from data.contract import (
     BRAIN_SYNC_ACQUISITION_REFERENCE,
@@ -160,6 +161,14 @@ def require_calibration_labels(capability):
     return capability
 
 
+def observed_event_indices(capability):
+    """Public flashes with an onset inside the actual granted EEG rows."""
+    cap = require_raw_capability(capability)
+    binding = cap.public_binding
+    return np.asarray([index for index, event in enumerate(cap.events)
+        if binding["sample_start"] <= event.sample < binding["full_stop"]], dtype=np.int64)
+
+
 def allowed_candidates(raw_capabilities, label_capability):
     """Join only granted C labels to original event identity and public membership."""
     caps = (raw_capabilities,) if type(raw_capabilities) is RawCapability else tuple(raw_capabilities)
@@ -206,6 +215,7 @@ class _RecordingIssuer:
         self._read_lease, self._closed = read_lease, False
         self._clock = validated.manifest["recording"]["clock"]
         self._segments = tuple(self._clock["segments"])
+        self._startup_cut = startup_cut_for(validated.bids)
         self._scope_sha = metadata_digest(scope.record())
         self._record_id = metadata_digest({"session_id": validated.session_id,
             "participant_id": validated.subject_id,
@@ -310,6 +320,7 @@ class _RecordingIssuer:
     def private_admission_receipt(self):
         """For the trusted parent audit; never attached to an inference capability."""
         return {"role": self._role, "original_files": self._source_receipt,
+            **({"raw_startup_cut": self._startup_cut} if self._startup_cut is not None else {}),
             "issuer_implementation_sha256": IMPLEMENTATION_SHA256,
             "actual_raw_reader": "data.dataset.read_raw -> MNE lazy get_data",
             "original_session_validator": "data.brainsync_contract",
@@ -321,17 +332,20 @@ class _RecordingIssuer:
             raise ValueError("raw request must identify one actual acquisition segment")
         segment = self._segments[segment_id]
         start, end = segment["stored_start"], segment["stored_stop"]
+        if self._startup_cut is not None:
+            start = max(start, self._startup_cut["stop_sample"])
         if (any(type(stop) is not int for stop in (prefix_stop, full_stop, available_stop))
                 or not start <= prefix_stop < full_stop <= available_stop <= end):
-            raise ValueError("P/F read support must remain inside one actual segment and availability")
+            raise ValueError("P/F read support must remain inside one actual segment and availability"
+                             + (" after the startup cut" if self._startup_cut is not None else ""))
         values = self._raw.get_data(start=start, stop=full_stop)
         self._check_original_files()
         if values.shape != (8, full_stop-start) or not np.isfinite(values).all():
             raise ValueError("actual native raw read does not contain its finite eight acquired slots")
         eeg, eog = frozen_array(values[self._eeg_indices, :].T), frozen_array(values[self._eog_indices, :].T)
-        public_events = tuple(PublicFlash(self._event_id(event), event.sample, event.sample-start,
+        public_events = tuple(PublicFlash(self._event_id(event), event.sample, event.sample-segment["stored_start"],
             event.block_id, event.trial_index, event.candidate_id)
-            for event in self._validated.bids.stimuli if start <= event.sample < available_stop)
+            for event in self._validated.bids.stimuli if segment["stored_start"] <= event.sample < available_stop)
         membership = _readonly_bool([[event.candidate_id == q for q in VOCABULARY] for event in public_events]
             if public_events else np.empty((0, len(VOCABULARY)), dtype=bool))
         experiment = self._validated.manifest["experiment"]
@@ -340,7 +354,10 @@ class _RecordingIssuer:
             visible = [event for event in public_events if event.block_id == block_id]
             block_rows.append({"block_id": block_id, "requested_flash_count": 45,
                 "requested_repetitions": 5, "visible_public_event_count": len(visible),
-                "complete45_in_this_segment_and_availability": len(visible) == 45})
+                "complete45_in_this_segment_and_availability": len(visible) == 45
+                    and all(event.sample >= start for event in visible),
+                **({"startup_events_without_EEG_support": sum(event.sample < start for event in visible)}
+                   if self._startup_cut is not None else {})})
         clock_fields = ("schema", "sample_rate_hz", "alignment_level", "absolute_offset_bound_seconds",
             "acquired_samples", "edf_samples", "padding_samples", "sequence_observed",
             "sequence_continuity_verified", "known_missing_samples")
@@ -352,7 +369,7 @@ class _RecordingIssuer:
             "participant_id": self._validated.subject_id, "session_id": self._validated.session_id,
             "record_id": self._record_id, "segment_id": segment_id,
             "record_segment_id": f"{self._record_id}:segment:{segment_id}",
-            "segment_start": start, "segment_stop": end,
+            "segment_start": segment["stored_start"], "segment_stop": end,
             "sample_start": start, "prefix_stop": prefix_stop, "full_stop": full_stop,
             "available_stop": available_stop, "sample_rate_hz": 250., "signal_unit": "V",
             "eeg_channels": tuple(self._validated.bids.channel_names[index] for index in self._eeg_indices),
@@ -371,6 +388,7 @@ class _RecordingIssuer:
                 "blocks": experiment["blocks"], "digits_per_block": 45, "repetitions_per_digit": 5,
                 "sequence_policy": experiment["sequence_policy"]},
             "public_physical_history": self._public_history(available_stop),
+            **({"raw_startup_cut": self._startup_cut} if self._startup_cut is not None else {}),
             "independent_recording_scope_sha256": self._scope_sha,
             "block_requests": block_rows, "source_prior_or_fit_authority_granted": False})
         cap = RawCapability(eeg, eog, public_events, membership, VOCABULARY, binding, "")
@@ -393,6 +411,10 @@ class _RecordingIssuer:
         binding = freeze_metadata({"schema": "brainsync_original_C_labels_capability/1",
             "record_id": self._record_id, "participant_id": self._validated.subject_id,
             "session_id": self._validated.session_id, "authorized_original_event_count": count,
+            **({"raw_startup_cut": self._startup_cut,
+                "startup_events_without_EEG_support": [label.event_id for label in labels
+                    if label.sample < self._startup_cut["stop_sample"]]}
+               if self._startup_cut is not None else {}),
             "labels_ready_timestamp_s": self._validated.calibration_available_timestamp_s,
             "requested_ready_at_timestamp_s": float(ready_at_timestamp_s),
             "independent_recording_scope_sha256": self._scope_sha,

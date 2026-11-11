@@ -36,7 +36,7 @@ decisions中对推理程序隐藏的目标数字。当前用户预算为九个�
 本人target-only基准优先保留原生七导信息，已有跨源模型继续显式Cz六导适配；后者的迁移收益
 仍与同Cz输入scratch配对。这个双路径选择依据可逆性、信息秩与源输入合同，不宣称已经实测
 原生七导更优。左/右耳垂不等效，不能将公共源native权重的参考字符串改写成BrainSync参考。
-见[科研判断与更正验证](evidence/brainsync_reference_20260908.zh.md)。
+见[科研判断与更正验证](evidence/history.zh.md#响应与噪声)。
 
 | 数据层 | 作用 | 结论边界 |
 |---|---|---|
@@ -52,28 +52,28 @@ decisions中对推理程序隐藏的目标数字。当前用户预算为九个�
 窗口重叠只证明输入共享时间支持，不等于噪声比例、不可识别性或已确认负迁移病因。
 
 此前核查的旧BrainSync目录只有error记录；本次用户补充`BrainSync_Tool_newest`后发现
-4份completed/confirmed候选记录和3份error记录，见[版本比较](evidence/brainsync_versions_20260906.zh.md)。
+4份completed/confirmed候选记录和3份error记录，见[版本比较](evidence/history.zh.md#执行与集成)。
 2026-09-07用户进一步确认P001目录为同一人，新增记录后共有5份完整session；
 派生副本已经通过显式身份、角色、坐标及BIDS读取核验，并完成本人先导云训练，
-见[P001证据](evidence/brainsync_p001_pilot_20260907.zh.md)。年龄、光学时钟、可靠成人效能
+见[P001证据](evidence/history.zh.md#执行与集成)。年龄、光学时钟、可靠成人效能
 仍未确认，预选方案后续AUC0.4926且严格R5覆盖仅10%，不能称已经获得产品确认。
 error记录、旧GTN、BI和合成信号不能冒充成人确认。
 GTN儿童三导且固定thought digit，只能作声明限制下的开发研究。
 
 ## 2. 活动算法路径
 
-[B08第一切片](evidence/calibration_g_prior_20261006.zh.md)采用全授权C、固定AR0 reference的g-prior；η优化不更新prior，g是variance倍率、λ是coefficient precision，互斥且不互换。full rank只是数值准入，weak方向仍可有大不确定性；rank-def明确失败，不pinv/fallback。公共效能与成人确认没有由实施证明。
-后续[同C参考能量对照](evidence/prior_control_20261006.zh.md)将g与各自的trace-isotropic控制配对，参考能量相等后再考察形状；同一种prior内的g变化单独解释为收缩强度敏感性。basis、full-C授权、noise程序、fixed32与输出温度同时固定；共同估计程序中的噪声重拟合仍属于该prior程序的整体效果，不能宣称final noise covariance也固定相同。
+[B08第一切片](evidence/history.zh.md#校准与选择)采用全授权C、固定AR0 reference的g-prior；η优化不更新prior，g是variance倍率、λ是coefficient precision，互斥且不互换。full rank只是数值准入，weak方向仍可有大不确定性；rank-def明确失败，不pinv/fallback。公共效能与成人确认没有由实施证明。
+后续[同C参考能量对照](evidence/history.zh.md#响应与噪声)将g与各自的trace-isotropic控制配对，参考能量相等后再考察形状；同一种prior内的g变化单独解释为收缩强度敏感性。basis、full-C授权、noise程序、fixed32与输出温度同时固定；共同估计程序中的噪声重拟合仍属于该prior程序的整体效果，不能宣称final noise covariance也固定相同。
 
-[多专家代码实施](evidence/ensemble_implementation_20261005.zh.md)已兑现固定算术池、严格requested风险、C内完整组OOF温度和source排除。
-本轮[Spec/Standards独立软件验收](evidence/ensemble_quality_20261005.zh.md)均通过；这只验证实现及信息边界，完整公共配对矩阵、三个完整流程seed和成人确认继续按执行计划验收。
-后续[fixed32条件AR研究](evidence/continuous_fixed_prefix_20261005.zh.md)保留完整授权C的kernel信息，只以共同tail评价/优化；Burg初始化、有限数值优化及全局MLE是不同证据。
+[多专家代码实施](evidence/history.zh.md#校准与选择)已兑现固定算术池、严格requested风险、C内完整组OOF温度和source排除。
+本轮[Spec/Standards独立软件验收](evidence/history.zh.md#校准与选择)均通过；这只验证实现及信息边界，完整公共配对矩阵、三个完整流程seed和成人确认继续按执行计划验收。
+后续[fixed32条件AR研究](evidence/history.zh.md#响应与噪声)保留完整授权C的kernel信息，只以共同tail评价/优化；Burg初始化、有限数值优化及全局MLE是不同证据。
 真实A01的AR8/32已达到预声明数值停止条件；这不证明局部/全局最优。顺序QR与精确梯度通过独立核对，完整M1固定六阶×两估计器与共同32点prefix；不凭软件通过或残差改善晋升。
 旧stationary AR是条件于已估noise的一次可行GLS；fixed32 `/4`联合profile条件tail的AR/空间协方差，并保留完整授权C的kernel信息。概率程序仍是开发程序，source-only K0经典/连续专家不可估。
 新179输入使用预声明共同raw支持，不能与历史178路线直接相减；target-only seed不称完整source→target seed。
 fixed32 M1八人完整576fit/重放已完成，全部同48decision支持。高阶conditional-profile的更低概率风险点估计伴随hit下降，AR0更高hit伴随NLL显著变差；全部替代臂未过既定开发联合门，不据更低Gaussian训练目标晋升或宣称泛化收益。
 
-2026-10-05 [分块科研方案](evidence/deep_research_plan_20261005.zh.md)统一hit优先的开发选择合同：
+2026-10-05 [分块科研方案](evidence/history.zh.md#执行与集成)统一hit优先的开发选择合同：
 固定requested participant/decision分母，失败和弃权保留；比较先验证支持，再看同批paired hit，
 NLL/Brier和错时置信度检查概率风险。候选进入下阶段须hit不降、配对NLL不增，且不丢失baseline
 已成功的决策输出；这是开发点估计门，不替代独立成人效能/非劣确认。三seed不增加独立参与者。
@@ -82,30 +82,30 @@ NLL/Brier和错时置信度检查概率风险。候选进入下阶段须hit不�
 历史执行源绑定部分缺失，不追认完整预声明。新方案按同批三专家锚点复核。
 
 边界模型必须同时条件化候选相关均值与协方差；确定padding不另加独立Γ。
-[B07 A0/A1](evidence/erp_dictionary_20261006.zh.md)的硬端点约束为同ambient cosine `ΦN`、`N∈ker(E)`；它改变可表达函数空间、common/target维数及g-reference总能量，不称同容量或已改善hit。相同列数、reference-energy和actual likelihood df分别解释；Gaussian锚点保持原数值。导数潜伏期、未知邻居mix及selection随机效应另需辨识/授权出口。
-[B06条件软件路径](evidence/conditional_state_20261006.zh.md)将`μ_a,q+ΩᵀΣ_X⁻¹(x−μ_X,q)`与Schur同时传到operator评分；奇异raw只在已识别支持内求解，候选完整期望和Ω必须在共同支持内。固定equal class prior的conditional-response程序不自动等于full-observation Bayes；真实native前缀/续段只验证已观察续段调用，不证明未知filter state可唯一恢复。
+[B07 A0/A1](evidence/history.zh.md#响应与噪声)的硬端点约束为同ambient cosine `ΦN`、`N∈ker(E)`；它改变可表达函数空间、common/target维数及g-reference总能量，不称同容量或已改善hit。相同列数、reference-energy和actual likelihood df分别解释；Gaussian锚点保持原数值。导数潜伏期、未知邻居mix及selection随机效应另需辨识/授权出口。
+[B06条件软件路径](evidence/history.zh.md#响应与噪声)将`μ_a,q+ΩᵀΣ_X⁻¹(x−μ_X,q)`与Schur同时传到operator评分；奇异raw只在已识别支持内求解，候选完整期望和Ω必须在共同支持内。固定equal class prior的conditional-response程序不自动等于full-observation Bayes；真实native前缀/续段只验证已观察续段调用，不证明未知filter state可唯一恢复。
 AR实际prefix还可能更新ERP核后验，不能只做噪声创新；g-prior信息矩阵在授权C设计固定，不能逐held候选重造。
 增加专家不保证hit单调，ERP输出重叠和白化ACF不能替代任务效能或完整增量保真。123项覆盖、文献与反例见方案附件。
 
-2026-10-05 [边界状态重新设计](evidence/boundary_state_redesign_20261005.zh.md)将确定 padding、外部潜在 state 与估计误差分开；ERP 重叠率仅作诊断，不能单独证明损伤。先验尺度须区分协方差分解 gauge、电压单位和真实 AR 模型变化。本轮交付独立框架/数学反例，未执行新性能矩阵，距离参数与拒绝阈值均未晋升。
+2026-10-05 [边界状态重新设计](evidence/history.zh.md#响应与噪声)将确定 padding、外部潜在 state 与估计误差分开；ERP 重叠率仅作诊断，不能单独证明损伤。先验尺度须区分协方差分解 gauge、电压单位和真实 AR 模型变化。本轮交付独立框架/数学反例，未执行新性能矩阵，距离参数与拒绝阈值均未晋升。
 
-2026-10-04的[全链科研重审](evidence/system_research_20261004.zh.md)区分物理证据同一性与数值输入同一性：
+2026-10-04的[全链科研重审](evidence/history.zh.md#执行与集成)区分物理证据同一性与数值输入同一性：
 模型臂比较通常两者都固定；滤波/窗口实验允许预声明算子改变数值输入，但物理事件、真值和授权预算仍配对；
 结果复用则必须绑定真实fit/score数值输入和原执行来源。任何artifact字段自校验不替代state与获准样本的关系证明。
 优先用成熟ERP原型增广/结构协方差强基线，再检验算子传播噪声、边缘状态边际化和连续候选似然。
-上述路线的可执行研究Module、保存重放与独立复审修复已进入[本轮实施](evidence/system_implementation_20261004.zh.md)，
+上述路线的可执行研究Module、保存重放与独立复审修复已进入[本轮实施](evidence/history.zh.md#执行与集成)，
 完整公共配对效能仍待检验，不自动替换生产。当前小网络1279参数，不能用泛化的“大网络过拟合”解释包效应。
 
 2026-10-05 算子研究补充：有限双向滤波是确定的观测坐标变换；只有均值和协方差同步变换时才能谈同一 Gaussian 候选模型。
 合法 BNCI C800 组实验显示，边缘校正降低差值 MSE 但会损伤 P300，AR 高阶降低相关却可丢失候选信息，边际尺度先验造成过度自信；
-成熟 Toeplitz/xDAWN 当前开发锚点较强。上述结果不构成十二库或成人效能结论，详见[算子复核](evidence/operator_research_20261004.zh.md)。
+成熟 Toeplitz/xDAWN 当前开发锚点较强。上述结果不构成十二库或成人效能结论，详见[算子复核](evidence/history.zh.md#执行与集成)。
 
 连续模型的校准截止还需核对后续未授权flash：不得只保留已知事件设计却读取包含未知刺激的响应尾。
 本轮BNCI研究显式在下一未知flash前截止并记录最后响应的右删失，全部K标签仍保留；
 这是新raw支持协议，不能与旧epoch路线直接相减后归因为算法增益。requested decision包含不完整项，
 NLL只在模型实际输出概率的项计算并报告缺失；均匀拒判填补只能另列为明确的报告约定。
 
-2026-09-29进一步[全链深审](evidence/deep_chain_audit_20260929.zh.md)证实：合法raw隔离、
+2026-09-29进一步[全链深审](evidence/history.zh.md#执行与集成)证实：合法raw隔离、
 有限值和执行hash不保证有限段信号保真。BI2014a强工频/参考污染在独立双向校准末端、test起点
 产生明显附加失真；同时有不能用新增右端解释的持续污染。先完成输入质量和比较身份闭环，
 不将全部差异归为A1/Q1或评分错误，不用全record诊断参照偷接未来test，也不按模型成绩删人。
@@ -114,7 +114,7 @@ minimum期望值与80%回退后的实际test量须分别入账，旧分数保留
 活动评分记录还必须绑定实际测试特征、标签、试次mask和预处理声明的 digest；只有行号相同而
 输入身份不同的历史记录不能进入新的配对统计。
 
-2026-09-29的[分层复算与优化规格](evidence/unified_optimization_20260929.zh.md)
+2026-09-29的[分层复算与优化规格](evidence/history.zh.md#执行与集成)
 显示三库prior-only与BNCI prior+decision不能合并解释为同一个decision处理；
 prior-only在A0下有单seed小幅正效应，不据完整包失败判其无效。
 CE/full-fine仍为强锚点；几何路线先核实测空间。BrainForm/BI2012探针交集仅Pz−Cz，
@@ -128,10 +128,10 @@ strict zero-shot、zero-label和few-shot分别报告。新方案尚未训练或�
 连续reader与准备合同已于09-18接入；其代码和无训练探针不构成新迁移成绩，
 Lee完整下载/转换与Mainsah外部角色仍按各自证据处理。
 
-2026-09-16统一矩阵已完成并重放核验，详见[结果分析](evidence/unified_results_20260916.zh.md)。
+2026-09-16统一矩阵已完成并重放核验，详见[结果分析](evidence/history.zh.md#公共评估)。
 公开开发证据支持校准后的迁移收益，尚不支持完整新增损失包优于同结构普通微调；
 BNCI是本轮唯一实际启用decision训练的库，其Q1包的AUC和真实36选一hit均下降。
-用户随后明确优先从科学推理、源码和原始协议判断，见[独立机制审查](evidence/chain_mechanism_20260916.zh.md)。
+用户随后明确优先从科学推理、源码和原始协议判断，见[独立机制审查](evidence/history.zh.md#执行与集成)。
 研究优先级先看完整决策监督、损失单位和输入信息保留；既有分数不用于倒推唯一病因。
 今后的prior/decision效能归因仍须固定源、匹配raw范围和工作集，不能据组合对照直接删除单一模块，
 也不能将这些公共36选一或trial AUC结果等同成人BrainSync九选一确认。
@@ -145,15 +145,15 @@ BNCI是本轮唯一实际启用decision训练的库，其Q1包的AUC和真实36�
 完整校准记录分别处理，未知目标推理在完整记录结束后执行；各轮分数为回顾性证据。
 双端有效状态误差经实际epoch算子评估；自然采集端点敏感度作诊断，含伪迹切段的片段使用
 完整双端条件界。原始滚动幅度可由漂移造成，新拟合默认只诊断，突变/恒值/缺样仍留原始账本。
-六条件本人QC/模型对照及已知漂移/ERP验证见[联合优化](evidence/bidirectional_qc_20260909.zh.md)。
+六条件本人QC/模型对照及已知漂移/ERP验证见[联合优化](evidence/history.zh.md#响应与噪声)。
 既有四会话及本轮受污染记录仍是开发证据；持续污染、经验包络外输入和新成人效能不能据此认证。
 
 2026-09-07连续质量研究选择先处理原始污染区间及滤波状态，再评估EOG和局部QC，详见
-[文献、数学与实施规格](evidence/brainsync_signal_quality_design_20260907.zh.md)。软件实施及旧数据
-开发重放见[验证记录](evidence/brainsync_quality_implementation_20260907.zh.md)，不变更窗口/频带配方。
+[文献、数学与实施规格](evidence/history.zh.md#响应与噪声)。软件实施及旧数据
+开发重放见[验证记录](evidence/history.zh.md#响应与噪声)，不变更窗口/频带配方。
 2026-09-08增加逐通道恢复：在明确清洁校准片段上拟合经验状态包络，按实际重采样/基线算子
 计算恢复期，参考/EOG依赖共同传播。该界只约束隔离异常后重置的状态误差，不保证持续输入无污染。
-62个冻结注入反例中仍有六个小幅30秒斜坡漏检，见[局部恢复证据](evidence/brainsync_recovery_20260908.zh.md)。
+62个冻结注入反例中仍有六个小幅30秒斜坡漏检，见[局部恢复证据](evidence/history.zh.md#执行与集成)。
 单HEOG已明确为左眼眼角，不能称完整眼动校正；这次旧记录重放未使用EOG回归。
 标签无关的质量门限仍可能选择性删除真实较大ERP；
 须做已知信号保真反例并报告冻结规则后的类保留率、完整决策覆盖与实际成本。
@@ -169,10 +169,10 @@ BNCI是本轮唯一实际启用decision训练的库，其Q1包的AUC和真实36�
 新个人QC要求已应用匹配的逐导连续QC `/4`，在重参考前检测原始数字恒值区间；本次显式设为5秒。
 epoch精确恒值另作无动态证据兜底，原始支持、异常、参考依赖、恢复期及最低有效导数仍决定准入。
 诊断包络仅在合法校准训练组拟合、随后冻结，测试不能更新；内层选方也遵守各自fit范围。
-文献、反例及三臂57拟合/114预测见[QC重设计证据](evidence/brainsync_qc_redesign_20260908.zh.md)。
+文献、反例及三臂57拟合/114预测见[QC重设计证据](evidence/history.zh.md#响应与噪声)。
 保留增加不等于污染消失，新方法也未在第五份记录稳定胜过重拟合旧QC；慢漂移和成人效能仍待验证。
 
-其余前置质量问题已按[持续趋势、采样支持与处理对照](evidence/brainsync_qc_remaining_20260908.zh.md)落实。
+其余前置质量问题已按[持续趋势、采样支持与处理对照](evidence/history.zh.md#响应与噪声)落实。
 持续趋势以5/15/30秒逐导稳健斜率、残差MAD和相邻趋势变化描述，不作伪迹认证或自动扣除；
 外加漂移能抵消原始趋势，不能以更小斜率证明更干净。恢复证书只覆盖重置初态齐次误差，
 不覆盖持续输入污染；当前不确定集内提前一个采样即可构造超1uV反例，不擅自缩短等待。
@@ -212,7 +212,7 @@ CLI在正K迁移遗漏scratch时拒绝启动；实际结果以校准/test行dige
 `公开raw → 明确binary source视图 → N2P3Net监督预训练 → 源head保留/目标微调 →
 目标独立EEG证据 → 目标协议九选一聚合/停止`。
 
-上述链条现已接入整合后的BrainSync主工作站，见[实施记录](evidence/brainsync_app_integration_20260906.zh.md)：
+上述链条现已接入整合后的BrainSync主工作站，见[实施记录](evidence/history.zh.md#执行与集成)：
 `transfer.calibrated`和`brainsync_model_task.py`提供内部选配方、完整校准refit、个体模型
 保存/加载及无标签completed recording推理；前端新测试采满45闪烁后自动判定，再确认目标。
 旧通用manifest仍是preprocess入口，不能把它和新结构化后端任务混为一谈。
@@ -236,10 +236,10 @@ EA、AS-MMD、Split-BN、TSD、Dense PDS、源残差、invariant/private等已�
 阶段通过合法监督、拟合状态和更新权限区分。首个设计为全参数有限源中心收缩、已有特征残差和共同membership决策层，
 源SupCon/MMD可组合；固定层是优化控制，不等于删除该层。模块取舍依赖完整组合下的贡献及成本，
 不以单项筛选先淘汰可能的协同。公式、风险归一化、组合设计及反证见
-[统一模型方案](evidence/unified_model_plan_20260916.zh.md)，当前尚无新架构效能结果。
+[统一模型方案](evidence/history.zh.md#执行与集成)，当前尚无新架构效能结果。
 
 首版主链已实施。源内λ选择只消费被排除在参考源拟合之外的参与者，按seed后participant等权开发AUC选择；
-外层目标不参与。最新[精简训练裁决](evidence/domain_transfer_major_20260920.zh.md)只对每折一个源内参考模型早停，
+外层目标不参与。最新[精简训练裁决](evidence/history.zh.md#公共评估)只对每折一个源内参考模型早停，
 其e*冻结到该折两种源目标的三个seed；个人固定90轮直接拟合全部授权C，不再强制个人内部选轮和第二次重训。
 首轮估计源目标包A与个人适配包Q的2×2交互及相对scratch/LDA收益，不分离包内各模块作用。
 共享预算由A1参考选择，三个seed条件于冻结e*/λ；实际剂量及选择成本另报，不宣称各方法分别最优。
@@ -261,7 +261,7 @@ LDA顺序实验作为独立开发对照：微调后冻结特征并拟合收缩LD
 配对重复关系从执行计划传到结果与分析，不从成功cell推断；不同源方法保留独立因素，复用scratch/LDA
 不增加独立重复数。预声明库缺失时全库主估计不可用，部分库读数另列；已知实际K失败保留分母，
 未知K不虚构。缺失AUC对比的识别界按正系数总和及库等权计算，不是置信区间。
-实施及数学验证见[八项修复证据](evidence/domain_transfer_major_20260920.zh.md)。
+实施及数学验证见[八项修复证据](evidence/history.zh.md#公共评估)。
 
 2026-09-16域迁移首批实现只开放显式P1/P2研究处理，蒸馏已取消；实际顺序见路线图。
 P1空间组指`st_spatial`，时间组包括`st_temporal`及MST depthwise/pointwise，
@@ -292,15 +292,20 @@ theta_S包含source参数/显式source统计；theta_0为同结构随机初始�
 LOSO术语须指明标签使用层级：纯zero-shot LOSO在source训练及任何目标拟合中都不使用
 留出者标签；“LOSO源预训练+目标自身校准”只保证source被试隔离，随后显式使用该人的
 早期校准标签；“8人共同留出”不是64折LOSO。三者不能用一个LOSO标题混报。
-全64人、通道与校准规则配对复核见[BI64设计与运行记录](evidence/bi64_protocol_factorial_20260906.zh.md)。
-该[64人实测](evidence/bi64_protocol_factorial_results_20260906.zh.md)显示16导强微调优于5导，
+全64人、通道与校准规则配对复核见[BI64设计与运行记录](evidence/history.zh.md#公共评估)。
+该[64人实测](evidence/history.zh.md#公共评估)显示16导强微调优于5导，
 selection改trial本身收益很小。五导继续作为真实硬件交集对照，不当成所有公开source的最佳信息保留方案；
 如何保留16导source信息并迁移到7导目标，需要另行验证，不能将缺失导插值当实测数据。
 
 公共source健康度用participant-macro AUC、类平衡读数、学习曲线和失败率；不替代成人指标。
-产品主读数为requested-participant operational九选一hit@R，实际请求的失败、tie、
-incomplete、abstain保留分母；条件valid准确率另报。还报告correct selections/min、
-calibration分钟、NLL/Brier、coverage及低表现被试。R由目标数据/产品预算声明，
+2026-10-31起，新BrainSync比较的目标识别率定义为“正确的唯一候选预测数 / 实际完成评分并输出唯一候选的决策数”。
+未评分、tie、incomplete、abstain不计入识别率分母，必须另外列出各类数量、原因及
+coverage（已评分决策数 / 全部请求决策数）；全无评分时识别率为未定义，不能写0或100%。
+R1为9数字各闪一次后的独立九选一；R5为一个45闪烁block五轮聚合，随机基线均为1/9。
+不同QC臂同时给各自已评分识别率、覆盖率和共同已评分请求上的配对结果，防止选择性拒判造成误读。
+历史requested-participant operational hit@R保留其“正确 / 全部请求”的原定义及原产物身份，
+新报告如引用必须明确命名，不能与已评分识别率混用。另报告correct selections/min、
+calibration分钟、NLL/Brier及低表现被试。R由目标数据/产品预算声明，
 BI R8不再是binary source训练/晋升门。
 
 sum-logit在条件独立且score为LLR时有Bayes依据；非线性不保证先平均EEG更优。
@@ -312,15 +317,15 @@ ERP平均/candidate损失必须有真实membership。正仿射log-odds在等覆�
 2026-09-15预处理执行科研裁决区分声明兼容、有限算子等价和字节复现。
 纯架构重构需保持实际信号、事件支持、QC及失败分母；无此证据不能据同参数宣称同算子，
 也不能宣称分类性能提升。拟合范围与数据来源身份分别核验，不要求合法source/target数据摘要相同。
-严格执行入口、七处调用和凭证门禁已落实，见[实施验收](evidence/preprocessing_execution_20260915.zh.md)。
+严格执行入口、七处调用和凭证门禁已落实，见[实施验收](evidence/history.zh.md#响应与噪声)。
 原始来源/拟合范围、声明语义、实际执行及字节身份分别绑定；旧无执行凭证数据可解释，但不补造认证。
 闭端支持和近等采样率恢复修正不得回写历史缓存/成绩；不以软件等价宣称识别率提高。
-理论与反证门槛见[预处理合同执行研究](evidence/preprocessing_contract_research_20260915.zh.md)。
+理论与反证门槛见[预处理合同执行研究](evidence/history.zh.md#响应与噪声)。
 
 2026-09-09用户明确要求BrainSync工频陷波：新本人校准使用50Hz、Q=30二阶IIR与原带通级联，
 参数来自独立BrainSync输入合同，原公共数据配方不按参与者或库名推测工频。
 这是输入方法变更：新模型、QC恢复证书和缓存需绑定包含陷波的实际算子；旧成绩保持原处理身份。
-信号抑制和已知ERP保真验证不等于真人识别率增益，见[实施证据](evidence/brainsync_notch_20260909.zh.md)。
+信号抑制和已知ERP保真验证不等于真人识别率增益，见[实施证据](evidence/history.zh.md#响应与噪声)。
 
 - 使用项目.venv；绑定raw、cache、环境、源码archive、模型、checkpoint及结果。
   authority为participant_key，本地ID只作provenance；namespace不改变真实身份。
@@ -352,7 +357,7 @@ ERP平均/candidate损失必须有真实membership。正仿射log-odds在等覆�
   共同五导是研究桥接，不宣传完整七导产品性能。
 - BI候选冲突不阻塞binary学习；F3/F5歧义不影响已确定五导，相关空间解释另行裁决。
 - BI2014a 永久只准入 01-61；62/64 的视力矫正不全、63 的干电极接触不良，以及作者
-  明确禁止用于 P300 分析的说明已核实，见[作者依据与删除记录](evidence/bi61_author_exclusion_20260906.zh.md)。
+  明确禁止用于 P300 分析的说明已核实，见[作者依据与删除记录](evidence/history.zh.md#公共评估)。
   三人的 raw 和活动缓存行已删除，源/目标/验证及旧 checkpoint 复用均受同一身份门禁限制。
   不能从含这些人的模型删除 ledger 后冒充合规，必须重训；历史64人结果保留原身份。
   不因新模型成绩进一步删其他被试；缺 candidate 数据仍可作 binary source。
@@ -372,7 +377,7 @@ CI含0只是未决，实用等效需要适当检验与精度。
 
 ## 6. 反例与联动
 
-本轮训练只执行[compact512基线与组件消融](evidence/domain_transfer_major_20260920.zh.md)：
+本轮训练只执行[compact512基线与组件消融](evidence/history.zh.md#公共评估)：
 固定batch上限512、60遍历，复用四个排他source；不新增源训练、不搜索batch或产品选择器。
 batch512是用户指定的资源策略，不是B0选出的最优值。三个消融只估计相对Source full的
 条件贡献，不证明完整因素交互、多源独立优势、源选模最优或成人效果。
@@ -396,7 +401,7 @@ source/scratch完整权重与BN来源、EOG不进入EEG张量/CAR/坐标、7EEG+
 
 ## 7. 历史与执行
 
-2026-09-06补充：[工作树清理与数据保留](evidence/workspace_cleanup_20260906.zh.md)记录历史
+2026-09-06补充：[工作树清理与数据保留](evidence/history.zh.md#执行与集成)记录历史
 `tmp/`全部16,389个文件的去向。四份cache及配套记录进入`experiments/cache/history/`，
 368份结果/日志进入`experiments/results_history/`，其余物理压缩；原结果不改写。
 历史脚本不能作为当前训练入口，历史数据重新使用仍须通过现行合同与划分核验。
@@ -409,7 +414,7 @@ dated结果按写作时口径解释，不执行过时默认机制/R8门禁；训
 校准目标，但刺激本身可见过；BI候选冲突未解不作该主张。该对照保留独立科学意义，
 不要求产品部署排除所有校准数字。
 原微调复核的混合均值、性能反证及refit风险更正见
-[校准范围守卫复核](evidence/finetune_leakage_review_20260906.zh.md)。
-严格公开对照已完成，见[BNCI未见校准目标结果](evidence/bnci_unseen_target_results_20260906.zh.md)：
+[校准范围守卫复核](evidence/history.zh.md#校准与选择)。
+严格公开对照已完成，见[BNCI未见校准目标结果](evidence/history.zh.md#公共评估)：
 同一200个后续decision、8人3seed；校准内部选择配方的600trial AUC为0.8136。
 它仍是已观察公共数据的development，不能替代真实BrainSync确认或P300成分归因。

@@ -70,6 +70,8 @@ def _prepare_source(
     with phases.phase("project_reference_QC_and_identity:" + namespace) if phases is not None else nullcontext():
         if reference_mode == "common_average":
             aligned = ensure_common_channel_average_reference(dataset, channels)
+        elif reference_mode == "established":
+            aligned = adapt_observed_montage(dataset, channels, preserve_reference_label=True)
         elif missing_channel_policy == "mask" or reference_mode == "measured_channel":
             aligned = adapt_observed_montage(dataset, channels, reference_channel=reference_channel)
             if missing_channel_policy == "require" and not bool(aligned.trial_channel_mask.all()):
@@ -124,11 +126,12 @@ def main(argv=None, *, retain_production=False, phases=None):
     )
     parser.add_argument(
         "--reference-mode",
-        choices=("common_average", "native_preserve", "measured_channel"),
+        choices=("common_average", "native_preserve", "measured_channel", "established"),
         default="native_preserve",
         help=(
             "native_preserve selects channels without re-referencing (default, requires "
             "an explicit shared parent reference); common_average applies one shared CAR."
+            " established selects the already referenced QC montage without another subtraction."
         ),
     )
     parser.add_argument(

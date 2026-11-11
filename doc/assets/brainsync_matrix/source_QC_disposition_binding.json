@@ -1,0 +1,65 @@
+{
+  "schema": "n2p3_source_QC_disposition_evidence_binding/1",
+  "study": "BI2015a",
+  "requested_records": 123,
+  "records_with_EEG": 120,
+  "records_without_EEG": 3,
+  "admission_locator": "C:\\Users\\chent\\AppData\\Local\\Packages\\OpenAI.Codex_2p2nqsd0c76g0\\LocalCache\\Local\\n2p3-net-cache\\brainsync_eog_consistent_20261031\\QC\\BI2015a\\qc_disposition_view\\admission.json",
+  "admission_sha256": "2421d5ae95d43ee79cfdbc9309d6d0d5d33be474675efeda4b46a44cb0463a1a",
+  "original_preparation_sha256": "39c6f2b8e964c2b064846ff9de414fc6730453884dfedd72c2ee0f32780d8608",
+  "original_preparation_status": "failed_preserved",
+  "original_runtime": {
+    "archive_sha256": "4ee239dfb3c3f66763053ed63668a579e1d6dd93ffdeb56bc57571659b826506",
+    "manifest_sha256": "5e3c7cf649f54e90ebd6d91513b07edc8e723f4ba72626b1da3d611a05cefb41",
+    "source_commit": "6c31085289cc4c6674480592238b5f890f31086c",
+    "byte_size": 3451992,
+    "member_count": 850,
+    "working_tree_snapshot": true,
+    "source_commit_role": "base_commit_only",
+    "executed_files_verified": 850
+  },
+  "consumer_sha256": "fd68c2a974f50613fe607d448c628d6d6f439685541263aaf4a24ffc66f17c31",
+  "cache_sha256": "dc3e3195516f0fa4d384b98263cbaa26b126bd5448bf7071d41eba75b173e095",
+  "retained_epochs": 36618,
+  "scheduled_requested": 63684,
+  "thresholds_changed": false,
+  "new_NN_fits": 0,
+  "witnesses": [
+    {
+      "subject": "3",
+      "session": "2",
+      "run": "0",
+      "original_member": "subject_03_session_03.mat",
+      "raw_member_sha256": "4aed1656476ecfddc3afdf2404887ea9ea090fc05293574d120a83d2ad75efd0",
+      "scheduled": 360,
+      "retained_epochs": 0,
+      "minimum_channels": 3,
+      "witness_sha256": "000699ef9966730828f2585ee1f3b44a5bef2ec1782ba7c1752fc32ffeda64b0",
+      "witness_locator": "C:\\Users\\chent\\AppData\\Local\\Packages\\OpenAI.Codex_2p2nqsd0c76g0\\LocalCache\\Local\\n2p3-net-cache\\brainsync_eog_consistent_20261031\\QC\\BI2015a\\qc_disposition_view\\rejection_1.json"
+    },
+    {
+      "subject": "33",
+      "session": "2",
+      "run": "0",
+      "original_member": "subject_33_session_03.mat",
+      "raw_member_sha256": "3d1b2f7127f6ccd77124c4a1cb206f8e753bfca3f9a8e15f74aecedccaa1dbcb",
+      "scheduled": 504,
+      "retained_epochs": 0,
+      "minimum_channels": 3,
+      "witness_sha256": "45dbc92a1f6579e68dc0cd2ba398af98e14d63b343718a2d9a2f7484b6a0b326",
+      "witness_locator": "C:\\Users\\chent\\AppData\\Local\\Packages\\OpenAI.Codex_2p2nqsd0c76g0\\LocalCache\\Local\\n2p3-net-cache\\brainsync_eog_consistent_20261031\\QC\\BI2015a\\qc_disposition_view\\rejection_2.json"
+    },
+    {
+      "subject": "41",
+      "session": "0",
+      "run": "0",
+      "original_member": "subject_41_session_01.mat",
+      "raw_member_sha256": "0e607c76140fcddc2e64a062f5d31118ba23ba36a2fd99ed43641487334d6c36",
+      "scheduled": 504,
+      "retained_epochs": 0,
+      "minimum_channels": 3,
+      "witness_sha256": "c7e1da030f08c9824353d4462b73bd080d38c81f6bec49556e80e7a56605511c",
+      "witness_locator": "C:\\Users\\chent\\AppData\\Local\\Packages\\OpenAI.Codex_2p2nqsd0c76g0\\LocalCache\\Local\\n2p3-net-cache\\brainsync_eog_consistent_20261031\\QC\\BI2015a\\qc_disposition_view\\rejection_3.json"
+    }
+  ]
+}

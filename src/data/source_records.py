@@ -16,6 +16,7 @@ from data.channel import canonical_channel_name
 from data.contract import BRAIN_SYNC_CAUSAL_DATA_CONTRACT
 from data.dataset import build_subject
 from data.domain import adapt_observed_montage, annotate_source_domain
+from data.eog_preprocessing import EOGPreprocessingPolicy, prepare_source_eog
 from data.epochs import (
     PreprocessingSpec,
     _cache_record_path,
@@ -88,13 +89,16 @@ def verify_prepared_cache(path, *, cache_sha256, cache_record_sha256):
         raise ValueError("completed source cache no longer matches its original attestation")
 
 
-def source_preparation_method(preprocessing: PreprocessingSpec | None = None):
+def source_preparation_method(preprocessing: PreprocessingSpec | None = None, *, eog_policy=None):
     """Bind the data implementation and parser environment used by this preparation."""
     directory = Path(__file__).parent
     spec = SOURCE_EOG_PREPROCESSING if preprocessing is None else preprocessing
     spec.validate()
+    if eog_policy is not None and not isinstance(eog_policy, EOGPreprocessingPolicy):
+        raise TypeError("source EOG policy must be an EOGPreprocessingPolicy")
     return {"schema": "n2p3_source_record_method/3",
             "preprocessing": spec.record(),
+            **({"artifact_preprocessing_policy": eog_policy.record()} if eog_policy is not None else {}),
             "data_modules_sha256": {path.name: file_sha256(path) for path in sorted(directory.glob("*.py"))},
             "runner_module": "data.source_records",
             "runner_sha256": file_sha256(Path(__file__)),
@@ -180,7 +184,7 @@ def _source_channel_admission(raw):
 
 def prepare_source_record(item, *, root, output, preparation_method=None,
                           preprocessing: PreprocessingSpec | None = None,
-                          raw_scope: RawSampleScope | None = None):
+                          raw_scope: RawSampleScope | None = None, eog_policy=None):
     """Read verified bytes, preprocess native channels, then map measured Cz differences."""
     item = dict(item)
     if "preprocessing" in item:
@@ -204,16 +208,16 @@ def prepare_source_record(item, *, root, output, preparation_method=None,
         raise ValueError("author-excluded source participant")
     root, output = Path(root), Path(output).resolve()
     output.mkdir(parents=True, exist_ok=True)
-    method = source_preparation_method() if spec == SOURCE_EOG_PREPROCESSING else source_preparation_method(spec)
+    method = (source_preparation_method() if spec == SOURCE_EOG_PREPROCESSING else source_preparation_method(spec)) if eog_policy is None else source_preparation_method(spec, eog_policy=eog_policy)
     if preparation_method is not None and preparation_method != method:
         raise ValueError("source preparation implementation changed before worker execution")
-    with _verified_source_record(item, root=root, output=output) as loaded:
+    with _verified_source_record(item, root=root, output=output, retain_eog=eog_policy is not None) as loaded:
         return _prepare_record_view(item, output=output, method=method, spec=spec,
-                                    raw_scope=raw_scope, loaded=loaded)
+                                    raw_scope=raw_scope, loaded=loaded, eog_policy=eog_policy)
 
 
 @contextmanager
-def _verified_source_record(item, *, root, output):
+def _verified_source_record(item, *, root, output, retain_eog=False):
     """Parse one verified original recording; views never share filtered samples."""
     source = root / item["path"]
     with tempfile.TemporaryDirectory(prefix="n2p3-parser-", dir=output) as temporary:
@@ -230,7 +234,7 @@ def _verified_source_record(item, *, root, output):
             path = source.parent if item["study"] == "GTN" else source
         inputs = verify_source_record_inputs(item, root=root,
             extracted_member=path if item.get("member") else None)
-        parsed = _read_record(item, path)
+        parsed = _read_record(item, path, **({"retain_eog": True} if retain_eog else {}))
         raw, events, labels = parsed[:3]
         candidate = parsed[3] if len(parsed) == 4 else None
         try:
@@ -239,7 +243,7 @@ def _verified_source_record(item, *, root, output):
             raw.close()
 
 
-def _prepare_record_view(item, *, output, method, spec, raw_scope, loaded, require_both_classes=True):
+def _prepare_record_view(item, *, output, method, spec, raw_scope, loaded, require_both_classes=True, eog_policy=None):
     original, events, labels, inputs, candidate = loaded
     raw = original.copy()
     if len(events) != len(labels):
@@ -254,6 +258,43 @@ def _prepare_record_view(item, *, output, method, spec, raw_scope, loaded, requi
     if rate != item["sample_rate_hz"]:
         raise ValueError("source sampling rate differs from manifest")
     names, admission = _source_channel_admission(raw)
+    start = 0 if raw_scope is None else raw_scope.start_sample - int(raw.first_samp)
+    stop = int(raw.n_times) if raw_scope is None else raw_scope.stop_sample - int(raw.first_samp)
+    ocular, reference = None, item["reference"]
+    continuous = detected = recovery = projected = candidate_raw = None
+    if eog_policy is not None:
+        fit_mask = np.zeros(raw.n_times, dtype=bool)
+        fit_mask[start:stop] = True
+        # Explicit acquisition gaps never enter a source-only ocular fit.
+        for onset, duration, description in zip(raw.annotations.onset, raw.annotations.duration,
+                                               raw.annotations.description, strict=True):
+            if description.lower().startswith(("bad", "edge")):
+                left = max(0, int(np.floor((onset - raw.first_time) * rate)))
+                right = min(raw.n_times, int(np.ceil((onset + duration - raw.first_time) * rate)))
+                fit_mask[left:right] = False
+        if eog_policy.continuous_qc:
+            if raw_scope is not None:
+                raise ValueError("continuous source QC requires the complete authorised source record")
+            from data.source_qc import fit_source_continuous
+
+            extra = [n for n, kind in zip(raw.ch_names, raw.get_channel_types(), strict=True) if kind == "eog"]
+            continuous, detected = fit_source_continuous(raw.copy().pick(names + extra),
+                policy=eog_policy, preprocessing=spec, fit_mask=fit_mask,
+                participant_key=f"{item['study']}:{item['subject']}", session_id=item["session"] + ":" + item["run"],
+                source_reference=reference)
+            fit_mask &= detected.valid_sample_mask
+        raw, reference, ocular = prepare_source_eog(raw, policy=eog_policy, eeg_names=names,
+            source_reference=reference, participant_key=f"{item['study']}:{item['subject']}",
+            session_id=item["session"] + ":" + item["run"], fit_mask=fit_mask, preprocessing=spec)
+        if continuous is not None:
+            from data.source_qc import apply_source_continuous
+
+            raw, projected, recovery = apply_source_continuous(raw, model=continuous,
+                detected=detected, ocular_record=ocular, eeg_names=names)
+            reference = "measured_channel:CZ"
+            candidate_raw = raw.copy()
+        names = [n for n, kind in zip(raw.ch_names, raw.get_channel_types(), strict=True)
+                 if n in names and kind == "eeg"]
     raw.pick(names)
     coordinate_derivation = None
     if item["study"] == "EPFLP300":
@@ -265,23 +306,23 @@ def _prepare_record_view(item, *, output, method, spec, raw_scope, loaded, requi
             "original_positions_m": {key: value.tolist() for key, value in
                 original_montage.get_positions()["ch_pos"].items()}}
         raw.set_montage("standard_1005")
-    start = 0 if raw_scope is None else raw_scope.start_sample - int(raw.first_samp)
-    stop = int(raw.n_times) if raw_scope is None else raw_scope.stop_sample - int(raw.first_samp)
     values = raw.get_data(start=start, stop=stop)
     if not np.isfinite(values).all() or any(np.ptp(c) == 0 for c in values):
         raise ValueError("nonfinite or entire-record constant measured EEG")
     if candidate is not None:
         from data.bnci2014_008_candidate import build_bnci2014_008_subject_dataset
 
-        dataset = build_bnci2014_008_subject_dataset(candidate, preprocessing=spec, raw_scope=raw_scope, raw=original)
+        dataset = build_bnci2014_008_subject_dataset(candidate, preprocessing=spec, raw_scope=raw_scope,
+            raw=original if candidate_raw is None else candidate_raw,
+            **({"channels": tuple(names)} if candidate_raw is not None else {}))
     else:
         subject = build_subject(raw, events, labels, subject_id=item["subject"],
             metadata={"dataset_id": item["study"], "session": item["session"], "run": item["run"],
-                      "selection_id": item["session"] + ":" + item["run"], "reference": item["reference"]},
+                      "selection_id": item["session"] + ":" + item["run"], "reference": reference},
             preprocessing=spec, raw_scope=raw_scope, channels=names, montage="standard_1005")
         dataset = _subject_epoch_dataset(subject, spec, dataset_name=item["study"])
     dataset.provenance.update(source="explicit_audited_public_raw", dataset_class=item["study"],
-        source_sample_rate_hz=rate, source_reference=item["reference"], raw_record=item,
+        source_sample_rate_hz=rate, source_reference=reference, raw_record=item,
         original_event_count=len(events),
         **({"original_target_count": int(labels.sum())} if raw_scope is None else
            {"authorized_target_count": int(np.asarray(labels)[authorized].sum()),
@@ -292,6 +333,16 @@ def _prepare_record_view(item, *, output, method, spec, raw_scope, loaded, requi
                    "label_admission": "binary_two_classes" if require_both_classes else "binary_labels_allow_single_class",
                    **({"raw_scope": raw_scope.record()} if raw_scope is not None else {})}
     dataset.provenance.update(source_preparation=preparation, source_channel_admission=admission)
+    if ocular is not None:
+        dataset.provenance["artifact_preprocessing_policy"] = eog_policy.record()
+        dataset.provenance["ocular_artifact_processing"] = ocular
+        preparation["ocular_artifact_processing"] = ocular
+    if continuous is not None:
+        from data.source_qc import apply_source_epoch_masks
+
+        dataset = apply_source_epoch_masks(dataset, raw=raw, result=projected, recovery=recovery, model=continuous)
+        preparation["continuous_model"] = continuous.record()
+        dataset.provenance["source_qc"] = "native_difference_MAD; exact_constant; EOG_OLS_when_recorded; bidirectional_boundary_recovery; local_channel_masks"
     if raw_scope is not None:
         dataset.provenance["target_raw_record_scopes"] = [{
             "raw_identity": {key: item[key] for key in ("study", "subject", "session", "run")} | {
@@ -305,7 +356,10 @@ def _prepare_record_view(item, *, output, method, spec, raw_scope, loaded, requi
         dataset.provenance["source_coordinate_derivation"] = coordinate_derivation
     if item["study"] == "GTN":
         dataset.provenance["reference_evidence"] = "10.1038/sdata.2016.121: common reference on bridge of nose; native metadata absence preserved in raw_record"
-    dataset = annotate_source_domain(adapt_observed_montage(dataset, SIX, reference_channel="Cz"), item["study"])
+    already_referenced = continuous is not None or (ocular is not None and ocular["status"] == "applied")
+    dataset = annotate_source_domain(adapt_observed_montage(dataset, SIX,
+        reference_channel=None if already_referenced else "Cz",
+        preserve_reference_label=already_referenced), item["study"])
     token = hashlib.sha256(json.dumps({"record": item, "preparation": preparation}, sort_keys=True).encode()).hexdigest()[:20]
     path = output / (token + ".npz")
     if path.exists():
@@ -987,7 +1041,19 @@ def merge_source_shards(paths, output):
     provenance = {key: value for key, value in records[0].provenance.items()
                   if key not in {"raw_record", "original_event_count", "original_target_count",
                                  "authorized_event_count", "authorized_target_count",
-                                 "preprocessing_execution", "source_channel_admission", "source_preparation"}}
+                                 "preprocessing_execution", "source_channel_admission", "source_preparation",
+                                 "ocular_artifact_processing", "continuous_artifact_processing",
+                                 "continuous_quality_ledger", "bidirectional_boundary_recovery"}}
     provenance["source_record_count"] = len(records)
+    if any("ocular_artifact_processing" in record.provenance for record in records):
+        provenance["source_ocular_preprocessing_records"] = [
+            {"record": record.provenance["raw_record"],
+             "processing": record.provenance.get("ocular_artifact_processing")}
+            for record in records]
+    if any("continuous_artifact_processing" in record.provenance for record in records):
+        provenance["source_continuous_preprocessing_records"] = [
+            {"record": record.provenance["raw_record"],
+             "model_digest": record.provenance.get("continuous_artifact_processing", {}).get("model_digest"),
+             "child_cache_sha256": file_sha256(path)} for path, record in zip(paths, records, strict=True)]
     return save_epoch_dataset(output, concatenate_epoch_datasets(
         records, name=records[0].name, provenance=provenance))

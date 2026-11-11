@@ -40,6 +40,63 @@ def _risk_record(value: float | None) -> float | str | None:
 
 
 @dataclass(frozen=True)
+class ScoredTargetAccuracy:
+    """Accuracy among actual target choices, with coverage kept separately.
+
+    The historical requested-outcome metrics below retain their original
+    meaning. New comparisons use this named metric instead of relabelling old
+    saved hit-rate fields or assigning errors to unscored decisions.
+    """
+
+    requested_decisions: int
+    scored_decisions: int
+    correct_decisions: int
+
+    def __post_init__(self) -> None:
+        counts = (self.requested_decisions, self.scored_decisions, self.correct_decisions)
+        if (any(type(value) is not int for value in counts)
+                or not 0 <= self.correct_decisions <= self.scored_decisions <= self.requested_decisions):
+            raise ValueError("decision counts must be integers with 0 <= correct <= scored <= requested")
+
+    @property
+    def accuracy(self) -> float | None:
+        return self.correct_decisions / self.scored_decisions if self.scored_decisions else None
+
+    @property
+    def coverage(self) -> float | None:
+        return self.scored_decisions / self.requested_decisions if self.requested_decisions else None
+
+    def record(self) -> dict[str, object]:
+        return {"schema": "n2p3_scored_target_accuracy/1", **asdict(self),
+                "incorrect_scored_decisions": self.scored_decisions - self.correct_decisions,
+                "unscored_decisions": self.requested_decisions - self.scored_decisions,
+                "accuracy": self.accuracy, "coverage": self.coverage,
+                "accuracy_denominator": "scored_unique_target_choices"}
+
+
+def scored_target_accuracy(predictions, targets, *, candidate_vocabulary) -> ScoredTargetAccuracy:
+    """Evaluate unique nine/general-choice predictions after labels are revealed.
+
+    None means no scored choice (including an unavailable or tied result).
+    Invalid candidate identities are contract errors, not dropped observations.
+    """
+    predictions, targets = tuple(predictions), tuple(targets)
+    vocabulary = tuple(candidate_vocabulary)
+    if (len(vocabulary) < 2 or len(set(vocabulary)) != len(vocabulary)
+            or any(not isinstance(c, str) or not c.strip() for c in vocabulary)):
+        raise ValueError("scored target accuracy requires the full unique candidate vocabulary")
+    if len(predictions) != len(targets):
+        raise ValueError("scored predictions and revealed targets must align")
+    if any(t not in vocabulary for t in targets):
+        raise ValueError("revealed target lies outside the declared candidate vocabulary")
+    if any(p is not None and p not in vocabulary for p in predictions):
+        raise ValueError("prediction lies outside the declared candidate vocabulary")
+    scored = sum(p is not None for p in predictions)
+    correct = sum(p is not None and p == t for p, t in zip(predictions, targets, strict=True))
+    return ScoredTargetAccuracy(len(targets), scored, correct)
+
+
+@dataclass(frozen=True)
 class CandidateEvaluationCell:
     seed: int
     outcome: DecisionOutcome

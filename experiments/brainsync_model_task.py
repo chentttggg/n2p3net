@@ -51,6 +51,7 @@ from transfer.calibrated import (  # noqa: E402
 )
 from transfer.quality import load_epoch_quality, save_epoch_quality  # noqa: E402
 from transfer.recipes import TargetRecipe  # noqa: E402
+from transfer.workstation_profiles import load_old_basic_profile, validate_executed_profile_source  # noqa: E402
 
 TASK_RESULT_SCHEMA = "n2p3_brainsync_model_task/2"
 
@@ -93,6 +94,7 @@ def _model_summary(predictor) -> dict[str, object]:
         "selected_recipe": metadata["selection"].get("selected"),
         "internal_validation": metadata["selection"],
         "source_pretraining_used": metadata["source_pretraining_used"],
+        "calibration_profile": metadata.get("calibration_profile"),
         "ocular_correction_applied": ocular is not None,
         "epoch_qc_applied": quality is not None,
         "epoch_qc_method": None if quality is None else quality["model"]["method"],
@@ -223,6 +225,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--request-id", help="opaque caller receipt identity; never used for model selection")
     parser.add_argument("--session-dir", type=Path, action="append", default=[])
     parser.add_argument("--source-checkpoint", type=Path)
+    parser.add_argument("--calibration-profile", choices=("old_basic_nn_source",),
+                        help="frozen twelve-study basic source and full-calibration program")
     parser.add_argument("--model-artifact", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--reference-channel")
@@ -255,6 +259,15 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--seed", type=int)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
+    if args.calibration_profile and (
+            args.task != 'calibrate' or args.selector_mode != 'legacy_product'
+            or args.calibration_recipe or args.training_budget or args.preprocessing_config
+            or args.seed is not None or args.batch_size is not None or args.batch_rule
+            or args.selection_protocol is not None or args.reference_channel
+            or args.reference_mode != 'auto' or args.ocular_correction or args.ocular_model
+            or args.epoch_qc or args.epoch_qc_model or args.continuous_qc_model
+            or args.eog_reference_policy != SHARED_MEASURED_REFERENCE):
+        parser.error('old basic profile owns the calibration recipe, Cz reference and processing; overrides are not allowed')
     if args.task != 'calibrate' and (args.seed is not None or args.selection_protocol is not None):
         parser.error('seed and selection protocol belong to calibration')
     if args.seed is None:
@@ -313,6 +326,18 @@ def main(argv: list[str] | None = None) -> None:
         "session_dirs": [str(path.resolve()) for path in args.session_dir],
     }
     try:
+        profile = None
+        if args.calibration_profile:
+            profile = load_old_basic_profile(source_checkpoint=args.source_checkpoint)
+            args.source_checkpoint = profile['source_checkpoint']
+            args.preprocessing_config = profile['preprocessing']
+            args.training_budget = profile['training_budget']
+            args.selector_mode = 'unified'
+            args.selection_protocol = 'fixed_full_calibration'
+            args.reference_channel = 'Cz'
+            transfer_policy = profile['recipe']
+            args.batch_size, args.seed = transfer_policy.batch_size, transfer_policy.seed
+            summary['calibration_profile'] = profile['record']
         for name in ('training_budget', 'calibration_recipe'):
             path = getattr(args, name)
             if path is not None:
@@ -344,6 +369,7 @@ def main(argv: list[str] | None = None) -> None:
             predictor = load_calibrated_predictor(io.BytesIO(artifact_bytes), device=args.device)
             predictor.validate_personal_workflow_metadata()
             summary.update(subject_id=predictor.metadata["subject_id"],
+                           calibration_profile=predictor.metadata.get('calibration_profile'),
                            simulation_status=predictor.metadata["input_contract"]["simulation_status"])
         if args.task == "inspect":
             summary.update(status="completed", **_model_summary(predictor))
@@ -393,6 +419,8 @@ def main(argv: list[str] | None = None) -> None:
                     unified_training_budget=training_budget,
                 ))
                 summary["planned_epoch_qc"] = args.epoch_qc or epoch_quality is not None
+                if profile is not None:
+                    validate_executed_profile_source(profile['record'], summary['source_checkpoint_gate'].get('checkpoint_sha256'))
                 summary["planned_ocular"]["eog_reference_policy"] = args.eog_reference_policy
                 atomic_write_json(summary_path, summary)
                 _progress(100, f"dry run {summary_path.resolve()}")
@@ -439,6 +467,9 @@ def main(argv: list[str] | None = None) -> None:
                 epoch_quality_model=epoch_quality,
                 declared_preprocessing=preprocessing if args.preprocessing_config is not None else None,
             )
+            if profile is not None:
+                validate_executed_profile_source(profile['record'], predictor.metadata.get('source_checkpoint_sha256'))
+                predictor.metadata['calibration_profile'] = profile['record']
             save_calibrated_predictor(args.model_artifact, predictor)
             artifact_bytes = args.model_artifact.read_bytes()
             restored = load_calibrated_predictor(io.BytesIO(artifact_bytes), device=args.device)

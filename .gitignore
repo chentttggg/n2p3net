@@ -16,6 +16,7 @@ build/
 !.env.example
 /.claude/settings.local.json
 /artifacts/
+/models/source/basic12_r1s0m0_u27950.pt
 *.bak
 *.orig
 *.rej

@@ -92,7 +92,7 @@ def _h5_source_values(handle, path, selection=slice(None)):
         raise GTNSourceError(f'GTN source is missing its HDF5 dataset: {path}') from error
 
 
-def read_gtn(nix_path: str | Path, txt_path: str | Path) -> GTNData:
+def read_gtn(nix_path: str | Path, txt_path: str | Path, *, retain_eog: bool = False) -> GTNData:
     """读一个 GTN 被试的 .nix + .txt → GTNData。"""
     nix_path = Path(nix_path)
     txt_path = Path(txt_path)
@@ -115,7 +115,9 @@ def read_gtn(nix_path: str | Path, txt_path: str | Path) -> GTNData:
         # 通道名（D-gtn-channels）：按名过滤出 Fz/Cz/Pz，丢弃 EOG
         all_ch = [_to_str(c) for c in _h5_source_values(f, f"{eeg_base}/dimensions/1/labels")]
         data = _h5_source_values(f, f"{eeg_base}/data")  # (4, N) float64
-        picks = [i for i, c in enumerate(all_ch) if c in _EEG_CHANNELS]
+        if type(retain_eog) is not bool:
+            raise ValueError("retain_eog must be explicitly boolean")
+        picks = [i for i, c in enumerate(all_ch) if c in _EEG_CHANNELS or retain_eog and c.upper() == "EOG"]
         picked_ch = [all_ch[i] for i in picks]
         eeg = data[picks, :]  # (3, N)
 
@@ -144,7 +146,8 @@ def read_gtn(nix_path: str | Path, txt_path: str | Path) -> GTNData:
             rec_date, rec_time = "", ""
 
     # 构造 MNE Raw（Fz/Cz/Pz 3 导）
-    info = mne.create_info(picked_ch, sfreq, ch_types="eeg")
+    info = mne.create_info(picked_ch, sfreq,
+                           ch_types=["eog" if c.upper() == "EOG" else "eeg" for c in picked_ch])
     raw = mne.io.RawArray(eeg, info, verbose=False)
 
     # 元数据（.txt + .nix）
@@ -193,7 +196,7 @@ def _nix_subject_ids(nix_path: Path) -> list[str]:
             raise GTNSourceError(f'GTN source is missing its NIX data-array group: {nix_path}') from error
 
 
-def read_gtn_experiment(exp_dir: str | Path) -> GTNData:
+def read_gtn_experiment(exp_dir: str | Path, *, retain_eog: bool = False) -> GTNData:
     """读一个 GTN experiment 目录（含根下 .nix + Data/*.txt）。
 
     experiment 目录结构（EEGBase 下载后）：
@@ -235,7 +238,7 @@ def read_gtn_experiment(exp_dir: str | Path) -> GTNData:
         )
     for subject_id in internal_ids:
         if subject_id in txt_by_stem:
-            return read_gtn(nix_path, txt_by_stem[subject_id])
+            return read_gtn(nix_path, txt_by_stem[subject_id], retain_eog=retain_eog)
 
     raise FileNotFoundError(
         f"{exp_dir / 'Data'} 下没有与 NIX 内部被试 {internal_ids} 匹配的 .txt 元数据文件"

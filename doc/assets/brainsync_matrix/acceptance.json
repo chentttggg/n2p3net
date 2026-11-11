@@ -1,0 +1,109 @@
+{
+  "schema": "n2p3_brainsync_real_matrix_acceptance/1",
+  "accepted_at_utc": "2026-10-31T03:39:59.850846+00:00",
+  "status": "accepted_single_person_retrospective_development",
+  "requested_cells": 150,
+  "completed_cells": 150,
+  "original_failed_cells_preserved": 5,
+  "additional_scope_correction_tasks": 5,
+  "same_person_authority": "User confirmed same person; original P003 kept separate from personal calibration identity.",
+  "report": "experiments/runs/brainsync_matrix_20261031/index.html",
+  "checkpoint": "experiments/runs/brainsync_matrix_20261031/checkpoint.json",
+  "artifacts": [
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/plan.json",
+      "bytes": 13534,
+      "sha256": "8cb2c9f71bcd075dee86d9887476883914fcaec23e79b9eba0fd6d58a1da4889"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/jobs.json",
+      "bytes": 91015,
+      "sha256": "3aea385a83dfce514e8b9f81b4cea5371282f276dc78e50a37a11f6e41a57e70"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/recovery_map.json",
+      "bytes": 5221,
+      "sha256": "ac4059e893577419c2fd4ce07be987e8831a2feb02f5f7d6d232ec12a3a3d22d"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/execution_source/source.manifest.json",
+      "bytes": 96882,
+      "sha256": "b75de75804e333fa869a12716f1d9c8b139c9ec63f7cf8821769fcfbe727f33a"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/recovery_source/source.manifest.json",
+      "bytes": 96882,
+      "sha256": "78f3979aa1544a584c0976a04740623c66a5de1167e05880485bf8ff1aae0d62"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/old_source_expected.json",
+      "bytes": 38207,
+      "sha256": "ab5c73a35c79ab4ffd702ff11a81b16da47776390289950f3221bf3a9b3a7740"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/recovered_models.json",
+      "bytes": 1774,
+      "sha256": "1702952a5a4499939231b427bbf3ac845283fed2cf6d386e9c00e993cb49ccdd"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/archive_receipt.json",
+      "bytes": 277,
+      "sha256": "93bec089ebe8c243b807d6a479a5ddd06366d9992382fa7465fbd2b1ff2399ca"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/complete_execution.tar.gz",
+      "bytes": 305844200,
+      "sha256": "5d5236ba0a88186093fcb39cc6ff0e0818f61fdf6279f37c5b5cd433c57227d9"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/verification.json",
+      "bytes": 8511,
+      "sha256": "308480cdefbeb6f59a093f6466d252e60964ecaa60442b469d41710a4b3d2b13"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/input_numerical_verification.json",
+      "bytes": 2819,
+      "sha256": "743ffea25419b17bb70fb17bfe30440f011a4a23e9c2602cdf3c53ab04e6bb84"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/independent_prediction_verification.json",
+      "bytes": 251,
+      "sha256": "4b89613277f5a805ddefcc3959f298880688e5e7334e53975ff3a94588c0272b"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/original_scope_verification.json",
+      "bytes": 1477,
+      "sha256": "1a1ac761663dd5a91a20add524b59e75bbc5da381a050393492f11eba00387a9"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/analysis/summary.json",
+      "bytes": 224417,
+      "sha256": "14389e22febec5259e653cd74c2aa6bc1b580a899ba67015ab739f464a52b1a0"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/analysis/decision_records.json",
+      "bytes": 49237432,
+      "sha256": "f4d895c8e10f9a051b65d86285eab32f4d79866f2100df96d424e6b53be19a05"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/index.html",
+      "bytes": 29190,
+      "sha256": "746eab1c3634dc6e392ee0779eed471cb35001effa71b6fe7a1faf209c22d2e4"
+    },
+    {
+      "path": "experiments/runs/brainsync_matrix_20261031/analyze.py",
+      "bytes": 23901,
+      "sha256": "b77eca151dd0b31598546769532f744259d7df942667b5ddef5cfdd8e631fbc8"
+    }
+  ],
+  "old_executed_source_archive_sha256": "c71a4d2109eaed23bea734c76845940bcf05d51a3af4478ac3c1db54fe75fd24",
+  "original_complete_public_archive_sha256": "db3456fada03f6cc7177c225b822c4884aef4e2204c646218c029ef0bd99c790",
+  "persistent_cloud_delivery": "/root/autodl-fs/n2p3-runs/brainsync_matrix_20261031",
+  "scientific_scope": "Frozen deployment-source inference; C-only fixed target experts and declared equal pools; all requested coverage and risk preserved.",
+  "not_promoted": [
+    "production default",
+    "online single-block device inference",
+    "pure P300 physiology",
+    "population-level superiority"
+  ]
+}

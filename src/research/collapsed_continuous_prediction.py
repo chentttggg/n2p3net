@@ -14,7 +14,11 @@ from weakref import WeakKeyDictionary
 
 import numpy as np
 
-from data.brainsync_raw_authority import RawCapability, require_raw_capability
+from data.brainsync_raw_authority import (
+    RawCapability,
+    observed_event_indices,
+    require_raw_capability,
+)
 from models.candidate_evidence import CandidateEvidence, CandidateExpertIdentity
 from research.frozen_metadata import freeze_metadata, plain_metadata
 from transfer.noise_model import metadata_digest
@@ -229,8 +233,7 @@ def publish_continuous_prediction(verified_inference, original_target, prepared_
     expected = (repetitions,)*len(cap.candidate_vocabulary)
     observed_counts, event_ids = np.zeros(len(cap.candidate_vocabulary), dtype=int), set()
     for current_cap in caps:
-        indices = [i for i, event in enumerate(current_cap.events)
-            if event.sample < current_cap.public_binding['full_stop']]
+        indices = observed_event_indices(current_cap)
         for index in indices:
             if current_cap.events[index].event_id in event_ids:
                 raise ValueError('independent segment observations duplicated an original session event')

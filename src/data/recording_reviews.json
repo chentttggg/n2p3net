@@ -1,0 +1,13 @@
+{
+  "schema": "brainsync_recording_reviews/1",
+  "recordings": [
+    {
+      "session_id": "P001_20261030_144501_01",
+      "raw_sha256": "544800f400864556924eabf9d96b0c2fab9738952d8d62ec0b981cd0fe95e789",
+      "status": "excluded",
+      "reason": "Owner excluded the 2026-10-30 14:45 recording after review of multi-channel transients and continuing instability.",
+      "authority": "Direct user instruction in the BrainSync quality review on 2026-10-30",
+      "evidence": "doc/evidence/response_and_noise.zh.md"
+    }
+  ]
+}

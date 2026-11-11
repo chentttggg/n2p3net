@@ -685,6 +685,8 @@ def fit_source_trajectory(
             source_snapshot_sha256=source_snapshot_sha256, architecture=model.architecture_record(),
             preprocessing={**preprocessing_execution_binding(dataset.provenance.get("preprocessing_execution"), dataset.preprocessing),
                            "epoch": dataset.preprocessing.record(), "channel_names": list(dataset.channel_names),
+                           **({"artifact_preprocessing_policy": dataset.provenance["artifact_preprocessing_policy"]}
+                              if "artifact_preprocessing_policy" in dataset.provenance else {}),
                            "source_reference": dataset.provenance.get("source_reference")},
             optimizer={"name": "torch.optim.Adam", "config": asdict(config), "actual_updates": updates,
                        "trial_draws": snapshot["trial_draws"], "batch_sequence_sha256": snapshot["batch_sequence_sha256"]},
@@ -705,6 +707,8 @@ def fit_source_trajectory(
             "input_preprocessing": dataset.preprocessing.record(), "input_channel_names": list(dataset.channel_names),
             "input_preprocessing_execution": dataset.provenance.get("preprocessing_execution"),
             "input_source_reference": dataset.provenance.get("source_reference"),
+            **({"artifact_preprocessing_policy": dataset.provenance["artifact_preprocessing_policy"]}
+               if "artifact_preprocessing_policy" in dataset.provenance else {}),
             "input_mean": snapshot["input_mean"].reshape(-1).tolist(),
             "input_std": snapshot["input_std"].reshape(-1).tolist(),
             "classifier_trained": True,

@@ -1,0 +1,24 @@
+{
+  "schema": "n2p3_workstation_calibration_profile/1",
+  "id": "old_basic_nn_source",
+  "source": {
+    "path": "../models/source/basic12_r1s0m0_u27950.pt",
+    "sha256": "935ee55de598256ca9299595ec899359751b1ebbf5fa0bb15af0f0fbb8bda3bd"
+  },
+  "preprocessing": "brainsync_bidirectional_preprocessing.json",
+  "training_budget": "unified_training_budget.json",
+  "recipe": {
+    "name": "nn_source",
+    "initialization": "source",
+    "input_statistics": "target_prefix",
+    "bn_buffers": "calibration",
+    "bn_affine": "trainable",
+    "weights": "non_bn",
+    "dropout": "off",
+    "batch_size": 512,
+    "lr": 0.001,
+    "epochs": 90,
+    "seed": 20261031,
+    "candidate_loss_weight": 0.0
+  }
+}

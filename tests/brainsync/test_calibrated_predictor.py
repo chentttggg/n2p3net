@@ -100,8 +100,62 @@ def _cz_view(dataset):
     )
 
 
+def test_preprocessing_program_survives_personal_package_and_actual_raw_replay(tmp_path, sessions):
+    from data.eog_preprocessing import EOGPreprocessingPolicy
+    from transfer.calibrated import fit_fixed_waveform_lda
+
+    roots, testing = sessions
+    training = _cz_view(load_brainsync_sessions(roots))
+    policy = EOGPreprocessingPolicy("basic_eog_ols_v1", False, "record_unavailable").record()
+    training.provenance["artifact_preprocessing_policy"] = policy
+    predictor = fit_fixed_waveform_lda(training, declared_preprocessing=training.preprocessing)
+    assert predictor.metadata["recipe"]["initialization"] == "waveform_lda"
+    path = save_calibrated_predictor(tmp_path / "program.pt", predictor)
+    restored = load_calibrated_predictor(path)
+    replay = restored.load_inference_session(testing)
+    assert replay.provenance["artifact_preprocessing_policy"] == policy
+    assert restored.metadata["input_contract"]["artifact_preprocessing_policy"] == policy
+    assert np.isfinite(restored.predict_logit(replay)).any()
+
+
 def _write_cz_checkpoint(path, dataset):
     return write_checkpoint(path, _cz_view(dataset), source_snapshot_sha256="f" * 64)
+
+
+def test_saved_ocular_nominal_projection_replays_rounding_but_rejects_real_geometry_shift(tmp_path, sessions):
+    import csv
+
+    from data.eog_preprocessing import EOGPreprocessingPolicy
+    from data.ocular import PRESERVE_ACQUIRED_EOG
+    from transfer.calibrated import fit_fixed_waveform_lda
+
+    roots, testing = sessions
+    ocular = fit_brainsync_eog_sessions(roots, reference_channel="Cz", eog_reference_policy=PRESERVE_ACQUIRED_EOG)
+    data = load_brainsync_sessions(roots, ocular_model=ocular)
+    data = adapt_observed_montage(data, data.channel_names, preserve_reference_label=True)
+    data.provenance["artifact_preprocessing_policy"] = EOGPreprocessingPolicy("fixture_QC", True, "record_unavailable").record()
+    fitted = fit_fixed_waveform_lda(data, declared_preprocessing=data.preprocessing)
+    saved = save_calibrated_predictor(tmp_path / "nominal.pt", fitted)
+    restored = load_calibrated_predictor(saved)
+    electrodes = next(testing.rglob("*_electrodes.tsv"))
+    with electrodes.open(encoding="utf-8-sig") as stream:
+        reader = csv.DictReader(stream, delimiter="\t")
+        fields, rows = reader.fieldnames, list(reader)
+
+    def shift(amount):
+        with electrodes.open("w", encoding="utf-8", newline="") as stream:
+            writer = csv.DictWriter(stream, fieldnames=fields, delimiter="\t")
+            writer.writeheader()
+            writer.writerows({**row, "x": str(float(row["x"]) + amount)} if row["x"] != "n/a" else row for row in rows)
+
+    shift(1e-8)
+    replay = restored.load_inference_session(testing)
+    np.testing.assert_array_equal(replay.channel_positions_m, data.channel_positions_m)
+    assert replay.provenance["domain_adapter"]["preserve_reference_label"] is True
+    assert np.isfinite(restored.predict_logit(replay)).any()
+    shift(.01)
+    with pytest.raises(ValueError, match="geometry"):
+        restored.load_inference_session(testing)
 
 
 def test_inference_admission_counts_cover_preprocessing_and_model_exclusions():

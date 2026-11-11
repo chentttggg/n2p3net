@@ -17,6 +17,40 @@ from tests.support.io import read_json, write_json
 def complete_requests(tmp_path):
     return build_complete_requests(tmp_path)
 
+
+def test_startup_cut_preserves_history_labels_without_claiming_observed_eeg(complete_requests, monkeypatch):
+    from dataclasses import replace
+
+    import numpy as np
+
+    from data import brainsync_startup as startup
+    from data.brainsync_contract import validate_brainsync_bids_recording
+    from data.source_records import file_sha256
+
+    calibration, held, scope = complete_requests
+    registry, cuts = {}, {}
+    for request in calibration+held:
+        session = validate_brainsync_bids_recording(request.path)
+        try:
+            plan = startup.plan_startup_cut(np.array([e.sample for e in session.bids.stimuli]),
+                session.bids.sample_rate_hz, round(session.bids.duration_seconds*session.bids.sample_rate_hz))
+            digest = file_sha256(session.bids.raw_path)
+            registry[digest] = {**plan, 'raw_sha256': digest}
+            cuts[request.session_id] = plan['stop_sample']
+        finally:
+            session.bids.close()
+    monkeypatch.setattr(startup, 'startup_cuts', lambda: registry)
+
+    def adjusted(request):
+        return replace(request, reads=tuple(replace(read, prefix_stop=cuts[request.session_id]+125)
+            if read.segment_id == 0 else read for read in request.reads))
+
+    with module.open_adult_programme_inputs(tuple(map(adjusted, calibration)), tuple(map(adjusted, held)), scope=scope) as programme:
+        assert programme.record['actual_C_labels'] == 135
+        assert all(row.record['startup_history_labels_without_EEG_support'] for row in programme.calibration)
+        assert all(row.record['actual_observed_completed_flashes'] == row.record['requested_completed_flashes']-3
+                   for row in programme.calibration+programme.held)
+
 def test_complete_original_multirecord_inputs_and_cold_actual_readmission(complete_requests, tmp_path, monkeypatch):
     calibration, held, scope = complete_requests
     original_validator = authority.validate_brainsync_bids_session

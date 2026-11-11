@@ -2021,6 +2021,14 @@ def concatenate_epoch_datasets(
 
         qc_features = EpochQCFeatures.concatenate([dataset.qc_features for dataset in datasets])
     merged_provenance = dict(provenance or {})
+    artifact_policies = [dataset.provenance.get("artifact_preprocessing_policy") for dataset in datasets]
+    if any(policy is not None for policy in artifact_policies):
+        if any(policy != artifact_policies[0] for policy in artifact_policies):
+            raise ValueError("Cannot concatenate different artifact preprocessing policies.")
+        if ("artifact_preprocessing_policy" in merged_provenance
+                and merged_provenance["artifact_preprocessing_policy"] != artifact_policies[0]):
+            raise ValueError("concatenation provenance changes the artifact preprocessing policy")
+        merged_provenance["artifact_preprocessing_policy"] = artifact_policies[0]
     executions = merge_preprocessing_executions(datasets)
     if executions is not None:
         merged_provenance["preprocessing_execution"] = executions

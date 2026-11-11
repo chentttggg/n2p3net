@@ -118,6 +118,19 @@ def test_read_gtn_experiment():
     assert (counts >= 5).all(), f"每个数字应出现多次，得到 {dict(zip(digits, counts, strict=True))}"
 
 
+@pytest.mark.skipif(not HAS_GTN, reason="GTN 数据未下载")
+def test_gtn_optional_auxiliary_is_actual_recorded_eog_and_eeg_is_unchanged():
+    baseline = read_gtn_experiment(EXP_DIR)
+    auxiliary = read_gtn_experiment(EXP_DIR, retain_eog=True)
+    assert auxiliary.raw.ch_names == ["Fz", "Cz", "Pz", "EOG"]
+    assert auxiliary.raw.get_channel_types() == ["eeg", "eeg", "eeg", "eog"]
+    np.testing.assert_array_equal(auxiliary.raw.get_data(picks=["Fz", "Cz", "Pz"]), baseline.raw.get_data())
+    np.testing.assert_array_equal(auxiliary.events, baseline.events)
+    assert auxiliary.thought_number == baseline.thought_number
+    with pytest.raises(ValueError, match="boolean"):
+        read_gtn_experiment(EXP_DIR, retain_eog=1)
+
+
 @pytest.mark.parametrize("experiment", ["Experiment_515_P3_Numbers", "Experiment_531_P3_Numbers"])
 def test_gtn_multi_txt_matches_nix_internal_subject(experiment):
     """review v6 P0-3：Experiment_515/531 的 Data 下有多个 .txt，必须按 NIX 内部被试名匹配。"""

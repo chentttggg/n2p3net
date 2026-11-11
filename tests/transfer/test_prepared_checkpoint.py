@@ -11,8 +11,10 @@ from tests.support.datasets import binary_dataset, source_dataset
 from transfer.checkpoint import PreparedTransferCheckpoint, load_n2p3_trunk_checkpoint
 
 
-def _source(tmp_path):
+def _source(tmp_path, policy=None):
     dataset = source_dataset()
+    if policy is not None:
+        dataset.provenance["artifact_preprocessing_policy"] = policy
     _, payloads = fit_source_trajectory(dataset, np.arange(4),
         config=DeepConfig(fixed_updates=1, batch_size=4, sampling="uniform_rows", compile_mode=None),
         source_cache_sha256="a" * 64, source_snapshot_sha256="b" * 64,
@@ -20,6 +22,30 @@ def _source(tmp_path):
     path = tmp_path / "source.pt"
     torch.save(payloads[1], path)
     return dataset, path, payloads[1]
+
+
+def test_preprocessing_program_is_bound_through_source_fit_save_reload_and_compact_bind(tmp_path):
+    from dataclasses import replace
+
+    from data.eog_preprocessing import EOGPreprocessingPolicy
+
+    policy = EOGPreprocessingPolicy("qc_v1", True, "record_unavailable").record()
+    dataset, path, payload = _source(tmp_path, policy)
+    assert payload["training_contract"]["preprocessing"]["artifact_preprocessing_policy"] == policy
+    from transfer.checkpoint import _AdmittedTransferSource
+
+    prepared = _AdmittedTransferSource(path.read_bytes())
+    assert prepared.bind(dataset, "source::s3") is not None
+    basic = replace(dataset, provenance={k: v for k, v in dataset.provenance.items()
+                                         if k != "artifact_preprocessing_policy"})
+    with pytest.raises(ValueError, match="artifact preprocessing policies differ"):
+        prepared.bind(basic, "source::s3")
+    with pytest.raises(ValueError, match="artifact preprocessing policies differ"):
+        load_n2p3_trunk_checkpoint(path, basic, target_subject="source::s3")
+    tampered = copy.deepcopy(payload)
+    tampered["artifact_preprocessing_policy"]["enabled"] = False
+    with pytest.raises(ValueError, match="input signature"):
+        PreparedTransferCheckpoint(tampered, basic)
 
 
 def test_prepared_checkpoint_keeps_identity_gate_and_independent_model_state(tmp_path):

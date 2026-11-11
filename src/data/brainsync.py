@@ -24,6 +24,7 @@ from data.brainsync_contract import (
     validate_brainsync_bids_recording,
     validate_brainsync_bids_session,
 )
+from data.brainsync_startup import apply_startup_cut, require_startup_fit, startup_cut_for
 from data.channel import canonical_channel_name
 from data.continuous_qc import (
     FittedContinuousQC,
@@ -41,7 +42,7 @@ from data.epochs import (
     preprocessing_spec_from_contract,
 )
 from data.identity import DatasetIdentityTable
-from data.ocular import FittedEOGRegression
+from data.ocular import FittedEOGRegression, validate_eog_fit_preprocessing
 from data.preprocess import continuous_filter_segments
 from data.qc_features import compute_epoch_qc_features
 from research.contracts import semantic_sha256
@@ -282,6 +283,11 @@ def _build_content_bound_brainsync_session(
     raw.set_channel_types(
         {name: kind.lower() for name, kind in zip(raw.ch_names, bids.channel_types, strict=True)}
     )
+    startup_cut = startup_cut_for(bids)
+    apply_startup_cut(raw, startup_cut)
+    for fitted in (continuous_qc_model, ocular_model):
+        if fitted is not None:
+            require_startup_fit(fitted.fit_provenance, startup_cut)
     raw.info["bads"] = [
         name
         for name, status in zip(raw.ch_names, bids.channel_statuses, strict=True)
@@ -317,6 +323,7 @@ def _build_content_bound_brainsync_session(
         if not local_qc:
             raw = continuous_result.annotate(raw)
     if ocular_model is not None:
+        validate_eog_fit_preprocessing(ocular_model, preprocessing)
         participant = DatasetIdentityTable.from_source_rows(
             [subject_id], ["BrainSync-GTN"]).record_for(subject_id).authority_key("source_or_global")
         if participant != ocular_model.participant_key:
@@ -589,6 +596,7 @@ def _build_content_bound_brainsync_session(
             "continuous_quality_ledger": None if continuous_result is None else {
                 **continuous_result.record(), "signal_diagnostics": signal_diagnostics},
             "sample_clock": validated.manifest["recording"].get("clock", {"alignment_level": "legacy_host_only"}),
+            "raw_startup_cut": startup_cut,
             "acquisition_runtime": validated.manifest.get("runtime", {}),
             "ocular_artifact_processing": {
                 "status": "not_applied" if ocular_model is None else "applied",

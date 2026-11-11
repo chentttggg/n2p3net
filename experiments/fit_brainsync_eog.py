@@ -16,8 +16,14 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from data.brainsync import load_brainsync_session  # noqa: E402
+from data.brainsync import BRAIN_SYNC_PREPROCESSING, load_brainsync_session  # noqa: E402
 from data.brainsync_contract import validate_brainsync_bids_session  # noqa: E402
+from data.brainsync_startup import (  # noqa: E402
+    apply_startup_cut,
+    require_startup_fit,
+    startup_cut_for,
+    startup_fit_provenance,
+)
 from data.continuous_qc import (  # noqa: E402
     FittedContinuousQC,
     load_continuous_qc,
@@ -30,7 +36,9 @@ from data.epochs import (  # noqa: E402
     materialize_dataset_identity,
 )
 from data.ocular import (  # noqa: E402
+    EOG_FIT_DOMAINS,
     EOG_REFERENCE_POLICIES,
+    PASSBAND_EOG_FIT_DOMAIN,
     SHARED_MEASURED_REFERENCE,
     FittedEOGRegression,
     fit_eog_regression,
@@ -46,6 +54,7 @@ def fit_brainsync_eog_sessions(
     fit_intervals_by_session: dict[str, list[list[int]]] | None = None,
     correction_strength: float = 1.0,
     preprocessing: PreprocessingSpec | None = None,
+    fit_domain: str = PASSBAND_EOG_FIT_DOMAIN,
 ) -> FittedEOGRegression:
     """Fit the reusable ocular model from explicitly selected labelled sessions."""
     with ExitStack() as input_leases:
@@ -53,6 +62,7 @@ def fit_brainsync_eog_sessions(
         if not roots or len(set(roots)) != len(roots):
             raise ValueError("unique calibration session paths are required")
         raws, sessions, participants, references, records, masks, derivations = [], [], set(), set(), [], [], []
+        startup_cuts = []
         for root in roots:
             session = validate_brainsync_bids_session(root)
             input_leases.callback(session.bids.close)
@@ -87,6 +97,11 @@ def fit_brainsync_eog_sessions(
                     if type(start) is not int or type(stop) is not int or not 0 <= start < stop <= raw.n_times:
                         raise ValueError("ocular fit intervals must be half-open native sample bounds")
                     mask[start:stop] = True
+            startup_cut = startup_cut_for(session.bids)
+            apply_startup_cut(raw, startup_cut, mask)
+            startup_cuts.append(startup_cut)
+            if continuous_qc_model is not None:
+                require_startup_fit(continuous_qc_model.fit_provenance, startup_cut)
             clock = session.manifest["recording"].get("clock")
             if clock is not None:
                 acquired = clock["acquired_samples"]
@@ -112,6 +127,7 @@ def fit_brainsync_eog_sessions(
                     "session_id": session.session_id,
                     "raw_sha256": hashlib.sha256(session.bids.raw_path.read_bytes()).hexdigest(),
                     "session_sha256": hashlib.sha256(session.session_path.read_bytes()).hexdigest(),
+                    "raw_startup_cut": startup_cut,
                     **({"authorized_fit_intervals_samples": authorized_intervals}
                        if authorized_intervals is not None else {}),
                 }
@@ -135,9 +151,12 @@ def fit_brainsync_eog_sessions(
             source_reference=next(iter(references)),
             reference_channel=reference_channel,
             eog_reference_policy=eog_reference_policy,
+            fit_domain=fit_domain,
+            preprocessing=dataset.preprocessing,
             fit_sample_mask=np.concatenate(masks),
             eog_derivation=derivations[0],
             fit_provenance={
+                **startup_fit_provenance(startup_cuts),
                 "role": "known_calibration_sessions_only",
                 "sources": records,
                 "calibration_session_ids": [session.session_id for session in sessions],
@@ -160,6 +179,7 @@ def main(argv=None) -> None:
                         default=SHARED_MEASURED_REFERENCE)
     parser.add_argument("--continuous-qc-model", type=Path)
     parser.add_argument('--preprocessing-config', type=Path, help='complete preprocessing declaration for the calibration input')
+    parser.add_argument('--fit-domain', choices=EOG_FIT_DOMAINS, default=PASSBAND_EOG_FIT_DOMAIN)
     parser.add_argument("--correction-strength", type=float, default=1.0)
     args = parser.parse_args(argv)
     if args.output.exists():
@@ -169,7 +189,8 @@ def main(argv=None) -> None:
         eog_reference_policy=args.eog_reference_policy,
         correction_strength=args.correction_strength,
         continuous_qc_model=None if args.continuous_qc_model is None else load_continuous_qc(args.continuous_qc_model),
-        preprocessing=None if args.preprocessing_config is None else load_preprocessing_spec(args.preprocessing_config),
+        preprocessing=BRAIN_SYNC_PREPROCESSING if args.preprocessing_config is None else load_preprocessing_spec(args.preprocessing_config),
+        fit_domain=args.fit_domain,
     )
     print(f"[ocular] {save_eog_regression(args.output, model)}", flush=True)
 

@@ -1,0 +1,89 @@
+{
+  "schema": "n2p3_brainsync_QC_chain_scope/1",
+  "scope": "Actual four-method epoch path in brainsync_matrix_20261031",
+  "basic": {
+    "shared_ingress": [
+      "completed/admitted recording",
+      "EDF/BIDS content identity",
+      "channels/units/coordinates/reference",
+      "public event sample and clock consistency",
+      "original padding/rest/invalid support exclusion",
+      "shared owner exclusion of P001_20261030_144501_01"
+    ],
+    "signal": [
+      "50Hz Q30 notch",
+      "0.1-30Hz order4 bidirectional IIR",
+      "epoch [-200,1200) ms",
+      "128Hz 179 samples",
+      "prestimulus mean baseline",
+      "measured Cz-reference six-channel projection"
+    ],
+    "amplitude_reject_threshold_v": null,
+    "EOG_classifier_input": false,
+    "ocular_regression": "not applied",
+    "fitted_personal_epoch_QC": "not applied"
+  },
+  "reviewed_increments": [
+    "original-EDF-bound per-channel reviewed intervals",
+    "whole-Fz masking in two named October calibration recordings",
+    "exact-constant detector >=5 seconds",
+    "clean original-axis segments filtered separately with reset states",
+    "fitted empirical epoch-boundary recovery mask at 1uV native-channel tolerance",
+    "minimum native 5/7 observation policy",
+    "Cz reference must be observed before six-slot projection",
+    "mask and admitted epochs consumed by C statistics and fitting",
+    "frozen profile and input state serialized and reloaded",
+    "NN >=5/6 final slots; classic selected-six complete observation gate",
+    "all declared experts required in the fixed pool",
+    "R1/R5 scheduled completeness and requested-denominator accounting"
+  ],
+  "actual_dataset_coverage": {
+    "registered_original_EDFs": [
+      "P001_20261024_214310_01",
+      "P001_20261024_220434_01",
+      "P001_20261028_221030_01",
+      "P001_20261028_222559_01",
+      "P001_20261028_224755_01",
+      "P001_20261030_142755_01",
+      "P001_20261030_152515_01"
+    ],
+    "september_recordings_reusing_basic": [
+      "P001_20260903_172410_01",
+      "P001_20260903_173947_01",
+      "P001_20260904_171926_01",
+      "P001_20260907_150258_01",
+      "P001_20260908_100906_01",
+      "P001_20260908_103053_01"
+    ],
+    "C10_reviewed_October_recordings": 5,
+    "C10_basic_September_recordings": 5,
+    "fixed_test_recordings_reviewed": [
+      "P001_20261030_142755_01",
+      "P001_20261030_152515_01"
+    ]
+  },
+  "not_claimed": [
+    "this personal profile applied to the historical public-source training",
+    "uniform reviewed processing of September and October",
+    "arbitrary new EDF admission",
+    "online operation",
+    "ICA or EOG-regression removal",
+    "separate fitted epoch-QC classification",
+    "full automatic motor-artifact identification",
+    "pure P300 source certification"
+  ],
+  "generic_difference_rejection_enabled": false,
+  "generic_range_rejection_enabled": false,
+  "profile_schema": "n2p3_continuous_qc/5",
+  "profile_sha256": "c52a6acaf0f18b090960056a38fd54f81b4c438876bab00192b1668535cba665",
+  "source_sha256": {
+    "experiments/prepare_brainsync_matrix.py": "cefdde85055ca78c1c94861b1b132334b4398e28d3864cbe6e574a80d26fab13",
+    "experiments/run_brainsync_real_matrix.py": "20ea30055b417eb6305ca15150f7be29f50b744c5fb42ed2b2c4c14ec493c5e9",
+    "src/data/brainsync.py": "e728f1e3d4f68140aa671da0abbf2ba8738449a74091564c1d8511b456bb5c5b",
+    "src/data/continuous_qc.py": "307a23c570ddfa6b2b9a9238bdb8c0d1ca596cdb954a7a31f4affd4d7237519e",
+    "src/data/domain.py": "12d3dbe0e79a81b416ef7fc150d6f0fe14cb291a0eaef8f99d0e627956ae8515",
+    "src/transfer/calibrated.py": "9b6db34b48c28656c30516f37d0ef20c7cdc8ff7cc51078e8cc60c61915e2ddb",
+    "src/transfer/calibration_candidates.py": "829ebadf77b20392c26f2d9ebfb2a8dbd91c486b5debd09a1a78d4f8301e59ad",
+    "src/transfer/ensemble.py": "beec8dd3ba070d24aeb617df22c1c7339b04d0346bdc0eb0d3799d2631bf3da1"
+  }
+}

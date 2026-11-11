@@ -20,12 +20,12 @@ def _huebner_sidecars(source):
     return {role: Path(base + f"_{role}.tsv") for role in ("channels", "events")}
 
 
-def _read_existing_record(item, path):
+def _read_existing_record(item, path, *, retain_eog=False):
     study, subject = item["study"], item["subject"]
     if study == "GTN":
         from data.gtn import read_gtn_experiment
 
-        gtn = read_gtn_experiment(path)
+        gtn = read_gtn_experiment(path, **({"retain_eog": True} if retain_eog else {}))
         if gtn.subject_id != subject:
             raise ValueError("GTN internal identity differs from verified manifest")
         return gtn.raw, gtn.events, (gtn.events[:, 2] == gtn.thought_number).astype(int)
@@ -33,7 +33,10 @@ def _read_existing_record(item, path):
         from moabb import datasets
 
         dataset = getattr(datasets, study)()
-        dataset.data_path = lambda *_args, **_kwargs: [str(path)]
+        # BI2012's MOABB condition parser splits '/' before '.', so a native
+        # Windows directory containing dots can otherwise become the condition.
+        parser_path = Path(path).as_posix() if study == "BI2012" else str(path)
+        dataset.data_path = lambda *_args, **_kwargs: [parser_path]
         sessions = dataset._get_single_subject_data(int(subject))
         raws = [raw for runs in sessions.values() for raw in runs.values()]
         if len(raws) != 1:
@@ -206,10 +209,12 @@ SOURCE_READERS = {study: _read_existing_record for study in (
 SOURCE_READERS.update(BrainForm=_read_brainform, Cattan2019_VR=_read_cattan)
 
 
-def read_source_record(item, path):
+def read_source_record(item, path, *, retain_eog=False):
     """Return continuous raw, original events, binary labels and optional membership."""
     if item["study"] not in SOURCE_READERS:
         raise ValueError(f"unsupported explicit source parser: {item['study']}; require a verified continuous-format adapter")
+    if retain_eog and item["study"] == "GTN":
+        return _read_existing_record(item, path, retain_eog=True)
     return SOURCE_READERS[item["study"]](item, path)
 
 
